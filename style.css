@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+    var(--bg-main): #F9FAFB;
+    --bg-card: #FFFFFF;
+    --text-main: #111827;
+    --text-muted: #6B7280;
+    --accent-primary: #10B981;
+    --accent-secondary: #F59E0B;
+    --danger: #EF4444;
+    --border-color: #E5E7EB;
+    --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --radius-lg: 16px; 
+    --radius-md: 12px;
+}
+
+[data-theme="dark"] {
+    --bg-main: #111827;
+    --bg-card: #1F2937;
+    --text-main: #F9FAFB;
+    --text-muted: #9CA3AF;
+    --accent-primary: #10B981;
+    --accent-secondary: #F59E0B;
+    --danger: #EF4444;
+    --border-color: #374151;
+    --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: var(--text-main); transition: all 0.3s ease; }
+
+.main-content { padding: 30px 50px; width: 100%; max-width: 1600px; margin: 0 auto; }
+.mt-20 { margin-top: 20px; }
+.mt-40 { margin-top: 40px; }
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+
+/* Topbar */
+.topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+.logo-area { display: flex; align-items: center; gap: 10px; }
+.logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent-primary) 50%, var(--accent-secondary) 50%); border-radius: 50%; } 
+.logo-area h2 { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; color: var(--text-main); }
+.logo-area span { font-weight: 500; color: var(--text-muted); font-size: 1rem; }
+.header-controls { display: flex; gap: 15px; }
+.slicer-group { display: flex; align-items: center; background-color: var(--bg-card); padding: 10px 20px; border-radius: 30px; box-shadow: var(--shadow-card); }
+.slicer-label { font-size: 0.8rem; color: var(--text-muted); margin-right: 8px; font-weight: 600; text-transform: uppercase; }
+.slicer-input { border: none; background: transparent; color: var(--text-main); font-family: inherit; font-weight: 700; outline: none; font-size: 0.85rem; cursor: pointer;}
+.btn-theme { background-color: var(--bg-card); border: none; padding: 10px 20px; border-radius: 30px; box-shadow: var(--shadow-card); cursor: pointer; font-weight: 700; color: var(--text-main); transition: 0.2s;}
+
+/* Typography & Grids */
+.page-title { font-size: 2rem; font-weight: 700; margin-bottom: 20px; letter-spacing: -0.5px; color: var(--text-main);}
+.section-header { margin-bottom: 20px; }
+.section-title { font-size: 1.3rem; font-weight: 700; color: var(--text-main); }
+.section-desc { font-size: 0.9rem; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+
+.executive-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; }
+.charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+.charts-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media(max-width: 1200px) { .executive-grid { grid-template-columns: repeat(3, 1fr); } .charts-grid-2 { grid-template-columns: 1fr; } }
+
+/* Cards & Badges */
+.card { background-color: var(--bg-card); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-card); border: none; transition: 0.3s ease; }
+.chart-card { display: flex; flex-direction: column; }
+.metric-card { display: flex; flex-direction: column; justify-content: space-between;}
+.card-subtitle { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;}
+.card-value { font-size: 2.2rem; font-weight: 700; color: var(--text-main); line-height: 1.1; margin-bottom: 15px;}
+.card-footer { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600;}
+.footer-note { color: var(--text-muted); font-weight: 500; }
+
+.badge { display: inline-block; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; }
+.badge.up { color: var(--accent-primary); background: rgba(16, 185, 129, 0.1); }
+.badge.down { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+.badge.info { color: var(--text-main); background: rgba(17, 24, 39, 0.05); }
+[data-theme="dark"] .badge.info { color: var(--text-main); background: rgba(255, 255, 255, 0.1); }
+
+.card-header h3 { font-size: 0.9rem; font-weight: 700; margin-bottom: 15px; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.5px;}
+.chart-wrapper { position: relative; height: 280px; width: 100%; }
+.workforce-trend-box .dropdown-slicer { border: 1px solid var(--border-color); padding: 5px 10px; border-radius: 8px; font-size: 0.75rem; background: var(--bg-main);}
+
+/* Matrix Table */
+.matrix-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; background: var(--bg-card); border-style: hidden; }
+.matrix-table th, .matrix-table td { padding: 12px 8px; border-bottom: 1px solid var(--border-color); border-right: 1px dashed var(--border-color); text-align: center; transition: 0.2s; background: var(--bg-card); }
+.matrix-table thead { position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.matrix-table th { color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.7rem; border-bottom: 2px solid var(--border-color); }
+.matrix-table th:last-child, .matrix-table td:last-child { border-right: none; }
+.matrix-table .aff-header { background: #F0FAF6; color: var(--accent-primary); border-bottom: 1px solid var(--border-color); font-size: 0.75rem; font-weight: 800; }
+.matrix-table .total-cell { background: #F9FAFB; color: var(--text-main); font-weight: 800; }
+[data-theme="dark"] .matrix-table .aff-header { background: #15322B; }
+[data-theme="dark"] .matrix-table .total-cell { background: #111827; }
+.matrix-table .role-cell { text-align: left; background: var(--bg-card); font-weight: 800; position: sticky; left: 0; z-index: 10; color: var(--text-main); border-right: 2px solid var(--border-color);}
+[data-theme="dark"] .matrix-table .role-cell { background: var(--bg-card); }
+.matrix-table thead .role-cell { z-index: 30; } 
+.matrix-table tfoot { position: sticky; bottom: -1px; z-index: 20; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
+.matrix-table tfoot td { background: var(--bg-card); border-top: 2px solid var(--border-color); border-bottom: none; font-weight: 800;}
+.matrix-table tfoot .role-cell { z-index: 30; } 
+
+/* Excel Daily Table */
+.excel-table { width: 100%; border-collapse: collapse; text-align: right; font-size: 0.85rem; background: var(--bg-card);}
+.excel-table th, .excel-table td { border-bottom: 1px solid var(--border-color); padding: 12px 10px; transition: 0.2s; background: var(--bg-card);}
+.excel-table th { color: var(--text-muted); font-weight: 700; text-align: center; font-size: 0.75rem; text-transform: uppercase; }
+.excel-table.sticky-header thead { position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.excel-table .header-row-1 th { border-bottom: 1px solid var(--border-color); }
+.excel-table .team-divider { border-left: 2px solid var(--border-color); }
+.excel-table td.team-divider { border-left: 2px solid var(--border-color); }
+.excel-table .date-header { text-align: left; background: #F0FAF6; font-weight: 800; color: var(--accent-primary); border-top: none;}
+[data-theme="dark"] .excel-table .date-header { background: #15322B; }
+.excel-table .dept-cell { text-align: left; font-weight: 700; padding-left: 15px; color: var(--text-main); min-width: 150px; position: sticky; left: 0; background: var(--bg-card); z-index: 10; border-right: 1px solid var(--border-color);}
+.excel-table thead .dept-cell { z-index: 30; }
+.text-red { color: var(--danger); font-weight: 700; }
+.text-green { color: var(--accent-primary); font-weight: 700; }
+
+/* Scrollbars */
+.matrix-scrollbar-fix { max-height: 350px; overflow-y: auto; overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-color); position: relative;}
+.excel-scrollbar-fix { max-height: 500px; overflow-y: auto; overflow-x: auto; border-bottom-left-radius: var(--radius-lg); border-bottom-right-radius: var(--radius-lg); position: relative;}
+.matrix-scrollbar-fix::-webkit-scrollbar, .excel-scrollbar-fix::-webkit-scrollbar { width: 6px; height: 6px; }
+.matrix-scrollbar-fix::-webkit-scrollbar-thumb, .excel-scrollbar-fix::-webkit-scrollbar-thumb { background: rgba(107, 114, 128, 0.3); border-radius: 3px; }
+.matrix-scrollbar-fix::-webkit-scrollbar-track, .excel-scrollbar-fix::-webkit-scrollbar-track { background: var(--bg-main); }
