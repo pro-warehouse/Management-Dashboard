@@ -115,3 +115,53 @@ body { font-family: 'Inter', sans-serif; background-color: var(--bg-main); color
 .matrix-scrollbar-fix::-webkit-scrollbar, .excel-scrollbar-fix::-webkit-scrollbar { width: 6px; height: 6px; }
 .matrix-scrollbar-fix::-webkit-scrollbar-thumb, .excel-scrollbar-fix::-webkit-scrollbar-thumb { background: rgba(107, 114, 128, 0.3); border-radius: 3px; }
 .matrix-scrollbar-fix::-webkit-scrollbar-track, .excel-scrollbar-fix::-webkit-scrollbar-track { background: var(--bg-main); }
+
+/* ==========================================
+   📱 Mobile Responsive (รองรับหน้าจอมือถือ/แท็บเล็ต) 
+   ========================================== */
+
+/* สำหรับหน้าจอขนาดแท็บเล็ตและมือถือทั่วไป (กว้างไม่เกิน 768px) */
+@media (max-width: 768px) {
+    /* 1. ลดระยะขอบซ้ายขวาของหน้าจอหลัก ให้เต็มจอขึ้น */
+    .main-content { padding: 15px 10px; }
+    
+    /* 2. ปรับ Topbar ด้านบนให้เรียงซ้อนกัน (โลโก้อยู่บน ปุ่มเมนูอยู่ล่าง) */
+    .topbar { flex-direction: column; gap: 15px; align-items: flex-start; padding: 15px; }
+    .header-controls { flex-wrap: wrap; width: 100%; gap: 10px; }
+    
+    /* 3. ปรับปุ่ม Filter ให้ยืดเต็มพื้นที่ที่ว่าง */
+    .slicer-group { flex: 1; min-width: 140px; padding: 8px 15px; }
+    .btn-theme { width: 100%; margin-top: 5px; }
+    
+    /* 4. ปรับการ์ด Executive Dashboard จาก 6 คอลัมน์ ให้เหลือ 2 คอลัมน์ */
+    .executive-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    
+    /* 5. ปรับกราฟให้เรียงเป็นแถวเดียว (บน-ล่าง) ไม่เบียดกัน */
+    .charts-grid { grid-template-columns: 1fr; }
+    .charts-grid-2 { grid-template-columns: 1fr; }
+    
+    /* 6. ย่อขนาดฟอนต์ให้เล็กลงนิดหน่อย ไม่ให้ล้นกรอบ */
+    .page-title { font-size: 1.5rem; }
+    .section-title { font-size: 1.1rem; }
+    .card-value { font-size: 1.6rem; }
+    
+    /* 7. ลด Padding ภายในการ์ดลง เพื่อเพิ่มพื้นที่ให้กราฟและข้อมูล */
+    .card { padding: 15px; }
+    
+    /* 8. จัดการปุ่ม Source Badge ให้ไม่ไปเกยกับ Text */
+    .section-header { display: flex; flex-direction: column; align-items: flex-start !important; gap: 10px; }
+    .source-badge { margin-left: 0; margin-top: 5px; }
+}
+
+/* สำหรับหน้าจอมือถือแนวตั้งที่แคบมากๆ (กว้างไม่เกิน 480px) */
+@media (max-width: 480px) {
+    /* ปรับการ์ด Executive ให้เหลือแค่ 1 คอลัมน์ (แสดงทีละ 1 ใบ) */
+    .executive-grid { grid-template-columns: 1fr; }
+    
+    /* ตัวอักษรโลโก้ย่อลงอีกนิด */
+    .logo-area h2 { font-size: 1.3rem; }
+    .logo-area span { display: block; font-size: 0.8rem; }
+    
+    /* Filter เรียงเป็นแถวเดียวแนวตั้ง */
+    .slicer-group { width: 100%; min-width: 100%; }
+}
