@@ -361,24 +361,21 @@ function toggleLoader(show) {
 // ========================================================
 // 🌟 CONFIGURATION & FULFILLMENT LIVE DATA BINDING 🌟
 // ========================================================
-const NODE_URL = "https://dc-ordermonitoring-backend.onrender.com/";
 
-// ========================================================
-// 🌟 CONFIGURATION & FULFILLMENT LIVE DATA BINDING 🌟
-// ========================================================
+const NODE_URL = "https://dc-ordermonitoring-backend.onrender.com/";
 
 function initFulfillmentRealtime() {
     const tableEl = document.getElementById('ffm-detail-table');
     
     // 💡 ทริค: ใช้ .trim() เพื่อล้างอักขระล่องหนที่มักจะติดมาตอนกดก๊อปปี้โค้ด
     const rawUrl = "https://dc-ordermonitoring-backend.onrender.com/api/run";
-    const NODE_URL = rawUrl.trim();
+    const SSE_URL = rawUrl.trim();
 
-    console.log("⚡ กำลังเชื่อมต่อท่อส่งข้อมูล Fulfillment Real-time (SSE)... URL:", NODE_URL);
+    console.log("⚡ กำลังเชื่อมต่อท่อส่งข้อมูล Fulfillment Real-time (SSE)... URL:", SSE_URL);
     
     try {
         // เปิดการเชื่อมต่อแบบสตรีมมิ่งค้างไว้
-        const eventSource = new EventSource(NODE_URL);
+        const eventSource = new EventSource(SSE_URL);
 
         // ดักจับข้อมูลทุกครั้งที่มีการอัปเดตส่งมาจากหลังบ้าน
         eventSource.onmessage = function(event) {
