@@ -296,19 +296,51 @@
             </div>
             </div>
 
-        <section class="section-container mt-40">
-            <div class="section-header">
-                <h2 class="section-title">
-                    1. Orders Shipped & Avg. Fulfillment
-                </h2>
+        <section id="fulfillment-section" class="section-container mt-40">
+    <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <h2 class="section-title">
+                1. Orders Shipped & Avg. Fulfillment
+                <span class="source-badge" style="background: rgba(16, 185, 129, 0.1); color: #10B981; border-color: transparent;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>
+                    Live Node API
+                </span>
+            </h2>
+            <p class="section-desc">ปริมาณออเดอร์รายสาขา (BU) อัตราความสำเร็จ และการควบคุมสถานะบิลคงค้างในแต่ละวัน</p>
+        </div>
+    </div>
+    
+    <div class="charts-grid-2 mt-20">
+        <div class="card chart-card">
+            <div class="card-header">
+                <h3>FULFILLMENT TREND HISTORY (%)</h3>
             </div>
-            
-            <div class="card data-card text-center" style="padding: 60px 20px; border: 2px dashed var(--border-color) !important; background: rgba(0,0,0,0.02);">
-                <div style="font-size: 3rem; margin-bottom: 15px;">🛠️</div>
-                <h3 style="color: var(--text-main); margin-bottom: 10px;">ส่วนนี้อยู่ระหว่างการพัฒนาระบบ (Work in Progress)</h3>
-                <p style="color: var(--text-muted); font-size: 0.9rem;">ระบบออเดอร์และการจัดส่งกำลังอยู่ระหว่างการปรับปรุง จะเปิดให้ใช้งานเร็วๆ นี้</p>
+            <div class="chart-wrapper" style="height: 280px; position: relative;">
+                <canvas id="ffmTrendChart"></canvas>
             </div>
-        </section>
+        </div>
+        
+        <div class="card chart-card">
+            <div class="card-header">
+                <h3>ORDER VOLUME & OUTSTANDING BY BU</h3>
+            </div>
+            <div class="chart-wrapper" style="height: 280px; position: relative;">
+                <canvas id="ffmVolumeChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card data-card mt-20">
+        <div class="card-header"><h3>DAILY FULFILLMENT MATRIX RECORD</h3></div>
+        <div style="width: 100%; overflow-x: auto; max-height: 400px; overflow-y: auto;">
+            <table class="matrix-table" id="ffm-detail-table">
+                <thead>
+                    <tr><th class="text-center" style="padding: 30px; color: var(--text-muted);">กำลังเรียกขอข้อมูลจากเซิร์ฟเวอร์หลังบ้าน...</th></tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+</section>
 
         <section id="monitoring" class="section-container mt-40">
             
