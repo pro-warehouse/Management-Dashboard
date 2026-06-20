@@ -87,6 +87,33 @@ const orderMixCtx = document.getElementById('orderMixChart')?.getContext('2d');
 if (orderMixCtx) {
     new Chart(orderMixCtx, { type: 'doughnut', data: { labels: ['E-com', 'B2B', '3PL'], datasets: [{ data: [55, 30, 15], backgroundColor: [accentGreen, accentOrange, '#3B82F6'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins:{legend:{position: 'bottom'}} } });
 }
+let workforceChartInstance = null;
+const wfCtx = document.getElementById('workforceChart')?.getContext('2d');
+if (wfCtx) {
+    workforceChartInstance = new Chart(wfCtx, { 
+        type: 'bar', 
+        data: { 
+            labels: [], 
+            datasets: [{ 
+                label: 'จำนวนกำลังพล (คน)', 
+                data: [], 
+                backgroundColor: '#3B82F6', // ใช้สีน้ำเงินให้เข้ากับธีมฝั่งต่างชาติ
+                borderRadius: 6 
+            }] 
+        }, 
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { legend: { display: false } }, 
+            scales: { 
+                x: { grid: { display: false } }, 
+                y: { beginAtZero: true, border: { display: false } } 
+            }, 
+            layout: { padding: { top: 20 } } 
+        }, 
+        plugins: [dataLabelPlugin] // ใช้ Plugin เดิมของคุณเพื่อให้ตัวเลขเด้งอยู่บนแท่ง
+    });
+}
 
 let ontimeChart1Instance = null;
 const ot1Ctx = document.getElementById('ontimeChart')?.getContext('2d');
@@ -119,6 +146,55 @@ if (claim1Ctx) {
             layout: { padding: { top: 10 } } 
         }, 
         plugins: [dataLabelPlugin] 
+    });
+}
+// --- กราฟ Fulfillment (ดึงจาก Node API) ---
+let ffmTrendChartInstance = null;
+const ffmTrendCtx = document.getElementById('ffmTrendChart')?.getContext('2d');
+if (ffmTrendCtx) {
+    ffmTrendChartInstance = new Chart(ffmTrendCtx, { 
+        type: 'line', 
+        data: { 
+            labels: [], 
+            datasets: [{ 
+                label: 'Fulfillment %', 
+                data: [], 
+                borderColor: '#10B981', 
+                backgroundColor: 'rgba(16, 185, 129, 0.1)', 
+                fill: true, 
+                tension: 0.4,
+                pointBackgroundColor: '#FFFFFF',
+                pointBorderColor: '#10B981',
+            }] 
+        }, 
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { legend: { display: false } },
+            scales: { x: { grid: { display: false } }, y: { border: { display: false }, beginAtZero: true, max: 100 } }
+        },
+        plugins: [lineDataLabelPlugin] // ใช้ Plugin เดิมของคุณให้ตัวเลขลอยบนจุด
+    });
+}
+
+let ffmVolumeChartInstance = null;
+const ffmVolCtx = document.getElementById('ffmVolumeChart')?.getContext('2d');
+if (ffmVolCtx) {
+    ffmVolumeChartInstance = new Chart(ffmVolCtx, { 
+        type: 'bar', 
+        data: { 
+            labels: [], 
+            datasets: [
+                { label: 'Completed (เสร็จ)', data: [], backgroundColor: '#10B981', borderRadius: 4 },
+                { label: 'Pending (ค้าง)', data: [], backgroundColor: '#EF4444', borderRadius: 4 }
+            ]
+        }, 
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false } } },
+            plugins: { legend: { position: 'top' } }
+        }
     });
 }
 
@@ -265,25 +341,137 @@ if (prodCtx) {
 // ==========================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxB0bNU1P9qrG_6aHoeiKyHMXT0_k76VlL0aq1I9xxHVpPDQK9qcd3FJMip4Jk9o6RY/exec';
 
-let globalData = { workforce:{}, fulfillment:{}, wave_ops:{}, ontime:{}, claims:{}, inventory:{}, transport:{}, productivity:{}, prod_area:{}, prod_users_map:{} };
+// 👇 เติมตัวแปรหลักที่หายไปกลับเข้าไปตรงนี้ 👇
+let globalData = {};
 let isFirstLoad = true;
-
 window.selectedBUs = ['ALL'];
 window.locFilters = { bu: ['ALL'], type: ['ALL'], zone: ['ALL'] };
 
-function toggleLoader(show) {
-    const loader = document.getElementById('global-loader');
-    if(loader) loader.style.display = show ? 'flex' : 'none';
+function standardizeBU(buName) {
+    if (!buName) return "N/A";
+    return buName.toString().trim().toUpperCase();
 }
 
-const standardizeBU = (bu) => {
-    let b = (bu || '').toString().trim().toUpperCase();
-    if (b.includes('MART')) return 'DM02';
-    if (b.includes('PUN') || b.includes('PUNTHAI')) return 'DP02';
-    if (b.includes('GFA') || b.includes('COFFEE')) return 'DG02';
-    if (b.includes('LUBE')) return '1115';
-    return b;
-};
+function toggleLoader(show) {
+    const loader = document.getElementById('loader') || document.querySelector('.loader');
+    if (loader) loader.style.display = show ? 'flex' : 'none';
+}
+// 👆 สิ้นสุดส่วนที่ต้องเติม 👆
+
+// ========================================================
+// 🌟 CONFIGURATION & FULFILLMENT LIVE DATA BINDING 🌟
+// ========================================================
+const NODE_URL = "https://dc-ordermonitoring-backend.onrender.com/";
+
+// เปลี่ยนจากระบบ Fetch เดิม เป็นการต่อท่อเปิดรับข้อมูลสตรีม Real-time (SSE)
+function initFulfillmentRealtime() {
+    const tableEl = document.getElementById('ffm-detail-table');
+    const NODE_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
+
+    console.log("⚡ กำลังเชื่อมต่อท่อส่งข้อมูล Fulfillment Real-time (SSE)...");
+    
+    // เปิดการเชื่อมต่อแบบสตรีมมิ่งค้างไว้
+    const eventSource = new EventSource(NODE_URL);
+
+    // ดักจับข้อมูลทุกครั้งที่มีการอัปเดตส่งมาจากหลังบ้าน
+    eventSource.onmessage = function(event) {
+        try {
+            // แปลงข้อมูลสตรีมที่ได้รับให้กลับมาเป็น JSON Object
+            const result = JSON.parse(event.data);
+            console.log("🔥 Node API Live Data:", result);
+
+            let trendLabels = [];
+            let trendValues = [];
+            let buNames = [];
+            let completedCounts = [];
+            let pendingCounts = [];
+
+            let tableHtml = `<thead>
+                <tr>
+                    <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">วันที่บันทึก</th>
+                    <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">หน่วยธุรกิจ (BU)</th>
+                    <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">ออเดอร์ทั้งหมด</th>
+                    <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">จัดเสร็จสิ้น (Completed)</th>
+                    <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">คงค้าง (Pending)</th>
+                    <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">Fulfillment Rate</th>
+                </tr>
+            </thead><tbody>`;
+
+            // รองรับทั้งกรณีที่หลังบ้านส่งมาเป็น Array หรือ Object เดี่ยวๆ
+            const dataArray = Array.isArray(result) ? result : [result];
+
+            if (dataArray.length > 0 && dataArray[0] !== null) {
+                dataArray.forEach(item => {
+                    const dateStr = item.date || item.Date || item.record_date || "N/A";
+                    const buStr = item.bu || item.BU || item.business_unit || "Unknown";
+                    const total = parseInt(item.total_orders || item.Total || item.qty_order || 0);
+                    const completed = parseInt(item.completed_orders || item.Completed || item.qty_completed || 0);
+                    
+                    const pending = total - completed > 0 ? total - completed : 0;
+                    const rate = total > 0 ? parseFloat(((completed / total) * 100).toFixed(2)) : 0;
+
+                    tableHtml += `<tr>
+                        <td style="padding:10px; font-weight:600; text-align:center;">${dateStr}</td>
+                        <td style="padding:10px; text-align:center;"><span class="badge info" style="font-weight:700;">${buStr}</span></td>
+                        <td style="padding:10px; text-align:center; font-weight:600;">${fmtN(total)}</td>
+                        <td style="padding:10px; text-align:center; color:#10B981; font-weight:700;">${fmtN(completed)}</td>
+                        <td style="padding:10px; text-align:center; color:${pending > 0 ? '#EF4444' : 'inherit'}; font-weight:700;">${pending > 0 ? fmtN(pending) : '-'}</td>
+                        <td style="padding:10px; text-align:center;">
+                            <span style="display:inline-block; background:${rate >= 95 ? '#dcfce7' : '#fee2e2'}; color:${rate >= 95 ? '#166534' : '#991b1b'}; padding:2px 8px; border-radius:12px; font-weight:700;">${rate}%</span>
+                        </td>
+                    </tr>`;
+
+                    // จัดกลุ่มข้อมูลเข้ากราฟเส้น (Trend)
+                    if (!trendLabels.includes(dateStr)) {
+                        trendLabels.push(dateStr);
+                        trendValues.push(rate);
+                    }
+
+                    // จัดกลุ่มข้อมูลรวมแยกรายคลัง (BU Volume)
+                    if (!buNames.includes(buStr)) {
+                        buNames.push(buStr);
+                        completedCounts.push(completed);
+                        pendingCounts.push(pending);
+                    } else {
+                        let idx = buNames.indexOf(buStr);
+                        completedCounts[idx] += completed;
+                        pendingCounts[idx] += pending;
+                    }
+                });
+                tableHtml += `</tbody>`;
+            } else {
+                tableHtml = `<tr><td class="text-center" style="padding: 30px; color: var(--text-muted);">ไม่มีข้อมูลสตรีมส่งมาในขณะนี้</td></tr>`;
+            }
+
+            if (tableEl) tableEl.innerHTML = tableHtml;
+
+            // ผลักข้อมูลเข้ากราฟคู่ขนาน
+            if (ffmTrendChartInstance) {
+                ffmTrendChartInstance.data.labels = trendLabels;
+                ffmTrendChartInstance.data.datasets[0].data = trendValues;
+                ffmTrendChartInstance.update();
+            }
+
+            if (ffmVolumeChartInstance) {
+                ffmVolumeChartInstance.data.labels = buNames;
+                ffmVolumeChartInstance.data.datasets[0].data = completedCounts;
+                ffmVolumeChartInstance.data.datasets[1].data = pendingCounts;
+                ffmVolumeChartInstance.update();
+            }
+
+        } catch (e) {
+            console.error("❌ เกิดข้อผิดพลาดในการถอดรหัสข้อมูลสตรีม:", e);
+        }
+    };
+
+    // แสดงแจ้งเตือนกรณีสัญญานหลุดหรือเซิร์ฟเวอร์ยังไม่ตื่น
+    eventSource.onerror = function(error) {
+        console.error("❌ SSE Connection Error:", error);
+        if (tableEl && tableEl.innerHTML.includes("กำลังเรียกขอข้อมูล")) {
+            tableEl.innerHTML = `<tr><td class="text-center" style="padding: 30px; color: var(--danger); font-weight:bold;">⚠️ ระบบกำลังเปิดท่อรอรับข้อมูล Real-time จากเซิร์ฟเวอร์หลังบ้าน...</td></tr>`;
+        }
+    };
+}
 
 function cleanDataBeforeLoad() {
     ['fulfillment', 'wave_ops', 'claims', 'inventory', 'inventory_daily', 'transport'].forEach(module => {
@@ -567,7 +755,13 @@ async function initDashboard() {
         });
         isFirstLoad = false;
     }
+    
+    // 1. ดึงสถิติตามรอบปกติจาก Google Apps Script ให้เสร็จสิ้น
     await Promise.all(sections.map(s => fetchSection(s)));
+    
+    // 2. เรียกเปิดท่อ Real-time สำหรับ Fulfillment หลังบ้านแยกเดี่ยวๆ ตรงนี้เลยครับ
+    initFulfillmentRealtime();
+    
     toggleLoader(false);
 }
 
