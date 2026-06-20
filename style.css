@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-    var(--bg-main): #F9FAFB;
+    --bg-main: #F9FAFB;
     --bg-card: #FFFFFF;
     --text-main: #111827;
     --text-muted: #6B7280;
@@ -115,7 +115,6 @@ body { font-family: 'Inter', sans-serif; background-color: var(--bg-main); color
 .matrix-scrollbar-fix::-webkit-scrollbar, .excel-scrollbar-fix::-webkit-scrollbar { width: 6px; height: 6px; }
 .matrix-scrollbar-fix::-webkit-scrollbar-thumb, .excel-scrollbar-fix::-webkit-scrollbar-thumb { background: rgba(107, 114, 128, 0.3); border-radius: 3px; }
 .matrix-scrollbar-fix::-webkit-scrollbar-track, .excel-scrollbar-fix::-webkit-scrollbar-track { background: var(--bg-main); }
-
 /* ==========================================
    📱 Mobile Responsive (รองรับหน้าจอมือถือ/แท็บเล็ต) 
    ========================================== */
