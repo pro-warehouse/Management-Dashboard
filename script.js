@@ -363,106 +363,126 @@ function toggleLoader(show) {
 // ========================================================
 const NODE_URL = "https://dc-ordermonitoring-backend.onrender.com/";
 
-// เปลี่ยนจากระบบ Fetch เดิม เป็นการต่อท่อเปิดรับข้อมูลสตรีม Real-time (SSE)
+// ========================================================
+// 🌟 CONFIGURATION & FULFILLMENT LIVE DATA BINDING 🌟
+// ========================================================
+
 function initFulfillmentRealtime() {
     const tableEl = document.getElementById('ffm-detail-table');
-    const NODE_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
-
-    console.log("⚡ กำลังเชื่อมต่อท่อส่งข้อมูล Fulfillment Real-time (SSE)...");
     
-    // เปิดการเชื่อมต่อแบบสตรีมมิ่งค้างไว้
-    const eventSource = new EventSource(NODE_URL);
+    // 💡 ทริค: ใช้ .trim() เพื่อล้างอักขระล่องหนที่มักจะติดมาตอนกดก๊อปปี้โค้ด
+    const rawUrl = "https://dc-ordermonitoring-backend.onrender.com/api/run";
+    const NODE_URL = rawUrl.trim();
 
-    // ดักจับข้อมูลทุกครั้งที่มีการอัปเดตส่งมาจากหลังบ้าน
-    eventSource.onmessage = function(event) {
-        try {
-            // แปลงข้อมูลสตรีมที่ได้รับให้กลับมาเป็น JSON Object
-            const result = JSON.parse(event.data);
-            console.log("🔥 Node API Live Data:", result);
+    console.log("⚡ กำลังเชื่อมต่อท่อส่งข้อมูล Fulfillment Real-time (SSE)... URL:", NODE_URL);
+    
+    try {
+        // เปิดการเชื่อมต่อแบบสตรีมมิ่งค้างไว้
+        const eventSource = new EventSource(NODE_URL);
 
-            let trendLabels = [];
-            let trendValues = [];
-            let buNames = [];
-            let completedCounts = [];
-            let pendingCounts = [];
+        // ดักจับข้อมูลทุกครั้งที่มีการอัปเดตส่งมาจากหลังบ้าน
+        eventSource.onmessage = function(event) {
+            try {
+                // แปลงข้อมูลสตรีมที่ได้รับให้กลับมาเป็น JSON Object
+                const result = JSON.parse(event.data);
+                console.log("🔥 Node API Live Data:", result);
 
-            let tableHtml = `<thead>
-                <tr>
-                    <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">วันที่บันทึก</th>
-                    <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">หน่วยธุรกิจ (BU)</th>
-                    <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">ออเดอร์ทั้งหมด</th>
-                    <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">จัดเสร็จสิ้น (Completed)</th>
-                    <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">คงค้าง (Pending)</th>
-                    <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">Fulfillment Rate</th>
-                </tr>
-            </thead><tbody>`;
+                let trendLabels = [];
+                let trendValues = [];
+                let buNames = [];
+                let completedCounts = [];
+                let pendingCounts = [];
 
-            // รองรับทั้งกรณีที่หลังบ้านส่งมาเป็น Array หรือ Object เดี่ยวๆ
-            const dataArray = Array.isArray(result) ? result : [result];
+                let tableHtml = `<thead>
+                    <tr>
+                        <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">วันที่บันทึก</th>
+                        <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">หน่วยธุรกิจ (BU)</th>
+                        <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">ออเดอร์ทั้งหมด</th>
+                        <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">จัดเสร็จสิ้น (Completed)</th>
+                        <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">คงค้าง (Pending)</th>
+                        <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">Fulfillment Rate</th>
+                    </tr>
+                </thead><tbody>`;
 
-            if (dataArray.length > 0 && dataArray[0] !== null) {
-                dataArray.forEach(item => {
-                    const dateStr = item.date || item.Date || item.record_date || "N/A";
-                    const buStr = item.bu || item.BU || item.business_unit || "Unknown";
-                    const total = parseInt(item.total_orders || item.Total || item.qty_order || 0);
-                    const completed = parseInt(item.completed_orders || item.Completed || item.qty_completed || 0);
-                    
-                    const pending = total - completed > 0 ? total - completed : 0;
-                    const rate = total > 0 ? parseFloat(((completed / total) * 100).toFixed(2)) : 0;
+                // รองรับทั้งกรณีที่หลังบ้านส่งมาเป็น Array หรือ Object เดี่ยวๆ
+                const dataArray = Array.isArray(result) ? result : [result];
 
-                    tableHtml += `<tr>
-                        <td style="padding:10px; font-weight:600; text-align:center;">${dateStr}</td>
-                        <td style="padding:10px; text-align:center;"><span class="badge info" style="font-weight:700;">${buStr}</span></td>
-                        <td style="padding:10px; text-align:center; font-weight:600;">${fmtN(total)}</td>
-                        <td style="padding:10px; text-align:center; color:#10B981; font-weight:700;">${fmtN(completed)}</td>
-                        <td style="padding:10px; text-align:center; color:${pending > 0 ? '#EF4444' : 'inherit'}; font-weight:700;">${pending > 0 ? fmtN(pending) : '-'}</td>
-                        <td style="padding:10px; text-align:center;">
-                            <span style="display:inline-block; background:${rate >= 95 ? '#dcfce7' : '#fee2e2'}; color:${rate >= 95 ? '#166534' : '#991b1b'}; padding:2px 8px; border-radius:12px; font-weight:700;">${rate}%</span>
-                        </td>
-                    </tr>`;
+                if (dataArray.length > 0 && dataArray[0] !== null) {
+                    dataArray.forEach(item => {
+                        const dateStr = item.date || item.Date || item.record_date || "N/A";
+                        const buStr = item.bu || item.BU || item.business_unit || "Unknown";
+                        const total = parseInt(item.total_orders || item.Total || item.qty_order || 0);
+                        const completed = parseInt(item.completed_orders || item.Completed || item.qty_completed || 0);
+                        
+                        const pending = total - completed > 0 ? total - completed : 0;
+                        const rate = total > 0 ? parseFloat(((completed / total) * 100).toFixed(2)) : 0;
 
-                    // จัดกลุ่มข้อมูลเข้ากราฟเส้น (Trend)
-                    if (!trendLabels.includes(dateStr)) {
-                        trendLabels.push(dateStr);
-                        trendValues.push(rate);
-                    }
+                        tableHtml += `<tr>
+                            <td style="padding:10px; font-weight:600; text-align:center;">${dateStr}</td>
+                            <td style="padding:10px; text-align:center;"><span class="badge info" style="font-weight:700;">${buStr}</span></td>
+                            <td style="padding:10px; text-align:center; font-weight:600;">${fmtN(total)}</td>
+                            <td style="padding:10px; text-align:center; color:#10B981; font-weight:700;">${fmtN(completed)}</td>
+                            <td style="padding:10px; text-align:center; color:${pending > 0 ? '#EF4444' : 'inherit'}; font-weight:700;">${pending > 0 ? fmtN(pending) : '-'}</td>
+                            <td style="padding:10px; text-align:center;">
+                                <span style="display:inline-block; background:${rate >= 95 ? '#dcfce7' : '#fee2e2'}; color:${rate >= 95 ? '#166534' : '#991b1b'}; padding:2px 8px; border-radius:12px; font-weight:700;">${rate}%</span>
+                            </td>
+                        </tr>`;
 
-                    // จัดกลุ่มข้อมูลรวมแยกรายคลัง (BU Volume)
-                    if (!buNames.includes(buStr)) {
-                        buNames.push(buStr);
-                        completedCounts.push(completed);
-                        pendingCounts.push(pending);
-                    } else {
-                        let idx = buNames.indexOf(buStr);
-                        completedCounts[idx] += completed;
-                        pendingCounts[idx] += pending;
-                    }
-                });
-                tableHtml += `</tbody>`;
-            } else {
-                tableHtml = `<tr><td class="text-center" style="padding: 30px; color: var(--text-muted);">ไม่มีข้อมูลสตรีมส่งมาในขณะนี้</td></tr>`;
+                        // จัดกลุ่มข้อมูลเข้ากราฟเส้น (Trend)
+                        if (!trendLabels.includes(dateStr)) {
+                            trendLabels.push(dateStr);
+                            trendValues.push(rate);
+                        }
+
+                        // จัดกลุ่มข้อมูลรวมแยกรายคลัง (BU Volume)
+                        if (!buNames.includes(buStr)) {
+                            buNames.push(buStr);
+                            completedCounts.push(completed);
+                            pendingCounts.push(pending);
+                        } else {
+                            let idx = buNames.indexOf(buStr);
+                            completedCounts[idx] += completed;
+                            pendingCounts[idx] += pending;
+                        }
+                    });
+                    tableHtml += `</tbody>`;
+                } else {
+                    tableHtml = `<tr><td colspan="6" class="text-center" style="padding: 30px; color: var(--text-muted);">ไม่มีข้อมูลสตรีมส่งมาในขณะนี้</td></tr>`;
+                }
+
+                if (tableEl) tableEl.innerHTML = tableHtml;
+
+                // ผลักข้อมูลเข้ากราฟคู่ขนาน
+                if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
+                    ffmTrendChartInstance.data.labels = trendLabels;
+                    ffmTrendChartInstance.data.datasets[0].data = trendValues;
+                    ffmTrendChartInstance.update();
+                }
+
+                if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance) {
+                    ffmVolumeChartInstance.data.labels = buNames;
+                    ffmVolumeChartInstance.data.datasets[0].data = completedCounts;
+                    ffmVolumeChartInstance.data.datasets[1].data = pendingCounts;
+                    ffmVolumeChartInstance.update();
+                }
+
+            } catch (e) {
+                console.error("❌ เกิดข้อผิดพลาดในการถอดรหัสข้อมูลสตรีม:", e);
             }
+        };
 
-            if (tableEl) tableEl.innerHTML = tableHtml;
-
-            // ผลักข้อมูลเข้ากราฟคู่ขนาน
-            if (ffmTrendChartInstance) {
-                ffmTrendChartInstance.data.labels = trendLabels;
-                ffmTrendChartInstance.data.datasets[0].data = trendValues;
-                ffmTrendChartInstance.update();
+        // แสดงแจ้งเตือนกรณีสัญญานหลุดหรือเซิร์ฟเวอร์ยังไม่ตื่น
+        eventSource.onerror = function(error) {
+            console.error("❌ SSE Connection Error:", error);
+            if (tableEl && tableEl.innerHTML.includes("กำลังเรียกขอข้อมูล")) {
+                tableEl.innerHTML = `<tr><td colspan="6" class="text-center" style="padding: 30px; color: var(--danger); font-weight:bold;">⚠️ ระบบกำลังเปิดท่อรอรับข้อมูล Real-time จากเซิร์ฟเวอร์หลังบ้าน...</td></tr>`;
             }
-
-            if (ffmVolumeChartInstance) {
-                ffmVolumeChartInstance.data.labels = buNames;
-                ffmVolumeChartInstance.data.datasets[0].data = completedCounts;
-                ffmVolumeChartInstance.data.datasets[1].data = pendingCounts;
-                ffmVolumeChartInstance.update();
-            }
-
-        } catch (e) {
-            console.error("❌ เกิดข้อผิดพลาดในการถอดรหัสข้อมูลสตรีม:", e);
-        }
-    };
+        };
+        
+    } catch (err) {
+        console.error("❌ สร้างการเชื่อมต่อ EventSource ไม่สำเร็จ (ตรวจสอบ URL):", err);
+    }
+}
 
     // แสดงแจ้งเตือนกรณีสัญญานหลุดหรือเซิร์ฟเวอร์ยังไม่ตื่น
     eventSource.onerror = function(error) {
