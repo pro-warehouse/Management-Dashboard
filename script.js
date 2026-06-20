@@ -26,7 +26,10 @@ const dataLabelPlugin = {
         if(chart.config.type !== 'bar' || chart.canvas.id === 'productivityChart') return;
         const { ctx } = chart;
         chart.data.datasets.forEach((dataset, i) => {
+            
+            // 🚩 เพิ่มเงื่อนไขนี้: ถ้าเป็น Dataset ของกราฟเส้น (จำนวนชิ้น) ไม่ต้องวาดตัวเลข จะได้ไม่รก
             if (dataset.type === 'line') return;
+            
             const meta = chart.getDatasetMeta(i);
             meta.data.forEach((bar, index) => {
                 const data = dataset.data[index];
@@ -42,6 +45,7 @@ const dataLabelPlugin = {
                     } else {
                         displayVal = data % 1 !== 0 ? data.toFixed(2) + '%' : fmtN(data);
                     }
+                    
                     ctx.fillText(displayVal, bar.x, bar.y - 6);
                 }
             });
@@ -83,31 +87,26 @@ const orderMixCtx = document.getElementById('orderMixChart')?.getContext('2d');
 if (orderMixCtx) {
     new Chart(orderMixCtx, { type: 'doughnut', data: { labels: ['E-com', 'B2B', '3PL'], datasets: [{ data: [55, 30, 15], backgroundColor: [accentGreen, accentOrange, '#3B82F6'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins:{legend:{position: 'bottom'}} } });
 }
-let workforceChartInstance = null;
-const wfCtx = document.getElementById('workforceChart')?.getContext('2d');
-if (wfCtx) {
-    workforceChartInstance = new Chart(wfCtx, { 
+
+// 👉 (เพิ่มใหม่) กราฟ Fulfillment
+let ffmTrendChartInstance = null;
+const ffmTrendCtx = document.getElementById('ffmTrendChart')?.getContext('2d');
+if (ffmTrendCtx) {
+    ffmTrendChartInstance = new Chart(ffmTrendCtx, { 
+        type: 'line', 
+        data: { labels: [], datasets: [{ label: 'Fulfillment %', data: [], borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: '#10B981' }] }, 
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, beginAtZero: true, max: 100 } } },
+        plugins: [lineDataLabelPlugin]
+    });
+}
+
+let ffmVolumeChartInstance = null;
+const ffmVolCtx = document.getElementById('ffmVolumeChart')?.getContext('2d');
+if (ffmVolCtx) {
+    ffmVolumeChartInstance = new Chart(ffmVolCtx, { 
         type: 'bar', 
-        data: { 
-            labels: [], 
-            datasets: [{ 
-                label: 'จำนวนกำลังพล (คน)', 
-                data: [], 
-                backgroundColor: '#3B82F6',
-                borderRadius: 6 
-            }] 
-        }, 
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { legend: { display: false } }, 
-            scales: { 
-                x: { grid: { display: false } }, 
-                y: { beginAtZero: true, border: { display: false } } 
-            }, 
-            layout: { padding: { top: 20 } } 
-        }, 
-        plugins: [dataLabelPlugin]
+        data: { labels: [], datasets: [ { label: 'Completed (เสร็จ)', data: [], backgroundColor: '#10B981', borderRadius: 4 }, { label: 'Pending (ค้าง)', data: [], backgroundColor: '#EF4444', borderRadius: 4 } ] }, 
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false } } }, plugins: { legend: { position: 'top' } } }
     });
 }
 
@@ -117,6 +116,7 @@ if (ot1Ctx) {
     ontimeChart1Instance = new Chart(ot1Ctx, { type: 'line', data: { labels: [], datasets: [{ label: 'On-Time %', data: [], borderColor: accentGreen, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: accentGreen, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}}, scales: { x: {grid:{display:false}}, y: {border:{display:false}} }, layout: { padding: { top: 40 } } }, plugins: [lineDataLabelPlugin] });
 }
 
+// --- กราฟย่อหน้า Executive Dashboard ---
 let claimChart1Instance = null;
 const claim1Ctx = document.getElementById('claimChart')?.getContext('2d');
 if (claim1Ctx) {
@@ -136,7 +136,7 @@ if (claim1Ctx) {
             scales: { 
                 x: {grid:{display:false}}, 
                 y: {position: 'left', beginAtZero: true},
-                y1: {position: 'right', beginAtZero: true, grid: {display:false}, display: false} 
+                y1: {position: 'right', beginAtZero: true, grid: {display:false}, display: false} // ซ่อนแกนขวาในหน้าแรกจะได้ไม่เบียด
             }, 
             layout: { padding: { top: 10 } } 
         }, 
@@ -144,55 +144,7 @@ if (claim1Ctx) {
     });
 }
 
-let ffmTrendChartInstance = null;
-const ffmTrendCtx = document.getElementById('ffmTrendChart')?.getContext('2d');
-if (ffmTrendCtx) {
-    ffmTrendChartInstance = new Chart(ffmTrendCtx, { 
-        type: 'line', 
-        data: { 
-            labels: [], 
-            datasets: [{ 
-                label: 'Fulfillment %', 
-                data: [], 
-                borderColor: '#10B981', 
-                backgroundColor: 'rgba(16, 185, 129, 0.1)', 
-                fill: true, 
-                tension: 0.4,
-                pointBackgroundColor: '#FFFFFF',
-                pointBorderColor: '#10B981',
-            }] 
-        }, 
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { legend: { display: false } },
-            scales: { x: { grid: { display: false } }, y: { border: { display: false }, beginAtZero: true, max: 100 } }
-        },
-        plugins: [lineDataLabelPlugin]
-    });
-}
-
-let ffmVolumeChartInstance = null;
-const ffmVolCtx = document.getElementById('ffmVolumeChart')?.getContext('2d');
-if (ffmVolCtx) {
-    ffmVolumeChartInstance = new Chart(ffmVolCtx, { 
-        type: 'bar', 
-        data: { 
-            labels: [], 
-            datasets: [
-                { label: 'Completed (เสร็จ)', data: [], backgroundColor: '#10B981', borderRadius: 4 },
-                { label: 'Pending (ค้าง)', data: [], backgroundColor: '#EF4444', borderRadius: 4 }
-            ]
-        }, 
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false } } },
-            plugins: { legend: { position: 'top' } }
-        }
-    });
-}
-
+// --- กราฟละเอียดใน Detail ข้อ 4 ---
 let claimChart2Instance = null;
 const claim2Ctx = document.getElementById('claimChart2')?.getContext('2d');
 if (claim2Ctx) {
@@ -212,12 +164,12 @@ if (claim2Ctx) {
                 legend:{
                     display:true, 
                     position: 'top',
-                    labels: { padding: 20, boxWidth: 12, font: {size: 11} } 
+                    labels: { padding: 20, boxWidth: 12, font: {size: 11} } // เพิ่มระยะห่างของตัวหนังสือด้านบน
                 }
             }, 
             scales: { 
                 x: {grid:{display:false}}, 
-                y: {position: 'left', beginAtZero: true, grace: '25%', title: {display: true, text: 'มูลค่ารวม (บาท)', font: {size: 10}}}, 
+                y: {position: 'left', beginAtZero: true, grace: '25%', title: {display: true, text: 'มูลค่ารวม (บาท)', font: {size: 10}}}, // ดันเพดานกราฟขึ้น 25% ไม่ให้ชน
                 y1: {position: 'right', beginAtZero: true, grace: '25%', grid: {display:false}, title: {display: true, text: 'จำนวนสินค้า (ชิ้น)', font: {size: 10}}} 
             }, 
             layout: { padding: { top: 10, left: 10, right: 10 } } 
@@ -243,6 +195,7 @@ if (invCtx) {
     inventoryChartInstance = new Chart(invCtx, { type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], borderColor: accentGreen, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: accentGreen, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}}, scales: { x: {grid:{display:false}}, y: {border:{display:false}} }, layout: { padding: { top: 40 } } }, plugins: [lineDataLabelPlugin] });
 }
 
+// 🌟 กราฟ Productivity สไตล์ Heat Map (Bar + Target Line) ปลอดภัย 100% 🌟
 let productivityChartInstance = null;
 const prodCtx = document.getElementById('productivityChart')?.getContext('2d');
 if (prodCtx) {
@@ -251,9 +204,36 @@ if (prodCtx) {
         data: { 
             labels: [], 
             datasets: [
-                { type: 'bar', label: 'Background', data: [], backgroundColor: [], borderRadius: 6, barPercentage: 0.6, categoryPercentage: 0.8, grouped: false },
-                { type: 'bar', label: 'Actual UPH', data: [], backgroundColor: [], borderRadius: 6, barPercentage: 0.6, categoryPercentage: 0.8, grouped: false },
-                { type: 'line', label: 'Target Line', data: [], borderColor: '#F59E0B', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false }
+                { 
+                    type: 'bar',
+                    label: 'Background', // สีอ่อนพื้นหลัง
+                    data: [], 
+                    backgroundColor: [], 
+                    borderRadius: 6,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.8,
+                    grouped: false // วาดทับ
+                },
+                { 
+                    type: 'bar',
+                    label: 'Actual UPH', // สีเข้มของจริง
+                    data: [], 
+                    backgroundColor: [], 
+                    borderRadius: 6,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.8,
+                    grouped: false
+                },
+                { 
+                    type: 'line',
+                    label: 'Target Line', // เส้นประเป้าหมาย
+                    data: [], 
+                    borderColor: '#F59E0B', 
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    fill: false
+                }
             ] 
         }, 
         options: { 
@@ -262,7 +242,7 @@ if (prodCtx) {
             plugins: { legend: { display: false } }, 
             scales: { 
                 x: { grid: { display: false }, stacked: false }, 
-                y: { border: { display: false }, display: false, beginAtZero: true, grace: '25%' } 
+                y: { border: { display: false }, display: false, beginAtZero: true, grace: '25%' } // ยืดพื้นที่ให้ตัวเลข
             }, 
             layout: { padding: { top: 30 } } 
         }, 
@@ -270,6 +250,7 @@ if (prodCtx) {
             id: 'customBarLabel',
             afterDatasetsDraw(chart) {
                 const { ctx } = chart;
+                // โชว์ตัวเลขเฉพาะบนแท่ง Actual UPH (Dataset 1)
                 if(chart.data.datasets.length > 1 && chart.getDatasetMeta(1)) {
                     const meta = chart.getDatasetMeta(1);
                     if (!meta.hidden && meta.data) {
@@ -280,9 +261,14 @@ if (prodCtx) {
                                 ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F9FAFB' : '#111827';
                                 ctx.textAlign = 'center';
                                 ctx.textBaseline = 'bottom';
+                                
+                                // 1. UPH: ลดฟอนต์ และเอาคำว่า 'UPH' ออกเพื่อประหยัดพื้นที่
                                 ctx.font = 'bold 11px Inter';
                                 ctx.fillText(uphVal, bar.x, bar.y - 14);
+                                
+                                // 2. ยอดหยิบ: ลดฟอนต์ และย่อเลขหลักหมื่นเป็น k (เช่น 98,527 -> 98.5k)
                                 let displayPicks = picksVal >= 10000 ? (picksVal / 1000).toFixed(1) + 'k' : fmtN(picksVal);
+                                
                                 ctx.fillStyle = '#6B7280';
                                 ctx.font = 'normal 9px Inter';
                                 ctx.fillText(`(${displayPicks})`, bar.x, bar.y - 4);
@@ -300,28 +286,30 @@ if (prodCtx) {
 // ==========================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxB0bNU1P9qrG_6aHoeiKyHMXT0_k76VlL0aq1I9xxHVpPDQK9qcd3FJMip4Jk9o6RY/exec';
 
-let globalData = {};
+let globalData = { workforce:{}, fulfillment:{}, wave_ops:{}, ontime:{}, claims:{}, inventory:{}, transport:{}, productivity:{}, prod_area:{}, prod_users_map:{} };
 let isFirstLoad = true;
+
 window.selectedBUs = ['ALL'];
 window.locFilters = { bu: ['ALL'], type: ['ALL'], zone: ['ALL'] };
 
-function standardizeBU(buName) {
-    if (!buName) return "N/A";
-    return buName.toString().trim().toUpperCase();
-}
-
 function toggleLoader(show) {
-    const loader = document.getElementById('loader') || document.querySelector('.loader');
-    if (loader) loader.style.display = show ? 'flex' : 'none';
+    const loader = document.getElementById('global-loader') || document.getElementById('loader') || document.querySelector('.loader');
+    if(loader) loader.style.display = show ? 'flex' : 'none';
 }
 
-// ========================================================
-// 🌟 FULFILLMENT LIVE DATA BINDING (SSE) 🌟
-// ========================================================
+const standardizeBU = (bu) => {
+    let b = (bu || '').toString().trim().toUpperCase();
+    if (b.includes('MART')) return 'DM02';
+    if (b.includes('PUN') || b.includes('PUNTHAI')) return 'DP02';
+    if (b.includes('GFA') || b.includes('COFFEE')) return 'DG02';
+    if (b.includes('LUBE')) return '1115';
+    return b;
+};
+
+// 👉 (เพิ่มใหม่) ฟังก์ชันเชื่อมต่อข้อมูล Fulfillment แบบ Real-time
 function initFulfillmentRealtime() {
     const tableEl = document.getElementById('ffm-detail-table');
-    const rawUrl = "https://dc-ordermonitoring-backend.onrender.com/api/run";
-    const SSE_URL = rawUrl.trim();
+    const SSE_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
 
     console.log("⚡ กำลังเชื่อมต่อท่อส่งข้อมูล Fulfillment Real-time (SSE)... URL:", SSE_URL);
     
@@ -421,7 +409,7 @@ function initFulfillmentRealtime() {
         };
         
     } catch (err) {
-        console.error("❌ สร้างการเชื่อมต่อ EventSource ไม่สำเร็จ (ตรวจสอบ URL):", err);
+        console.error("❌ สร้างการเชื่อมต่อ EventSource ไม่สำเร็จ:", err);
     }
 }
 
@@ -708,10 +696,9 @@ async function initDashboard() {
         isFirstLoad = false;
     }
     
-    // 1. ดึงสถิติตามรอบปกติจาก Google Apps Script
     await Promise.all(sections.map(s => fetchSection(s)));
     
-    // 2. เรียกเปิดท่อ Real-time สำหรับ Fulfillment
+    // 👉 (เพิ่มใหม่) สั่งให้เชื่อมต่อ Fulfillment หลังดึงข้อมูล Google App Script เสร็จ
     initFulfillmentRealtime();
     
     toggleLoader(false);
