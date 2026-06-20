@@ -26,10 +26,7 @@ const dataLabelPlugin = {
         if(chart.config.type !== 'bar' || chart.canvas.id === 'productivityChart') return;
         const { ctx } = chart;
         chart.data.datasets.forEach((dataset, i) => {
-            
-            // 🚩 เพิ่มเงื่อนไขนี้: ถ้าเป็น Dataset ของกราฟเส้น (จำนวนชิ้น) ไม่ต้องวาดตัวเลข จะได้ไม่รก
             if (dataset.type === 'line') return;
-            
             const meta = chart.getDatasetMeta(i);
             meta.data.forEach((bar, index) => {
                 const data = dataset.data[index];
@@ -45,7 +42,6 @@ const dataLabelPlugin = {
                     } else {
                         displayVal = data % 1 !== 0 ? data.toFixed(2) + '%' : fmtN(data);
                     }
-                    
                     ctx.fillText(displayVal, bar.x, bar.y - 6);
                 }
             });
@@ -97,7 +93,7 @@ if (wfCtx) {
             datasets: [{ 
                 label: 'จำนวนกำลังพล (คน)', 
                 data: [], 
-                backgroundColor: '#3B82F6', // ใช้สีน้ำเงินให้เข้ากับธีมฝั่งต่างชาติ
+                backgroundColor: '#3B82F6',
                 borderRadius: 6 
             }] 
         }, 
@@ -111,7 +107,7 @@ if (wfCtx) {
             }, 
             layout: { padding: { top: 20 } } 
         }, 
-        plugins: [dataLabelPlugin] // ใช้ Plugin เดิมของคุณเพื่อให้ตัวเลขเด้งอยู่บนแท่ง
+        plugins: [dataLabelPlugin]
     });
 }
 
@@ -121,7 +117,6 @@ if (ot1Ctx) {
     ontimeChart1Instance = new Chart(ot1Ctx, { type: 'line', data: { labels: [], datasets: [{ label: 'On-Time %', data: [], borderColor: accentGreen, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: accentGreen, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}}, scales: { x: {grid:{display:false}}, y: {border:{display:false}} }, layout: { padding: { top: 40 } } }, plugins: [lineDataLabelPlugin] });
 }
 
-// --- กราฟย่อหน้า Executive Dashboard ---
 let claimChart1Instance = null;
 const claim1Ctx = document.getElementById('claimChart')?.getContext('2d');
 if (claim1Ctx) {
@@ -141,14 +136,14 @@ if (claim1Ctx) {
             scales: { 
                 x: {grid:{display:false}}, 
                 y: {position: 'left', beginAtZero: true},
-                y1: {position: 'right', beginAtZero: true, grid: {display:false}, display: false} // ซ่อนแกนขวาในหน้าแรกจะได้ไม่เบียด
+                y1: {position: 'right', beginAtZero: true, grid: {display:false}, display: false} 
             }, 
             layout: { padding: { top: 10 } } 
         }, 
         plugins: [dataLabelPlugin] 
     });
 }
-// --- กราฟ Fulfillment (ดึงจาก Node API) ---
+
 let ffmTrendChartInstance = null;
 const ffmTrendCtx = document.getElementById('ffmTrendChart')?.getContext('2d');
 if (ffmTrendCtx) {
@@ -173,7 +168,7 @@ if (ffmTrendCtx) {
             plugins: { legend: { display: false } },
             scales: { x: { grid: { display: false } }, y: { border: { display: false }, beginAtZero: true, max: 100 } }
         },
-        plugins: [lineDataLabelPlugin] // ใช้ Plugin เดิมของคุณให้ตัวเลขลอยบนจุด
+        plugins: [lineDataLabelPlugin]
     });
 }
 
@@ -198,8 +193,6 @@ if (ffmVolCtx) {
     });
 }
 
-// --- กราฟละเอียดใน Detail ข้อ 4 ---
-// --- กราฟละเอียดใน Detail ข้อ 4 ---
 let claimChart2Instance = null;
 const claim2Ctx = document.getElementById('claimChart2')?.getContext('2d');
 if (claim2Ctx) {
@@ -219,12 +212,12 @@ if (claim2Ctx) {
                 legend:{
                     display:true, 
                     position: 'top',
-                    labels: { padding: 20, boxWidth: 12, font: {size: 11} } // เพิ่มระยะห่างของตัวหนังสือด้านบน
+                    labels: { padding: 20, boxWidth: 12, font: {size: 11} } 
                 }
             }, 
             scales: { 
                 x: {grid:{display:false}}, 
-                y: {position: 'left', beginAtZero: true, grace: '25%', title: {display: true, text: 'มูลค่ารวม (บาท)', font: {size: 10}}}, // ดันเพดานกราฟขึ้น 25% ไม่ให้ชน
+                y: {position: 'left', beginAtZero: true, grace: '25%', title: {display: true, text: 'มูลค่ารวม (บาท)', font: {size: 10}}}, 
                 y1: {position: 'right', beginAtZero: true, grace: '25%', grid: {display:false}, title: {display: true, text: 'จำนวนสินค้า (ชิ้น)', font: {size: 10}}} 
             }, 
             layout: { padding: { top: 10, left: 10, right: 10 } } 
@@ -250,7 +243,6 @@ if (invCtx) {
     inventoryChartInstance = new Chart(invCtx, { type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], borderColor: accentGreen, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: accentGreen, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}}, scales: { x: {grid:{display:false}}, y: {border:{display:false}} }, layout: { padding: { top: 40 } } }, plugins: [lineDataLabelPlugin] });
 }
 
-// 🌟 กราฟ Productivity สไตล์ Heat Map (Bar + Target Line) ปลอดภัย 100% 🌟
 let productivityChartInstance = null;
 const prodCtx = document.getElementById('productivityChart')?.getContext('2d');
 if (prodCtx) {
@@ -259,36 +251,9 @@ if (prodCtx) {
         data: { 
             labels: [], 
             datasets: [
-                { 
-                    type: 'bar',
-                    label: 'Background', // สีอ่อนพื้นหลัง
-                    data: [], 
-                    backgroundColor: [], 
-                    borderRadius: 6,
-                    barPercentage: 0.6,
-                    categoryPercentage: 0.8,
-                    grouped: false // วาดทับ
-                },
-                { 
-                    type: 'bar',
-                    label: 'Actual UPH', // สีเข้มของจริง
-                    data: [], 
-                    backgroundColor: [], 
-                    borderRadius: 6,
-                    barPercentage: 0.6,
-                    categoryPercentage: 0.8,
-                    grouped: false
-                },
-                { 
-                    type: 'line',
-                    label: 'Target Line', // เส้นประเป้าหมาย
-                    data: [], 
-                    borderColor: '#F59E0B', 
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    pointRadius: 0,
-                    fill: false
-                }
+                { type: 'bar', label: 'Background', data: [], backgroundColor: [], borderRadius: 6, barPercentage: 0.6, categoryPercentage: 0.8, grouped: false },
+                { type: 'bar', label: 'Actual UPH', data: [], backgroundColor: [], borderRadius: 6, barPercentage: 0.6, categoryPercentage: 0.8, grouped: false },
+                { type: 'line', label: 'Target Line', data: [], borderColor: '#F59E0B', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false }
             ] 
         }, 
         options: { 
@@ -297,7 +262,7 @@ if (prodCtx) {
             plugins: { legend: { display: false } }, 
             scales: { 
                 x: { grid: { display: false }, stacked: false }, 
-                y: { border: { display: false }, display: false, beginAtZero: true, grace: '25%' } // ยืดพื้นที่ให้ตัวเลข
+                y: { border: { display: false }, display: false, beginAtZero: true, grace: '25%' } 
             }, 
             layout: { padding: { top: 30 } } 
         }, 
@@ -305,7 +270,6 @@ if (prodCtx) {
             id: 'customBarLabel',
             afterDatasetsDraw(chart) {
                 const { ctx } = chart;
-                // โชว์ตัวเลขเฉพาะบนแท่ง Actual UPH (Dataset 1)
                 if(chart.data.datasets.length > 1 && chart.getDatasetMeta(1)) {
                     const meta = chart.getDatasetMeta(1);
                     if (!meta.hidden && meta.data) {
@@ -316,14 +280,9 @@ if (prodCtx) {
                                 ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F9FAFB' : '#111827';
                                 ctx.textAlign = 'center';
                                 ctx.textBaseline = 'bottom';
-                                
-                                // 1. UPH: ลดฟอนต์ และเอาคำว่า 'UPH' ออกเพื่อประหยัดพื้นที่
                                 ctx.font = 'bold 11px Inter';
                                 ctx.fillText(uphVal, bar.x, bar.y - 14);
-                                
-                                // 2. ยอดหยิบ: ลดฟอนต์ และย่อเลขหลักหมื่นเป็น k (เช่น 98,527 -> 98.5k)
                                 let displayPicks = picksVal >= 10000 ? (picksVal / 1000).toFixed(1) + 'k' : fmtN(picksVal);
-                                
                                 ctx.fillStyle = '#6B7280';
                                 ctx.font = 'normal 9px Inter';
                                 ctx.fillText(`(${displayPicks})`, bar.x, bar.y - 4);
@@ -341,7 +300,6 @@ if (prodCtx) {
 // ==========================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxB0bNU1P9qrG_6aHoeiKyHMXT0_k76VlL0aq1I9xxHVpPDQK9qcd3FJMip4Jk9o6RY/exec';
 
-// 👇 เติมตัวแปรหลักที่หายไปกลับเข้าไปตรงนี้ 👇
 let globalData = {};
 let isFirstLoad = true;
 window.selectedBUs = ['ALL'];
@@ -356,31 +314,22 @@ function toggleLoader(show) {
     const loader = document.getElementById('loader') || document.querySelector('.loader');
     if (loader) loader.style.display = show ? 'flex' : 'none';
 }
-// 👆 สิ้นสุดส่วนที่ต้องเติม 👆
 
 // ========================================================
-// 🌟 CONFIGURATION & FULFILLMENT LIVE DATA BINDING 🌟
+// 🌟 FULFILLMENT LIVE DATA BINDING (SSE) 🌟
 // ========================================================
-
-const NODE_URL = "https://dc-ordermonitoring-backend.onrender.com/";
-
 function initFulfillmentRealtime() {
     const tableEl = document.getElementById('ffm-detail-table');
-    
-    // 💡 ทริค: ใช้ .trim() เพื่อล้างอักขระล่องหนที่มักจะติดมาตอนกดก๊อปปี้โค้ด
     const rawUrl = "https://dc-ordermonitoring-backend.onrender.com/api/run";
     const SSE_URL = rawUrl.trim();
 
     console.log("⚡ กำลังเชื่อมต่อท่อส่งข้อมูล Fulfillment Real-time (SSE)... URL:", SSE_URL);
     
     try {
-        // เปิดการเชื่อมต่อแบบสตรีมมิ่งค้างไว้
         const eventSource = new EventSource(SSE_URL);
 
-        // ดักจับข้อมูลทุกครั้งที่มีการอัปเดตส่งมาจากหลังบ้าน
         eventSource.onmessage = function(event) {
             try {
-                // แปลงข้อมูลสตรีมที่ได้รับให้กลับมาเป็น JSON Object
                 const result = JSON.parse(event.data);
                 console.log("🔥 Node API Live Data:", result);
 
@@ -401,7 +350,6 @@ function initFulfillmentRealtime() {
                     </tr>
                 </thead><tbody>`;
 
-                // รองรับทั้งกรณีที่หลังบ้านส่งมาเป็น Array หรือ Object เดี่ยวๆ
                 const dataArray = Array.isArray(result) ? result : [result];
 
                 if (dataArray.length > 0 && dataArray[0] !== null) {
@@ -425,13 +373,11 @@ function initFulfillmentRealtime() {
                             </td>
                         </tr>`;
 
-                        // จัดกลุ่มข้อมูลเข้ากราฟเส้น (Trend)
                         if (!trendLabels.includes(dateStr)) {
                             trendLabels.push(dateStr);
                             trendValues.push(rate);
                         }
 
-                        // จัดกลุ่มข้อมูลรวมแยกรายคลัง (BU Volume)
                         if (!buNames.includes(buStr)) {
                             buNames.push(buStr);
                             completedCounts.push(completed);
@@ -449,7 +395,6 @@ function initFulfillmentRealtime() {
 
                 if (tableEl) tableEl.innerHTML = tableHtml;
 
-                // ผลักข้อมูลเข้ากราฟคู่ขนาน
                 if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
                     ffmTrendChartInstance.data.labels = trendLabels;
                     ffmTrendChartInstance.data.datasets[0].data = trendValues;
@@ -468,7 +413,6 @@ function initFulfillmentRealtime() {
             }
         };
 
-        // แสดงแจ้งเตือนกรณีสัญญานหลุดหรือเซิร์ฟเวอร์ยังไม่ตื่น
         eventSource.onerror = function(error) {
             console.error("❌ SSE Connection Error:", error);
             if (tableEl && tableEl.innerHTML.includes("กำลังเรียกขอข้อมูล")) {
@@ -479,15 +423,6 @@ function initFulfillmentRealtime() {
     } catch (err) {
         console.error("❌ สร้างการเชื่อมต่อ EventSource ไม่สำเร็จ (ตรวจสอบ URL):", err);
     }
-}
-
-    // แสดงแจ้งเตือนกรณีสัญญานหลุดหรือเซิร์ฟเวอร์ยังไม่ตื่น
-    eventSource.onerror = function(error) {
-        console.error("❌ SSE Connection Error:", error);
-        if (tableEl && tableEl.innerHTML.includes("กำลังเรียกขอข้อมูล")) {
-            tableEl.innerHTML = `<tr><td class="text-center" style="padding: 30px; color: var(--danger); font-weight:bold;">⚠️ ระบบกำลังเปิดท่อรอรับข้อมูล Real-time จากเซิร์ฟเวอร์หลังบ้าน...</td></tr>`;
-        }
-    };
 }
 
 function cleanDataBeforeLoad() {
@@ -773,10 +708,10 @@ async function initDashboard() {
         isFirstLoad = false;
     }
     
-    // 1. ดึงสถิติตามรอบปกติจาก Google Apps Script ให้เสร็จสิ้น
+    // 1. ดึงสถิติตามรอบปกติจาก Google Apps Script
     await Promise.all(sections.map(s => fetchSection(s)));
     
-    // 2. เรียกเปิดท่อ Real-time สำหรับ Fulfillment หลังบ้านแยกเดี่ยวๆ ตรงนี้เลยครับ
+    // 2. เรียกเปิดท่อ Real-time สำหรับ Fulfillment
     initFulfillmentRealtime();
     
     toggleLoader(false);
@@ -1189,7 +1124,6 @@ function updateDashboardData(selectedDateStr) {
                 }
             }
             
-            // Real-time Delay Alerts
             let activeWaveKey = null; let pendingFutureOrders = 0; let wKeysAsc = [...wKeysFFM].reverse(); 
             
             if (wKeysAsc.length > 0) {
@@ -1450,7 +1384,6 @@ function renderClaimSection() {
                 Object.keys(cData).forEach(bu => { 
                     if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
                         allBUs.add(bu); 
-                        // ดึงค่า .cost ออกมา ถ้าข้อมูลเป็นแบบใหม่ แต่ถ้าเป็นแบบเก่าก็ใช้ค่าเดิม
                         let buCost = typeof cData[bu] === 'object' ? (cData[bu].cost || 0) : (cData[bu] || 0);
                         let buQty = typeof cData[bu] === 'object' ? (cData[bu].qty || 0) : (cData[bu] || 0);
                         cTotalCost += buCost;
@@ -1491,11 +1424,10 @@ function renderClaimSection() {
 
         let sortedG = Object.keys(grouped).map(k => ({ label: k, ...grouped[k] })).sort((a,b) => a.time - b.time);
         
-        // 🌟 โค้ดใหม่: คำนวณเปรียบเทียบ เดือน/เดือน (MoM) หรือ วัน/วัน (DoD) 🌟
         const summaryBox = document.getElementById('claim-summary-box');
         if (summaryBox && sortedG.length > 0) {
-            let currM = sortedG[sortedG.length - 1]; // เดือน/วัน ล่าสุด
-            let prevM = sortedG.length > 1 ? sortedG[sortedG.length - 2] : null; // เดือน/วัน ก่อนหน้า
+            let currM = sortedG[sortedG.length - 1]; 
+            let prevM = sortedG.length > 1 ? sortedG[sortedG.length - 2] : null; 
             
             let html = `💡 <b>สรุปยอดล่าสุด (${currM.label}):</b> มูลค่าเคลมรวม <b style="color:var(--danger); font-size:1.15em;">${fmtN(currM.cost)} ฿</b> <span style="color:var(--text-muted); font-size:0.85em;">(${fmtN(currM.qty)} ชิ้น)</span>`;
             
@@ -1505,12 +1437,10 @@ function renderClaimSection() {
                 let periodText = period === 'Daily' ? 'เมื่อวาน' : `เดือน ${prevM.label}`;
                 
                 if (diffCost > 0) {
-                    // เคลมเยอะขึ้น = แย่ลง (สีแดง)
                     html += `<br><span style="margin-top:6px; display:inline-block;">📈 เทียบกับ${periodText}: <span style="color:var(--danger); font-weight:700;">แย่ลง (ยอดเคลมพุ่งขึ้น +${fmtN(diffCost)} ฿)</span> <span style="color:var(--text-muted); font-size:0.85em; margin-left:8px;">จำนวนชิ้น ${diffQty > 0 ? '+' : ''}${fmtN(diffQty)} ชิ้น</span></span>`;
                     summaryBox.style.borderLeftColor = '#EF4444';
                     summaryBox.style.background = 'rgba(239, 68, 68, 0.05)';
                 } else if (diffCost < 0) {
-                    // เคลมน้อยลง = ดีขึ้น (สีเขียว)
                     html += `<br><span style="margin-top:6px; display:inline-block;">📉 เทียบกับ${periodText}: <span style="color:#10B981; font-weight:700;">ดีขึ้น (ยอดเคลมลดลง ${fmtN(Math.abs(diffCost))} ฿)</span> <span style="color:var(--text-muted); font-size:0.85em; margin-left:8px;">จำนวนชิ้น ${diffQty > 0 ? '+' : ''}${fmtN(diffQty)} ชิ้น</span></span>`;
                     summaryBox.style.borderLeftColor = '#10B981';
                     summaryBox.style.background = 'rgba(16, 185, 129, 0.05)';
@@ -1524,22 +1454,21 @@ function renderClaimSection() {
             }
             summaryBox.innerHTML = html;
         }
-        // 🌟 จบโค้ดส่วนเปรียบเทียบ 🌟
 
-        // 3. วาดกราฟ Claim Trend (ส่งข้อมูลเคลมเข้ากราฟแบบคู่ขนาน)
+        // 3. วาดกราฟ Claim Trend 
         if (claimChart2Instance) {
             let chartSlice = (period === 'Daily') ? sortedG.slice(-14) : sortedG.slice(-12);
             let labels = [], dataCost = [], dataQty = [];
             
             chartSlice.forEach(g => {
                 labels.push(g.label);
-                dataCost.push(g.cost); // แกนบาท (Bar)
-                dataQty.push(g.qty);   // แกนชิ้น (Line)
+                dataCost.push(g.cost); 
+                dataQty.push(g.qty);   
             });
             
             claimChart2Instance.data.labels = labels;
             claimChart2Instance.data.datasets[0].data = dataCost;
-            claimChart2Instance.data.datasets[1].data = dataQty; // ยัดลง Dataset ที่ 2
+            claimChart2Instance.data.datasets[1].data = dataQty; 
             claimChart2Instance.update();
         }
 
@@ -1563,7 +1492,6 @@ function renderClaimSection() {
         }
 
         // 4. สร้างตาราง Daily / Monthly Claim Record
-        // 4. สร้างตาราง Daily / Monthly Claim Record
         const tableEl = document.getElementById('claim-detail-table');
         if (tableEl) {
             tableEl.parentElement.style.display = 'block';
@@ -1578,7 +1506,6 @@ function renderClaimSection() {
                 thead += `<th class="aff-header" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); min-width: 45px; white-space:nowrap; padding: 8px 4px; font-size: 10px;">${bu}</th>`;
             });
             
-            // 🌟 แยกคอลัมน์ Trend ออกมาเป็นอีก 1 ช่อง
             thead += `<th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); min-width: 65px; white-space:nowrap; padding: 8px 4px; font-size: 10px;">มูลค่ารวม (฿)</th>
                       <th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); min-width: 65px; white-space:nowrap; padding: 8px 4px; font-size: 10px;">เทียบเดือนก่อน</th>
             </tr></thead>`;
@@ -1601,7 +1528,6 @@ function renderClaimSection() {
                         }
                     });
 
-                    // คำนวณ Trend
                     let prevItem = tableItems[index + 1]; 
                     let diffHtml = '';
                     if (prevItem) {
@@ -1617,7 +1543,6 @@ function renderClaimSection() {
                         diffHtml = `<span style="color:var(--text-muted); font-size:10px;">-</span>`;
                     }
 
-                    // 🌟 วางลงในตารางแบบ 2 คอลัมน์แยกกัน
                     tr += `<td class="total-cell" style="text-align:center; white-space:nowrap; font-size:11px; padding: 8px 4px; color:var(--danger); font-weight:700;">${fmtN(item.cost)}</td>
                            <td class="total-cell" style="text-align:center; white-space:nowrap; padding: 8px 4px; background-color:#F8FAFC;">${diffHtml}</td>
                     </tr>`;
@@ -1628,7 +1553,6 @@ function renderClaimSection() {
             tableEl.innerHTML = thead + tbody + "</tbody>";
         }
 
-        // 5. อัปเดตตัวเลขการ์ดด้านบน (Executive Dashboard)
         if (sortedG.length > 0) {
             let currM = sortedG[sortedG.length - 1];
             let prevM = sortedG.length > 1 ? sortedG[sortedG.length - 2] : null;
@@ -1652,10 +1576,8 @@ function renderClaimSection() {
                 } else {
                     let diff = currCost - prevCost;
                     if (diff > 0) {
-                        // เคลมเพิ่มขึ้น = แย่ลง (สีแดง)
                         trendEl.className = "badge down"; trendEl.innerText = `↗ +${fmtN(diff)}`; noteEl.innerText = `vs ${prevM.label}`;
                     } else if (diff < 0) {
-                        // เคลมลดลง = ดีขึ้น (สีเขียว)
                         trendEl.className = "badge up"; trendEl.innerText = `↘ ${fmtN(Math.abs(diff))}`; noteEl.innerText = `vs ${prevM.label}`;
                     } else {
                         trendEl.className = "badge info"; trendEl.innerText = `0`; noteEl.innerText = `vs ${prevM.label}`;
@@ -2195,7 +2117,7 @@ function renderTransportSection() {
 }
 
 // ==========================================
-// 🌟 หมวดที่ 6: Productivity UI (V80 - การันตี 100%) 🌟
+// 🌟 หมวดที่ 6: Productivity UI 🌟
 // ==========================================
 function renderProductivitySection() {
     try {
@@ -2245,7 +2167,6 @@ function renderProductivitySection() {
                 grouped[groupKey] = { label: groupKey, time: item.time, user_picks: 0, user_hours: 0, areas: {}, users: {}, activePickers: new Set() };
             }
 
-            // --- ฝั่ง Area ---
             if (pAreas[dKey]) {
                 Object.keys(pAreas[dKey].areas).forEach(aName => {
                     if(aName && aName !== "N/A" && aName !== "") allAreasList.add(aName);
@@ -2259,7 +2180,6 @@ function renderProductivitySection() {
                 });
             }
 
-            // --- ฝั่ง User ---
             if (pUsers[dKey]) {
                 grouped[groupKey].user_picks += (pUsers[dKey].total_qty || 0);
                 grouped[groupKey].user_hours += ((pUsers[dKey].total_time || 0) / 3600);
@@ -2280,7 +2200,6 @@ function renderProductivitySection() {
             }
         });
 
-        // อัปเดต Dropdown
         if (areaFilterEl && areaFilterEl.options.length <= 1) {
             Array.from(allAreasList).sort().forEach(a => {
                 areaFilterEl.appendChild(new Option(a, a));
@@ -2294,9 +2213,6 @@ function renderProductivitySection() {
         let latest = sortedGroups[sortedGroups.length - 1];
         let currentTarget = getTarget(selectedArea);
 
-        // --- 📊 1. วาดกราฟ Productivity ---
-        // --- 📊 1. วาดกราฟ Productivity ---
-        // (ส่วนโค้ดกราฟเดิม ไม่ต้องเปลี่ยน...)
         if (productivityChartInstance) {
             let labels = [], dataActual = [], dataBackground = [], dataTarget = [], bgColorsActual = [], bgColorsBg = [], customPicks = [];
             let maxUPH = 0;
@@ -2337,12 +2253,10 @@ function renderProductivitySection() {
             productivityChartInstance.update();
         }
 
-        // 🌟 สูตรคำนวณ Hourly Rate (เงินเดือน / จำนวนวันทำงาน / 8 ชั่วโมง) 🌟
         let baseSalary = parseFloat(document.getElementById('cost-salary')?.value || 15000);
         let workDays = parseFloat(document.getElementById('cost-days')?.value || 26);
         let hourlyRate = workDays > 0 ? (baseSalary / workDays / 8) : 0;
 
-        // --- 🤖 2. AI Summary Box ---
         const summaryEl = document.getElementById('prod-summary-box');
         if (summaryEl) {
             let uph = 0, pks = 0, hrs = 0;
@@ -2363,7 +2277,6 @@ function renderProductivitySection() {
             summaryEl.style.background = uph >= currentTarget ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.05)';
         }
 
-        // --- 📝 3. ตาราง PERFORMANCE BY AREA ---
         const areaTableEl = document.getElementById('prod-area-table');
         if (areaTableEl) {
             let sortedAreas = Object.keys(latest.areas).sort((a, b) => {
@@ -2407,7 +2320,6 @@ function renderProductivitySection() {
             if(titleEl) titleEl.innerText = `PERFORMANCE BY AREA (${latest.label})`;
         }
 
-        // --- 👤 4. ตาราง PRODUCTIVITY BY USER ---
         const userTableEl = document.getElementById('prod-user-table');
         if (userTableEl) {
             let users = Object.keys(latest.users).sort((a, b) => {
@@ -2457,7 +2369,6 @@ function renderProductivitySection() {
             if(titleEl) titleEl.innerText = `PRODUCTIVITY BY USER (${latest.label})`;
         }
 
-        // --- 📅 5. ตาราง DAILY OVERALL SUMMARY ---
         const overallTableEl = document.getElementById('prod-overall-table');
         if (overallTableEl) {
             let html = `<thead><tr>
@@ -2593,28 +2504,19 @@ function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveD
 
 initDashboard();
 setInterval(() => { initDashboard(); }, 5 * 60 * 1000);
-// ==========================================
-// 🌟 ฟังก์ชันสำหรับคำนวณ Target UPH และ Event Listeners
-// ==========================================
 
 function getTarget(areaName) {
     let areaStr = (areaName || "").toString().toLowerCase();
-    
-    // ดึงค่าจากช่อง Input ตามประเภทของ Area
     if (areaStr === 'all') return parseInt(document.getElementById('trg-all')?.value || 150);
     if (areaStr.includes('full')) return parseInt(document.getElementById('trg-full')?.value || 150);
     if (areaStr.includes('half')) return parseInt(document.getElementById('trg-half')?.value || 150);
     if (areaStr.includes('ea')) return parseInt(document.getElementById('trg-ea')?.value || 150);
-    
-    // ค่าเริ่มต้นถ้าหาไม่เจอ
     return parseInt(document.getElementById('trg-all')?.value || 150);
 }
 
 function saveTargets() {
-    // เมื่อกดปุ่ม Save ให้ระบบวาดกราฟและตาราง Productivity ใหม่อีกครั้ง
     renderProductivitySection();
 }
 
-// เพิ่มตัวดักจับ Event เมื่อมีการเปลี่ยน Dropdown ในหมวด Productivity
 document.getElementById('prod-area-filter')?.addEventListener('change', renderProductivitySection);
 document.getElementById('prod-period-filter')?.addEventListener('change', renderProductivitySection);
