@@ -254,8 +254,8 @@ async function initFulfillmentRealtime() {
         // 🔄 เรียงวันที่จากใหม่ไปเก่า (มากไปน้อย)
         dbData.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        // สร้างตารางพร้อม CSS ที่ถูกต้อง ให้ Scroll ดูได้ไม่เละ
-        let htmlTable = `<div class="data-card" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden;">
+        // 🌟 แก้ไข: เพิ่ม margin-top: 24px เพื่อไม่ให้ตารางติดกับกราฟด้านบน
+        let htmlTable = `<div class="data-card" style="margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden;">
             <div class="card-header" style="padding: 15px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);"><h3 style="font-size:14px; font-weight:700; color:var(--text-main); margin:0;">📋 DAILY FULFILLMENT MATRIX RECORD</h3></div>
             <div style="max-height: 500px; overflow-y: auto; overflow-x: auto; background: var(--bg-card);">
             <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:right; white-space: nowrap;">
@@ -1022,7 +1022,7 @@ function updateDashboardData(selectedDateStr) {
         }
     } catch(e) { console.error("Workforce Update Error:", e); }
 
-    // 🟢 กู้คืน Wave Ops ให้ดึงจากข้อมูล App Script เหมือนเดิม (แก้การ์ดบิลว่าง)
+    // --- Wave Ops ---
     try {
         if(Object.keys(globalData.wave_ops || {}).length > 0) {
             let waveDataForFFM = globalData.wave_ops;
@@ -1044,73 +1044,6 @@ function updateDashboardData(selectedDateStr) {
                 }
             }
 
-            // แสดงผลการ์ด Orders Shipped Today (ตามระบบเก่า)
-            const ordersEl = document.getElementById('ffm-orders-shipped');
-            if (ordersEl) {
-                ordersEl.innerText = totalOrdersToday > 0 ? fmtN(totalOrdersToday) : "0";
-                const trendEl = document.getElementById('ffm-orders-trend');
-                const trendTextEl = document.getElementById('ffm-orders-note');
-                
-                if (trendEl) {
-                    if (totalOrdersYesterday === 0 && totalOrdersToday === 0) {
-                        trendEl.className = "badge info"; trendEl.innerText = "-"; if(trendTextEl) trendTextEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
-                    } else if (totalOrdersYesterday === 0) {
-                        trendEl.className = "badge up"; trendEl.innerText = "↗ 100%"; if(trendTextEl) trendTextEl.innerText = "vs previous";
-                    } else {
-                        let pctDiff = ((totalOrdersToday - totalOrdersYesterday) / totalOrdersYesterday) * 100;
-                        if (pctDiff > 0) { trendEl.className = "badge up"; trendEl.innerText = `↗ +${pctDiff.toFixed(1)}%`; } 
-                        else if (pctDiff < 0) { trendEl.className = "badge down"; trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(1)}%`; } 
-                        else { trendEl.className = "badge info"; trendEl.innerText = `0%`; }
-                        if(trendTextEl && prevWaveKey) { trendTextEl.innerText = `vs ${getShortDate(prevWaveKey)}`; }
-                    }
-                }
-                let ordersUpdateEl = ordersEl.parentElement.nextElementSibling;
-                if (ordersUpdateEl && targetWaveFfmKey) ordersUpdateEl.innerText = `Updated: ${getDisplayDate(targetWaveFfmKey)}`;
-            }
-
-            // แสดงผลตาราง Wave Summary Table (ตามระบบเก่า)
-            const waveSummaryTable = document.getElementById('wave-summary-table');
-            if (waveSummaryTable) {
-                let allBUs = new Set();
-                wKeysFFM.forEach(k => Object.keys(waveDataForFFM[k].bu_data || {}).forEach(bu => {
-                    if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) allBUs.add(bu);
-                }));
-                let sortedBUs = Array.from(allBUs).sort();
-
-                if (wKeysFFM.length === 0 || sortedBUs.length === 0) {
-                    waveSummaryTable.innerHTML = `<thead><tr><th class='text-center' style='padding:30px; color:var(--text-muted);'>ไม่มีข้อมูลออเดอร์</th></tr></thead>`;
-                } else {
-                    let thead = `<thead><tr><th class="role-cell" style="text-align:center; min-width: 120px;">Planned Date</th>${sortedBUs.map(bu => `<th class="aff-header">${bu}</th>`).join('')}<th class="total-cell">Total (เสร็จ / ทั้งหมด)</th><th class="total-cell" style="text-align:center;">% Completed</th></tr></thead>`;
-                    let tbody = "<tbody>";
-                    
-                    let validWaveKeys = wKeysFFM.filter(k => new Date(k).getTime() <= targetTimestamp + (3 * 24 * 60 * 60 * 1000)).slice(0, 7);
-                    
-                    validWaveKeys.forEach(dKey => {
-                        let tr = `<tr><td class="role-cell" style="text-align:center;">${getShortDate(dKey)}</td>`;
-                        let dayTot = 0, dayComp = 0;
-                        sortedBUs.forEach(bu => {
-                            let buData = waveDataForFFM[dKey].bu_data[bu] || { total_orders: 0, completed_orders: 0 };
-                            dayTot += buData.total_orders; dayComp += buData.completed_orders;
-                            if (buData.total_orders === 0) { tr += `<td>-</td>`; } 
-                            else {
-                                let color = (buData.completed_orders === buData.total_orders) ? 'var(--accent-primary)' : (buData.completed_orders > 0 ? 'var(--accent-secondary)' : 'var(--danger)');
-                                tr += `<td><span style="color:${color}; font-weight:800; font-size:0.9rem;">${fmtN(buData.completed_orders)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(buData.total_orders)}</span></td>`;
-                            }
-                        });
-                        
-                        let grandColor = (dayComp === dayTot && dayTot > 0) ? 'var(--accent-primary)' : (dayComp > 0 ? 'var(--accent-secondary)' : 'var(--danger)');
-                        tr += `<td class="total-cell"><span style="color:${grandColor}; font-weight:800; font-size:0.95rem;">${fmtN(dayComp)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(dayTot)}</span></td>`;
-                        
-                        let pct = dayTot > 0 ? ((dayComp / dayTot) * 100).toFixed(1) : 0;
-                        let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
-                        let pctColor = pct >= 100 ? '#166534' : (pct > 0 ? '#92400e' : '#991b1b');
-                        tr += `<td class="total-cell" style="text-align:center;"><span class="pct-pill" style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:600;">${pct}%</span></td></tr>`;
-                        tbody += tr;
-                    });
-                    waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
-                }
-            }
-            
             let activeWaveKey = null; let pendingFutureOrders = 0; let wKeysAsc = [...wKeysFFM].reverse(); 
             
             if (wKeysAsc.length > 0) {
