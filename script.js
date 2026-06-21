@@ -35,6 +35,7 @@ const dataLabelPlugin = {
                     ctx.font = 'bold 12px Inter';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'bottom';
+                    
                     let displayVal;
                     if (chart.canvas.id === 'claimChart' || chart.canvas.id === 'claimChart2') {
                         displayVal = fmtN(data); 
@@ -236,38 +237,40 @@ async function initFulfillmentRealtime() {
     }
 
     const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
-    console.log("🚀 กำลังรวมข้อมูลออเดอร์จาก AppScript เข้ากับจำนวนชิ้นจาก BigQuery...");
+    console.log("🚀 กำลังรวมข้อมูลออเดอร์ (GAS) + จำนวนชิ้น (BQ) เข้าตาราง...");
     
     try {
+        // ดึงข้อมูลยอดชิ้น (Pieces) จาก BigQuery Backend
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fn: 'apiGetDashboardSummary', args: ["", ""] })
         });
-
         const result = await response.json();
-        let dbData = result.success && result.data ? result.data : [];
+        let bqDataList = result.success && result.data ? result.data : [];
 
-        // 🟢 1. สร้างฐานข้อมูลรวม (Merge BigQuery + App Script) แก้ปัญหาวันที่ 9 แหว่ง
+        // 🟢 1. สร้างศูนย์รวมวันที่ (สกัดเวลาออก ให้เหลือแค่ YYYY-MM-DD)
         let unifiedDatesMap = {};
         
-        // ใส่ข้อมูลฝั่ง BigQuery (ยอดชิ้น)
-        dbData.forEach(row => {
-            unifiedDatesMap[row.date] = { bq: JSON.parse(row.ownerJson || '{}'), wave: {} };
+        // 1.1 นำข้อมูลจาก BigQuery ใส่เข้าศูนย์รวม
+        bqDataList.forEach(row => {
+            let cleanDate = row.date.substring(0, 10); // ตัดเอาเฉพาะวันที่ เช่น "2026-06-15"
+            unifiedDatesMap[cleanDate] = { bq: JSON.parse(row.ownerJson || '{}'), wave: {} };
         });
         
-        // ใส่ข้อมูลฝั่ง App Script (ยอดออเดอร์/บิล)
+        // 1.2 นำข้อมูลจาก Google Apps Script (globalData.wave_ops) ใส่เข้าศูนย์รวม
         if (globalData.wave_ops) {
             Object.keys(globalData.wave_ops).forEach(k => {
-                let dateStr = k.split('T')[0];
-                if (!unifiedDatesMap[dateStr]) unifiedDatesMap[dateStr] = { bq: {}, wave: {} };
-                unifiedDatesMap[dateStr].wave = globalData.wave_ops[k].bu_data || {};
+                let cleanDate = k.substring(0, 10); // ตัดเวลาทิ้งให้แมตช์กัน 100%
+                if (!unifiedDatesMap[cleanDate]) unifiedDatesMap[cleanDate] = { bq: {}, wave: {} };
+                unifiedDatesMap[cleanDate].wave = globalData.wave_ops[k].bu_data || {};
             });
         }
 
+        // เรียงวันที่จากใหม่สุดไปเก่าสุด
         let sortedDates = Object.keys(unifiedDatesMap).sort((a,b) => new Date(b) - new Date(a));
 
-        // 🌟 สร้างโครงสร้างตาราง HTML แบบเปิด Scrollbar ให้กว้างสะใจ
+        // 🌟 สร้างตาราง HTML พร้อม Scrollbar อย่างดี
         let htmlTable = `<div class="data-card" style="margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden;">
             <div class="card-header" style="padding: 15px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);"><h3 style="font-size:14px; font-weight:700; color:var(--text-main); margin:0;">📋 DAILY FULFILLMENT MATRIX RECORD</h3></div>
             <div style="max-height: 600px; overflow: auto; background: var(--bg-card);">
@@ -299,12 +302,13 @@ async function initFulfillmentRealtime() {
             if (sortedDates.length === 0) {
                 htmlTable += `<tr><td colspan="14" class="text-center" style="padding:30px; color:var(--text-muted);">ไม่มีข้อมูล</td></tr>`;
             } else {
+                // 📝 วนลูปตามวันที่จากใหม่ไปเก่า
                 sortedDates.forEach(dateStr => {
                     let dObj = new Date(dateStr);
                     let displayDate = isNaN(dObj) ? dateStr : `${dObj.getDate()}/${dObj.getMonth()+1}/${dObj.getFullYear()}`;
                     
-                    let bqData = unifiedDatesMap[dateStr].bq;
-                    let wData = unifiedDatesMap[dateStr].wave;
+                    let bqData = unifiedDatesMap[dateStr].bq || {};
+                    let wData = unifiedDatesMap[dateStr].wave || {};
                     
                     let allBUsInDay = new Set([...Object.keys(bqData), ...Object.keys(wData)]);
                     let sortedOwners = Array.from(allBUsInDay).filter(o => o !== 'UNKNOWN' && o !== '').sort();
@@ -320,7 +324,7 @@ async function initFulfillmentRealtime() {
                         const ordTotal = Math.max(parseFloat(bItem.ordTotal || 0), parseFloat(wItem.total_orders || 0));
                         const ordFull = Math.max(parseFloat(bItem.ordFull || 0), parseFloat(wItem.completed_orders || 0));
                         
-                        // 🟢 ดึงยอดชิ้น (Pieces) จาก BigQuery ล้วนๆ
+                        // 🟢 ดึงยอดชิ้น (Pieces) จาก BigQuery
                         const req = parseFloat(bItem.req || 0);
                         const alloc = parseFloat(bItem.alloc || 0);
                         const ship = parseFloat(bItem.ship || 0);
@@ -383,7 +387,7 @@ async function initFulfillmentRealtime() {
                     }
                 });
 
-                // เตรียมข้อมูลกราฟเส้น (ย้อน 14 วัน)
+                // เตรียมข้อมูลกราฟเส้น (ย้อน 14 วันล่าสุดจากเก่าไปใหม่ ให้เส้นวิ่งจากซ้ายไปขวา)
                 let sortedChartDates = Object.keys(chartDataMap).sort((a,b)=>new Date(a)-new Date(b)).slice(-14);
                 sortedChartDates.forEach(dStr => {
                     let dObj = new Date(dStr);
