@@ -26,10 +26,7 @@ const dataLabelPlugin = {
         if(chart.config.type !== 'bar' || chart.canvas.id === 'productivityChart') return;
         const { ctx } = chart;
         chart.data.datasets.forEach((dataset, i) => {
-            
-            // 🚩 เพิ่มเงื่อนไขนี้: ถ้าเป็น Dataset ของกราฟเส้น (จำนวนชิ้น) ไม่ต้องวาดตัวเลข จะได้ไม่รก
             if (dataset.type === 'line') return;
-            
             const meta = chart.getDatasetMeta(i);
             meta.data.forEach((bar, index) => {
                 const data = dataset.data[index];
@@ -45,7 +42,6 @@ const dataLabelPlugin = {
                     } else {
                         displayVal = data % 1 !== 0 ? data.toFixed(2) + '%' : fmtN(data);
                     }
-                    
                     ctx.fillText(displayVal, bar.x, bar.y - 6);
                 }
             });
@@ -83,12 +79,24 @@ const throughputCtx = document.getElementById('throughputChart')?.getContext('2d
 if (throughputCtx) {
     new Chart(throughputCtx, { type: 'bar', data: { labels: ['Mon','Tue','Wed','Thu','Fri'], datasets: [{ label: 'Inbound', data: [45, 38, 52, 48, 50], backgroundColor: accentOrange, borderRadius: 6 }, { label: 'Outbound', data: [48, 42, 55, 50, 54], backgroundColor: accentGreen, borderRadius: 6 }]}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: {grid:{display:false}}, y: {border:{display:false}} } } });
 }
+
 const orderMixCtx = document.getElementById('orderMixChart')?.getContext('2d');
 if (orderMixCtx) {
     new Chart(orderMixCtx, { type: 'doughnut', data: { labels: ['E-com', 'B2B', '3PL'], datasets: [{ data: [55, 30, 15], backgroundColor: [accentGreen, accentOrange, '#3B82F6'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins:{legend:{position: 'bottom'}} } });
 }
 
-// 👉 (เพิ่มใหม่) กราฟ Fulfillment
+// 🟢 กู้คืนกราฟ Workforce กลับมาแล้ว!
+let workforceChartInstance = null;
+const wfCtx = document.getElementById('workforceChart')?.getContext('2d');
+if (wfCtx) {
+    workforceChartInstance = new Chart(wfCtx, { 
+        type: 'bar', 
+        data: { labels: [], datasets: [{ label: 'จำนวนกำลังพล (คน)', data: [], backgroundColor: '#3B82F6', borderRadius: 6 }] }, 
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, border: { display: false } } }, layout: { padding: { top: 20 } } }, 
+        plugins: [dataLabelPlugin]
+    });
+}
+
 let ffmTrendChartInstance = null;
 const ffmTrendCtx = document.getElementById('ffmTrendChart')?.getContext('2d');
 if (ffmTrendCtx) {
@@ -116,64 +124,24 @@ if (ot1Ctx) {
     ontimeChart1Instance = new Chart(ot1Ctx, { type: 'line', data: { labels: [], datasets: [{ label: 'On-Time %', data: [], borderColor: accentGreen, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: accentGreen, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}}, scales: { x: {grid:{display:false}}, y: {border:{display:false}} }, layout: { padding: { top: 40 } } }, plugins: [lineDataLabelPlugin] });
 }
 
-// --- กราฟย่อหน้า Executive Dashboard ---
 let claimChart1Instance = null;
 const claim1Ctx = document.getElementById('claimChart')?.getContext('2d');
 if (claim1Ctx) {
     claimChart1Instance = new Chart(claim1Ctx, { 
         type: 'bar', 
-        data: { 
-            labels: [], 
-            datasets: [
-                { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#EF4444', borderRadius: 4, yAxisID: 'y' },
-                { label: 'จำนวนชิ้น (Pcs)', data: [], borderColor: '#3B82F6', backgroundColor: '#3B82F6', type: 'line', tension: 0.4, yAxisID: 'y1', pointRadius: 2 }
-            ] 
-        }, 
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins:{legend:{display:false}}, 
-            scales: { 
-                x: {grid:{display:false}}, 
-                y: {position: 'left', beginAtZero: true},
-                y1: {position: 'right', beginAtZero: true, grid: {display:false}, display: false} // ซ่อนแกนขวาในหน้าแรกจะได้ไม่เบียด
-            }, 
-            layout: { padding: { top: 10 } } 
-        }, 
+        data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#EF4444', borderRadius: 4, yAxisID: 'y' }, { label: 'จำนวนชิ้น (Pcs)', data: [], borderColor: '#3B82F6', backgroundColor: '#3B82F6', type: 'line', tension: 0.4, yAxisID: 'y1', pointRadius: 2 } ] }, 
+        options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}}, scales: { x: {grid:{display:false}}, y: {position: 'left', beginAtZero: true}, y1: {position: 'right', beginAtZero: true, grid: {display:false}, display: false} }, layout: { padding: { top: 10 } } }, 
         plugins: [dataLabelPlugin] 
     });
 }
 
-// --- กราฟละเอียดใน Detail ข้อ 4 ---
 let claimChart2Instance = null;
 const claim2Ctx = document.getElementById('claimChart2')?.getContext('2d');
 if (claim2Ctx) {
     claimChart2Instance = new Chart(claim2Ctx, { 
         type: 'bar', 
-        data: { 
-            labels: [], 
-            datasets: [
-                { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#EF4444', borderRadius: 6, yAxisID: 'y' },
-                { label: 'จำนวนชิ้น (Pcs)', data: [], borderColor: '#3B82F6', backgroundColor: '#3B82F6', type: 'line', tension: 0.4, yAxisID: 'y1', pointRadius: 4, borderWidth: 2 }
-            ] 
-        }, 
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins:{
-                legend:{
-                    display:true, 
-                    position: 'top',
-                    labels: { padding: 20, boxWidth: 12, font: {size: 11} } // เพิ่มระยะห่างของตัวหนังสือด้านบน
-                }
-            }, 
-            scales: { 
-                x: {grid:{display:false}}, 
-                y: {position: 'left', beginAtZero: true, grace: '25%', title: {display: true, text: 'มูลค่ารวม (บาท)', font: {size: 10}}}, // ดันเพดานกราฟขึ้น 25% ไม่ให้ชน
-                y1: {position: 'right', beginAtZero: true, grace: '25%', grid: {display:false}, title: {display: true, text: 'จำนวนสินค้า (ชิ้น)', font: {size: 10}}} 
-            }, 
-            layout: { padding: { top: 10, left: 10, right: 10 } } 
-        }, 
+        data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#EF4444', borderRadius: 6, yAxisID: 'y' }, { label: 'จำนวนชิ้น (Pcs)', data: [], borderColor: '#3B82F6', backgroundColor: '#3B82F6', type: 'line', tension: 0.4, yAxisID: 'y1', pointRadius: 4, borderWidth: 2 } ] }, 
+        options: { responsive: true, maintainAspectRatio: false, plugins:{ legend:{ display:true, position: 'top', labels: { padding: 20, boxWidth: 12, font: {size: 11} } } }, scales: { x: {grid:{display:false}}, y: {position: 'left', beginAtZero: true, grace: '25%', title: {display: true, text: 'มูลค่ารวม (บาท)', font: {size: 10}}}, y1: {position: 'right', beginAtZero: true, grace: '25%', grid: {display:false}, title: {display: true, text: 'จำนวนสินค้า (ชิ้น)', font: {size: 10}}} }, layout: { padding: { top: 10, left: 10, right: 10 } } }, 
         plugins: [dataLabelPlugin] 
     });
 }
@@ -195,62 +163,17 @@ if (invCtx) {
     inventoryChartInstance = new Chart(invCtx, { type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], borderColor: accentGreen, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: accentGreen, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}}, scales: { x: {grid:{display:false}}, y: {border:{display:false}} }, layout: { padding: { top: 40 } } }, plugins: [lineDataLabelPlugin] });
 }
 
-// 🌟 กราฟ Productivity สไตล์ Heat Map (Bar + Target Line) ปลอดภัย 100% 🌟
 let productivityChartInstance = null;
 const prodCtx = document.getElementById('productivityChart')?.getContext('2d');
 if (prodCtx) {
     productivityChartInstance = new Chart(prodCtx, { 
         type: 'bar', 
-        data: { 
-            labels: [], 
-            datasets: [
-                { 
-                    type: 'bar',
-                    label: 'Background', // สีอ่อนพื้นหลัง
-                    data: [], 
-                    backgroundColor: [], 
-                    borderRadius: 6,
-                    barPercentage: 0.6,
-                    categoryPercentage: 0.8,
-                    grouped: false // วาดทับ
-                },
-                { 
-                    type: 'bar',
-                    label: 'Actual UPH', // สีเข้มของจริง
-                    data: [], 
-                    backgroundColor: [], 
-                    borderRadius: 6,
-                    barPercentage: 0.6,
-                    categoryPercentage: 0.8,
-                    grouped: false
-                },
-                { 
-                    type: 'line',
-                    label: 'Target Line', // เส้นประเป้าหมาย
-                    data: [], 
-                    borderColor: '#F59E0B', 
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    pointRadius: 0,
-                    fill: false
-                }
-            ] 
-        }, 
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { legend: { display: false } }, 
-            scales: { 
-                x: { grid: { display: false }, stacked: false }, 
-                y: { border: { display: false }, display: false, beginAtZero: true, grace: '25%' } // ยืดพื้นที่ให้ตัวเลข
-            }, 
-            layout: { padding: { top: 30 } } 
-        }, 
+        data: { labels: [], datasets: [ { type: 'bar', label: 'Background', data: [], backgroundColor: [], borderRadius: 6, barPercentage: 0.6, categoryPercentage: 0.8, grouped: false }, { type: 'bar', label: 'Actual UPH', data: [], backgroundColor: [], borderRadius: 6, barPercentage: 0.6, categoryPercentage: 0.8, grouped: false }, { type: 'line', label: 'Target Line', data: [], borderColor: '#F59E0B', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false } ] }, 
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, stacked: false }, y: { border: { display: false }, display: false, beginAtZero: true, grace: '25%' } }, layout: { padding: { top: 30 } } }, 
         plugins: [{
             id: 'customBarLabel',
             afterDatasetsDraw(chart) {
                 const { ctx } = chart;
-                // โชว์ตัวเลขเฉพาะบนแท่ง Actual UPH (Dataset 1)
                 if(chart.data.datasets.length > 1 && chart.getDatasetMeta(1)) {
                     const meta = chart.getDatasetMeta(1);
                     if (!meta.hidden && meta.data) {
@@ -259,18 +182,10 @@ if (prodCtx) {
                             const picksVal = chart.data.datasets[1].customPicks ? chart.data.datasets[1].customPicks[index] : 0;
                             if(uphVal > 0){
                                 ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F9FAFB' : '#111827';
-                                ctx.textAlign = 'center';
-                                ctx.textBaseline = 'bottom';
-                                
-                                // 1. UPH: ลดฟอนต์ และเอาคำว่า 'UPH' ออกเพื่อประหยัดพื้นที่
-                                ctx.font = 'bold 11px Inter';
+                                ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.font = 'bold 11px Inter';
                                 ctx.fillText(uphVal, bar.x, bar.y - 14);
-                                
-                                // 2. ยอดหยิบ: ลดฟอนต์ และย่อเลขหลักหมื่นเป็น k (เช่น 98,527 -> 98.5k)
                                 let displayPicks = picksVal >= 10000 ? (picksVal / 1000).toFixed(1) + 'k' : fmtN(picksVal);
-                                
-                                ctx.fillStyle = '#6B7280';
-                                ctx.font = 'normal 9px Inter';
+                                ctx.fillStyle = '#6B7280'; ctx.font = 'normal 9px Inter';
                                 ctx.fillText(`(${displayPicks})`, bar.x, bar.y - 4);
                             }
                         });
@@ -307,59 +222,59 @@ const standardizeBU = (bu) => {
 };
 
 // ========================================================
-// 🌟 FULFILLMENT DATA BINDING (REAL BIGQUERY DATA) 🌟
+// 🌟 FULFILLMENT DATA BINDING (ดึงของจริงจาก BIGQUERY) 🌟
 // ========================================================
 async function initFulfillmentRealtime() {
     const tableEl = document.getElementById('ffm-detail-table');
-    const NODE_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
+    const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
 
-    console.log("⚡ กำลังดึงข้อมูล Fulfillment (ของจริงจำนวนชิ้น) จาก BigQuery...");
+    console.log("⚡ กำลังดึงข้อมูล Fulfillment (ของจริงเป็นจำนวนชิ้น) จาก BigQuery...");
     
     try {
-        // 1. เรียก API ยิงเข้า BigQuery ของคุณโดยตรงผ่าน POST
-        const response = await fetch(NODE_URL, {
+        // ใช้คำสั่ง fetch ยิงเข้าเส้นทาง POST เพื่อกระตุ้น BigQuery ของคุณ
+        const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 fn: 'apiGetDashboardSummary',
-                args: ["", ""] // ปล่อยว่างเพื่อให้ดึงย้อนหลังตามฐานข้อมูล
+                args: ["", ""] // ไม่ระบุวันที่เพื่อให้ดึงข้อมูลย้อนหลังตามระบบ Server
             })
         });
 
-        const rawData = await response.json();
-        
-        if (!rawData.success || !rawData.data) {
-            throw new Error("Failed to fetch from BigQuery");
-        }
+        const result = await response.json();
+        console.log("🔥 BigQuery Data:", result);
 
-        const dbData = rawData.data; 
+        if (!result.success || !result.data) throw new Error("Failed to fetch from BigQuery");
+
+        const dbData = result.data; 
         
-        // 2. 🔄 จัดกลุ่มข้อมูล (Group By Date & BU)
         let datesMap = {}; 
         let buSet = new Set();
 
+        // 1. จัดกลุ่มและแยกข้อมูล (Est = Req / Act = Ship เป็นจำนวนชิ้น)
         dbData.forEach(dayRow => {
-            const dateStr = dayRow.date;
+            const dateStr = dayRow.date; 
             let ownerData = {};
             try { ownerData = JSON.parse(dayRow.ownerJson || '{}'); } catch(e) {}
 
             Object.keys(ownerData).forEach(bu => {
+                if (window.selectedBUs && !window.selectedBUs.includes('ALL') && !window.selectedBUs.includes(bu)) return;
+                
                 if (bu !== 'UNKNOWN' && bu !== '') {
                     buSet.add(bu);
                     if (!datesMap[dateStr]) datesMap[dateStr] = {};
-                    datesMap[dateStr][bu] = { 
-                        est: ownerData[bu].req || 0, // ยอดสั่ง (ชิ้น/Pieces)
-                        act: ownerData[bu].ship || 0 // ยอดส่ง (ชิ้น/Pieces)
-                    };
+                    if (!datesMap[dateStr][bu]) datesMap[dateStr][bu] = { est: 0, act: 0 };
+                    
+                    datesMap[dateStr][bu].est += (ownerData[bu].req || 0); // Est ชิ้น
+                    datesMap[dateStr][bu].act += (ownerData[bu].ship || 0); // Act ชิ้น
                 }
             });
         });
 
         let buNames = Array.from(buSet).sort(); 
-        // ดึง 14 วันล่าสุดมาแสดงบนตาราง
-        let sortedDates = Object.keys(datesMap).sort((a, b) => new Date(b) - new Date(a)).slice(0, 14);
+        let sortedDates = Object.keys(datesMap).sort((a, b) => new Date(b) - new Date(a)).slice(0, 14); // เอา 14 วันล่าสุด
 
-        // 3. 📝 สร้างโครงสร้างตาราง HTML แบบ Pivot (ตารางรวม Est/Act ตามรูปตัวอย่าง)
+        // 2. สร้างโครงสร้างตาราง HTML แบบ Pivot Table (แยก BU แนวนอน)
         let tableHtml = `<thead>
             <tr>
                 <th rowspan="2" style="padding:12px; text-align:center; position:sticky; top:0; left:0; background:var(--bg-card); z-index:20; border-right: 1px solid var(--border-color); min-width: 70px;">Date</th>`;
@@ -391,6 +306,7 @@ async function initFulfillmentRealtime() {
         } else {
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             
+            // 3. วนลูปสร้างแถวข้อมูลทีละวัน
             sortedDates.forEach((dStr, idx) => {
                 let dObj = new Date(dStr);
                 let displayDate = isNaN(dObj) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${monthNames[dObj.getMonth()]}`;
@@ -409,7 +325,7 @@ async function initFulfillmentRealtime() {
                     dayEstTot += est;
                     dayActTot += act;
 
-                    // สะสมยอดกราฟแท่ง (ใช้วันที่ล่าสุดวันเดียว)
+                    // สำหรับกราฟแท่ง จะใช้ยอดของวันที่ล่าสุดเท่านั้น (idx === 0)
                     if (idx === 0) {
                         buVolumeCompleted[buIdx] += act;
                         buVolumePending[buIdx] += Math.max(0, est - act);
@@ -437,7 +353,7 @@ async function initFulfillmentRealtime() {
 
         if (tableEl) tableEl.innerHTML = tableHtml;
 
-        // อัปเดตกราฟเส้น และกราฟแท่งด้วยข้อมูลจริง
+        // อัปเดตกราฟเส้น และกราฟแท่ง
         if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
             ffmTrendChartInstance.data.labels = trendLabels.reverse();
             ffmTrendChartInstance.data.datasets[0].data = trendValues.reverse();
@@ -451,9 +367,45 @@ async function initFulfillmentRealtime() {
             ffmVolumeChartInstance.update();
         }
 
+        // --- อัปเดตตัวเลขการ์ดด้านบน (Executive Dashboard) ทันที ---
+        let latestDayPct = trendValues.length > 0 ? trendValues[trendValues.length - 1] : 0;
+        let prevDayPct = trendValues.length > 1 ? trendValues[trendValues.length - 2] : 0;
+        let diffPct = latestDayPct - prevDayPct;
+        
+        const rateEl = document.getElementById('ffm-order-rate');
+        if (rateEl) {
+            rateEl.innerText = latestDayPct > 0 ? latestDayPct.toFixed(1) + "%" : "...";
+            let rateUpdateEl = rateEl.parentElement.nextElementSibling;
+            if (rateUpdateEl && sortedDates.length > 0) rateUpdateEl.innerText = `Updated: วันที่ ${trendLabels[trendLabels.length - 1]}`;
+        }
+
+        const ordersEl = document.getElementById('ffm-orders-shipped');
+        if (ordersEl && sortedDates.length > 0) {
+            let latestDateStr = sortedDates[0];
+            let todayActTot = 0;
+            buNames.forEach(bu => { todayActTot += (datesMap[latestDateStr][bu]?.act || 0); });
+            
+            ordersEl.innerText = fmtN(todayActTot); // ยอดจำนวนชิ้นทั้งหมดของวันล่าสุด
+
+            const trendEl = document.getElementById('ffm-orders-trend');
+            const trendTextEl = document.getElementById('ffm-orders-note');
+            
+            if (trendEl && trendTextEl) {
+                if (diffPct > 0) {
+                    trendEl.className = "badge up"; trendEl.innerText = `↗ +${diffPct.toFixed(1)}%`; trendTextEl.innerText = `vs วันก่อนหน้า`;
+                } else if (diffPct < 0) {
+                    trendEl.className = "badge down"; trendEl.innerText = `↘ ${Math.abs(diffPct).toFixed(1)}%`; trendTextEl.innerText = `vs วันก่อนหน้า`;
+                } else {
+                    trendEl.className = "badge info"; trendEl.innerText = `0%`; trendTextEl.innerText = `ไม่เปลี่ยนแปลง`;
+                }
+            }
+            let ordersUpdateEl = ordersEl.parentElement.nextElementSibling;
+            if (ordersUpdateEl) ordersUpdateEl.innerText = `ข้อมูลล่าสุด: จำนวนชิ้น (Pieces)`;
+        }
+
     } catch (err) {
         console.error("❌ Fetch Data Error:", err);
-        if (tableEl) tableEl.innerHTML = `<tr><td colspan="10" class="text-center" style="padding: 30px; color: var(--danger); font-weight:bold;">⚠️ ดึงข้อมูลจากฐานข้อมูล BigQuery ไม่สำเร็จ</td></tr>`;
+        if (tableEl) tableEl.innerHTML = `<tr><td colspan="10" class="text-center" style="padding: 30px; color: var(--danger); font-weight:bold;">⚠️ ดึงข้อมูลจาก BigQuery ไม่สำเร็จ</td></tr>`;
     }
 }
 
@@ -667,6 +619,7 @@ function populateGlobalBUFilters() {
             renderInventorySection();
             renderTransportSection();
             renderProductivitySection();
+            initFulfillmentRealtime(); // ดึงข้อมูล BQ ใหม่เมื่อเปลี่ยนสาขา
         });
     }
 
@@ -742,7 +695,7 @@ async function initDashboard() {
     
     await Promise.all(sections.map(s => fetchSection(s)));
     
-    // 👉 (เพิ่มใหม่) สั่งให้เชื่อมต่อ Fulfillment หลังดึงข้อมูล Google App Script เสร็จ
+    // ดึงข้อมูลจริงจาก BigQuery
     initFulfillmentRealtime();
     
     toggleLoader(false);
@@ -1066,53 +1019,6 @@ function updateDashboardData(selectedDateStr) {
                 }
             }
 
-            const ordersEl = document.getElementById('ffm-orders-shipped');
-            if (ordersEl) {
-                ordersEl.innerText = totalOrdersToday > 0 ? fmtN(totalOrdersToday) : "0";
-                const trendEl = document.getElementById('ffm-orders-trend');
-                const trendTextEl = document.getElementById('ffm-orders-note');
-                
-                if (trendEl) {
-                    if (totalOrdersYesterday === 0 && totalOrdersToday === 0) {
-                        trendEl.className = "badge info"; trendEl.innerText = "-"; if(trendTextEl) trendTextEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
-                    } else if (totalOrdersYesterday === 0) {
-                        trendEl.className = "badge up"; trendEl.innerText = "↗ 100%"; if(trendTextEl) trendTextEl.innerText = "vs previous";
-                    } else {
-                        let pctDiff = ((totalOrdersToday - totalOrdersYesterday) / totalOrdersYesterday) * 100;
-                        if (pctDiff > 0) { trendEl.className = "badge up"; trendEl.innerText = `↗ +${pctDiff.toFixed(1)}%`; } 
-                        else if (pctDiff < 0) { trendEl.className = "badge down"; trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(1)}%`; } 
-                        else { trendEl.className = "badge info"; trendEl.innerText = `0%`; }
-                        if(trendTextEl && prevWaveKey) { trendTextEl.innerText = `vs ${getShortDate(prevWaveKey)}`; }
-                    }
-                }
-                let ordersUpdateEl = ordersEl.parentElement.nextElementSibling;
-                if (ordersUpdateEl && targetWaveFfmKey) ordersUpdateEl.innerText = `Updated: ${getDisplayDate(targetWaveFfmKey)}`;
-            }
-            
-            let ffmData = globalData.fulfillment || {};
-            let ffmKeys = Object.keys(ffmData).sort((a,b)=>new Date(b).getTime() - new Date(a).getTime());
-            let targetFfmKey = null; let avgOrderFFM = "0";
-
-            for (let k of ffmKeys) {
-                if (new Date(k).getTime() <= targetTimestamp) {
-                    let buList = [];
-                    Object.keys(ffmData[k].bu_data || {}).forEach(bu => {
-                        if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) buList.push(ffmData[k].bu_data[bu]);
-                    });
-                    if (buList.length > 0) {
-                        targetFfmKey = k;
-                        avgOrderFFM = (buList.reduce((s, i) => s + (i.item_ffm || 0), 0) / buList.length).toFixed(1);
-                        break;
-                    }
-                }
-            }
-            const rateEl = document.getElementById('ffm-order-rate');
-            if (rateEl) {
-                rateEl.innerText = avgOrderFFM > 0 ? avgOrderFFM + "%" : "...";
-                let rateUpdateEl = rateEl.parentElement.nextElementSibling;
-                if (rateUpdateEl && targetFfmKey) rateUpdateEl.innerText = `Updated: ${getDisplayDate(targetFfmKey)}`;
-            }
-            
             const waveSummaryTable = document.getElementById('wave-summary-table');
             if (waveSummaryTable) {
                 let allBUs = new Set();
