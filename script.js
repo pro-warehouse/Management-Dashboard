@@ -161,13 +161,15 @@ function toggleLoader(show) {
 // 🌟 4. FULFILLMENT DATA BINDING (MATRIX PIVOT TABLE) 🌟
 // ========================================================
 async function initFulfillmentRealtime() {
-    const tableEl = document.getElementById('ffm-detail-table');
-    if (!tableEl) return;
-    
-    // ตั้งค่าให้ตารางกางออกได้และมี Scrollbar แนวนอน
-    if (tableEl.parentElement) {
-        tableEl.parentElement.style.overflowX = 'auto';
-        tableEl.parentElement.style.maxWidth = '100%';
+    let wrapperEl = document.getElementById('fulfillment-v3-wrapper');
+    if (!wrapperEl) {
+        const tableEl = document.getElementById('ffm-detail-table');
+        if (!tableEl) return;
+        const targetCard = tableEl.closest('.data-card') || tableEl.parentElement;
+        wrapperEl = document.createElement('div');
+        wrapperEl.id = 'fulfillment-v3-wrapper';
+        targetCard.parentNode.insertBefore(wrapperEl, targetCard);
+        targetCard.remove();
     }
 
     const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
@@ -183,10 +185,10 @@ async function initFulfillmentRealtime() {
         const result = await response.json();
         let bqDataList = result.success && result.data ? result.data : [];
 
-        // 🟢 1. สร้าง Map วันที่รวม (Date Normalization)
+        // 🟢 1. สร้าง Map วันที่รวม (Date Normalization) เพื่อปลดล็อกให้ Orders โชว์ครบทุกวัน
         let unifiedDatesMap = {};
         
-        // 1.1 ใส่ข้อมูล Orders จาก App Script เข้าไปก่อน (นับตั้งแต่วันที่ออเดอร์เข้า)
+        // 1.1 ใส่ข้อมูล Orders จาก App Script ทั้งหมด!
         if (globalData.wave_ops) {
             Object.keys(globalData.wave_ops).forEach(k => {
                 let sd = getStandardDate(k); 
@@ -219,7 +221,7 @@ async function initFulfillmentRealtime() {
                         unifiedDatesMap[sd].bq[sBu].req += parseFloat(bItem.req || 0);
                         unifiedDatesMap[sd].bq[sBu].alloc += parseFloat(bItem.alloc || 0);
                         unifiedDatesMap[sd].bq[sBu].ship += parseFloat(bItem.ship || 0);
-                        unifiedDatesMap[sDate].bq[sBu].actShort += parseFloat(bItem.actShort || 0);
+                        unifiedDatesMap[sd].bq[sBu].actShort += parseFloat(bItem.actShort || 0);
                         unifiedDatesMap[sd].bq[sBu].pu += parseFloat(bItem.pu || 0);
                         unifiedDatesMap[sd].bq[sBu].plt += parseFloat(bItem.plt || 0);
                     }
@@ -227,29 +229,32 @@ async function initFulfillmentRealtime() {
             } catch(e) {}
         });
 
-        // ลบค่า String ว่างๆ ออกเผื่อมีหลุดมา
         delete unifiedDatesMap[""];
         let sortedDates = Object.keys(unifiedDatesMap).sort((a,b) => new Date(b) - new Date(a));
 
         // 🌟 2. สร้างโครงสร้าง HTML ให้ตารางกางออกสวยๆ
-        let htmlTable = `<thead>
-            <tr>
-                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); border-right:1px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; left:0; z-index:30;">Date</th>
-                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Owner</th>
-                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Orders</th>
-                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Req</th>
-                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">ETA</th>
-                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Ship</th>
-                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Est.Short</th>
-                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Act.Short</th>
-                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Ord.SLA</th>
-                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">DC SLA</th>
-                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">FFM%</th>
-                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Pcs/Pick</th>
-                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Pcs/Ord</th>
-                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Pallets</th>
-            </tr>
-        </thead><tbody>`;
+        let htmlTable = `<div class="data-card" style="margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden;">
+            <div class="card-header" style="padding: 15px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);"><h3 style="font-size:14px; font-weight:700; color:var(--text-main); margin:0;">📋 DAILY FULFILLMENT MATRIX RECORD</h3></div>
+            <div style="max-height: 500px; overflow: auto; background: var(--bg-card);">
+            <table style="min-width: 1200px; width:100%; border-collapse:separate; border-spacing:0; font-size:12px; text-align:right; white-space: nowrap;">
+            <thead>
+                <tr>
+                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); border-right:1px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; left:0; z-index:30;">Date</th>
+                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Owner</th>
+                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Orders</th>
+                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Req</th>
+                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">ETA</th>
+                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Ship</th>
+                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Est.Short</th>
+                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Act.Short</th>
+                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Ord.SLA</th>
+                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">DC SLA</th>
+                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">FFM%</th>
+                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Pcs/Pick</th>
+                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Pcs/Ord</th>
+                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Pallets</th>
+                </tr>
+            </thead><tbody>`;
 
         let trendLabels = [], trendValues = [];
         let buVolumeCompleted = {}, buVolumePending = {};
@@ -278,8 +283,8 @@ async function initFulfillmentRealtime() {
                     const wItem = wData[bu] || {};
                     
                     // 🟢 การรวมข้อมูล (Merge): ดึง Orders จาก Wave Ops และ Pieces จาก BigQuery
-                    const ordTotal = wItem.ordTotal > 0 ? wItem.ordTotal : parseFloat(bItem.ordTotal || 0);
-                    const ordFull = wItem.ordTotal > 0 ? wItem.ordFull : parseFloat(bItem.ordFull || 0);
+                    const ordTotal = Math.max(parseFloat(bItem.ordTotal || 0), parseFloat(wItem.ordTotal || 0));
+                    const ordFull = Math.max(parseFloat(bItem.ordFull || 0), parseFloat(wItem.ordFull || 0));
                     
                     const req = parseFloat(bItem.req || 0);
                     const alloc = parseFloat(bItem.alloc || 0);
@@ -358,9 +363,8 @@ async function initFulfillmentRealtime() {
             });
         }
         
-        htmlTable += "</tbody>";
-        tableEl.innerHTML = htmlTable;
-        tableEl.style.minWidth = "1200px"; // บังคับให้ตารางกางออก ไม่บีบตัวหนังสือ
+        htmlTable += "</tbody></table></div></div>";
+        wrapperEl.innerHTML = htmlTable;
 
         // --- 📊 อัปเดตกราฟ FFM Rate & Volume ---
         if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
@@ -380,6 +384,7 @@ async function initFulfillmentRealtime() {
             ffmVolumeChartInstance.update();
         }
 
+        // อัปเดต % ของการ์ดด้านบน
         if (trendValues.length > 0) {
             const currentFfmRate = trendValues[trendValues.length - 1];
             const rateEl = document.getElementById('ffm-order-rate');
@@ -392,6 +397,7 @@ async function initFulfillmentRealtime() {
 
     } catch (err) {
         console.error("❌ Fetch Matrix Error:", err);
+        wrapperEl.innerHTML = `<div class="data-card" style="padding:25px; text-align:center; color:var(--danger); font-weight:bold;">⚠️ เกิดข้อผิดพลาดในการโหลดตาราง Matrix</div>`;
     }
 }
 
@@ -683,7 +689,7 @@ function updateDashboardData(selectedDateStr) {
         }
     } catch(e) { console.error("Workforce Update Error:", e); }
 
-    // 🟢 8. WAVE OPS & ORDERS SHIPPED TODAY (กู้คืนตรรกะเดิม เพื่อแสดงจำนวนบิล)
+    // 🟢 กู้คืน Wave Ops ให้ดึงจากข้อมูล App Script เหมือนเดิม
     try {
         if(Object.keys(globalData.wave_ops || {}).length > 0) {
             let waveDataForFFM = globalData.wave_ops;
@@ -1348,7 +1354,7 @@ function renderInventorySection() {
         if(Object.keys(globalData.inventory).length === 0) return;
         const invData = globalData.inventory;
         const invFilterBU = document.getElementById('inv-bu-filter')?.value || 'ALL';
-        const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
+        const dpVal = document.getElementById('date-picker')?.value || new DatetoISOString().split('T')[0];
         const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
         
         let parsedData = [];
