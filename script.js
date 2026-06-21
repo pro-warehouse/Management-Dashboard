@@ -307,158 +307,153 @@ const standardizeBU = (bu) => {
 };
 
 // ========================================================
-// 🌟 FULFILLMENT LIVE DATA BINDING (SSE) 🌟
+// 🌟 FULFILLMENT DATA BINDING (REAL BIGQUERY DATA) 🌟
 // ========================================================
-function initFulfillmentRealtime() {
+async function initFulfillmentRealtime() {
     const tableEl = document.getElementById('ffm-detail-table');
-    const rawUrl = "https://dc-ordermonitoring-backend.onrender.com/api/run";
-    const SSE_URL = rawUrl.trim();
+    const NODE_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
 
-    console.log("⚡ กำลังเชื่อมต่อท่อส่งข้อมูล Fulfillment Real-time (SSE)... URL:", SSE_URL);
+    console.log("⚡ กำลังดึงข้อมูล Fulfillment (ของจริงจำนวนชิ้น) จาก BigQuery...");
     
     try {
-        const eventSource = new EventSource(SSE_URL);
+        // 1. เรียก API ยิงเข้า BigQuery ของคุณโดยตรงผ่าน POST
+        const response = await fetch(NODE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fn: 'apiGetDashboardSummary',
+                args: ["", ""] // ปล่อยว่างเพื่อให้ดึงย้อนหลังตามฐานข้อมูล
+            })
+        });
 
-        eventSource.onmessage = function(event) {
-            try {
-                const result = JSON.parse(event.data);
-                console.log("🔥 Node API Live Data:", result);
-
-                const dataArray = Array.isArray(result) ? result : [result];
-
-                // 1. 🔄 จัดกลุ่มข้อมูล (Group By Date & BU)
-                let datesMap = {}; 
-                let buSet = new Set();
-
-                dataArray.forEach(item => {
-                    const dateStr = item.date || item.Date || item.record_date || "N/A";
-                    const buStr = item.bu || item.BU || item.business_unit || "Unknown";
-                    const est = parseInt(item.total_orders || item.Total || item.qty_order || 0);
-                    const act = parseInt(item.completed_orders || item.Completed || item.qty_completed || 0);
-                    
-                    buSet.add(buStr); // เก็บรายชื่อ BU ทั้งหมด
-                    
-                    if (!datesMap[dateStr]) datesMap[dateStr] = {};
-                    if (!datesMap[dateStr][buStr]) datesMap[dateStr][buStr] = { est: 0, act: 0 };
-                    
-                    datesMap[dateStr][buStr].est += est;
-                    datesMap[dateStr][buStr].act += act;
-                });
-
-                let buNames = Array.from(buSet).sort(); // เรียงชื่อ BU (DM02, DP02, ...)
-                let sortedDates = Object.keys(datesMap).sort((a, b) => new Date(b) - new Date(a)); // เรียงวันที่ล่าสุดขึ้นก่อน
-
-                // 2. 📝 สร้างโครงสร้างตาราง HTML แบบ Pivot
-                let tableHtml = `<thead>
-                    <tr>
-                        <th rowspan="2" style="padding:12px; text-align:center; position:sticky; top:0; left:0; background:var(--bg-card); z-index:20; border-right: 1px solid var(--border-color); min-width: 70px;">Date</th>`;
-                
-                // หัวตารางแถวที่ 1 (ชื่อ BU)
-                buNames.forEach(bu => {
-                    tableHtml += `<th colspan="3" style="padding:8px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10; border-bottom: 1px solid var(--border-color);">${bu}</th>`;
-                });
-                tableHtml += `<th colspan="3" style="padding:8px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10; border-bottom: 1px solid var(--border-color); border-left: 2px solid var(--border-color);">Total Overall</th>
-                    </tr><tr>`;
-
-                // หัวตารางแถวที่ 2 (Est / Act / %)
-                buNames.forEach(() => {
-                    tableHtml += `<th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">Est</th>
-                                  <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">Act</th>
-                                  <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">%</th>`;
-                });
-                tableHtml += `<th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; border-left: 2px solid var(--border-color); color:var(--text-muted);">Est</th>
-                              <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">Act</th>
-                              <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">%</th>
-                    </tr>
-                </thead><tbody>`;
-
-                let trendLabels = [];
-                let trendValues = [];
-                let buVolumeCompleted = new Array(buNames.length).fill(0);
-                let buVolumePending = new Array(buNames.length).fill(0);
-
-                if (sortedDates.length === 0) {
-                    tableHtml += `<tr><td colspan="${(buNames.length * 3) + 4}" class="text-center" style="padding: 30px; color: var(--text-muted);">ไม่มีข้อมูลสตรีมส่งมาในขณะนี้</td></tr>`;
-                } else {
-                    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                    
-                    // 3. ✍️ วนลูปสร้างแถวข้อมูลทีละวัน
-                    sortedDates.forEach((dStr, idx) => {
-                        let dObj = new Date(dStr);
-                        let displayDate = isNaN(dObj) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${monthNames[dObj.getMonth()]}`;
-
-                        tableHtml += `<tr>
-                            <td style="padding:8px 10px; font-weight:600; text-align:center; white-space:nowrap; position:sticky; left:0; background:var(--bg-card); border-right: 1px solid var(--border-color); z-index:5;">${displayDate}</td>`;
-                        
-                        let dayEstTot = 0;
-                        let dayActTot = 0;
-
-                        buNames.forEach((bu, buIdx) => {
-                            let est = datesMap[dStr][bu]?.est || 0;
-                            let act = datesMap[dStr][bu]?.act || 0;
-                            let pct = est > 0 ? ((act / est) * 100).toFixed(1) : 0;
-                            
-                            dayEstTot += est;
-                            dayActTot += act;
-
-                            // สะสมยอดกราฟแท่ง (เอาเฉพาะข้อมูลของวันล่าสุด วันเดียวเท่านั้น)
-                            if (idx === 0) {
-                                buVolumeCompleted[buIdx] += act;
-                                buVolumePending[buIdx] += Math.max(0, est - act);
-                            }
-
-                            let pctColor = pct >= 99 ? '#10B981' : (pct >= 95 ? '#F59E0B' : '#EF4444');
-                            tableHtml += `<td style="padding:8px; text-align:center; font-size:12px;">${est > 0 ? fmtN(est) : '-'}</td>
-                                          <td style="padding:8px; text-align:center; font-size:12px; color:#10B981; font-weight:600;">${act > 0 ? fmtN(act) : '-'}</td>
-                                          <td style="padding:8px; text-align:center; font-size:12px; font-weight:700; color:${est > 0 ? pctColor : 'var(--text-muted)'};">${est > 0 ? pct + '%' : '-'}</td>`;
-                        });
-
-                        // ยอดรวมภาพรวมรายวัน (Total Overall)
-                        let dayPct = dayEstTot > 0 ? ((dayActTot / dayEstTot) * 100).toFixed(1) : 0;
-                        let dayPctColor = dayPct >= 99 ? '#10B981' : (dayPct >= 95 ? '#F59E0B' : '#EF4444');
-
-                        tableHtml += `<td style="padding:8px; text-align:center; font-size:12px; background:var(--bg-body); font-weight:600; border-left: 2px solid var(--border-color);">${dayEstTot > 0 ? fmtN(dayEstTot) : '-'}</td>
-                                      <td style="padding:8px; text-align:center; font-size:12px; background:var(--bg-body); color:#10B981; font-weight:700;">${dayActTot > 0 ? fmtN(dayActTot) : '-'}</td>
-                                      <td style="padding:8px; text-align:center; font-size:12px; background:var(--bg-body); font-weight:800; color:${dayPctColor};">${dayPct}%</td>
-                        </tr>`;
-
-                        // เก็บข้อมูลไว้แสดงกราฟเส้น
-                        trendLabels.push(displayDate);
-                        trendValues.push(parseFloat(dayPct));
-                    });
-                }
-                tableHtml += `</tbody>`;
-
-                if (tableEl) tableEl.innerHTML = tableHtml;
-
-                // อัปเดตกราฟเส้น และกราฟแท่ง
-                if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
-                    ffmTrendChartInstance.data.labels = trendLabels.reverse();
-                    ffmTrendChartInstance.data.datasets[0].data = trendValues.reverse();
-                    ffmTrendChartInstance.update();
-                }
-
-                if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance) {
-                    ffmVolumeChartInstance.data.labels = buNames;
-                    ffmVolumeChartInstance.data.datasets[0].data = buVolumeCompleted;
-                    ffmVolumeChartInstance.data.datasets[1].data = buVolumePending;
-                    ffmVolumeChartInstance.update();
-                }
-
-            } catch (e) {
-                console.error("❌ เกิดข้อผิดพลาดในการถอดรหัสข้อมูลสตรีม:", e);
-            }
-        };
-
-        eventSource.onerror = function(error) {
-            console.error("❌ SSE Connection Error:", error);
-            if (tableEl && tableEl.innerHTML.includes("กำลังเรียกขอข้อมูล")) {
-                tableEl.innerHTML = `<tr><td colspan="100%" class="text-center" style="padding: 30px; color: var(--danger); font-weight:bold;">⚠️ ระบบกำลังเปิดท่อรอรับข้อมูล Real-time จากเซิร์ฟเวอร์หลังบ้าน...</td></tr>`;
-            }
-        };
+        const rawData = await response.json();
         
+        if (!rawData.success || !rawData.data) {
+            throw new Error("Failed to fetch from BigQuery");
+        }
+
+        const dbData = rawData.data; 
+        
+        // 2. 🔄 จัดกลุ่มข้อมูล (Group By Date & BU)
+        let datesMap = {}; 
+        let buSet = new Set();
+
+        dbData.forEach(dayRow => {
+            const dateStr = dayRow.date;
+            let ownerData = {};
+            try { ownerData = JSON.parse(dayRow.ownerJson || '{}'); } catch(e) {}
+
+            Object.keys(ownerData).forEach(bu => {
+                if (bu !== 'UNKNOWN' && bu !== '') {
+                    buSet.add(bu);
+                    if (!datesMap[dateStr]) datesMap[dateStr] = {};
+                    datesMap[dateStr][bu] = { 
+                        est: ownerData[bu].req || 0, // ยอดสั่ง (ชิ้น/Pieces)
+                        act: ownerData[bu].ship || 0 // ยอดส่ง (ชิ้น/Pieces)
+                    };
+                }
+            });
+        });
+
+        let buNames = Array.from(buSet).sort(); 
+        // ดึง 14 วันล่าสุดมาแสดงบนตาราง
+        let sortedDates = Object.keys(datesMap).sort((a, b) => new Date(b) - new Date(a)).slice(0, 14);
+
+        // 3. 📝 สร้างโครงสร้างตาราง HTML แบบ Pivot (ตารางรวม Est/Act ตามรูปตัวอย่าง)
+        let tableHtml = `<thead>
+            <tr>
+                <th rowspan="2" style="padding:12px; text-align:center; position:sticky; top:0; left:0; background:var(--bg-card); z-index:20; border-right: 1px solid var(--border-color); min-width: 70px;">Date</th>`;
+        
+        buNames.forEach(bu => {
+            tableHtml += `<th colspan="3" style="padding:8px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10; border-bottom: 1px solid var(--border-color);">${bu}</th>`;
+        });
+        tableHtml += `<th colspan="3" style="padding:8px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10; border-bottom: 1px solid var(--border-color); border-left: 2px solid var(--border-color);">Total Overall</th>
+            </tr><tr>`;
+
+        buNames.forEach(() => {
+            tableHtml += `<th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">Est</th>
+                          <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">Act</th>
+                          <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">%</th>`;
+        });
+        tableHtml += `<th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; border-left: 2px solid var(--border-color); color:var(--text-muted);">Est</th>
+                      <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">Act</th>
+                      <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">%</th>
+            </tr>
+        </thead><tbody>`;
+
+        let trendLabels = [];
+        let trendValues = [];
+        let buVolumeCompleted = new Array(buNames.length).fill(0);
+        let buVolumePending = new Array(buNames.length).fill(0);
+
+        if (sortedDates.length === 0) {
+            tableHtml += `<tr><td colspan="${(buNames.length * 3) + 4}" class="text-center" style="padding: 30px; color: var(--text-muted);">ไม่พบข้อมูลจากฐานข้อมูล</td></tr>`;
+        } else {
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            
+            sortedDates.forEach((dStr, idx) => {
+                let dObj = new Date(dStr);
+                let displayDate = isNaN(dObj) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${monthNames[dObj.getMonth()]}`;
+
+                tableHtml += `<tr>
+                    <td style="padding:8px 10px; font-weight:600; text-align:center; white-space:nowrap; position:sticky; left:0; background:var(--bg-card); border-right: 1px solid var(--border-color); z-index:5;">${displayDate}</td>`;
+                
+                let dayEstTot = 0;
+                let dayActTot = 0;
+
+                buNames.forEach((bu, buIdx) => {
+                    let est = datesMap[dStr][bu]?.est || 0;
+                    let act = datesMap[dStr][bu]?.act || 0;
+                    let pct = est > 0 ? ((act / est) * 100).toFixed(1) : 0;
+                    
+                    dayEstTot += est;
+                    dayActTot += act;
+
+                    // สะสมยอดกราฟแท่ง (ใช้วันที่ล่าสุดวันเดียว)
+                    if (idx === 0) {
+                        buVolumeCompleted[buIdx] += act;
+                        buVolumePending[buIdx] += Math.max(0, est - act);
+                    }
+
+                    let pctColor = pct >= 99 ? '#10B981' : (pct >= 95 ? '#F59E0B' : '#EF4444');
+                    tableHtml += `<td style="padding:8px; text-align:center; font-size:12px;">${est > 0 ? fmtN(est) : '-'}</td>
+                                  <td style="padding:8px; text-align:center; font-size:12px; color:#10B981; font-weight:600;">${act > 0 ? fmtN(act) : '-'}</td>
+                                  <td style="padding:8px; text-align:center; font-size:12px; font-weight:700; color:${est > 0 ? pctColor : 'var(--text-muted)'};">${est > 0 ? pct + '%' : '-'}</td>`;
+                });
+
+                let dayPct = dayEstTot > 0 ? ((dayActTot / dayEstTot) * 100).toFixed(1) : 0;
+                let dayPctColor = dayPct >= 99 ? '#10B981' : (dayPct >= 95 ? '#F59E0B' : '#EF4444');
+
+                tableHtml += `<td style="padding:8px; text-align:center; font-size:12px; background:var(--bg-body); font-weight:600; border-left: 2px solid var(--border-color);">${dayEstTot > 0 ? fmtN(dayEstTot) : '-'}</td>
+                              <td style="padding:8px; text-align:center; font-size:12px; background:var(--bg-body); color:#10B981; font-weight:700;">${dayActTot > 0 ? fmtN(dayActTot) : '-'}</td>
+                              <td style="padding:8px; text-align:center; font-size:12px; background:var(--bg-body); font-weight:800; color:${dayPctColor};">${dayPct}%</td>
+                </tr>`;
+
+                trendLabels.push(displayDate);
+                trendValues.push(parseFloat(dayPct));
+            });
+        }
+        tableHtml += `</tbody>`;
+
+        if (tableEl) tableEl.innerHTML = tableHtml;
+
+        // อัปเดตกราฟเส้น และกราฟแท่งด้วยข้อมูลจริง
+        if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
+            ffmTrendChartInstance.data.labels = trendLabels.reverse();
+            ffmTrendChartInstance.data.datasets[0].data = trendValues.reverse();
+            ffmTrendChartInstance.update();
+        }
+
+        if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance) {
+            ffmVolumeChartInstance.data.labels = buNames;
+            ffmVolumeChartInstance.data.datasets[0].data = buVolumeCompleted;
+            ffmVolumeChartInstance.data.datasets[1].data = buVolumePending;
+            ffmVolumeChartInstance.update();
+        }
+
     } catch (err) {
-        console.error("❌ สร้างการเชื่อมต่อ EventSource ไม่สำเร็จ:", err);
+        console.error("❌ Fetch Data Error:", err);
+        if (tableEl) tableEl.innerHTML = `<tr><td colspan="10" class="text-center" style="padding: 30px; color: var(--danger); font-weight:bold;">⚠️ ดึงข้อมูลจากฐานข้อมูล BigQuery ไม่สำเร็จ</td></tr>`;
     }
 }
 
