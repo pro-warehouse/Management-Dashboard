@@ -222,28 +222,29 @@ const standardizeBU = (bu) => {
 };
 
 // ========================================================
-// 🌟 FULFILLMENT DATA BINDING (ดึงของจริงจาก BIGQUERY) 🌟
+// 🌟 FULFILLMENT DATA BINDING (3 SEPARATE PIVOT TABLES) 🌟
 // ========================================================
 async function initFulfillmentRealtime() {
     const tableEl = document.getElementById('ffm-detail-table');
+    if (!tableEl) return;
+
+    // หา Container หลักเพื่อใช้บรรจุทั้ง 3 ตารางแยกกัน
+    const containerEl = tableEl.parentElement;
     const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
 
-    console.log("⚡ กำลังดึงข้อมูล Fulfillment (ของจริงเป็นจำนวนชิ้น) จาก BigQuery...");
+    console.log("⚡ กำลังคำนวณและแยกมิติตารางสรุปประสิทธิภาพจาก BigQuery...");
     
     try {
-        // ใช้คำสั่ง fetch ยิงเข้าเส้นทาง POST เพื่อกระตุ้น BigQuery ของคุณ
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 fn: 'apiGetDashboardSummary',
-                args: ["", ""] // ไม่ระบุวันที่เพื่อให้ดึงข้อมูลย้อนหลังตามระบบ Server
+                args: ["", ""]
             })
         });
 
         const result = await response.json();
-        console.log("🔥 BigQuery Data:", result);
-
         if (!result.success || !result.data) throw new Error("Failed to fetch from BigQuery");
 
         const dbData = result.data; 
@@ -251,112 +252,221 @@ async function initFulfillmentRealtime() {
         let datesMap = {}; 
         let buSet = new Set();
 
-        // 1. จัดกลุ่มและแยกข้อมูล (Est = Req / Act = Ship เป็นจำนวนชิ้น)
+        // 1. 🔄 จัดกลุ่มและจัดเตรียมโครงสร้างข้อมูลดิบจาก BigQuery
         dbData.forEach(dayRow => {
             const dateStr = dayRow.date; 
             let ownerData = {};
             try { ownerData = JSON.parse(dayRow.ownerJson || '{}'); } catch(e) {}
 
             Object.keys(ownerData).forEach(bu => {
-                if (window.selectedBUs && !window.selectedBUs.includes('ALL') && !window.selectedBUs.includes(bu)) return;
-                
                 if (bu !== 'UNKNOWN' && bu !== '') {
                     buSet.add(bu);
                     if (!datesMap[dateStr]) datesMap[dateStr] = {};
-                    if (!datesMap[dateStr][bu]) datesMap[dateStr][bu] = { est: 0, act: 0 };
                     
-                    datesMap[dateStr][bu].est += (ownerData[bu].req || 0); // Est ชิ้น
-                    datesMap[dateStr][bu].act += (ownerData[bu].ship || 0); // Act ชิ้น
+                    const item = ownerData[bu];
+                    datesMap[dateStr][bu] = {
+                        ordTotal: parseInt(item.ordTotal || 0), // จำนวนออเดอร์ทั้งหมด
+                        ordFull: parseInt(item.ordFull || 0),   // จำนวนออเดอร์ที่จัดครบ (SLA)
+                        reqPieces: parseInt(item.req || 0),     // จำนวนชิ้นแผนสั่ง
+                        shipPieces: parseInt(item.ship || 0),   // จำนวนชิ้นที่จ่ายจริง
+                        shortage: parseInt(item.actShort || 0)  // สินค้าขาดสต๊อก
+                    };
                 }
             });
         });
 
         let buNames = Array.from(buSet).sort(); 
-        let sortedDates = Object.keys(datesMap).sort((a, b) => new Date(b) - new Date(a)).slice(0, 14); // เอา 14 วันล่าสุด
+        let sortedDates = Object.keys(datesMap).sort((a, b) => new Date(b) - new Date(a)).slice(0, 10); // ดึงข้อมูล 10 วันล่าสุด
 
-        // 2. สร้างโครงสร้างตาราง HTML แบบ Pivot Table (แยก BU แนวนอน)
-        let tableHtml = `<thead>
-            <tr>
-                <th rowspan="2" style="padding:12px; text-align:center; position:sticky; top:0; left:0; background:var(--bg-card); z-index:20; border-right: 1px solid var(--border-color); min-width: 70px;">Date</th>`;
-        
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const getDisplayDate = (dStr) => {
+            let dObj = new Date(dStr);
+            return isNaN(dObj) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${monthNames[dObj.getMonth()]}`;
+        };
+
+        const getPctBadge = (pct) => {
+            let bg = '#fee2e2', clr = '#991b1b';
+            if (pct >= 99) { bg = '#dcfce7'; clr = '#166534'; }
+            else if (pct >= 95) { bg = '#fef3c7'; clr = '#92400e'; }
+            return `<span style="display:inline-block; background:${bg}; color:${clr}; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:700;">${pct}%</span>`;
+        };
+
+        // ========================================================
+        // 📊 TABLE 1: เปอร์เซ็นต์ความสำเร็จระดับออเดอร์ (Order SLA บิล)
+        // ========================================================
+        let htmlTable1 = `<div class="data-card" style="margin-bottom: 25px; overflow-x: auto;">
+            <div class="card-header"><h3 style="font-size:14px; font-weight:700; color:var(--text-main);">📋 1. % ORDER SLA RECORD BY BILL LEVEL (TARGET 99.00%)</h3></div>
+            <table class="data-table" style="width:100%; border-collapse:collapse; font-size:12px;">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="padding:10px; background:var(--bg-card); border:1px solid var(--border-color); text-align:center;">Date</th>`;
         buNames.forEach(bu => {
-            tableHtml += `<th colspan="3" style="padding:8px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10; border-bottom: 1px solid var(--border-color);">${bu}</th>`;
+            htmlTable1 += `<th colspan="3" style="padding:6px; background:var(--bg-card); border:1px solid var(--border-color); text-align:center;">${bu}</th>`;
         });
-        tableHtml += `<th colspan="3" style="padding:8px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10; border-bottom: 1px solid var(--border-color); border-left: 2px solid var(--border-color);">Total Overall</th>
-            </tr><tr>`;
-
+        htmlTable1 += `<th colspan="3" style="padding:6px; background:var(--bg-card); border:1px solid var(--border-color); text-align:center;">Total Overall</th></tr><tr>`;
         buNames.forEach(() => {
-            tableHtml += `<th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">Est</th>
-                          <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">Act</th>
-                          <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">%</th>`;
+            htmlTable1 += `<th style="padding:4px; font-size:10px; color:var(--text-muted); border:1px solid var(--border-color); text-align:center;">Total</th>
+                           <th style="padding:4px; font-size:10px; color:var(--text-muted); border:1px solid var(--border-color); text-align:center;">Full</th>
+                           <th style="padding:4px; font-size:10px; color:var(--text-muted); border:1px solid var(--border-color); text-align:center;">%</th>`;
         });
-        tableHtml += `<th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; border-left: 2px solid var(--border-color); color:var(--text-muted);">Est</th>
-                      <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">Act</th>
-                      <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">%</th>
-            </tr>
-        </thead><tbody>`;
+        htmlTable1 += `<th style="padding:4px; font-size:10px; border:1px solid var(--border-color); text-align:center;">Total</th>
+                      <th style="padding:4px; font-size:10px; border:1px solid var(--border-color); text-align:center;">Full</th>
+                      <th style="padding:4px; font-size:10px; border:1px solid var(--border-color); text-align:center;">%</th></tr></thead><tbody>`;
+
+        // ========================================================
+        // 📊 TABLE 2: เปอร์เซ็นต์ความสำเร็จระดับจำนวนชิ้นสินค้า (Piece Fill Rate)
+        // ========================================================
+        let htmlTable2 = `<div class="data-card" style="margin-bottom: 25px; overflow-x: auto;">
+            <div class="card-header"><h3 style="font-size:14px; font-weight:700; color:var(--text-main);">📦 2. % PIECE FULFILLMENT RATE RECORD BY SKU LEVEL (TARGET 99.00%)</h3></div>
+            <table class="data-table" style="width:100%; border-collapse:collapse; font-size:12px;">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="padding:10px; background:var(--bg-card); border:1px solid var(--border-color); text-align:center;">Date</th>`;
+        buNames.forEach(bu => {
+            htmlTable2 += `<th colspan="3" style="padding:6px; background:var(--bg-card); border:1px solid var(--border-color); text-align:center;">${bu}</th>`;
+        });
+        htmlTable2 += `<th colspan="3" style="padding:6px; background:var(--bg-card); border:1px solid var(--border-color); text-align:center;">Total Overall</th></tr><tr>`;
+        buNames.forEach(() => {
+            htmlTable2 += `<th style="padding:4px; font-size:10px; color:var(--text-muted); border:1px solid var(--border-color); text-align:center;">Est</th>
+                           <th style="padding:4px; font-size:10px; color:var(--text-muted); border:1px solid var(--border-color); text-align:center;">Act</th>
+                           <th style="padding:4px; font-size:10px; color:var(--text-muted); border:1px solid var(--border-color); text-align:center;">%</th>`;
+        });
+        htmlTable2 += `<th style="padding:4px; font-size:10px; border:1px solid var(--border-color); text-align:center;">Est</th>
+                      <th style="padding:4px; font-size:10px; border:1px solid var(--border-color); text-align:center;">Act</th>
+                      <th style="padding:4px; font-size:10px; border:1px solid var(--border-color); text-align:center;">%</th></tr></thead><tbody>`;
+
+        // ========================================================
+        // 📊 TABLE 3: ตารางแจกแจงแบบประวัติย้อนหลังเรียงตาม Owner/สาขา
+        // ========================================================
+        let htmlTable3 = `<div class="data-card" style="overflow-x: auto;">
+            <div class="card-header"><h3 style="font-size:14px; font-weight:700; color:var(--text-main);">🏢 3. FULFILLMENT DAILY BREAKDOWN BY OWNER SUMMARY</h3></div>
+            <table class="data-table" style="width:100%; border-collapse:collapse; font-size:12px;">
+            <thead>
+                <tr>
+                    <th style="padding:10px; background:var(--bg-card); border:1px solid var(--border-color); text-align:center;">Date</th>
+                    <th style="padding:10px; background:var(--bg-card); border:1px solid var(--border-color); text-align:center;">Owner</th>
+                    <th style="padding:10px; background:var(--bg-card); border:1px solid var(--border-color); text-align:center;">Total Orders</th>
+                    <th style="padding:10px; background:var(--bg-card); border:1px solid var(--border-color); text-align:center;">Req Qty (Est)</th>
+                    <th style="padding:10px; background:var(--bg-card); border:1px solid var(--border-color); text-align:center;">Shipped Qty (Act)</th>
+                    <th style="padding:10px; background:var(--bg-card); border:1px solid var(--border-color); text-align:center;">Shortage</th>
+                    <th style="padding:10px; background:var(--bg-card); border:1px solid var(--border-color); text-align:center;">Order SLA %</th>
+                    <th style="padding:10px; background:var(--bg-card); border:1px solid var(--border-color); text-align:center;">Piece FFM %</th>
+                </tr>
+            </thead><tbody>`;
 
         let trendLabels = [];
         let trendValues = [];
         let buVolumeCompleted = new Array(buNames.length).fill(0);
         let buVolumePending = new Array(buNames.length).fill(0);
 
-        if (sortedDates.length === 0) {
-            tableHtml += `<tr><td colspan="${(buNames.length * 3) + 4}" class="text-center" style="padding: 30px; color: var(--text-muted);">ไม่พบข้อมูลจากฐานข้อมูล</td></tr>`;
-        } else {
-            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            
-            // 3. วนลูปสร้างแถวข้อมูลทีละวัน
-            sortedDates.forEach((dStr, idx) => {
-                let dObj = new Date(dStr);
-                let displayDate = isNaN(dObj) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${monthNames[dObj.getMonth()]}`;
+        // 🟢 วนลูปเพื่อนำข้อมูลดิบมาเขียนลงบน HTML แต่ละตารางแบบคู่ขนาน
+        sortedDates.forEach((dStr, idx) => {
+            const displayDate = getDisplayDate(dStr);
+            trendLabels.push(displayDate);
 
-                tableHtml += `<tr>
-                    <td style="padding:8px 10px; font-weight:600; text-align:center; white-space:nowrap; position:sticky; left:0; background:var(--bg-card); border-right: 1px solid var(--border-color); z-index:5;">${displayDate}</td>`;
+            // บรรทัดเปิดของตาราง Pivot 1 และ 2
+            htmlTable1 += `<tr><td style="padding:8px; font-weight:600; text-align:center; border:1px solid var(--border-color); position:sticky; left:0; background:var(--bg-card);">${displayDate}</td>`;
+            htmlTable2 += `<tr><td style="padding:8px; font-weight:600; text-align:center; border:1px solid var(--border-color); position:sticky; left:0; background:var(--bg-card);">${displayDate}</td>`;
+
+            let totalOrdDay = 0, totalFullDay = 0;
+            let totalReqDay = 0, totalShipDay = 0;
+
+            buNames.forEach((bu, buIdx) => {
+                const data = datesMap[dStr][bu] || { ordTotal:0, ordFull:0, reqPieces:0, shipPieces:0, shortage:0 };
                 
-                let dayEstTot = 0;
-                let dayActTot = 0;
+                totalOrdDay += data.ordTotal;
+                totalFullDay += data.ordFull;
+                totalReqDay += data.reqPieces;
+                totalShipDay += data.shipPieces;
 
-                buNames.forEach((bu, buIdx) => {
-                    let est = datesMap[dStr][bu]?.est || 0;
-                    let act = datesMap[dStr][bu]?.act || 0;
-                    let pct = est > 0 ? ((act / est) * 100).toFixed(1) : 0;
-                    
-                    dayEstTot += est;
-                    dayActTot += act;
+                // คำนวณเปอร์เซ็นต์ของแต่ละคอลัมน์ BU
+                let slaPct = data.ordTotal > 0 ? ((data.ordFull / data.ordTotal) * 100).toFixed(1) : "0.0";
+                let piecePct = data.reqPieces > 0 ? ((data.shipPieces / data.reqPieces) * 100).toFixed(1) : "0.0";
 
-                    // สำหรับกราฟแท่ง จะใช้ยอดของวันที่ล่าสุดเท่านั้น (idx === 0)
-                    if (idx === 0) {
-                        buVolumeCompleted[buIdx] += act;
-                        buVolumePending[buIdx] += Math.max(0, est - act);
-                    }
+                // จัดเก็บยอดของวันล่าสุดเข้าสู่กราฟแท่ง
+                if (idx === 0) {
+                    buVolumeCompleted[buIdx] = data.shipPieces;
+                    buVolumePending[buIdx] = Math.max(0, data.reqPieces - data.shipPieces);
+                }
 
-                    let pctColor = pct >= 99 ? '#10B981' : (pct >= 95 ? '#F59E0B' : '#EF4444');
-                    tableHtml += `<td style="padding:8px; text-align:center; font-size:12px;">${est > 0 ? fmtN(est) : '-'}</td>
-                                  <td style="padding:8px; text-align:center; font-size:12px; color:#10B981; font-weight:600;">${act > 0 ? fmtN(act) : '-'}</td>
-                                  <td style="padding:8px; text-align:center; font-size:12px; font-weight:700; color:${est > 0 ? pctColor : 'var(--text-muted)'};">${est > 0 ? pct + '%' : '-'}</td>`;
-                });
+                // ต่อเติมเซลล์ตาราง 1 (Order SLA)
+                htmlTable1 += `<td style="padding:8px; text-align:center; border:1px solid var(--border-color);">${data.ordTotal > 0 ? fmtN(data.ordTotal) : '-'}</td>
+                               <td style="padding:8px; text-align:center; border:1px solid var(--border-color); color:#10B981;">${data.ordFull > 0 ? fmtN(data.ordFull) : '-'}</td>
+                               <td style="padding:8px; text-align:center; border:1px solid var(--border-color); font-weight:700;">${data.ordTotal > 0 ? getPctBadge(slaPct) : '-'}</td>`;
 
-                let dayPct = dayEstTot > 0 ? ((dayActTot / dayEstTot) * 100).toFixed(1) : 0;
-                let dayPctColor = dayPct >= 99 ? '#10B981' : (dayPct >= 95 ? '#F59E0B' : '#EF4444');
+                // ต่อเติมเซลล์ตาราง 2 (Piece Fulfillment)
+                htmlTable2 += `<td style="padding:8px; text-align:center; border:1px solid var(--border-color);">${data.reqPieces > 0 ? fmtN(data.reqPieces) : '-'}</td>
+                               <td style="padding:8px; text-align:center; border:1px solid var(--border-color); color:#10B981;">${data.shipPieces > 0 ? fmtN(data.shipPieces) : '-'}</td>
+                               <td style="padding:8px; text-align:center; border:1px solid var(--border-color); font-weight:700;">${data.reqPieces > 0 ? getPctBadge(piecePct) : '-'}</td>`;
 
-                tableHtml += `<td style="padding:8px; text-align:center; font-size:12px; background:var(--bg-body); font-weight:600; border-left: 2px solid var(--border-color);">${dayEstTot > 0 ? fmtN(dayEstTot) : '-'}</td>
-                              <td style="padding:8px; text-align:center; font-size:12px; background:var(--bg-body); color:#10B981; font-weight:700;">${dayActTot > 0 ? fmtN(dayActTot) : '-'}</td>
-                              <td style="padding:8px; text-align:center; font-size:12px; background:var(--bg-body); font-weight:800; color:${dayPctColor};">${dayPct}%</td>
-                </tr>`;
-
-                trendLabels.push(displayDate);
-                trendValues.push(parseFloat(dayPct));
+                // ต่อเติมแถวของตารางที่ 3 (Owner Breakdown)
+                if (data.ordTotal > 0 || data.reqPieces > 0) {
+                    htmlTable3 += `<tr>
+                        <td style="padding:8px; text-align:center; border:1px solid var(--border-color);">${displayDate}</td>
+                        <td style="padding:8px; text-align:center; font-weight:700; border:1px solid var(--border-color);"><span class="badge info">${bu}</span></td>
+                        <td style="padding:8px; text-align:center; border:1px solid var(--border-color);">${fmtN(data.ordTotal)}</td>
+                        <td style="padding:8px; text-align:center; border:1px solid var(--border-color);">${fmtN(data.reqPieces)}</td>
+                        <td style="padding:8px; text-align:center; border:1px solid var(--border-color); color:#10B981; font-weight:600;">${fmtN(data.shipPieces)}</td>
+                        <td style="padding:8px; text-align:center; border:1px solid var(--border-color); color:${data.shortage > 0 ? 'var(--danger)' : 'inherit'}; font-weight:600;">${data.shortage > 0 ? fmtN(data.shortage) : '-'}</td>
+                        <td style="padding:8px; text-align:center; border:1px solid var(--border-color);">${getPctBadge(slaPct)}</td>
+                        <td style="padding:8px; text-align:center; border:1px solid var(--border-color);">${getPctBadge(piecePct)}</td>
+                    </tr>`;
+                }
             });
+
+            // ปิดยอดรวมท้ายแถวรายวันภาพรวม (Total Overall Columns)
+            let overallSlaDay = totalOrdDay > 0 ? ((totalFullDay / totalOrdDay) * 100).toFixed(1) : "0.0";
+            let overallPieceDay = totalReqDay > 0 ? ((totalShipDay / totalReqDay) * 100).toFixed(1) : "0.0";
+
+            htmlTable1 += `<td style="padding:8px; text-align:center; font-weight:600; background:var(--bg-body); border:1px solid var(--border-color); border-left:2px solid var(--border-color);">${fmtN(totalOrdDay)}</td>
+                           <td style="padding:8px; text-align:center; font-weight:600; background:var(--bg-body); border:1px solid var(--border-color); color:#10B981;">${fmtN(totalFullDay)}</td>
+                           <td style="padding:8px; text-align:center; background:var(--bg-body); border:1px solid var(--border-color);">${getPctBadge(overallSlaDay)}</td></tr>`;
+
+            htmlTable2 += `<td style="padding:8px; text-align:center; font-weight:600; background:var(--bg-body); border:1px solid var(--border-color); border-left:2px solid var(--border-color);">${fmtN(totalReqDay)}</td>
+                           <td style="padding:8px; text-align:center; font-weight:600; background:var(--bg-body); border:1px solid var(--border-color); color:#10B981;">${fmtN(totalShipDay)}</td>
+                           <td style="padding:8px; text-align:center; background:var(--bg-body); border:1px solid var(--border-color);">${getPctBadge(overallPieceDay)}</td></tr>`;
+
+            trendValues.push(parseFloat(overallPieceDay)); // ใช้ % จำนวนชิ้นวิ่งขึ้นกราฟเส้นประวัติศาสตร์
+        });
+
+        // 3. 💥 เคลียร์ Container เก่าแล้วยัดตารางหรูๆ ทั้ง 3 ชุดเข้าแทนที่หน้ากระดาษเว็บ
+        htmlTable1 += "</tbody></table></div>";
+        htmlTable2 += "</tbody></table></div>";
+        htmlTable3 += "</tbody></table></div>";
+        
+        containerEl.innerHTML = htmlTable1 + htmlTable2 + htmlTable3;
+
+        // --- 📊 4. อัปเดตตัวเลขการ์ดด้านบนสุด และกราฟหน้าหลักแบบ Real-time ---
+        if (sortedDates.length > 0) {
+            let lastDate = sortedDates[0];
+            let dayReq = 0, dayShip = 0, dayOrd = 0, dayFull = 0;
+            buNames.forEach(bu => {
+                const d = datesMap[lastDate][bu] || { ordTotal:0, ordFull:0, reqPieces:0, shipPieces:0 };
+                dayReq += d.reqPieces; dayShip += d.shipPieces;
+                dayOrd += d.ordTotal;  dayFull += d.ordFull;
+            });
+
+            const currentFfmRate = dayReq > 0 ? ((dayShip / dayReq) * 100) : 0;
+
+            const rateEl = document.getElementById('ffm-order-rate');
+            if (rateEl) {
+                rateEl.innerText = currentFfmRate.toFixed(1) + "%";
+                let rateUpdateEl = rateEl.parentElement.nextElementSibling;
+                if (rateUpdateEl) rateUpdateEl.innerText = `Updated: วันที่ ${getDisplayDate(lastDate)}`;
+            }
+
+            const ordersEl = document.getElementById('ffm-orders-shipped');
+            if (ordersEl) {
+                ordersEl.innerText = fmtN(dayShip); // โชว์ยอดจ่ายสินค้าของวันนี้จริง (ชิ้น)
+                let ordersUpdateEl = ordersEl.parentElement.nextElementSibling;
+                if (ordersUpdateEl) ordersUpdateEl.innerText = `มิติหน่วยนับ: จำนวนชิ้น (Pieces)`;
+            }
         }
-        tableHtml += `</tbody>`;
 
-        if (tableEl) tableEl.innerHTML = tableHtml;
-
-        // อัปเดตกราฟเส้น และกราฟแท่ง
+        // รีเฟรชฐานข้อมูลกราฟวิเคราะห์ Chart.js หน้าบ้าน
         if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
-            ffmTrendChartInstance.data.labels = trendLabels.reverse();
-            ffmTrendChartInstance.data.datasets[0].data = trendValues.reverse();
+            ffmTrendChartInstance.data.labels = trendLabels.slice().reverse();
+            ffmTrendChartInstance.data.datasets[0].data = trendValues.slice().reverse();
             ffmTrendChartInstance.update();
         }
 
@@ -367,45 +477,9 @@ async function initFulfillmentRealtime() {
             ffmVolumeChartInstance.update();
         }
 
-        // --- อัปเดตตัวเลขการ์ดด้านบน (Executive Dashboard) ทันที ---
-        let latestDayPct = trendValues.length > 0 ? trendValues[trendValues.length - 1] : 0;
-        let prevDayPct = trendValues.length > 1 ? trendValues[trendValues.length - 2] : 0;
-        let diffPct = latestDayPct - prevDayPct;
-        
-        const rateEl = document.getElementById('ffm-order-rate');
-        if (rateEl) {
-            rateEl.innerText = latestDayPct > 0 ? latestDayPct.toFixed(1) + "%" : "...";
-            let rateUpdateEl = rateEl.parentElement.nextElementSibling;
-            if (rateUpdateEl && sortedDates.length > 0) rateUpdateEl.innerText = `Updated: วันที่ ${trendLabels[trendLabels.length - 1]}`;
-        }
-
-        const ordersEl = document.getElementById('ffm-orders-shipped');
-        if (ordersEl && sortedDates.length > 0) {
-            let latestDateStr = sortedDates[0];
-            let todayActTot = 0;
-            buNames.forEach(bu => { todayActTot += (datesMap[latestDateStr][bu]?.act || 0); });
-            
-            ordersEl.innerText = fmtN(todayActTot); // ยอดจำนวนชิ้นทั้งหมดของวันล่าสุด
-
-            const trendEl = document.getElementById('ffm-orders-trend');
-            const trendTextEl = document.getElementById('ffm-orders-note');
-            
-            if (trendEl && trendTextEl) {
-                if (diffPct > 0) {
-                    trendEl.className = "badge up"; trendEl.innerText = `↗ +${diffPct.toFixed(1)}%`; trendTextEl.innerText = `vs วันก่อนหน้า`;
-                } else if (diffPct < 0) {
-                    trendEl.className = "badge down"; trendEl.innerText = `↘ ${Math.abs(diffPct).toFixed(1)}%`; trendTextEl.innerText = `vs วันก่อนหน้า`;
-                } else {
-                    trendEl.className = "badge info"; trendEl.innerText = `0%`; trendTextEl.innerText = `ไม่เปลี่ยนแปลง`;
-                }
-            }
-            let ordersUpdateEl = ordersEl.parentElement.nextElementSibling;
-            if (ordersUpdateEl) ordersUpdateEl.innerText = `ข้อมูลล่าสุด: จำนวนชิ้น (Pieces)`;
-        }
-
     } catch (err) {
-        console.error("❌ Fetch Data Error:", err);
-        if (tableEl) tableEl.innerHTML = `<tr><td colspan="10" class="text-center" style="padding: 30px; color: var(--danger); font-weight:bold;">⚠️ ดึงข้อมูลจาก BigQuery ไม่สำเร็จ</td></tr>`;
+        console.error("❌ BigQuery Fetch Block Error:", err);
+        containerEl.innerHTML = `<div class="data-card" style="padding:25px; text-align:center; color:var(--danger); font-weight:bold;">⚠️ ดึงรายงานแยกมิติชิ้นและออเดอร์จาก BigQuery ไม่สำเร็จ</div>`;
     }
 }
 
