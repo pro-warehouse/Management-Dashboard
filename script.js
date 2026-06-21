@@ -25,14 +25,15 @@ const getStandardDate = (rawDate) => {
     // ตัด Timezone (T) ออก
     if (str.includes('T')) str = str.split('T')[0];
     
-    // กรณีเป็น DD/MM/YYYY หรือ D/M/YYYY
+    // กรณีเป็น DD/MM/YYYY หรือ D/M/YYYY (แก้บั๊ก 202)
     if (str.includes('/')) {
         let parts = str.split(/[ /]/);
         if (parts.length >= 3) {
             let d = parts[0].padStart(2, '0');
             let m = parts[1].padStart(2, '0');
             let y = parts[2];
-            if (y.length === 2) y = "20" + y; // กันเหนียวปี 2 หลัก
+            if (y.length === 2) y = "20" + y; 
+            else if (y.length === 3 && y.startsWith("202")) y = y + "6"; // ซ่อมบั๊กปี 202 -> 2026
             return `${y}-${m}-${d}`;
         }
     }
@@ -58,7 +59,7 @@ const standardizeBU = (bu) => {
 };
 
 // ==========================================
-// 🌟 2. Custom Plugins 🌟
+// 🌟 1. Custom Plugins 🌟
 // ==========================================
 const dataLabelPlugin = {
     id: 'dataLabelPlugin',
@@ -107,7 +108,7 @@ const lineDataLabelPlugin = {
 };
 
 // ==========================================
-// 🌟 3. Setup Chart Instances 🌟
+// 🌟 2. Setup Chart Instances 🌟
 // ==========================================
 const throughputCtx = document.getElementById('throughputChart')?.getContext('2d');
 if (throughputCtx) new Chart(throughputCtx, { type: 'bar', data: { labels: ['Mon','Tue','Wed','Thu','Fri'], datasets: [{ label: 'Inbound', data: [45, 38, 52, 48, 50], backgroundColor: accentOrange, borderRadius: 6 }, { label: 'Outbound', data: [48, 42, 55, 50, 54], backgroundColor: accentGreen, borderRadius: 6 }]}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: {grid:{display:false}}, y: {border:{display:false}} } } });
@@ -152,11 +153,11 @@ const prodCtx = document.getElementById('productivityChart')?.getContext('2d');
 if (prodCtx) productivityChartInstance = new Chart(prodCtx, { type: 'bar', data: { labels: [], datasets: [ { type: 'bar', label: 'Background', data: [], backgroundColor: [], borderRadius: 6, barPercentage: 0.6, categoryPercentage: 0.8, grouped: false }, { type: 'bar', label: 'Actual UPH', data: [], backgroundColor: [], borderRadius: 6, barPercentage: 0.6, categoryPercentage: 0.8, grouped: false }, { type: 'line', label: 'Target Line', data: [], borderColor: '#F59E0B', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, stacked: false }, y: { border: { display: false }, display: false, beginAtZero: true, grace: '25%' } }, layout: { padding: { top: 30 } } }, plugins: [{ id: 'customBarLabel', afterDatasetsDraw(chart) { const { ctx } = chart; if(chart.data.datasets.length > 1 && chart.getDatasetMeta(1)) { const meta = chart.getDatasetMeta(1); if (!meta.hidden && meta.data) { meta.data.forEach((bar, index) => { const uphVal = chart.data.datasets[1].data[index]; const picksVal = chart.data.datasets[1].customPicks ? chart.data.datasets[1].customPicks[index] : 0; if(uphVal > 0){ ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F9FAFB' : '#111827'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.font = 'bold 11px Inter'; ctx.fillText(uphVal, bar.x, bar.y - 14); let displayPicks = picksVal >= 10000 ? (picksVal / 1000).toFixed(1) + 'k' : fmtN(picksVal); ctx.fillStyle = '#6B7280'; ctx.font = 'normal 9px Inter'; ctx.fillText(`(${displayPicks})`, bar.x, bar.y - 4); } }); } } } }] });
 
 // ==========================================
-// 🌟 4. Data Config & Setup 🌟
+// 🌟 3. Data Config & Setup 🌟
 // ==========================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxB0bNU1P9qrG_6aHoeiKyHMXT0_k76VlL0aq1I9xxHVpPDQK9qcd3FJMip4Jk9o6RY/exec';
 
-let globalData = { workforce:{}, wave_ops:{}, ontime:{}, claims:{}, inventory:{}, transport:{}, productivity:{}, prod_area:{}, prod_users_map:{} };
+let globalData = { workforce:{}, fulfillment:{}, wave_ops:{}, ontime:{}, claims:{}, inventory:{}, transport:{}, productivity:{}, prod_area:{}, prod_users_map:{} };
 let isFirstLoad = true;
 
 window.selectedBUs = ['ALL'];
@@ -168,7 +169,7 @@ function toggleLoader(show) {
 }
 
 // ========================================================
-// 🌟 5. FULFILLMENT DATA BINDING (MATRIX & WAVES) 🌟
+// 🌟 4. FULFILLMENT DATA BINDING (TRIPLE MERGE) 🌟
 // ========================================================
 async function initFulfillmentRealtime() {
     let wrapperEl = document.getElementById('fulfillment-v3-wrapper');
@@ -183,7 +184,7 @@ async function initFulfillmentRealtime() {
     }
 
     const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
-    console.log("🚀 กำลังผสานข้อมูล Orders (GAS) เข้ากับ Pieces (BQ)...");
+    console.log("🚀 กำลังผสานข้อมูล: ประวัติ (FFM) + ปัจจุบัน (WaveOps) + ของจริง (BQ)...");
     
     try {
         const response = await fetch(API_URL, {
@@ -195,14 +196,33 @@ async function initFulfillmentRealtime() {
         const result = await response.json();
         let bqDataList = result.success && result.data ? result.data : [];
 
-        // 🟢 1. สร้าง Map วันที่รวม (Date Normalization) เพื่อปลดล็อกให้ Orders โชว์ครบทุกวัน
+        // 🟢 1. สร้าง Map วันที่รวม (Date Normalization) เพื่อปลดล็อกให้ Orders โชว์ครบยันอดีต
         let unifiedDatesMap = {};
         
-        // 1.1 ใส่ข้อมูล Orders จาก App Script ทั้งหมด!
+        // 1.1 ดึงประวัติเก่าทั้งหมดจาก globalData.fulfillment (App Script History)
+        if (globalData.fulfillment) {
+            Object.keys(globalData.fulfillment).forEach(k => {
+                let sd = getStandardDate(k); 
+                if (!unifiedDatesMap[sd]) unifiedDatesMap[sd] = { bq: {}, wave: {}, ffm: {} };
+                
+                let fData = globalData.fulfillment[k].bu_data || {};
+                Object.keys(fData).forEach(rawBu => {
+                    let sBu = standardizeBU(rawBu);
+                    if (!unifiedDatesMap[sd].ffm[sBu]) unifiedDatesMap[sd].ffm[sBu] = { ordTotal: 0, ordFull: 0, req: 0 };
+                    
+                    let item = fData[rawBu];
+                    unifiedDatesMap[sd].ffm[sBu].ordTotal += parseFloat(item.total_orders || item.orders || item.ordTotal || 0);
+                    unifiedDatesMap[sd].ffm[sBu].ordFull += parseFloat(item.completed_orders || item.completed || item.ordFull || 0);
+                    unifiedDatesMap[sd].ffm[sBu].req += parseFloat(item.req_qty || item.req || 0);
+                });
+            });
+        }
+
+        // 1.2 ดึงข้อมูลแผนปัจจุบันจาก globalData.wave_ops (App Script Active)
         if (globalData.wave_ops) {
             Object.keys(globalData.wave_ops).forEach(k => {
                 let sd = getStandardDate(k); 
-                if (!unifiedDatesMap[sd]) unifiedDatesMap[sd] = { bq: {}, wave: {} };
+                if (!unifiedDatesMap[sd]) unifiedDatesMap[sd] = { bq: {}, wave: {}, ffm: {} };
                 
                 let wData = globalData.wave_ops[k].bu_data || {};
                 Object.keys(wData).forEach(rawBu => {
@@ -214,10 +234,10 @@ async function initFulfillmentRealtime() {
             });
         }
 
-        // 1.2 ใส่ข้อมูล Pieces จาก BigQuery ตามเข้าไป
+        // 1.3 ดึงข้อมูล Pieces จาก BigQuery ตามเข้าไป
         bqDataList.forEach(row => {
             let sd = getStandardDate(row.date);
-            if (!unifiedDatesMap[sd]) unifiedDatesMap[sd] = { bq: {}, wave: {} };
+            if (!unifiedDatesMap[sd]) unifiedDatesMap[sd] = { bq: {}, wave: {}, ffm: {} };
             
             try { 
                 let rawBq = JSON.parse(row.ownerJson || '{}'); 
@@ -225,13 +245,15 @@ async function initFulfillmentRealtime() {
                     let sBu = standardizeBU(rawBu); 
                     if (sBu !== 'UNKNOWN' && sBu !== '') {
                         if (!unifiedDatesMap[sd].bq[sBu]) {
-                            unifiedDatesMap[sd].bq[sBu] = { req:0, alloc:0, ship:0, actShort:0, pu:0, plt:0 };
+                            unifiedDatesMap[sd].bq[sBu] = { req:0, alloc:0, ship:0, actShort:0, pu:0, plt:0, ordTotal:0, ordFull:0 };
                         }
                         let bItem = rawBq[rawBu];
+                        unifiedDatesMap[sd].bq[sBu].ordTotal += parseFloat(bItem.ordTotal || 0);
+                        unifiedDatesMap[sd].bq[sBu].ordFull += parseFloat(bItem.ordFull || 0);
                         unifiedDatesMap[sd].bq[sBu].req += parseFloat(bItem.req || 0);
                         unifiedDatesMap[sd].bq[sBu].alloc += parseFloat(bItem.alloc || 0);
                         unifiedDatesMap[sd].bq[sBu].ship += parseFloat(bItem.ship || 0);
-                        unifiedDatesMap[sd].bq[sBu].actShort += parseFloat(bItem.actShort || 0); // ✅ จุดแก้ Fatal Error อยู่ตรงนี้ครับ!
+                        unifiedDatesMap[sd].bq[sBu].actShort += parseFloat(bItem.actShort || 0); 
                         unifiedDatesMap[sd].bq[sBu].pu += parseFloat(bItem.pu || 0);
                         unifiedDatesMap[sd].bq[sBu].plt += parseFloat(bItem.plt || 0);
                     }
@@ -239,6 +261,7 @@ async function initFulfillmentRealtime() {
             } catch(e) {}
         });
 
+        // ลบค่า String ว่างๆ ออกเผื่อมีหลุดมา
         delete unifiedDatesMap[""];
         let sortedDates = Object.keys(unifiedDatesMap).sort((a,b) => new Date(b) - new Date(a));
 
@@ -274,16 +297,16 @@ async function initFulfillmentRealtime() {
         if (sortedDates.length === 0) {
             htmlTable += `<tr><td colspan="14" class="text-center" style="padding:30px; color:var(--text-muted);">ไม่มีข้อมูล</td></tr>`;
         } else {
-            // 📝 วนลูปวาดตาราง
+            // 📝 วนลูปวาดตารางและดึงข้อมูลลงแถว
             sortedDates.forEach(dateStr => {
                 let dObj = new Date(dateStr);
-                // ตบวันที่ให้สวยงามแบบ DD/MM/YYYY
                 let displayDate = isNaN(dObj.getTime()) ? dateStr : `${String(dObj.getDate()).padStart(2, '0')}/${String(dObj.getMonth()+1).padStart(2, '0')}/${dObj.getFullYear()}`;
                 
                 let bqData = unifiedDatesMap[dateStr].bq || {};
                 let wData = unifiedDatesMap[dateStr].wave || {};
+                let fData = unifiedDatesMap[dateStr].ffm || {};
                 
-                let allBUsInDay = new Set([...Object.keys(bqData), ...Object.keys(wData)]);
+                let allBUsInDay = new Set([...Object.keys(bqData), ...Object.keys(wData), ...Object.keys(fData)]);
                 let sortedOwners = Array.from(allBUsInDay).filter(o => o !== 'UNKNOWN' && o !== '').sort();
 
                 sortedOwners.forEach(bu => {
@@ -292,12 +315,15 @@ async function initFulfillmentRealtime() {
                     buNamesSet.add(bu);
                     const bItem = bqData[bu] || {};
                     const wItem = wData[bu] || {};
+                    const fItem = fData[bu] || {};
                     
-                    // 🟢 ผสานร่าง Orders (Wave Ops) + Pieces (BQ)
-                    const ordTotal = Math.max(parseFloat(bItem.ordTotal || 0), parseFloat(wItem.ordTotal || 0));
-                    const ordFull = Math.max(parseFloat(bItem.ordFull || 0), parseFloat(wItem.ordFull || 0));
+                    // 🟢 การรวมข้อมูลสุดยอด (Triple Merge): ดึง Orders จากทุกแหล่ง ให้ครบไม่มีขาด
+                    const ordTotal = Math.max(parseFloat(bItem.ordTotal || 0), parseFloat(wItem.ordTotal || 0), parseFloat(fItem.ordTotal || 0));
+                    const ordFull = Math.max(parseFloat(bItem.ordFull || 0), parseFloat(wItem.ordFull || 0), parseFloat(fItem.ordFull || 0));
                     
-                    const req = parseFloat(bItem.req || 0);
+                    // 🟢 ดึงยอด Req จาก BigQuery หรือ History
+                    const req = Math.max(parseFloat(bItem.req || 0), parseFloat(fItem.req || 0));
+                    
                     const alloc = parseFloat(bItem.alloc || 0);
                     const ship = parseFloat(bItem.ship || 0);
                     const actShort = parseFloat(bItem.actShort || 0);
@@ -358,7 +384,7 @@ async function initFulfillmentRealtime() {
                 }
             });
 
-            // สร้างข้อมูลให้กราฟเส้น Trend (ย้อน 14 วัน)
+            // วาดกราฟเส้น Trend ย้อน 14 วันล่าสุด
             let sortedChartDates = Object.keys(chartDataMap).sort((a,b)=>new Date(a)-new Date(b)).slice(-14);
             sortedChartDates.forEach(dStr => {
                 let dObj = new Date(dStr);
@@ -1010,7 +1036,7 @@ function updateDashboardData(selectedDateStr) {
         }
     } catch(e) { console.error("Workforce Update Error:", e); }
 
-    // 🟢 8. WAVE OPS & ORDERS SHIPPED TODAY (กู้คืนตรรกะเดิม เพื่อแสดงจำนวนบิลแยกจากยอดชิ้น)
+    // 🟢 Wave Ops & Orders Shipped Today 
     try {
         if(Object.keys(globalData.wave_ops || {}).length > 0) {
             let waveDataForFFM = globalData.wave_ops;
@@ -1032,7 +1058,6 @@ function updateDashboardData(selectedDateStr) {
                 }
             }
 
-            // แสดงยอดการ์ด Orders Shipped
             const ordersEl = document.getElementById('ffm-orders-shipped');
             if (ordersEl) {
                 ordersEl.innerText = totalOrdersToday > 0 ? fmtN(totalOrdersToday) : "0";
@@ -1056,7 +1081,6 @@ function updateDashboardData(selectedDateStr) {
                 if (ordersUpdateEl && targetWaveFfmKey) ordersUpdateEl.innerText = `Updated: ${getDisplayDate(targetWaveFfmKey)}`;
             }
 
-            // แสดงตาราง Wave Summary
             const waveSummaryTable = document.getElementById('wave-summary-table');
             if (waveSummaryTable) {
                 let allBUs = new Set();
