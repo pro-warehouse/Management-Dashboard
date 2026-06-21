@@ -221,7 +221,7 @@ const standardizeBU = (bu) => {
 };
 
 // ========================================================
-// 🌟 FULFILLMENT DATA BINDING (SINGLE DETAILED TABLE) 🌟
+// 🌟 4. FULFILLMENT DATA BINDING (SINGLE MATRIX TABLE) 🌟
 // ========================================================
 async function initFulfillmentRealtime() {
     let wrapperEl = document.getElementById('fulfillment-v3-wrapper');
@@ -289,7 +289,7 @@ async function initFulfillmentRealtime() {
             dbData.forEach(dayRow => {
                 const dateStr = dayRow.date; 
                 let dObj = new Date(dateStr);
-                let displayDate = isNaN(dObj) ? dateStr : `${String(dObj.getDate()).padStart(2, '0')}/${String(dObj.getMonth()+1).padStart(2, '0')}/${dObj.getFullYear()}`;
+                let displayDate = isNaN(dObj) ? dateStr : `${dObj.getDate()}/${dObj.getMonth()+1}/${dObj.getFullYear()}`;
                 
                 let ownerData = {};
                 try { ownerData = JSON.parse(dayRow.ownerJson || '{}'); } catch(e) {}
@@ -313,13 +313,14 @@ async function initFulfillmentRealtime() {
 
                     const estShort = Math.max(0, req - alloc);
 
-                    // การคำนวณสัดส่วนต่างๆ
+                    // การคำนวณสัดส่วนต่างๆ (SLA / FFM / Averages)
                     const ordSLA = ordTotal > 0 ? (ordFull / ordTotal) : null;
                     const dcSLA = alloc > 0 ? (ship / alloc) : null;
                     const ffm = req > 0 ? (ship / req) : null;
                     const pcsPick = pu > 0 ? (req / pu) : null;
                     const pcsOrd = ordTotal > 0 ? (req / ordTotal) : null;
 
+                    // ฟังก์ชันตกแต่งเปอร์เซ็นต์สีเขียวเหลืองแดง
                     const colorPct = (v) => {
                         if (v === null || v === undefined) return '-';
                         if (v >= 0.99) return `<span style="color:#10B981; font-weight:600;">${(v*100).toFixed(1)}%</span>`;
@@ -344,13 +345,16 @@ async function initFulfillmentRealtime() {
                         <td style="padding:6px; border:1px solid var(--border-color);">${plt > 0 ? plt.toFixed(1) : '-'}</td>
                     </tr>`;
 
+                    // สำหรับกราฟเส้น (Trend)
                     if (!chartDataMap[dateStr]) chartDataMap[dateStr] = { req:0, ship:0 };
                     chartDataMap[dateStr].req += req;
                     chartDataMap[dateStr].ship += ship;
+
                     if (!buVolumeCompleted[bu]) { buVolumeCompleted[bu] = 0; buVolumePending[bu] = 0; }
                 });
             });
 
+            // ดึงข้อมูลสำหรับกราฟแท่ง (เฉพาะวันล่าสุด)
             const latestDate = Object.keys(chartDataMap).sort((a,b)=>new Date(b)-new Date(a))[0];
             let ownerDataLatest = {};
             try { ownerDataLatest = JSON.parse(dbData.find(r => r.date === latestDate).ownerJson || '{}'); } catch(e) {}
@@ -365,11 +369,13 @@ async function initFulfillmentRealtime() {
                 }
             });
 
+            // สร้างข้อมูลให้กราฟเส้น (เรียงย้อน 14 วันล่าสุดจากเก่าไปใหม่ ให้เส้นวิ่งจากซ้ายไปขวา)
             let sortedChartDates = Object.keys(chartDataMap).sort((a,b)=>new Date(a)-new Date(b)).slice(-14);
             sortedChartDates.forEach(dStr => {
                 let dObj = new Date(dStr);
                 let disp = isNaN(dObj) ? dStr : `${dObj.getDate()} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dObj.getMonth()]}`;
                 trendLabels.push(disp);
+                
                 let req = chartDataMap[dStr].req;
                 let ship = chartDataMap[dStr].ship;
                 let pct = req > 0 ? (ship / req) * 100 : 0;
@@ -380,22 +386,26 @@ async function initFulfillmentRealtime() {
         htmlTable += "</tbody></table></div>";
         wrapperEl.innerHTML = htmlTable;
 
+        // อัปเดตกราฟเส้น
         if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
             ffmTrendChartInstance.data.labels = trendLabels;
             ffmTrendChartInstance.data.datasets[0].data = trendValues;
             ffmTrendChartInstance.update();
         }
 
+        // อัปเดตกราฟแท่ง
         if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance) {
             let buNames = Array.from(buNamesSet).sort();
             let volComp = buNames.map(b => buVolumeCompleted[b] || 0);
             let volPend = buNames.map(b => buVolumePending[b] || 0);
+
             ffmVolumeChartInstance.data.labels = buNames;
             ffmVolumeChartInstance.data.datasets[0].data = volComp;
             ffmVolumeChartInstance.data.datasets[1].data = volPend;
             ffmVolumeChartInstance.update();
         }
 
+        // อัปเดตการ์ดตัวเลขสรุปด้านบนสุด
         if (trendValues.length > 0) {
             const currentFfmRate = trendValues[trendValues.length - 1];
             const rateEl = document.getElementById('ffm-order-rate');
@@ -409,6 +419,7 @@ async function initFulfillmentRealtime() {
             if (ordersEl) {
                 let totalShipToday = Object.values(buVolumeCompleted).reduce((a,b)=>a+b, 0);
                 ordersEl.innerText = fmtN(totalShipToday);
+                
                 let prevDayPct = trendValues.length > 1 ? trendValues[trendValues.length - 2] : 0;
                 let diffPct = currentFfmRate - prevDayPct;
 
@@ -434,9 +445,6 @@ async function initFulfillmentRealtime() {
     }
 }
 
-// ==========================================
-// ฟังก์ชัน Helper ทั้งหมด
-// ==========================================
 function cleanDataBeforeLoad() {
     ['fulfillment', 'wave_ops', 'claims', 'inventory', 'inventory_daily', 'transport'].forEach(module => {
         if (globalData[module]) {
@@ -700,8 +708,51 @@ function refreshUIBySection(section) {
     if (section === 'productivity') renderProductivitySection();
 }
 
+// 🟢 ฟังก์ชันสตาร์ทระบบที่เคยทำหล่นหายไป กลับมาแล้วครับ!
+async function initDashboard() {
+    toggleLoader(true);
+    const sections = ['executive', 'workforce', 'ontime_claims', 'inventory', 'transport', 'productivity'];
+    resetTrendRoleFilter();
+    const dp = document.getElementById('date-picker');
+    if (dp && isFirstLoad) {
+        let today = new Date();
+        dp.value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+        dp.addEventListener('change', (e) => {
+            let dStr = e.target.value;
+            updateDashboardData(dStr);
+            renderOnTimeSection();
+            renderClaimSection();
+            renderLocationAccuracy();
+            renderInventorySection();
+            renderTransportSection();
+            renderProductivitySection();
+            initFulfillmentRealtime();
+        });
+        isFirstLoad = false;
+    }
+    
+    await Promise.all(sections.map(s => fetchSection(s)));
+    
+    initFulfillmentRealtime();
+    
+    toggleLoader(false);
+}
+
+document.getElementById('trend-role-filter')?.addEventListener('change', () => {
+    const dp = document.getElementById('date-picker');
+    if (dp) updateTrendChart(dp.value);
+});
+
+document.getElementById('ontime-filter')?.addEventListener('change', renderOnTimeSection);
+document.getElementById('ontime-period-filter')?.addEventListener('change', renderOnTimeSection);
+document.getElementById('claim-period-filter')?.addEventListener('change', renderClaimSection);
+
+// 🟢 สั่งรันระบบ
+initDashboard();
+setInterval(() => { initDashboard(); }, 5 * 60 * 1000);
+
 // ==========================================
-// 🌟 5. การอัปเดตหน้าจอหลัก (Render Logic)
+// 🌟 5. ฟังก์ชันแสดงผลส่วนต่างๆ 🌟
 // ==========================================
 function updateDashboardData(selectedDateStr) {
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -718,7 +769,6 @@ function updateDashboardData(selectedDateStr) {
         return `${String(dObj.getDate()).padStart(2, '0')} ${months[dObj.getMonth()]}`;
     };
     
-    // --- Workforce ---
     try {
         if(Object.keys(globalData.workforce || {}).length > 0) {
             let wfData = globalData.workforce;
@@ -1009,48 +1059,6 @@ function updateDashboardData(selectedDateStr) {
                 }
             }
 
-            const waveSummaryTable = document.getElementById('wave-summary-table');
-            if (waveSummaryTable) {
-                let allBUs = new Set();
-                wKeysFFM.forEach(k => Object.keys(waveDataForFFM[k].bu_data || {}).forEach(bu => {
-                    if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) allBUs.add(bu);
-                }));
-                let sortedBUs = Array.from(allBUs).sort();
-
-                if (wKeysFFM.length === 0 || sortedBUs.length === 0) {
-                    waveSummaryTable.innerHTML = `<thead><tr><th class='text-center' style='padding:30px; color:var(--text-muted);'>ไม่มีข้อมูลออเดอร์</th></tr></thead>`;
-                } else {
-                    let thead = `<thead><tr><th class="role-cell" style="text-align:center; min-width: 120px;">Planned Date</th>${sortedBUs.map(bu => `<th class="aff-header">${bu}</th>`).join('')}<th class="total-cell">Total (เสร็จ / ทั้งหมด)</th><th class="total-cell" style="text-align:center;">% Completed</th></tr></thead>`;
-                    let tbody = "<tbody>";
-                    
-                    let validWaveKeys = wKeysFFM.filter(k => new Date(k).getTime() <= targetTimestamp + (3 * 24 * 60 * 60 * 1000)).slice(0, 7);
-                    
-                    validWaveKeys.forEach(dKey => {
-                        let tr = `<tr><td class="role-cell" style="text-align:center;">${getShortDate(dKey)}</td>`;
-                        let dayTot = 0, dayComp = 0;
-                        sortedBUs.forEach(bu => {
-                            let buData = waveDataForFFM[dKey].bu_data[bu] || { total_orders: 0, completed_orders: 0 };
-                            dayTot += buData.total_orders; dayComp += buData.completed_orders;
-                            if (buData.total_orders === 0) { tr += `<td>-</td>`; } 
-                            else {
-                                let color = (buData.completed_orders === buData.total_orders) ? 'var(--accent-primary)' : (buData.completed_orders > 0 ? 'var(--accent-secondary)' : 'var(--danger)');
-                                tr += `<td><span style="color:${color}; font-weight:800; font-size:0.9rem;">${fmtN(buData.completed_orders)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(buData.total_orders)}</span></td>`;
-                            }
-                        });
-                        
-                        let grandColor = (dayComp === dayTot && dayTot > 0) ? 'var(--accent-primary)' : (dayComp > 0 ? 'var(--accent-secondary)' : 'var(--danger)');
-                        tr += `<td class="total-cell"><span style="color:${grandColor}; font-weight:800; font-size:0.95rem;">${fmtN(dayComp)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(dayTot)}</span></td>`;
-                        
-                        let pct = dayTot > 0 ? ((dayComp / dayTot) * 100).toFixed(1) : 0;
-                        let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
-                        let pctColor = pct >= 100 ? '#166534' : (pct > 0 ? '#92400e' : '#991b1b');
-                        tr += `<td class="total-cell" style="text-align:center;"><span class="pct-pill" style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:600;">${pct}%</span></td></tr>`;
-                        tbody += tr;
-                    });
-                    waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
-                }
-            }
-            
             let activeWaveKey = null; let pendingFutureOrders = 0; let wKeysAsc = [...wKeysFFM].reverse(); 
             
             if (wKeysAsc.length > 0) {
@@ -1300,7 +1308,6 @@ function renderClaimSection() {
         let combinedData = [];
         let allBUs = new Set();
         
-        // 1. กวาดข้อมูลและแยกระหว่าง Cost กับ Qty
         Object.keys(claimsData).forEach(dKey => {
             let dObj = new Date(dKey);
             if (!isNaN(dObj.getTime()) && dObj.getTime() <= targetTimestamp) {
@@ -1327,7 +1334,6 @@ function renderClaimSection() {
         let sortedBUs = Array.from(allBUs).sort();
         let grouped = {};
 
-        // 2. จัดกลุ่มรายวัน หรือ รายเดือน
         combinedData.forEach(item => {
             let pd = item.dateObj;
             let groupKey = (period === 'Daily') ? `${String(pd.getDate()).padStart(2,'0')} ${months[pd.getMonth()]}` : `${months[pd.getMonth()]} ${pd.getFullYear()}`;
@@ -1382,7 +1388,6 @@ function renderClaimSection() {
             summaryBox.innerHTML = html;
         }
 
-        // 3. วาดกราฟ Claim Trend 
         if (claimChart2Instance) {
             let chartSlice = (period === 'Daily') ? sortedG.slice(-14) : sortedG.slice(-12);
             let labels = [], dataCost = [], dataQty = [];
@@ -1399,7 +1404,6 @@ function renderClaimSection() {
             claimChart2Instance.update();
         }
 
-        // กราฟอันเล็กหน้า Overview Executive
         if (claimChart1Instance) {
             let overviewSlice = sortedG.slice(-6); 
             let labels = [], dataCost = [], dataQty = [];
@@ -1418,7 +1422,6 @@ function renderClaimSection() {
             claimChart1Instance.update();
         }
 
-        // 4. สร้างตาราง Daily / Monthly Claim Record
         const tableEl = document.getElementById('claim-detail-table');
         if (tableEl) {
             tableEl.parentElement.style.display = 'block';
@@ -2444,7 +2447,3 @@ function saveTargets() {
 
 document.getElementById('prod-area-filter')?.addEventListener('change', renderProductivitySection);
 document.getElementById('prod-period-filter')?.addEventListener('change', renderProductivitySection);
-
-// Start
-initDashboard();
-setInterval(() => { initDashboard(); }, 5 * 60 * 1000);
