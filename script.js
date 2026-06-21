@@ -17,17 +17,25 @@ const dangerRed = '#EF4444';
 
 const fmtN = (v) => (v || 0).toLocaleString();
 
-// 🛠️ ฟังก์ชันแปลงวันที่แก้บั๊กตัดปี (Year Truncation Bug Fix)
-const getLocalDateStr = (rawDate) => {
-    if (!rawDate) return "";
-    let d = new Date(rawDate);
-    // ถ้า Date อ่านไม่ออก (NaN) ให้ส่งค่าเดิมกลับไป
-    if (isNaN(d.getTime())) return String(rawDate).trim();
-    // ถ้าอ่านออก ให้บังคับโครงสร้างเป็น YYYY-MM-DD ทันที
-    let year = d.getFullYear();
-    let month = String(d.getMonth() + 1).padStart(2, '0');
-    let day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+// 🛠️ ฟังก์ชันแปลงวันที่ให้ตรงกัน 100% (แก้ปัญหา Timezone และรูปแบบวันที่)
+const getStandardDate = (val) => {
+    if (!val) return "";
+    let str = String(val).trim();
+    // กรณีเป็น DD/MM/YYYY (จาก App Script)
+    if (str.includes('/')) {
+        let parts = str.split(/[ /]/);
+        if (parts.length >= 3) {
+            let d = parts[0].padStart(2, '0');
+            let m = parts[1].padStart(2, '0');
+            let y = parts[2].substring(0, 4);
+            return `${y}-${m}-${d}`;
+        }
+    }
+    // กรณีมีตัว T ห้อยเวลามา (2026-06-09T17:00:00Z) ให้ตัดทิ้ง
+    if (str.includes('T')) return str.split('T')[0];
+    // กรณีปกติ YYYY-MM-DD
+    if (str.length >= 10) return str.substring(0, 10);
+    return str;
 };
 
 const standardizeBU = (bu) => {
@@ -150,22 +158,20 @@ function toggleLoader(show) {
 }
 
 // ========================================================
-// 🌟 4. FULFILLMENT DATA BINDING (MATRIX & CHARTS) 🌟
+// 🌟 4. FULFILLMENT DATA BINDING (MATRIX PIVOT TABLE) 🌟
 // ========================================================
 async function initFulfillmentRealtime() {
-    let wrapperEl = document.getElementById('fulfillment-v3-wrapper');
-    if (!wrapperEl) {
-        const tableEl = document.getElementById('ffm-detail-table');
-        if (!tableEl) return;
-        const targetCard = tableEl.closest('.data-card') || tableEl.parentElement;
-        wrapperEl = document.createElement('div');
-        wrapperEl.id = 'fulfillment-v3-wrapper';
-        targetCard.parentNode.insertBefore(wrapperEl, targetCard);
-        targetCard.remove();
+    const tableEl = document.getElementById('ffm-detail-table');
+    if (!tableEl) return;
+    
+    // ตั้งค่าให้ตารางกางออกได้และมี Scrollbar แนวนอน
+    if (tableEl.parentElement) {
+        tableEl.parentElement.style.overflowX = 'auto';
+        tableEl.parentElement.style.maxWidth = '100%';
     }
 
     const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
-    console.log("🚀 กำลังรวมข้อมูลออเดอร์ (GAS) + จำนวนชิ้น (BQ) เข้าตาราง...");
+    console.log("🚀 กำลังรวมข้อมูล Orders (GAS) เข้ากับยอด Pieces (BQ)...");
     
     try {
         const response = await fetch(API_URL, {
@@ -177,76 +183,73 @@ async function initFulfillmentRealtime() {
         const result = await response.json();
         let bqDataList = result.success && result.data ? result.data : [];
 
-        // 🟢 1. สร้างศูนย์รวมวันที่ (แก้ Timezone Date Bug)
+        // 🟢 1. สร้าง Map วันที่รวม (Date Normalization)
         let unifiedDatesMap = {};
         
-        // 1.1 นำข้อมูลจาก App Script (ยอด Orders) มาตั้งต้นก่อน
+        // 1.1 ใส่ข้อมูล Orders จาก App Script เข้าไปก่อน (นับตั้งแต่วันที่ออเดอร์เข้า)
         if (globalData.wave_ops) {
             Object.keys(globalData.wave_ops).forEach(k => {
-                let localDate = getLocalDateStr(k); // ตัดเวลาและบังคับเป็น YYYY-MM-DD
-                if (!unifiedDatesMap[localDate]) unifiedDatesMap[localDate] = { bq: {}, wave: {} };
+                let sd = getStandardDate(k); 
+                if (!unifiedDatesMap[sd]) unifiedDatesMap[sd] = { bq: {}, wave: {} };
                 
                 let wData = globalData.wave_ops[k].bu_data || {};
                 Object.keys(wData).forEach(rawBu => {
                     let sBu = standardizeBU(rawBu);
-                    if (!unifiedDatesMap[localDate].wave[sBu]) unifiedDatesMap[localDate].wave[sBu] = { ordTotal: 0, ordFull: 0 };
-                    unifiedDatesMap[localDate].wave[sBu].ordTotal += parseFloat(wData[rawBu].total_orders || 0);
-                    unifiedDatesMap[localDate].wave[sBu].ordFull += parseFloat(wData[rawBu].completed_orders || 0);
+                    if (!unifiedDatesMap[sd].wave[sBu]) unifiedDatesMap[sd].wave[sBu] = { ordTotal: 0, ordFull: 0 };
+                    unifiedDatesMap[sd].wave[sBu].ordTotal += parseFloat(wData[rawBu].total_orders || 0);
+                    unifiedDatesMap[sd].wave[sBu].ordFull += parseFloat(wData[rawBu].completed_orders || 0);
                 });
             });
         }
 
-        // 1.2 นำข้อมูลจาก BigQuery (ยอด Pieces) มาเสียบรวมกัน
+        // 1.2 ใส่ข้อมูล Pieces จาก BigQuery ตามเข้าไป
         bqDataList.forEach(row => {
-            let localDate = getLocalDateStr(row.date);
-            if (!unifiedDatesMap[localDate]) unifiedDatesMap[localDate] = { bq: {}, wave: {} };
+            let sd = getStandardDate(row.date);
+            if (!unifiedDatesMap[sd]) unifiedDatesMap[sd] = { bq: {}, wave: {} };
+            
             try { 
                 let rawBq = JSON.parse(row.ownerJson || '{}'); 
                 Object.keys(rawBq).forEach(rawBu => {
                     let sBu = standardizeBU(rawBu); 
                     if (sBu !== 'UNKNOWN' && sBu !== '') {
-                        if (!unifiedDatesMap[localDate].bq[sBu]) {
-                            unifiedDatesMap[localDate].bq[sBu] = { req:0, alloc:0, ship:0, actShort:0, pu:0, plt:0 };
+                        if (!unifiedDatesMap[sd].bq[sBu]) {
+                            unifiedDatesMap[sd].bq[sBu] = { req:0, alloc:0, ship:0, actShort:0, pu:0, plt:0 };
                         }
-                        let item = rawBq[rawBu];
-                        unifiedDatesMap[localDate].bq[sBu].req += parseFloat(item.req || 0);
-                        unifiedDatesMap[localDate].bq[sBu].alloc += parseFloat(item.alloc || 0);
-                        unifiedDatesMap[localDate].bq[sBu].ship += parseFloat(item.ship || 0);
-                        unifiedDatesMap[localDate].bq[sBu].actShort += parseFloat(item.actShort || 0);
-                        unifiedDatesMap[localDate].bq[sBu].pu += parseFloat(item.pu || 0);
-                        unifiedDatesMap[localDate].bq[sBu].plt += parseFloat(item.plt || 0);
+                        let bItem = rawBq[rawBu];
+                        unifiedDatesMap[sd].bq[sBu].req += parseFloat(bItem.req || 0);
+                        unifiedDatesMap[sd].bq[sBu].alloc += parseFloat(bItem.alloc || 0);
+                        unifiedDatesMap[sd].bq[sBu].ship += parseFloat(bItem.ship || 0);
+                        unifiedDatesMap[sDate].bq[sBu].actShort += parseFloat(bItem.actShort || 0);
+                        unifiedDatesMap[sd].bq[sBu].pu += parseFloat(bItem.pu || 0);
+                        unifiedDatesMap[sd].bq[sBu].plt += parseFloat(bItem.plt || 0);
                     }
                 });
             } catch(e) {}
         });
 
-        // ลบวันที่ ที่เป็น String เปล่าออกไป (ถ้ามี)
+        // ลบค่า String ว่างๆ ออกเผื่อมีหลุดมา
         delete unifiedDatesMap[""];
         let sortedDates = Object.keys(unifiedDatesMap).sort((a,b) => new Date(b) - new Date(a));
 
-        // 🌟 สร้างตาราง HTML (ปลดล็อกความกว้าง ให้ Scroll ได้สวยๆ)
-        let htmlTable = `<div class="data-card" style="margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden;">
-            <div class="card-header" style="padding: 15px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);"><h3 style="font-size:14px; font-weight:700; color:var(--text-main); margin:0;">📋 DAILY FULFILLMENT MATRIX RECORD</h3></div>
-            <div style="max-height: 500px; overflow: auto; background: var(--bg-card);">
-            <table style="min-width: 1200px; width:100%; border-collapse:separate; border-spacing:0; font-size:12px; text-align:right; white-space: nowrap;">
-            <thead>
-                <tr>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); border-right:1px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; left:0; z-index:30;">Date</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Owner</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Orders</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Req</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">ETA</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Ship</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Est.Short</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Act.Short</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Ord.SLA</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">DC SLA</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">FFM%</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Pcs/Pick</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Pcs/Ord</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Pallets</th>
-                </tr>
-            </thead><tbody>`;
+        // 🌟 2. สร้างโครงสร้าง HTML ให้ตารางกางออกสวยๆ
+        let htmlTable = `<thead>
+            <tr>
+                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); border-right:1px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; left:0; z-index:30;">Date</th>
+                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Owner</th>
+                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Orders</th>
+                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Req</th>
+                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">ETA</th>
+                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Ship</th>
+                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Est.Short</th>
+                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Act.Short</th>
+                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Ord.SLA</th>
+                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">DC SLA</th>
+                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">FFM%</th>
+                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Pcs/Pick</th>
+                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Pcs/Ord</th>
+                <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Pallets</th>
+            </tr>
+        </thead><tbody>`;
 
         let trendLabels = [], trendValues = [];
         let buVolumeCompleted = {}, buVolumePending = {};
@@ -256,7 +259,7 @@ async function initFulfillmentRealtime() {
         if (sortedDates.length === 0) {
             htmlTable += `<tr><td colspan="14" class="text-center" style="padding:30px; color:var(--text-muted);">ไม่มีข้อมูล</td></tr>`;
         } else {
-            // 📝 วนลูปตามวันที่จากใหม่ไปเก่า สร้างตาราง
+            // 📝 วนลูปวาดตารางและดึงข้อมูลลงแถว
             sortedDates.forEach(dateStr => {
                 let dObj = new Date(dateStr);
                 let displayDate = isNaN(dObj.getTime()) ? dateStr : `${dObj.getDate()}/${dObj.getMonth()+1}/${dObj.getFullYear()}`;
@@ -274,17 +277,17 @@ async function initFulfillmentRealtime() {
                     const bItem = bqData[bu] || {};
                     const wItem = wData[bu] || {};
                     
-                    // ดึงยอด Orders จาก App Script (มีข้อมูลปุ๊บนับทันที ไม่สนว่า Shipped หรือยัง)
-                    const ordTotal = Math.max(parseFloat(bItem.ordTotal || 0), parseFloat(wItem.ordTotal || 0));
-                    const ordFull = Math.max(parseFloat(bItem.ordFull || 0), parseFloat(wItem.ordFull || 0));
+                    // 🟢 การรวมข้อมูล (Merge): ดึง Orders จาก Wave Ops และ Pieces จาก BigQuery
+                    const ordTotal = wItem.ordTotal > 0 ? wItem.ordTotal : parseFloat(bItem.ordTotal || 0);
+                    const ordFull = wItem.ordTotal > 0 ? wItem.ordFull : parseFloat(bItem.ordFull || 0);
                     
-                    // ดึงยอดชิ้น (Pieces) จาก BigQuery
                     const req = parseFloat(bItem.req || 0);
                     const alloc = parseFloat(bItem.alloc || 0);
                     const ship = parseFloat(bItem.ship || 0);
                     const actShort = parseFloat(bItem.actShort || 0);
                     const pu = parseFloat(bItem.pu || 0);
                     const plt = parseFloat(bItem.plt || 0);
+
                     const estShort = Math.max(0, req - alloc);
 
                     const ordSLA = ordTotal > 0 ? (ordFull / ordTotal) : null;
@@ -300,21 +303,21 @@ async function initFulfillmentRealtime() {
                         return `<span style="color:#EF4444; font-weight:600;">${(v*100).toFixed(1)}%</span>`;
                     };
 
-                    htmlTable += `<tr style="cursor: pointer; color:var(--text-main);" onmouseover="this.style.backgroundColor='var(--bg-body)'" onmouseout="this.style.backgroundColor='transparent'">
+                    htmlTable += `<tr style="cursor: pointer; color:var(--text-main); white-space:nowrap;" onmouseover="this.style.backgroundColor='var(--bg-body)'" onmouseout="this.style.backgroundColor='transparent'">
                         <td style="padding:10px 15px; text-align:center; position:sticky; left:0; background:var(--bg-card); border-bottom:1px solid var(--border-color); border-right:1px solid var(--border-color); z-index:10;">${displayDate}</td>
                         <td style="padding:10px 15px; text-align:center; border-bottom:1px solid var(--border-color); font-weight:600;">${bu}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color);">${ordTotal > 0 ? fmtN(ordTotal) : 0}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color);">${req > 0 ? fmtN(req) : 0}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color);">${alloc > 0 ? fmtN(alloc) : 0}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); color:#10B981; font-weight:600;">${ship > 0 ? fmtN(ship) : 0}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color);">${estShort > 0 ? fmtN(estShort) : 0}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); color:${actShort > 0 ? '#EF4444' : 'inherit'};">${actShort > 0 ? fmtN(actShort) : 0}</td>
+                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${ordTotal > 0 ? fmtN(ordTotal) : 0}</td>
+                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${req > 0 ? fmtN(req) : 0}</td>
+                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${alloc > 0 ? fmtN(alloc) : 0}</td>
+                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); color:#10B981; font-weight:600; text-align:right;">${ship > 0 ? fmtN(ship) : 0}</td>
+                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${estShort > 0 ? fmtN(estShort) : 0}</td>
+                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); color:${actShort > 0 ? '#EF4444' : 'inherit'}; text-align:right;">${actShort > 0 ? fmtN(actShort) : 0}</td>
                         <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:center;">${colorPct(ordSLA)}</td>
                         <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:center;">${colorPct(dcSLA)}</td>
                         <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:center;">${colorPct(ffm)}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color);">${pcsPick !== null ? pcsPick.toFixed(1) : '-'}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color);">${pcsOrd !== null ? pcsOrd.toFixed(1) : '-'}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color);">${plt > 0 ? plt.toFixed(1) : '-'}</td>
+                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${pcsPick !== null ? pcsPick.toFixed(1) : '-'}</td>
+                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${pcsOrd !== null ? pcsOrd.toFixed(1) : '-'}</td>
+                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${plt > 0 ? plt.toFixed(1) : '-'}</td>
                     </tr>`;
 
                     if (!chartDataMap[dateStr]) chartDataMap[dateStr] = { req:0, ship:0 };
@@ -325,11 +328,13 @@ async function initFulfillmentRealtime() {
                 });
             });
 
-            // ข้อมูลสำหรับกราฟแท่ง FFM Volume (เฉพาะยอดวันล่าสุดที่มีการส่ง)
-            const latestDate = Object.keys(chartDataMap).sort((a,b)=>new Date(b)-new Date(a))[0];
+            // ข้อมูลวาดกราฟแท่ง Volume (นับยอดชิ้นวันล่าสุด)
+            const latestDate = sortedDates[0];
             let bqLatest = unifiedDatesMap[latestDate]?.bq || {};
+            let wLatest = unifiedDatesMap[latestDate]?.wave || {};
             
-            Object.keys(bqLatest).forEach(bu => {
+            let allLatestBUs = new Set([...Object.keys(bqLatest), ...Object.keys(wLatest)]);
+            allLatestBUs.forEach(bu => {
                 if (window.selectedBUs && !window.selectedBUs.includes('ALL') && !window.selectedBUs.includes(bu)) return;
                 if (bu !== 'UNKNOWN' && bu !== '') {
                     const req = parseFloat(bqLatest[bu]?.req || 0);
@@ -339,7 +344,7 @@ async function initFulfillmentRealtime() {
                 }
             });
 
-            // สร้างข้อมูลให้กราฟเส้น Trend (ย้อน 14 วันล่าสุดจากเก่าไปใหม่)
+            // วาดกราฟเส้น Trend ย้อน 14 วัน
             let sortedChartDates = Object.keys(chartDataMap).sort((a,b)=>new Date(a)-new Date(b)).slice(-14);
             sortedChartDates.forEach(dStr => {
                 let dObj = new Date(dStr);
@@ -353,8 +358,9 @@ async function initFulfillmentRealtime() {
             });
         }
         
-        htmlTable += "</tbody></table></div></div>";
-        wrapperEl.innerHTML = htmlTable;
+        htmlTable += "</tbody>";
+        tableEl.innerHTML = htmlTable;
+        tableEl.style.minWidth = "1200px"; // บังคับให้ตารางกางออก ไม่บีบตัวหนังสือ
 
         // --- 📊 อัปเดตกราฟ FFM Rate & Volume ---
         if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
@@ -374,7 +380,6 @@ async function initFulfillmentRealtime() {
             ffmVolumeChartInstance.update();
         }
 
-        // อัปเดต % เฉลี่ยของการ์ด Avg Fulfillment ด้านบน
         if (trendValues.length > 0) {
             const currentFfmRate = trendValues[trendValues.length - 1];
             const rateEl = document.getElementById('ffm-order-rate');
@@ -387,326 +392,13 @@ async function initFulfillmentRealtime() {
 
     } catch (err) {
         console.error("❌ Fetch Matrix Error:", err);
-        wrapperEl.innerHTML = `<div class="data-card" style="padding:25px; text-align:center; color:var(--danger); font-weight:bold;">⚠️ เกิดข้อผิดพลาดในการโหลดตาราง Matrix</div>`;
     }
 }
 
-// ==========================================
-// ฟังก์ชันอื่นๆ (โหลด App Script และ Render ส่วนย่อย)
-// ==========================================
+// ========================================================
+// 🌟 5. ฟังก์ชันอัปเดตข้อมูล App Script ปกติ 🌟
+// ========================================================
 
-function cleanDataBeforeLoad() {
-    ['fulfillment', 'wave_ops', 'claims', 'inventory', 'inventory_daily', 'transport'].forEach(module => {
-        if (globalData[module]) {
-            Object.keys(globalData[module]).forEach(dateKey => {
-                let oldBuData = globalData[module][dateKey].bu_data;
-                if (oldBuData) {
-                    let newBuData = {};
-                    Object.keys(oldBuData).forEach(bu => {
-                        let mBu = standardizeBU(bu);
-                        if (!newBuData[mBu]) {
-                            newBuData[mBu] = typeof oldBuData[bu] === 'object' ? { ...oldBuData[bu] } : oldBuData[bu];
-                        } else {
-                            if (typeof oldBuData[bu] === 'object') {
-                                Object.keys(oldBuData[bu]).forEach(k => {
-                                    newBuData[mBu][k] = (newBuData[mBu][k] || 0) + oldBuData[bu][k];
-                                });
-                            } else {
-                                newBuData[mBu] += oldBuData[bu];
-                            }
-                        }
-                    });
-                    globalData[module][dateKey].bu_data = newBuData;
-                }
-            });
-        }
-    });
-
-    if (globalData.workforce) {
-        Object.keys(globalData.workforce).forEach(dateKey => {
-            let dayData = globalData.workforce[dateKey];
-            if (dayData.matrix) {
-                let newMatrix = {};
-                Object.keys(dayData.matrix).forEach(aff => {
-                    let mBu = standardizeBU(aff);
-                    if (!newMatrix[mBu]) {
-                        newMatrix[mBu] = dayData.matrix[aff];
-                    } else {
-                        Object.keys(dayData.matrix[aff]).forEach(role => {
-                            if (!newMatrix[mBu][role]) newMatrix[mBu][role] = {};
-                            Object.keys(dayData.matrix[aff][role]).forEach(team => {
-                                newMatrix[mBu][role][team] = (newMatrix[mBu][role][team] || 0) + dayData.matrix[aff][role][team];
-                            });
-                        });
-                    }
-                });
-                dayData.matrix = newMatrix;
-            }
-        });
-    }
-}
-
-function setupLocDropdown(prefix, filterKey) {
-    const selectBtn = document.getElementById(`loc-${prefix}-select`);
-    const menu = document.getElementById(`loc-${prefix}-menu`);
-    const selectAll = document.getElementById(`loc-${prefix}-all`);
-    const list = document.getElementById(`loc-${prefix}-list`);
-    const applyBtn = document.getElementById(`loc-${prefix}-apply`);
-    const textSpan = document.getElementById(`loc-${prefix}-text`);
-    
-    if(!selectBtn || !menu) return;
-
-    selectBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        ['bu', 'type', 'zone'].forEach(p => {
-            if(p !== prefix) {
-                let m = document.getElementById(`loc-${p}-menu`);
-                if(m) m.style.display = 'none';
-            }
-        });
-        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-    });
-
-    selectAll.addEventListener('change', (e) => {
-        const cbs = list.querySelectorAll('input[type="checkbox"]');
-        cbs.forEach(cb => cb.checked = e.target.checked);
-    });
-
-    list.addEventListener('change', (e) => {
-        if (e.target.tagName === 'INPUT') {
-            const cbs = list.querySelectorAll('input[type="checkbox"]');
-            const allChecked = Array.from(cbs).every(cb => cb.checked);
-            selectAll.checked = allChecked;
-        }
-    });
-
-    applyBtn.addEventListener('click', () => {
-        menu.style.display = 'none';
-        const cbs = list.querySelectorAll('input[type="checkbox"]');
-        if (selectAll.checked) {
-            window.locFilters[filterKey] = ['ALL'];
-            textSpan.innerText = prefix === 'bu' ? 'BU: All' : (prefix === 'type' ? 'Type: All' : 'Zone: All');
-        } else {
-            const checkedVals = Array.from(cbs).filter(cb => cb.checked).map(cb => cb.value);
-            window.locFilters[filterKey] = checkedVals.length > 0 ? checkedVals : [];
-            let label = checkedVals.length > 0 ? (checkedVals.length <= 1 ? checkedVals[0] : `${checkedVals.length} Selected`) : 'None';
-            textSpan.innerText = prefix === 'bu' ? `BU: ${label}` : (prefix === 'type' ? `Type: ${label}` : `Zone: ${label}`);
-        }
-        renderLocationAccuracy(); 
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!selectBtn.contains(e.target) && !menu.contains(e.target)) {
-            menu.style.display = 'none';
-        }
-    });
-}
-setupLocDropdown('bu', 'bu');
-setupLocDropdown('type', 'type');
-setupLocDropdown('zone', 'zone');
-
-function populateLocFilterOptions(dataArray) {
-    let bus = new Set();
-    let types = new Set();
-    let zones = new Set();
-
-    dataArray.forEach(item => {
-        bus.add(item.bu);
-        types.add(item.type);
-        zones.add(item.zone);
-    });
-
-    const populateList = (prefix, set) => {
-        const list = document.getElementById(`loc-${prefix}-list`);
-        if(!list) return;
-        list.innerHTML = '';
-        let sorted = Array.from(set).sort();
-        sorted.forEach(val => {
-            let isChecked = window.locFilters[prefix].includes('ALL') || window.locFilters[prefix].includes(val);
-            let label = document.createElement('label');
-            label.style.cssText = "display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-main); font-size: 0.75rem;";
-            label.innerHTML = `<input type="checkbox" value="${val}" ${isChecked ? 'checked' : ''}> ${val}`;
-            list.appendChild(label);
-        });
-        const selectAll = document.getElementById(`loc-${prefix}-all`);
-        if(selectAll) selectAll.checked = window.locFilters[prefix].includes('ALL');
-    };
-
-    populateList('bu', bus);
-    populateList('type', types);
-    populateList('zone', zones);
-}
-
-function populateGlobalBUFilters() {
-    let buSet = new Set();
-    if(globalData.fulfillment) Object.values(globalData.fulfillment).forEach(d => Object.keys(d.bu_data || {}).forEach(bu => buSet.add(bu)));
-    if(globalData.claims) Object.values(globalData.claims).forEach(d => Object.keys(d.bu_data || {}).forEach(bu => buSet.add(bu)));
-    if(globalData.inventory) Object.values(globalData.inventory).forEach(d => Object.keys(d.bu_data || {}).forEach(bu => buSet.add(bu)));
-    if(globalData.transport) Object.values(globalData.transport).forEach(d => Object.keys(d.bu_data || {}).forEach(bu => buSet.add(bu)));
-    
-    let sortedBUs = Array.from(buSet).sort();
-    
-    const cbList = document.getElementById('bu-checkbox-list');
-    const selectAllCb = document.getElementById('bu-select-all');
-    const multiText = document.getElementById('bu-multi-text');
-    const menu = document.getElementById('bu-dropdown-menu');
-    const toggleBtn = document.getElementById('bu-multi-select');
-    const applyBtn = document.getElementById('bu-apply-btn');
-    
-    if (cbList && cbList.innerHTML === '') {
-        sortedBUs.forEach(bu => {
-            const label = document.createElement('label');
-            label.style.cssText = "display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-main); font-size: 0.85rem;";
-            label.innerHTML = `<input type="checkbox" class="bu-item-cb" value="${bu}" checked> ${bu}`;
-            cbList.appendChild(label);
-        });
-
-        const itemCbs = document.querySelectorAll('.bu-item-cb');
-        
-        selectAllCb.addEventListener('change', (e) => {
-            itemCbs.forEach(cb => cb.checked = e.target.checked);
-        });
-        
-        itemCbs.forEach(cb => {
-            cb.addEventListener('change', () => {
-                const allChecked = Array.from(itemCbs).every(c => c.checked);
-                selectAllCb.checked = allChecked;
-            });
-        });
-
-        toggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!toggleBtn.contains(e.target) && !menu.contains(e.target)) {
-                menu.style.display = 'none';
-            }
-        });
-
-        applyBtn.addEventListener('click', () => {
-            menu.style.display = 'none';
-            if (selectAllCb.checked) {
-                window.selectedBUs = ['ALL'];
-                multiText.innerText = 'All BUs';
-            } else {
-                const checkedVals = Array.from(itemCbs).filter(c => c.checked).map(c => c.value);
-                window.selectedBUs = checkedVals.length > 0 ? checkedVals : [];
-                multiText.innerText = checkedVals.length > 0 ? (checkedVals.length <= 2 ? checkedVals.join(', ') : `${checkedVals.length} BUs Selected`) : 'No Selection';
-            }
-            const dp = document.getElementById('date-picker');
-            let dStr = dp ? dp.value : new Date().toISOString().split('T')[0];
-            
-            updateDashboardData(dStr);
-            renderOnTimeSection();
-            renderClaimSection();
-            renderLocationAccuracy();
-            renderInventorySection();
-            renderTransportSection();
-            renderProductivitySection();
-            initFulfillmentRealtime(); 
-        });
-    }
-
-    const invBuSelect = document.getElementById('inv-bu-filter');
-    if (invBuSelect && invBuSelect.options.length <= 1) {
-        sortedBUs.forEach(bu => invBuSelect.appendChild(new Option(bu, bu)));
-        invBuSelect.addEventListener('change', renderInventorySection);
-    }
-}
-
-function resetTrendRoleFilter() {
-    const roleFilterEl = document.getElementById('trend-role-filter');
-    if (roleFilterEl && roleFilterEl.options.length <= 1) {
-        roleFilterEl.innerHTML = `
-            <option value="All">All Ops (รวม)</option>
-            <option value="Pick">Pick</option>
-            <option value="RT">RT</option>
-            <option value="QCQA">QC & QA</option>
-            <option value="Grouping">Grouping</option>
-            <option value="Putaway">Put-away</option>
-            <option value="Receive">Receive</option>
-        `;
-    }
-}
-
-async function fetchSection(sectionName) {
-    try {
-        const response = await fetch(`${GAS_URL}?section=${sectionName}`);
-        const result = await response.json();
-        if (result.status === "success") {
-            Object.assign(globalData, result.data);
-            cleanDataBeforeLoad();
-            if (['executive', 'claims', 'inventory', 'transport'].includes(sectionName)) {
-                populateGlobalBUFilters();
-            }
-            refreshUIBySection(sectionName);
-        }
-    } catch (e) { console.error(`Error loading ${sectionName}:`, e); }
-}
-
-function refreshUIBySection(section) {
-    const dp = document.getElementById('date-picker');
-    const dateStr = dp ? dp.value : new Date().toISOString().split('T')[0];
-    
-    if (section === 'executive') updateDashboardData(dateStr); 
-    if (section === 'workforce') updateDashboardData(dateStr); 
-    if (section === 'ontime_claims') { renderOnTimeSection(); renderClaimSection(); }
-    if (section === 'inventory') { renderInventorySection(); renderLocationAccuracy(); }
-    if (section === 'transport') renderTransportSection();
-    if (section === 'productivity') renderProductivitySection();
-}
-
-// ==========================================
-// 🚀 6. ฟังก์ชันสตาร์ทระบบหลัก (initDashboard) 
-// ==========================================
-async function initDashboard() {
-    toggleLoader(true);
-    const sections = ['executive', 'workforce', 'ontime_claims', 'inventory', 'transport', 'productivity'];
-    resetTrendRoleFilter();
-    const dp = document.getElementById('date-picker');
-    if (dp && isFirstLoad) {
-        let today = new Date();
-        dp.value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-        dp.addEventListener('change', (e) => {
-            let dStr = e.target.value;
-            updateDashboardData(dStr);
-            renderOnTimeSection();
-            renderClaimSection();
-            renderLocationAccuracy();
-            renderInventorySection();
-            renderTransportSection();
-            renderProductivitySection();
-            initFulfillmentRealtime();
-        });
-        isFirstLoad = false;
-    }
-    
-    await Promise.all(sections.map(s => fetchSection(s)));
-    
-    // ดึงฐานข้อมูลเข้าสู่ตาราง Fulfillment 
-    await initFulfillmentRealtime();
-    
-    toggleLoader(false);
-}
-
-document.getElementById('trend-role-filter')?.addEventListener('change', () => {
-    const dp = document.getElementById('date-picker');
-    if (dp) updateTrendChart(dp.value);
-});
-
-document.getElementById('ontime-filter')?.addEventListener('change', renderOnTimeSection);
-document.getElementById('ontime-period-filter')?.addEventListener('change', renderOnTimeSection);
-document.getElementById('claim-period-filter')?.addEventListener('change', renderClaimSection);
-
-// 🟢 สั่งรันระบบเมื่อโหลดหน้าเว็บ
-initDashboard();
-setInterval(() => { initDashboard(); }, 5 * 60 * 1000);
-
-// ==========================================
-// 🌟 7. ฟังก์ชันแสดงผลส่วนอื่นๆ 🌟
-// ==========================================
 function updateDashboardData(selectedDateStr) {
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const targetTimestamp = new Date(selectedDateStr).setHours(23, 59, 59, 999);
@@ -722,6 +414,7 @@ function updateDashboardData(selectedDateStr) {
         return isNaN(dObj.getTime()) ? dateString : `${String(dObj.getDate()).padStart(2, '0')} ${months[dObj.getMonth()]}`;
     };
     
+    // --- Workforce ---
     try {
         if(Object.keys(globalData.workforce || {}).length > 0) {
             let wfData = globalData.workforce;
@@ -990,7 +683,7 @@ function updateDashboardData(selectedDateStr) {
         }
     } catch(e) { console.error("Workforce Update Error:", e); }
 
-    // 🟢 8. WAVE OPS & ORDERS SHIPPED TODAY (กู้คืนตรรกะเดิม เพื่อแสดงจำนวนบิลแยกจากยอดชิ้น)
+    // 🟢 8. WAVE OPS & ORDERS SHIPPED TODAY (กู้คืนตรรกะเดิม เพื่อแสดงจำนวนบิล)
     try {
         if(Object.keys(globalData.wave_ops || {}).length > 0) {
             let waveDataForFFM = globalData.wave_ops;
