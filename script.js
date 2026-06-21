@@ -17,6 +17,26 @@ const dangerRed = '#EF4444';
 
 const fmtN = (v) => (v || 0).toLocaleString();
 
+// 🛠️ ฟังก์ชันแปลงวันที่ให้ตรงกัน 100% ป้องกัน Timezone หรอก
+const getLocalDateStr = (rawDate) => {
+    if (!rawDate) return "";
+    let d = new Date(rawDate);
+    if (isNaN(d.getTime())) return String(rawDate).substring(0, 10);
+    let year = d.getFullYear();
+    let month = String(d.getMonth() + 1).padStart(2, '0');
+    let day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const standardizeBU = (bu) => {
+    let b = (bu || '').toString().trim().toUpperCase();
+    if (b.includes('MART')) return 'DM02';
+    if (b.includes('PUN') || b.includes('PUNTHAI')) return 'DP02';
+    if (b.includes('GFA') || b.includes('COFFEE')) return 'DG02';
+    if (b.includes('LUBE')) return '1115';
+    return b;
+};
+
 // ==========================================
 // 🌟 1. Custom Plugins 🌟
 // ==========================================
@@ -127,22 +147,6 @@ function toggleLoader(show) {
     if(loader) loader.style.display = show ? 'flex' : 'none';
 }
 
-const standardizeBU = (bu) => {
-    let b = (bu || '').toString().trim().toUpperCase();
-    if (b.includes('MART')) return 'DM02';
-    if (b.includes('PUN') || b.includes('PUNTHAI')) return 'DP02';
-    if (b.includes('GFA') || b.includes('COFFEE')) return 'DG02';
-    if (b.includes('LUBE')) return '1115';
-    return b;
-};
-
-// 🛠️ ฟังก์ชันตัด Date ให้อยู่ในฟอร์แมต YYYY-MM-DD เพื่อแก้ปัญหา Timezone
-const cleanDateStr = (rawDate) => {
-    if (!rawDate) return "";
-    if (typeof rawDate === 'string' && rawDate.length >= 10) return rawDate.substring(0, 10);
-    return rawDate;
-};
-
 // ========================================================
 // 🌟 4. FULFILLMENT DATA BINDING (MATRIX & CHARTS) 🌟
 // ========================================================
@@ -171,26 +175,50 @@ async function initFulfillmentRealtime() {
         const result = await response.json();
         let bqDataList = result.success && result.data ? result.data : [];
 
-        // 🟢 สร้างศูนย์รวมวันที่ 
+        // 🟢 1. สร้างศูนย์รวมวันที่ (แก้ Timezone Date 9 หาย)
         let unifiedDatesMap = {};
         
-        // 1. นำข้อมูลจาก App Script (ยอด Orders) มาตั้งต้นก่อน
+        // 1.1 นำข้อมูลจาก App Script (ยอด Orders) มาใส่ก่อนเป็นตัวยืนพื้น
         if (globalData.wave_ops) {
             Object.keys(globalData.wave_ops).forEach(k => {
-                let localDate = cleanDateStr(k); // ตัดเวลาทิ้ง
+                let localDate = getLocalDateStr(k); // ตัดเวลาทิ้งเป็น YYYY-MM-DD
                 if (!unifiedDatesMap[localDate]) unifiedDatesMap[localDate] = { bq: {}, wave: {} };
-                unifiedDatesMap[localDate].wave = globalData.wave_ops[k].bu_data || {};
+                
+                let wData = globalData.wave_ops[k].bu_data || {};
+                Object.keys(wData).forEach(rawBu => {
+                    let sBu = standardizeBU(rawBu);
+                    if (!unifiedDatesMap[localDate].wave[sBu]) unifiedDatesMap[localDate].wave[sBu] = { ordTotal: 0, ordFull: 0 };
+                    unifiedDatesMap[localDate].wave[sBu].ordTotal += parseFloat(wData[rawBu].total_orders || 0);
+                    unifiedDatesMap[localDate].wave[sBu].ordFull += parseFloat(wData[rawBu].completed_orders || 0);
+                });
             });
         }
 
-        // 2. นำข้อมูลจาก BigQuery (ยอด Pieces) มาเสียบ
+        // 1.2 นำข้อมูลจาก BigQuery (ยอด Pieces) มาเสียบรวมกัน
         bqDataList.forEach(row => {
-            let localDate = cleanDateStr(row.date);
+            let localDate = getLocalDateStr(row.date);
             if (!unifiedDatesMap[localDate]) unifiedDatesMap[localDate] = { bq: {}, wave: {} };
-            try { unifiedDatesMap[localDate].bq = JSON.parse(row.ownerJson || '{}'); } catch(e) {}
+            try { 
+                let rawBq = JSON.parse(row.ownerJson || '{}'); 
+                Object.keys(rawBq).forEach(rawBu => {
+                    let sBu = standardizeBU(rawBu); // ป้องกันชื่อ BU ซ้ำซ้อน (DM02 vs DM02 )
+                    if (sBu !== 'UNKNOWN' && sBu !== '') {
+                        if (!unifiedDatesMap[localDate].bq[sBu]) {
+                            unifiedDatesMap[localDate].bq[sBu] = { req:0, alloc:0, ship:0, actShort:0, pu:0, plt:0 };
+                        }
+                        let item = rawBq[rawBu];
+                        unifiedDatesMap[localDate].bq[sBu].req += parseFloat(item.req || 0);
+                        unifiedDatesMap[localDate].bq[sBu].alloc += parseFloat(item.alloc || 0);
+                        unifiedDatesMap[localDate].bq[sBu].ship += parseFloat(item.ship || 0);
+                        unifiedDatesMap[localDate].bq[sBu].actShort += parseFloat(item.actShort || 0);
+                        unifiedDatesMap[localDate].bq[sBu].pu += parseFloat(item.pu || 0);
+                        unifiedDatesMap[localDate].bq[sBu].plt += parseFloat(item.plt || 0);
+                    }
+                });
+            } catch(e) {}
         });
 
-        let sortedDates = Object.keys(unifiedDatesMap).sort((a,b) => new Date(b) - new Date(a));
+        let sortedDates = Object.keys(unifiedDatesMap).sort((a,b) => new Date(b) - new Date(a)).slice(0, 30);
 
         // 🌟 สร้างตาราง HTML (ปลดล็อกความกว้าง ให้ Scroll ได้สวยๆ)
         let htmlTable = `<div class="data-card" style="margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden;">
@@ -224,6 +252,7 @@ async function initFulfillmentRealtime() {
         if (sortedDates.length === 0) {
             htmlTable += `<tr><td colspan="14" class="text-center" style="padding:30px; color:var(--text-muted);">ไม่มีข้อมูล</td></tr>`;
         } else {
+            // 📝 วนลูปตามวันที่จากใหม่ไปเก่า สร้างตาราง
             sortedDates.forEach(dateStr => {
                 let dObj = new Date(dateStr);
                 let displayDate = isNaN(dObj) ? dateStr : `${dObj.getDate()}/${dObj.getMonth()+1}/${dObj.getFullYear()}`;
@@ -241,9 +270,9 @@ async function initFulfillmentRealtime() {
                     const bItem = bqData[bu] || {};
                     const wItem = wData[bu] || {};
                     
-                    // ดึงข้อมูล Orders จาก App Script (มีข้อมูลปุ๊บนับทันที ไม่สนว่า Shipped หรือยัง)
-                    const ordTotal = Math.max(parseFloat(bItem.ordTotal || 0), parseFloat(wItem.total_orders || 0));
-                    const ordFull = Math.max(parseFloat(bItem.ordFull || 0), parseFloat(wItem.completed_orders || 0));
+                    // ดึงยอด Orders จาก App Script มาใช้ (นับตั้งแต่วันที่มี Order)
+                    const ordTotal = Math.max(parseFloat(bItem.ordTotal || 0), parseFloat(wItem.ordTotal || 0));
+                    const ordFull = Math.max(parseFloat(bItem.ordFull || 0), parseFloat(wItem.ordFull || 0));
                     
                     // ดึงยอดชิ้น (Pieces) จาก BigQuery
                     const req = parseFloat(bItem.req || 0);
@@ -284,7 +313,6 @@ async function initFulfillmentRealtime() {
                         <td style="padding:10px 15px; border-bottom:1px solid var(--border-color);">${plt > 0 ? plt.toFixed(1) : '-'}</td>
                     </tr>`;
 
-                    // สำหรับกราฟเส้น (Trend)
                     if (!chartDataMap[dateStr]) chartDataMap[dateStr] = { req:0, ship:0 };
                     chartDataMap[dateStr].req += req;
                     chartDataMap[dateStr].ship += ship;
@@ -293,13 +321,11 @@ async function initFulfillmentRealtime() {
                 });
             });
 
-            // ข้อมูลสำหรับกราฟแท่ง (เฉพาะยอดวันล่าสุด)
-            const latestDate = sortedDates[0];
+            // ข้อมูลสำหรับกราฟแท่ง FFM Volume (เฉพาะยอดวันล่าสุดที่มีการส่ง)
+            const latestDate = Object.keys(chartDataMap).sort((a,b)=>new Date(b)-new Date(a))[0];
             let bqLatest = unifiedDatesMap[latestDate]?.bq || {};
-            let wLatest = unifiedDatesMap[latestDate]?.wave || {};
             
-            let allLatestBUs = new Set([...Object.keys(bqLatest), ...Object.keys(wLatest)]);
-            allLatestBUs.forEach(bu => {
+            Object.keys(bqLatest).forEach(bu => {
                 if (window.selectedBUs && !window.selectedBUs.includes('ALL') && !window.selectedBUs.includes(bu)) return;
                 if (bu !== 'UNKNOWN' && bu !== '') {
                     const req = parseFloat(bqLatest[bu]?.req || 0);
@@ -309,7 +335,7 @@ async function initFulfillmentRealtime() {
                 }
             });
 
-            // สร้างข้อมูลให้กราฟเส้น (ย้อน 14 วันล่าสุดจากเก่าไปใหม่)
+            // สร้างข้อมูลให้กราฟเส้น Trend (ย้อน 14 วันล่าสุดจากเก่าไปใหม่)
             let sortedChartDates = Object.keys(chartDataMap).sort((a,b)=>new Date(a)-new Date(b)).slice(-14);
             sortedChartDates.forEach(dStr => {
                 let dObj = new Date(dStr);
@@ -326,7 +352,7 @@ async function initFulfillmentRealtime() {
         htmlTable += "</tbody></table></div></div>";
         wrapperEl.innerHTML = htmlTable;
 
-        // --- 📊 อัปเดตกราฟ FFM ---
+        // --- 📊 อัปเดตกราฟ FFM Rate & Volume ---
         if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
             ffmTrendChartInstance.data.labels = trendLabels;
             ffmTrendChartInstance.data.datasets[0].data = trendValues;
@@ -344,7 +370,7 @@ async function initFulfillmentRealtime() {
             ffmVolumeChartInstance.update();
         }
 
-        // อัปเดต % ของการ์ดด้านบน
+        // อัปเดต % เฉลี่ยของการ์ด Avg Fulfillment ด้านบน
         if (trendValues.length > 0) {
             const currentFfmRate = trendValues[trendValues.length - 1];
             const rateEl = document.getElementById('ffm-order-rate');
@@ -356,7 +382,7 @@ async function initFulfillmentRealtime() {
         }
 
     } catch (err) {
-        console.error("❌ Fetch Block Error:", err);
+        console.error("❌ Fetch Matrix Error:", err);
         wrapperEl.innerHTML = `<div class="data-card" style="padding:25px; text-align:center; color:var(--danger); font-weight:bold;">⚠️ เกิดข้อผิดพลาดในการโหลดตาราง Matrix</div>`;
     }
 }
@@ -655,7 +681,7 @@ async function initDashboard() {
     
     await Promise.all(sections.map(s => fetchSection(s)));
     
-    // ดึงฐานข้อมูลของจริงเข้าสู่ตาราง Fulfillment 
+    // ดึงฐานข้อมูลเข้าสู่ตาราง Fulfillment 
     await initFulfillmentRealtime();
     
     toggleLoader(false);
@@ -675,7 +701,7 @@ initDashboard();
 setInterval(() => { initDashboard(); }, 5 * 60 * 1000);
 
 // ==========================================
-// 🌟 7. ฟังก์ชันอัปเดตการ์ด Wave Ops & Orders 🌟
+// 🌟 7. ฟังก์ชันแสดงผลส่วนอื่นๆ 🌟
 // ==========================================
 function updateDashboardData(selectedDateStr) {
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -692,7 +718,6 @@ function updateDashboardData(selectedDateStr) {
         return `${String(dObj.getDate()).padStart(2, '0')} ${months[dObj.getMonth()]}`;
     };
     
-    // --- Workforce ---
     try {
         if(Object.keys(globalData.workforce || {}).length > 0) {
             let wfData = globalData.workforce;
@@ -2386,7 +2411,7 @@ function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveD
             let bg, color, icon;
             if (al.type === 'critical') {
                 bg = '#fee2e2'; color = '#991b1b';
-                icon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+                icon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
             } else {
                 bg = '#fef3c7'; color = '#92400e';
                 icon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
