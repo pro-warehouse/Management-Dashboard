@@ -17,24 +17,34 @@ const dangerRed = '#EF4444';
 
 const fmtN = (v) => (v || 0).toLocaleString();
 
-// 🛠️ ฟังก์ชันแปลงวันที่ให้ตรงกัน 100% (แก้ปัญหา Timezone และรูปแบบวันที่)
-const getStandardDate = (val) => {
-    if (!val) return "";
-    let str = String(val).trim();
-    // กรณีเป็น DD/MM/YYYY (จาก App Script)
+// 🛠️ 1. Smart Date Normalizer (แก้ปัญหา Timezone และวันที่แหว่ง 100%)
+const getStandardDate = (rawDate) => {
+    if (!rawDate) return "";
+    let str = String(rawDate).trim();
+    
+    // ตัด Timezone (T) ออก
+    if (str.includes('T')) str = str.split('T')[0];
+    
+    // กรณีเป็น DD/MM/YYYY หรือ D/M/YYYY
     if (str.includes('/')) {
         let parts = str.split(/[ /]/);
         if (parts.length >= 3) {
             let d = parts[0].padStart(2, '0');
             let m = parts[1].padStart(2, '0');
-            let y = parts[2].substring(0, 4);
+            let y = parts[2];
+            if (y.length === 2) y = "20" + y; // กันเหนียวปี 2 หลัก
             return `${y}-${m}-${d}`;
         }
     }
-    // กรณีมีตัว T ห้อยเวลามา (2026-06-09T17:00:00Z) ให้ตัดทิ้ง
-    if (str.includes('T')) return str.split('T')[0];
-    // กรณีปกติ YYYY-MM-DD
-    if (str.length >= 10) return str.substring(0, 10);
+    
+    // กรณี YYYY-MM-DD
+    if (str.length >= 10 && str.includes('-')) return str.substring(0, 10);
+    
+    // Fallback ป้องกัน Error
+    let dObj = new Date(rawDate);
+    if (!isNaN(dObj.getTime())) {
+        return `${dObj.getFullYear()}-${String(dObj.getMonth()+1).padStart(2,'0')}-${String(dObj.getDate()).padStart(2,'0')}`;
+    }
     return str;
 };
 
@@ -48,7 +58,7 @@ const standardizeBU = (bu) => {
 };
 
 // ==========================================
-// 🌟 1. Custom Plugins 🌟
+// 🌟 2. Custom Plugins 🌟
 // ==========================================
 const dataLabelPlugin = {
     id: 'dataLabelPlugin',
@@ -97,7 +107,7 @@ const lineDataLabelPlugin = {
 };
 
 // ==========================================
-// 🌟 2. Setup Chart Instances 🌟
+// 🌟 3. Setup Chart Instances 🌟
 // ==========================================
 const throughputCtx = document.getElementById('throughputChart')?.getContext('2d');
 if (throughputCtx) new Chart(throughputCtx, { type: 'bar', data: { labels: ['Mon','Tue','Wed','Thu','Fri'], datasets: [{ label: 'Inbound', data: [45, 38, 52, 48, 50], backgroundColor: accentOrange, borderRadius: 6 }, { label: 'Outbound', data: [48, 42, 55, 50, 54], backgroundColor: accentGreen, borderRadius: 6 }]}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: {grid:{display:false}}, y: {border:{display:false}} } } });
@@ -142,7 +152,7 @@ const prodCtx = document.getElementById('productivityChart')?.getContext('2d');
 if (prodCtx) productivityChartInstance = new Chart(prodCtx, { type: 'bar', data: { labels: [], datasets: [ { type: 'bar', label: 'Background', data: [], backgroundColor: [], borderRadius: 6, barPercentage: 0.6, categoryPercentage: 0.8, grouped: false }, { type: 'bar', label: 'Actual UPH', data: [], backgroundColor: [], borderRadius: 6, barPercentage: 0.6, categoryPercentage: 0.8, grouped: false }, { type: 'line', label: 'Target Line', data: [], borderColor: '#F59E0B', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, stacked: false }, y: { border: { display: false }, display: false, beginAtZero: true, grace: '25%' } }, layout: { padding: { top: 30 } } }, plugins: [{ id: 'customBarLabel', afterDatasetsDraw(chart) { const { ctx } = chart; if(chart.data.datasets.length > 1 && chart.getDatasetMeta(1)) { const meta = chart.getDatasetMeta(1); if (!meta.hidden && meta.data) { meta.data.forEach((bar, index) => { const uphVal = chart.data.datasets[1].data[index]; const picksVal = chart.data.datasets[1].customPicks ? chart.data.datasets[1].customPicks[index] : 0; if(uphVal > 0){ ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F9FAFB' : '#111827'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.font = 'bold 11px Inter'; ctx.fillText(uphVal, bar.x, bar.y - 14); let displayPicks = picksVal >= 10000 ? (picksVal / 1000).toFixed(1) + 'k' : fmtN(picksVal); ctx.fillStyle = '#6B7280'; ctx.font = 'normal 9px Inter'; ctx.fillText(`(${displayPicks})`, bar.x, bar.y - 4); } }); } } } }] });
 
 // ==========================================
-// 🌟 3. Data Config & Setup 🌟
+// 🌟 4. Data Config & Setup 🌟
 // ==========================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxB0bNU1P9qrG_6aHoeiKyHMXT0_k76VlL0aq1I9xxHVpPDQK9qcd3FJMip4Jk9o6RY/exec';
 
@@ -158,7 +168,7 @@ function toggleLoader(show) {
 }
 
 // ========================================================
-// 🌟 4. FULFILLMENT DATA BINDING (MATRIX PIVOT TABLE) 🌟
+// 🌟 5. FULFILLMENT DATA BINDING (MATRIX & WAVES) 🌟
 // ========================================================
 async function initFulfillmentRealtime() {
     let wrapperEl = document.getElementById('fulfillment-v3-wrapper');
@@ -173,7 +183,7 @@ async function initFulfillmentRealtime() {
     }
 
     const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
-    console.log("🚀 กำลังรวมข้อมูล Orders (GAS) เข้ากับยอด Pieces (BQ)...");
+    console.log("🚀 กำลังผสานข้อมูล Orders (GAS) เข้ากับ Pieces (BQ)...");
     
     try {
         const response = await fetch(API_URL, {
@@ -221,7 +231,7 @@ async function initFulfillmentRealtime() {
                         unifiedDatesMap[sd].bq[sBu].req += parseFloat(bItem.req || 0);
                         unifiedDatesMap[sd].bq[sBu].alloc += parseFloat(bItem.alloc || 0);
                         unifiedDatesMap[sd].bq[sBu].ship += parseFloat(bItem.ship || 0);
-                        unifiedDatesMap[sd].bq[sBu].actShort += parseFloat(bItem.actShort || 0);
+                        unifiedDatesMap[sd].bq[sBu].actShort += parseFloat(bItem.actShort || 0); // ✅ จุดแก้ Fatal Error อยู่ตรงนี้ครับ!
                         unifiedDatesMap[sd].bq[sBu].pu += parseFloat(bItem.pu || 0);
                         unifiedDatesMap[sd].bq[sBu].plt += parseFloat(bItem.plt || 0);
                     }
@@ -232,7 +242,7 @@ async function initFulfillmentRealtime() {
         delete unifiedDatesMap[""];
         let sortedDates = Object.keys(unifiedDatesMap).sort((a,b) => new Date(b) - new Date(a));
 
-        // 🌟 2. สร้างโครงสร้าง HTML ให้ตารางกางออกสวยๆ
+        // 🌟 2. สร้างโครงสร้าง HTML ตาราง Matrix ให้เลื่อนขวาได้
         let htmlTable = `<div class="data-card" style="margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden;">
             <div class="card-header" style="padding: 15px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);"><h3 style="font-size:14px; font-weight:700; color:var(--text-main); margin:0;">📋 DAILY FULFILLMENT MATRIX RECORD</h3></div>
             <div style="max-height: 500px; overflow: auto; background: var(--bg-card);">
@@ -264,10 +274,11 @@ async function initFulfillmentRealtime() {
         if (sortedDates.length === 0) {
             htmlTable += `<tr><td colspan="14" class="text-center" style="padding:30px; color:var(--text-muted);">ไม่มีข้อมูล</td></tr>`;
         } else {
-            // 📝 วนลูปวาดตารางและดึงข้อมูลลงแถว
+            // 📝 วนลูปวาดตาราง
             sortedDates.forEach(dateStr => {
                 let dObj = new Date(dateStr);
-                let displayDate = isNaN(dObj.getTime()) ? dateStr : `${dObj.getDate()}/${dObj.getMonth()+1}/${dObj.getFullYear()}`;
+                // ตบวันที่ให้สวยงามแบบ DD/MM/YYYY
+                let displayDate = isNaN(dObj.getTime()) ? dateStr : `${String(dObj.getDate()).padStart(2, '0')}/${String(dObj.getMonth()+1).padStart(2, '0')}/${dObj.getFullYear()}`;
                 
                 let bqData = unifiedDatesMap[dateStr].bq || {};
                 let wData = unifiedDatesMap[dateStr].wave || {};
@@ -282,7 +293,7 @@ async function initFulfillmentRealtime() {
                     const bItem = bqData[bu] || {};
                     const wItem = wData[bu] || {};
                     
-                    // 🟢 การรวมข้อมูล (Merge): ดึง Orders จาก Wave Ops และ Pieces จาก BigQuery
+                    // 🟢 ผสานร่าง Orders (Wave Ops) + Pieces (BQ)
                     const ordTotal = Math.max(parseFloat(bItem.ordTotal || 0), parseFloat(wItem.ordTotal || 0));
                     const ordFull = Math.max(parseFloat(bItem.ordFull || 0), parseFloat(wItem.ordFull || 0));
                     
@@ -333,13 +344,11 @@ async function initFulfillmentRealtime() {
                 });
             });
 
-            // ข้อมูลวาดกราฟแท่ง Volume (นับยอดชิ้นวันล่าสุด)
-            const latestDate = sortedDates[0];
+            // ข้อมูลวาดกราฟแท่ง Volume (นับยอดชิ้นวันล่าสุดที่มีการส่ง)
+            const latestDate = Object.keys(chartDataMap).sort((a,b)=>new Date(b)-new Date(a))[0];
             let bqLatest = unifiedDatesMap[latestDate]?.bq || {};
-            let wLatest = unifiedDatesMap[latestDate]?.wave || {};
             
-            let allLatestBUs = new Set([...Object.keys(bqLatest), ...Object.keys(wLatest)]);
-            allLatestBUs.forEach(bu => {
+            Object.keys(bqLatest).forEach(bu => {
                 if (window.selectedBUs && !window.selectedBUs.includes('ALL') && !window.selectedBUs.includes(bu)) return;
                 if (bu !== 'UNKNOWN' && bu !== '') {
                     const req = parseFloat(bqLatest[bu]?.req || 0);
@@ -349,7 +358,7 @@ async function initFulfillmentRealtime() {
                 }
             });
 
-            // วาดกราฟเส้น Trend ย้อน 14 วัน
+            // สร้างข้อมูลให้กราฟเส้น Trend (ย้อน 14 วัน)
             let sortedChartDates = Object.keys(chartDataMap).sort((a,b)=>new Date(a)-new Date(b)).slice(-14);
             sortedChartDates.forEach(dStr => {
                 let dObj = new Date(dStr);
@@ -384,7 +393,7 @@ async function initFulfillmentRealtime() {
             ffmVolumeChartInstance.update();
         }
 
-        // อัปเดต % ของการ์ดด้านบน
+        // อัปเดต % เฉลี่ยของการ์ด Avg Fulfillment
         if (trendValues.length > 0) {
             const currentFfmRate = trendValues[trendValues.length - 1];
             const rateEl = document.getElementById('ffm-order-rate');
@@ -402,9 +411,321 @@ async function initFulfillmentRealtime() {
 }
 
 // ========================================================
-// 🌟 5. ฟังก์ชันอัปเดตข้อมูล App Script ปกติ 🌟
+// 🌟 6. ฟังก์ชันอัปเดตข้อมูลอื่นๆ (ดึงมาจากระบบเดิม) 🌟
 // ========================================================
 
+function cleanDataBeforeLoad() {
+    ['fulfillment', 'wave_ops', 'claims', 'inventory', 'inventory_daily', 'transport'].forEach(module => {
+        if (globalData[module]) {
+            Object.keys(globalData[module]).forEach(dateKey => {
+                let oldBuData = globalData[module][dateKey].bu_data;
+                if (oldBuData) {
+                    let newBuData = {};
+                    Object.keys(oldBuData).forEach(bu => {
+                        let mBu = standardizeBU(bu);
+                        if (!newBuData[mBu]) {
+                            newBuData[mBu] = typeof oldBuData[bu] === 'object' ? { ...oldBuData[bu] } : oldBuData[bu];
+                        } else {
+                            if (typeof oldBuData[bu] === 'object') {
+                                Object.keys(oldBuData[bu]).forEach(k => {
+                                    newBuData[mBu][k] = (newBuData[mBu][k] || 0) + oldBuData[bu][k];
+                                });
+                            } else {
+                                newBuData[mBu] += oldBuData[bu];
+                            }
+                        }
+                    });
+                    globalData[module][dateKey].bu_data = newBuData;
+                }
+            });
+        }
+    });
+
+    if (globalData.workforce) {
+        Object.keys(globalData.workforce).forEach(dateKey => {
+            let dayData = globalData.workforce[dateKey];
+            if (dayData.matrix) {
+                let newMatrix = {};
+                Object.keys(dayData.matrix).forEach(aff => {
+                    let mBu = standardizeBU(aff);
+                    if (!newMatrix[mBu]) {
+                        newMatrix[mBu] = dayData.matrix[aff];
+                    } else {
+                        Object.keys(dayData.matrix[aff]).forEach(role => {
+                            if (!newMatrix[mBu][role]) newMatrix[mBu][role] = {};
+                            Object.keys(dayData.matrix[aff][role]).forEach(team => {
+                                newMatrix[mBu][role][team] = (newMatrix[mBu][role][team] || 0) + dayData.matrix[aff][role][team];
+                            });
+                        });
+                    }
+                });
+                dayData.matrix = newMatrix;
+            }
+        });
+    }
+}
+
+function setupLocDropdown(prefix, filterKey) {
+    const selectBtn = document.getElementById(`loc-${prefix}-select`);
+    const menu = document.getElementById(`loc-${prefix}-menu`);
+    const selectAll = document.getElementById(`loc-${prefix}-all`);
+    const list = document.getElementById(`loc-${prefix}-list`);
+    const applyBtn = document.getElementById(`loc-${prefix}-apply`);
+    const textSpan = document.getElementById(`loc-${prefix}-text`);
+    
+    if(!selectBtn || !menu) return;
+
+    selectBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        ['bu', 'type', 'zone'].forEach(p => {
+            if(p !== prefix) {
+                let m = document.getElementById(`loc-${p}-menu`);
+                if(m) m.style.display = 'none';
+            }
+        });
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    });
+
+    selectAll.addEventListener('change', (e) => {
+        const cbs = list.querySelectorAll('input[type="checkbox"]');
+        cbs.forEach(cb => cb.checked = e.target.checked);
+    });
+
+    list.addEventListener('change', (e) => {
+        if (e.target.tagName === 'INPUT') {
+            const cbs = list.querySelectorAll('input[type="checkbox"]');
+            const allChecked = Array.from(cbs).every(cb => cb.checked);
+            selectAll.checked = allChecked;
+        }
+    });
+
+    applyBtn.addEventListener('click', () => {
+        menu.style.display = 'none';
+        const cbs = list.querySelectorAll('input[type="checkbox"]');
+        if (selectAll.checked) {
+            window.locFilters[filterKey] = ['ALL'];
+            textSpan.innerText = prefix === 'bu' ? 'BU: All' : (prefix === 'type' ? 'Type: All' : 'Zone: All');
+        } else {
+            const checkedVals = Array.from(cbs).filter(cb => cb.checked).map(cb => cb.value);
+            window.locFilters[filterKey] = checkedVals.length > 0 ? checkedVals : [];
+            let label = checkedVals.length > 0 ? (checkedVals.length <= 1 ? checkedVals[0] : `${checkedVals.length} Selected`) : 'None';
+            textSpan.innerText = prefix === 'bu' ? `BU: ${label}` : (prefix === 'type' ? `Type: ${label}` : `Zone: ${label}`);
+        }
+        renderLocationAccuracy(); 
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!selectBtn.contains(e.target) && !menu.contains(e.target)) {
+            menu.style.display = 'none';
+        }
+    });
+}
+setupLocDropdown('bu', 'bu');
+setupLocDropdown('type', 'type');
+setupLocDropdown('zone', 'zone');
+
+function populateLocFilterOptions(dataArray) {
+    let bus = new Set();
+    let types = new Set();
+    let zones = new Set();
+
+    dataArray.forEach(item => {
+        bus.add(item.bu);
+        types.add(item.type);
+        zones.add(item.zone);
+    });
+
+    const populateList = (prefix, set) => {
+        const list = document.getElementById(`loc-${prefix}-list`);
+        if(!list) return;
+        list.innerHTML = '';
+        let sorted = Array.from(set).sort();
+        sorted.forEach(val => {
+            let isChecked = window.locFilters[prefix].includes('ALL') || window.locFilters[prefix].includes(val);
+            let label = document.createElement('label');
+            label.style.cssText = "display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-main); font-size: 0.75rem;";
+            label.innerHTML = `<input type="checkbox" value="${val}" ${isChecked ? 'checked' : ''}> ${val}`;
+            list.appendChild(label);
+        });
+        const selectAll = document.getElementById(`loc-${prefix}-all`);
+        if(selectAll) selectAll.checked = window.locFilters[prefix].includes('ALL');
+    };
+
+    populateList('bu', bus);
+    populateList('type', types);
+    populateList('zone', zones);
+}
+
+function populateGlobalBUFilters() {
+    let buSet = new Set();
+    if(globalData.fulfillment) Object.values(globalData.fulfillment).forEach(d => Object.keys(d.bu_data || {}).forEach(bu => buSet.add(bu)));
+    if(globalData.claims) Object.values(globalData.claims).forEach(d => Object.keys(d.bu_data || {}).forEach(bu => buSet.add(bu)));
+    if(globalData.inventory) Object.values(globalData.inventory).forEach(d => Object.keys(d.bu_data || {}).forEach(bu => buSet.add(bu)));
+    if(globalData.transport) Object.values(globalData.transport).forEach(d => Object.keys(d.bu_data || {}).forEach(bu => buSet.add(bu)));
+    
+    let sortedBUs = Array.from(buSet).sort();
+    
+    const cbList = document.getElementById('bu-checkbox-list');
+    const selectAllCb = document.getElementById('bu-select-all');
+    const multiText = document.getElementById('bu-multi-text');
+    const menu = document.getElementById('bu-dropdown-menu');
+    const toggleBtn = document.getElementById('bu-multi-select');
+    const applyBtn = document.getElementById('bu-apply-btn');
+    
+    if (cbList && cbList.innerHTML === '') {
+        sortedBUs.forEach(bu => {
+            const label = document.createElement('label');
+            label.style.cssText = "display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-main); font-size: 0.85rem;";
+            label.innerHTML = `<input type="checkbox" class="bu-item-cb" value="${bu}" checked> ${bu}`;
+            cbList.appendChild(label);
+        });
+
+        const itemCbs = document.querySelectorAll('.bu-item-cb');
+        
+        selectAllCb.addEventListener('change', (e) => {
+            itemCbs.forEach(cb => cb.checked = e.target.checked);
+        });
+        
+        itemCbs.forEach(cb => {
+            cb.addEventListener('change', () => {
+                const allChecked = Array.from(itemCbs).every(c => c.checked);
+                selectAllCb.checked = allChecked;
+            });
+        });
+
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!toggleBtn.contains(e.target) && !menu.contains(e.target)) {
+                menu.style.display = 'none';
+            }
+        });
+
+        applyBtn.addEventListener('click', () => {
+            menu.style.display = 'none';
+            if (selectAllCb.checked) {
+                window.selectedBUs = ['ALL'];
+                multiText.innerText = 'All BUs';
+            } else {
+                const checkedVals = Array.from(itemCbs).filter(c => c.checked).map(c => c.value);
+                window.selectedBUs = checkedVals.length > 0 ? checkedVals : [];
+                multiText.innerText = checkedVals.length > 0 ? (checkedVals.length <= 2 ? checkedVals.join(', ') : `${checkedVals.length} BUs Selected`) : 'No Selection';
+            }
+            const dp = document.getElementById('date-picker');
+            let dStr = dp ? dp.value : new Date().toISOString().split('T')[0];
+            
+            updateDashboardData(dStr);
+            renderOnTimeSection();
+            renderClaimSection();
+            renderLocationAccuracy();
+            renderInventorySection();
+            renderTransportSection();
+            renderProductivitySection();
+            initFulfillmentRealtime(); 
+        });
+    }
+
+    const invBuSelect = document.getElementById('inv-bu-filter');
+    if (invBuSelect && invBuSelect.options.length <= 1) {
+        sortedBUs.forEach(bu => invBuSelect.appendChild(new Option(bu, bu)));
+        invBuSelect.addEventListener('change', renderInventorySection);
+    }
+}
+
+function resetTrendRoleFilter() {
+    const roleFilterEl = document.getElementById('trend-role-filter');
+    if (roleFilterEl && roleFilterEl.options.length <= 1) {
+        roleFilterEl.innerHTML = `
+            <option value="All">All Ops (รวม)</option>
+            <option value="Pick">Pick</option>
+            <option value="RT">RT</option>
+            <option value="QCQA">QC & QA</option>
+            <option value="Grouping">Grouping</option>
+            <option value="Putaway">Put-away</option>
+            <option value="Receive">Receive</option>
+        `;
+    }
+}
+
+async function fetchSection(sectionName) {
+    try {
+        const response = await fetch(`${GAS_URL}?section=${sectionName}`);
+        const result = await response.json();
+        if (result.status === "success") {
+            Object.assign(globalData, result.data);
+            cleanDataBeforeLoad();
+            if (['executive', 'claims', 'inventory', 'transport'].includes(sectionName)) {
+                populateGlobalBUFilters();
+            }
+            refreshUIBySection(sectionName);
+        }
+    } catch (e) { console.error(`Error loading ${sectionName}:`, e); }
+}
+
+function refreshUIBySection(section) {
+    const dp = document.getElementById('date-picker');
+    const dateStr = dp ? dp.value : new Date().toISOString().split('T')[0];
+    
+    if (section === 'executive') updateDashboardData(dateStr); 
+    if (section === 'workforce') updateDashboardData(dateStr); 
+    if (section === 'ontime_claims') { renderOnTimeSection(); renderClaimSection(); }
+    if (section === 'inventory') { renderInventorySection(); renderLocationAccuracy(); }
+    if (section === 'transport') renderTransportSection();
+    if (section === 'productivity') renderProductivitySection();
+}
+
+// ==========================================
+// 🚀 7. ฟังก์ชันสตาร์ทระบบหลัก (initDashboard) 
+// ==========================================
+async function initDashboard() {
+    toggleLoader(true);
+    const sections = ['executive', 'workforce', 'ontime_claims', 'inventory', 'transport', 'productivity'];
+    resetTrendRoleFilter();
+    const dp = document.getElementById('date-picker');
+    if (dp && isFirstLoad) {
+        let today = new Date();
+        dp.value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+        dp.addEventListener('change', (e) => {
+            let dStr = e.target.value;
+            updateDashboardData(dStr);
+            renderOnTimeSection();
+            renderClaimSection();
+            renderLocationAccuracy();
+            renderInventorySection();
+            renderTransportSection();
+            renderProductivitySection();
+            initFulfillmentRealtime();
+        });
+        isFirstLoad = false;
+    }
+    
+    await Promise.all(sections.map(s => fetchSection(s)));
+    
+    // ดึงฐานข้อมูลเข้าสู่ตาราง Fulfillment หลังจากโหลดข้อมูล GAS เสร็จ
+    await initFulfillmentRealtime();
+    
+    toggleLoader(false);
+}
+
+document.getElementById('trend-role-filter')?.addEventListener('change', () => {
+    const dp = document.getElementById('date-picker');
+    if (dp) updateTrendChart(dp.value);
+});
+
+document.getElementById('ontime-filter')?.addEventListener('change', renderOnTimeSection);
+document.getElementById('ontime-period-filter')?.addEventListener('change', renderOnTimeSection);
+document.getElementById('claim-period-filter')?.addEventListener('change', renderClaimSection);
+
+// 🟢 สั่งรันระบบเมื่อโหลดหน้าเว็บ
+initDashboard();
+setInterval(() => { initDashboard(); }, 5 * 60 * 1000);
+
+// ==========================================
+// 🌟 8. ฟังก์ชันอัปเดต UI ส่วนย่อยอื่นๆ (App Script Data)
+// ==========================================
 function updateDashboardData(selectedDateStr) {
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const targetTimestamp = new Date(selectedDateStr).setHours(23, 59, 59, 999);
@@ -689,7 +1010,7 @@ function updateDashboardData(selectedDateStr) {
         }
     } catch(e) { console.error("Workforce Update Error:", e); }
 
-    // 🟢 กู้คืน Wave Ops ให้ดึงจากข้อมูล App Script เหมือนเดิม
+    // 🟢 8. WAVE OPS & ORDERS SHIPPED TODAY (กู้คืนตรรกะเดิม เพื่อแสดงจำนวนบิลแยกจากยอดชิ้น)
     try {
         if(Object.keys(globalData.wave_ops || {}).length > 0) {
             let waveDataForFFM = globalData.wave_ops;
@@ -1354,7 +1675,7 @@ function renderInventorySection() {
         if(Object.keys(globalData.inventory).length === 0) return;
         const invData = globalData.inventory;
         const invFilterBU = document.getElementById('inv-bu-filter')?.value || 'ALL';
-        const dpVal = document.getElementById('date-picker')?.value || new DatetoISOString().split('T')[0];
+        const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
         const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
         
         let parsedData = [];
@@ -1749,7 +2070,7 @@ function renderTransportSection() {
                             let buPct = buD.total > 0 ? (buD.success / buD.total) * 100 : 0;
                             let buClr = buPct >= 99 ? '#166534' : (buPct >= 90 ? '#92400e' : '#991b1b');
                             
-                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; padding: 8px 4px;">
+                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; background-color:${buBg}; padding: 8px 4px;">
                                 <span style="display:block; color:${buClr}; font-weight:700; font-size:11px;">${buPct.toFixed(1)}%</span>
                                 <span style="font-size:8px; color:var(--text-muted);">${fmtN(buD.success)}/${fmtN(buD.total)}</span>
                             </td>`;
