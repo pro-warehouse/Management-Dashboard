@@ -306,10 +306,13 @@ const standardizeBU = (bu) => {
     return b;
 };
 
-// 👉 (เพิ่มใหม่) ฟังก์ชันเชื่อมต่อข้อมูล Fulfillment แบบ Real-time
+// ========================================================
+// 🌟 FULFILLMENT LIVE DATA BINDING (SSE) 🌟
+// ========================================================
 function initFulfillmentRealtime() {
     const tableEl = document.getElementById('ffm-detail-table');
-    const SSE_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
+    const rawUrl = "https://dc-ordermonitoring-backend.onrender.com/api/run";
+    const SSE_URL = rawUrl.trim();
 
     console.log("⚡ กำลังเชื่อมต่อท่อส่งข้อมูล Fulfillment Real-time (SSE)... URL:", SSE_URL);
     
@@ -321,78 +324,124 @@ function initFulfillmentRealtime() {
                 const result = JSON.parse(event.data);
                 console.log("🔥 Node API Live Data:", result);
 
-                let trendLabels = [];
-                let trendValues = [];
-                let buNames = [];
-                let completedCounts = [];
-                let pendingCounts = [];
+                const dataArray = Array.isArray(result) ? result : [result];
 
+                // 1. 🔄 จัดกลุ่มข้อมูล (Group By Date & BU)
+                let datesMap = {}; 
+                let buSet = new Set();
+
+                dataArray.forEach(item => {
+                    const dateStr = item.date || item.Date || item.record_date || "N/A";
+                    const buStr = item.bu || item.BU || item.business_unit || "Unknown";
+                    const est = parseInt(item.total_orders || item.Total || item.qty_order || 0);
+                    const act = parseInt(item.completed_orders || item.Completed || item.qty_completed || 0);
+                    
+                    buSet.add(buStr); // เก็บรายชื่อ BU ทั้งหมด
+                    
+                    if (!datesMap[dateStr]) datesMap[dateStr] = {};
+                    if (!datesMap[dateStr][buStr]) datesMap[dateStr][buStr] = { est: 0, act: 0 };
+                    
+                    datesMap[dateStr][buStr].est += est;
+                    datesMap[dateStr][buStr].act += act;
+                });
+
+                let buNames = Array.from(buSet).sort(); // เรียงชื่อ BU (DM02, DP02, ...)
+                let sortedDates = Object.keys(datesMap).sort((a, b) => new Date(b) - new Date(a)); // เรียงวันที่ล่าสุดขึ้นก่อน
+
+                // 2. 📝 สร้างโครงสร้างตาราง HTML แบบ Pivot
                 let tableHtml = `<thead>
                     <tr>
-                        <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">วันที่บันทึก</th>
-                        <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">หน่วยธุรกิจ (BU)</th>
-                        <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">ออเดอร์ทั้งหมด</th>
-                        <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">จัดเสร็จสิ้น (Completed)</th>
-                        <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">คงค้าง (Pending)</th>
-                        <th style="padding:12px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10;">Fulfillment Rate</th>
+                        <th rowspan="2" style="padding:12px; text-align:center; position:sticky; top:0; left:0; background:var(--bg-card); z-index:20; border-right: 1px solid var(--border-color); min-width: 70px;">Date</th>`;
+                
+                // หัวตารางแถวที่ 1 (ชื่อ BU)
+                buNames.forEach(bu => {
+                    tableHtml += `<th colspan="3" style="padding:8px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10; border-bottom: 1px solid var(--border-color);">${bu}</th>`;
+                });
+                tableHtml += `<th colspan="3" style="padding:8px; text-align:center; position:sticky; top:0; background:var(--bg-card); z-index:10; border-bottom: 1px solid var(--border-color); border-left: 2px solid var(--border-color);">Total Overall</th>
+                    </tr><tr>`;
+
+                // หัวตารางแถวที่ 2 (Est / Act / %)
+                buNames.forEach(() => {
+                    tableHtml += `<th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">Est</th>
+                                  <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">Act</th>
+                                  <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">%</th>`;
+                });
+                tableHtml += `<th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; border-left: 2px solid var(--border-color); color:var(--text-muted);">Est</th>
+                              <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">Act</th>
+                              <th style="padding:8px; text-align:center; position:sticky; top:39px; background:var(--bg-card); z-index:10; font-size:11px; color:var(--text-muted);">%</th>
                     </tr>
                 </thead><tbody>`;
 
-                const dataArray = Array.isArray(result) ? result : [result];
+                let trendLabels = [];
+                let trendValues = [];
+                let buVolumeCompleted = new Array(buNames.length).fill(0);
+                let buVolumePending = new Array(buNames.length).fill(0);
 
-                if (dataArray.length > 0 && dataArray[0] !== null) {
-                    dataArray.forEach(item => {
-                        const dateStr = item.date || item.Date || item.record_date || "N/A";
-                        const buStr = item.bu || item.BU || item.business_unit || "Unknown";
-                        const total = parseInt(item.total_orders || item.Total || item.qty_order || 0);
-                        const completed = parseInt(item.completed_orders || item.Completed || item.qty_completed || 0);
-                        
-                        const pending = total - completed > 0 ? total - completed : 0;
-                        const rate = total > 0 ? parseFloat(((completed / total) * 100).toFixed(2)) : 0;
+                if (sortedDates.length === 0) {
+                    tableHtml += `<tr><td colspan="${(buNames.length * 3) + 4}" class="text-center" style="padding: 30px; color: var(--text-muted);">ไม่มีข้อมูลสตรีมส่งมาในขณะนี้</td></tr>`;
+                } else {
+                    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    
+                    // 3. ✍️ วนลูปสร้างแถวข้อมูลทีละวัน
+                    sortedDates.forEach((dStr, idx) => {
+                        let dObj = new Date(dStr);
+                        let displayDate = isNaN(dObj) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${monthNames[dObj.getMonth()]}`;
 
                         tableHtml += `<tr>
-                            <td style="padding:10px; font-weight:600; text-align:center;">${dateStr}</td>
-                            <td style="padding:10px; text-align:center;"><span class="badge info" style="font-weight:700;">${buStr}</span></td>
-                            <td style="padding:10px; text-align:center; font-weight:600;">${fmtN(total)}</td>
-                            <td style="padding:10px; text-align:center; color:#10B981; font-weight:700;">${fmtN(completed)}</td>
-                            <td style="padding:10px; text-align:center; color:${pending > 0 ? '#EF4444' : 'inherit'}; font-weight:700;">${pending > 0 ? fmtN(pending) : '-'}</td>
-                            <td style="padding:10px; text-align:center;">
-                                <span style="display:inline-block; background:${rate >= 95 ? '#dcfce7' : '#fee2e2'}; color:${rate >= 95 ? '#166534' : '#991b1b'}; padding:2px 8px; border-radius:12px; font-weight:700;">${rate}%</span>
-                            </td>
+                            <td style="padding:8px 10px; font-weight:600; text-align:center; white-space:nowrap; position:sticky; left:0; background:var(--bg-card); border-right: 1px solid var(--border-color); z-index:5;">${displayDate}</td>`;
+                        
+                        let dayEstTot = 0;
+                        let dayActTot = 0;
+
+                        buNames.forEach((bu, buIdx) => {
+                            let est = datesMap[dStr][bu]?.est || 0;
+                            let act = datesMap[dStr][bu]?.act || 0;
+                            let pct = est > 0 ? ((act / est) * 100).toFixed(1) : 0;
+                            
+                            dayEstTot += est;
+                            dayActTot += act;
+
+                            // สะสมยอดกราฟแท่ง (เอาเฉพาะข้อมูลของวันล่าสุด วันเดียวเท่านั้น)
+                            if (idx === 0) {
+                                buVolumeCompleted[buIdx] += act;
+                                buVolumePending[buIdx] += Math.max(0, est - act);
+                            }
+
+                            let pctColor = pct >= 99 ? '#10B981' : (pct >= 95 ? '#F59E0B' : '#EF4444');
+                            tableHtml += `<td style="padding:8px; text-align:center; font-size:12px;">${est > 0 ? fmtN(est) : '-'}</td>
+                                          <td style="padding:8px; text-align:center; font-size:12px; color:#10B981; font-weight:600;">${act > 0 ? fmtN(act) : '-'}</td>
+                                          <td style="padding:8px; text-align:center; font-size:12px; font-weight:700; color:${est > 0 ? pctColor : 'var(--text-muted)'};">${est > 0 ? pct + '%' : '-'}</td>`;
+                        });
+
+                        // ยอดรวมภาพรวมรายวัน (Total Overall)
+                        let dayPct = dayEstTot > 0 ? ((dayActTot / dayEstTot) * 100).toFixed(1) : 0;
+                        let dayPctColor = dayPct >= 99 ? '#10B981' : (dayPct >= 95 ? '#F59E0B' : '#EF4444');
+
+                        tableHtml += `<td style="padding:8px; text-align:center; font-size:12px; background:var(--bg-body); font-weight:600; border-left: 2px solid var(--border-color);">${dayEstTot > 0 ? fmtN(dayEstTot) : '-'}</td>
+                                      <td style="padding:8px; text-align:center; font-size:12px; background:var(--bg-body); color:#10B981; font-weight:700;">${dayActTot > 0 ? fmtN(dayActTot) : '-'}</td>
+                                      <td style="padding:8px; text-align:center; font-size:12px; background:var(--bg-body); font-weight:800; color:${dayPctColor};">${dayPct}%</td>
                         </tr>`;
 
-                        if (!trendLabels.includes(dateStr)) {
-                            trendLabels.push(dateStr);
-                            trendValues.push(rate);
-                        }
-
-                        if (!buNames.includes(buStr)) {
-                            buNames.push(buStr);
-                            completedCounts.push(completed);
-                            pendingCounts.push(pending);
-                        } else {
-                            let idx = buNames.indexOf(buStr);
-                            completedCounts[idx] += completed;
-                            pendingCounts[idx] += pending;
-                        }
+                        // เก็บข้อมูลไว้แสดงกราฟเส้น
+                        trendLabels.push(displayDate);
+                        trendValues.push(parseFloat(dayPct));
                     });
-                    tableHtml += `</tbody>`;
-                } else {
-                    tableHtml = `<tr><td colspan="6" class="text-center" style="padding: 30px; color: var(--text-muted);">ไม่มีข้อมูลสตรีมส่งมาในขณะนี้</td></tr>`;
                 }
+                tableHtml += `</tbody>`;
 
                 if (tableEl) tableEl.innerHTML = tableHtml;
 
+                // อัปเดตกราฟเส้น และกราฟแท่ง
                 if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
-                    ffmTrendChartInstance.data.labels = trendLabels;
-                    ffmTrendChartInstance.data.datasets[0].data = trendValues;
+                    ffmTrendChartInstance.data.labels = trendLabels.reverse();
+                    ffmTrendChartInstance.data.datasets[0].data = trendValues.reverse();
                     ffmTrendChartInstance.update();
                 }
 
                 if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance) {
                     ffmVolumeChartInstance.data.labels = buNames;
-                    ffmVolumeChartInstance.data.datasets[0].data = completedCounts;
-                    ffmVolumeChartInstance.data.datasets[1].data = pendingCounts;
+                    ffmVolumeChartInstance.data.datasets[0].data = buVolumeCompleted;
+                    ffmVolumeChartInstance.data.datasets[1].data = buVolumePending;
                     ffmVolumeChartInstance.update();
                 }
 
@@ -404,7 +453,7 @@ function initFulfillmentRealtime() {
         eventSource.onerror = function(error) {
             console.error("❌ SSE Connection Error:", error);
             if (tableEl && tableEl.innerHTML.includes("กำลังเรียกขอข้อมูล")) {
-                tableEl.innerHTML = `<tr><td colspan="6" class="text-center" style="padding: 30px; color: var(--danger); font-weight:bold;">⚠️ ระบบกำลังเปิดท่อรอรับข้อมูล Real-time จากเซิร์ฟเวอร์หลังบ้าน...</td></tr>`;
+                tableEl.innerHTML = `<tr><td colspan="100%" class="text-center" style="padding: 30px; color: var(--danger); font-weight:bold;">⚠️ ระบบกำลังเปิดท่อรอรับข้อมูล Real-time จากเซิร์ฟเวอร์หลังบ้าน...</td></tr>`;
             }
         };
         
