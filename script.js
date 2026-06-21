@@ -17,11 +17,13 @@ const dangerRed = '#EF4444';
 
 const fmtN = (v) => (v || 0).toLocaleString();
 
-// 🛠️ ฟังก์ชันแปลงวันที่ให้ตรงกัน 100% ป้องกัน Timezone หรอก
+// 🛠️ ฟังก์ชันแปลงวันที่แก้บั๊กตัดปี (Year Truncation Bug Fix)
 const getLocalDateStr = (rawDate) => {
     if (!rawDate) return "";
     let d = new Date(rawDate);
-    if (isNaN(d.getTime())) return String(rawDate).substring(0, 10);
+    // ถ้า Date อ่านไม่ออก (NaN) ให้ส่งค่าเดิมกลับไป
+    if (isNaN(d.getTime())) return String(rawDate).trim();
+    // ถ้าอ่านออก ให้บังคับโครงสร้างเป็น YYYY-MM-DD ทันที
     let year = d.getFullYear();
     let month = String(d.getMonth() + 1).padStart(2, '0');
     let day = String(d.getDate()).padStart(2, '0');
@@ -175,13 +177,13 @@ async function initFulfillmentRealtime() {
         const result = await response.json();
         let bqDataList = result.success && result.data ? result.data : [];
 
-        // 🟢 1. สร้างศูนย์รวมวันที่ (แก้ Timezone Date 9 หาย)
+        // 🟢 1. สร้างศูนย์รวมวันที่ (แก้ Timezone Date Bug)
         let unifiedDatesMap = {};
         
-        // 1.1 นำข้อมูลจาก App Script (ยอด Orders) มาใส่ก่อนเป็นตัวยืนพื้น
+        // 1.1 นำข้อมูลจาก App Script (ยอด Orders) มาตั้งต้นก่อน
         if (globalData.wave_ops) {
             Object.keys(globalData.wave_ops).forEach(k => {
-                let localDate = getLocalDateStr(k); // ตัดเวลาทิ้งเป็น YYYY-MM-DD
+                let localDate = getLocalDateStr(k); // ตัดเวลาและบังคับเป็น YYYY-MM-DD
                 if (!unifiedDatesMap[localDate]) unifiedDatesMap[localDate] = { bq: {}, wave: {} };
                 
                 let wData = globalData.wave_ops[k].bu_data || {};
@@ -201,7 +203,7 @@ async function initFulfillmentRealtime() {
             try { 
                 let rawBq = JSON.parse(row.ownerJson || '{}'); 
                 Object.keys(rawBq).forEach(rawBu => {
-                    let sBu = standardizeBU(rawBu); // ป้องกันชื่อ BU ซ้ำซ้อน (DM02 vs DM02 )
+                    let sBu = standardizeBU(rawBu); 
                     if (sBu !== 'UNKNOWN' && sBu !== '') {
                         if (!unifiedDatesMap[localDate].bq[sBu]) {
                             unifiedDatesMap[localDate].bq[sBu] = { req:0, alloc:0, ship:0, actShort:0, pu:0, plt:0 };
@@ -218,7 +220,9 @@ async function initFulfillmentRealtime() {
             } catch(e) {}
         });
 
-        let sortedDates = Object.keys(unifiedDatesMap).sort((a,b) => new Date(b) - new Date(a)).slice(0, 30);
+        // ลบวันที่ ที่เป็น String เปล่าออกไป (ถ้ามี)
+        delete unifiedDatesMap[""];
+        let sortedDates = Object.keys(unifiedDatesMap).sort((a,b) => new Date(b) - new Date(a));
 
         // 🌟 สร้างตาราง HTML (ปลดล็อกความกว้าง ให้ Scroll ได้สวยๆ)
         let htmlTable = `<div class="data-card" style="margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden;">
@@ -255,7 +259,7 @@ async function initFulfillmentRealtime() {
             // 📝 วนลูปตามวันที่จากใหม่ไปเก่า สร้างตาราง
             sortedDates.forEach(dateStr => {
                 let dObj = new Date(dateStr);
-                let displayDate = isNaN(dObj) ? dateStr : `${dObj.getDate()}/${dObj.getMonth()+1}/${dObj.getFullYear()}`;
+                let displayDate = isNaN(dObj.getTime()) ? dateStr : `${dObj.getDate()}/${dObj.getMonth()+1}/${dObj.getFullYear()}`;
                 
                 let bqData = unifiedDatesMap[dateStr].bq || {};
                 let wData = unifiedDatesMap[dateStr].wave || {};
@@ -270,7 +274,7 @@ async function initFulfillmentRealtime() {
                     const bItem = bqData[bu] || {};
                     const wItem = wData[bu] || {};
                     
-                    // ดึงยอด Orders จาก App Script มาใช้ (นับตั้งแต่วันที่มี Order)
+                    // ดึงยอด Orders จาก App Script (มีข้อมูลปุ๊บนับทันที ไม่สนว่า Shipped หรือยัง)
                     const ordTotal = Math.max(parseFloat(bItem.ordTotal || 0), parseFloat(wItem.ordTotal || 0));
                     const ordFull = Math.max(parseFloat(bItem.ordFull || 0), parseFloat(wItem.ordFull || 0));
                     
@@ -339,7 +343,7 @@ async function initFulfillmentRealtime() {
             let sortedChartDates = Object.keys(chartDataMap).sort((a,b)=>new Date(a)-new Date(b)).slice(-14);
             sortedChartDates.forEach(dStr => {
                 let dObj = new Date(dStr);
-                let disp = isNaN(dObj) ? dStr : `${dObj.getDate()} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dObj.getMonth()]}`;
+                let disp = isNaN(dObj.getTime()) ? dStr : `${dObj.getDate()} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dObj.getMonth()]}`;
                 trendLabels.push(disp);
                 
                 let req = chartDataMap[dStr].req;
@@ -710,12 +714,12 @@ function updateDashboardData(selectedDateStr) {
     const getDisplayDate = (dateString) => {
         if (!dateString) return "--";
         const dObj = new Date(dateString);
-        return `${String(dObj.getDate()).padStart(2, '0')} ${months[dObj.getMonth()]} ${dObj.getFullYear()}`;
+        return isNaN(dObj.getTime()) ? dateString : `${String(dObj.getDate()).padStart(2, '0')} ${months[dObj.getMonth()]} ${dObj.getFullYear()}`;
     };
     const getShortDate = (dateString) => {
         if (!dateString) return "--";
         const dObj = new Date(dateString);
-        return `${String(dObj.getDate()).padStart(2, '0')} ${months[dObj.getMonth()]}`;
+        return isNaN(dObj.getTime()) ? dateString : `${String(dObj.getDate()).padStart(2, '0')} ${months[dObj.getMonth()]}`;
     };
     
     try {
@@ -1008,7 +1012,31 @@ function updateDashboardData(selectedDateStr) {
                 }
             }
 
-            // แสดงตาราง Wave Summary Table 
+            // แสดงยอดการ์ด Orders Shipped
+            const ordersEl = document.getElementById('ffm-orders-shipped');
+            if (ordersEl) {
+                ordersEl.innerText = totalOrdersToday > 0 ? fmtN(totalOrdersToday) : "0";
+                const trendEl = document.getElementById('ffm-orders-trend');
+                const trendTextEl = document.getElementById('ffm-orders-note');
+                
+                if (trendEl) {
+                    if (totalOrdersYesterday === 0 && totalOrdersToday === 0) {
+                        trendEl.className = "badge info"; trendEl.innerText = "-"; if(trendTextEl) trendTextEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
+                    } else if (totalOrdersYesterday === 0) {
+                        trendEl.className = "badge up"; trendEl.innerText = "↗ 100%"; if(trendTextEl) trendTextEl.innerText = "vs previous";
+                    } else {
+                        let pctDiff = ((totalOrdersToday - totalOrdersYesterday) / totalOrdersYesterday) * 100;
+                        if (pctDiff > 0) { trendEl.className = "badge up"; trendEl.innerText = `↗ +${pctDiff.toFixed(1)}%`; } 
+                        else if (pctDiff < 0) { trendEl.className = "badge down"; trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(1)}%`; } 
+                        else { trendEl.className = "badge info"; trendEl.innerText = `0%`; }
+                        if(trendTextEl && prevWaveKey) { trendTextEl.innerText = `vs ${getShortDate(prevWaveKey)}`; }
+                    }
+                }
+                let ordersUpdateEl = ordersEl.parentElement.nextElementSibling;
+                if (ordersUpdateEl && targetWaveFfmKey) ordersUpdateEl.innerText = `Updated: ${getDisplayDate(targetWaveFfmKey)}`;
+            }
+
+            // แสดงตาราง Wave Summary
             const waveSummaryTable = document.getElementById('wave-summary-table');
             if (waveSummaryTable) {
                 let allBUs = new Set();
