@@ -833,13 +833,14 @@ async function initFulfillmentRealtime() {
                 }
                 
                 // 🟢 อัปเดตข้อความ Updated ของการ์ด Wave Operations
-                if (todayKeyStr) {
-                    let dispDate = getDisplayDate(todayKeyStr);
-                    if(document.getElementById('wave-date-1')) document.getElementById('wave-date-1').innerText = `Updated: ${dispDate}`;
-                    if(document.getElementById('wave-date-2')) document.getElementById('wave-date-2').innerText = `Updated: ${dispDate}`;
-                    if(document.getElementById('wave-date-3')) document.getElementById('wave-date-3').innerText = `Updated: ${dispDate}`;
-                    if(document.getElementById('wave-date-4')) document.getElementById('wave-date-4').innerText = `Updated: ${dispDate}`;
-                }
+let targetWaveDate = activeWaveKey || todayKeyStr; // ใช้ activeWaveKey เป็นหลัก เพราะคือวันที่ของข้อมูลที่กำลังแสดงอยู่จริงๆ
+if (targetWaveDate) {
+    let dispDate = getDisplayDate(targetWaveDate);
+    if(document.getElementById('wave-date-1')) document.getElementById('wave-date-1').innerText = `Updated: ${dispDate}`;
+    if(document.getElementById('wave-date-2')) document.getElementById('wave-date-2').innerText = `Updated: ${dispDate}`;
+    if(document.getElementById('wave-date-3')) document.getElementById('wave-date-3').innerText = `Updated: ${dispDate}`;
+    if(document.getElementById('wave-date-4')) document.getElementById('wave-date-4').innerText = `Updated: ${dispDate}`;
+}
             }
             if (typeof generateExecutiveAlerts === "function") generateExecutiveAlerts(targetTimestamp, activeWaveKey, aLate, aDelay, diffDays, worstBU);
         }
