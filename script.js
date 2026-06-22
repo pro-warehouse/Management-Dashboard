@@ -436,8 +436,9 @@ const ordFull = bData.full;
                         <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${plt > 0 ? plt.toFixed(1) : '-'}</td>
                     </tr>`;
 
-                    if (!chartDataMap[dateStr]) chartDataMap[dateStr] = { req:0, ship:0, ordTotal:0, buShip: {}, buReq: {}, buOrd: {} };
+                    if (!chartDataMap[dateStr]) chartDataMap[dateStr] = { req:0, alloc:0, ship:0, ordTotal:0, buShip: {}, buReq: {}, buOrd: {} };
                     chartDataMap[dateStr].req += req;
+                    chartDataMap[dateStr].alloc += alloc; // 🟢 เพิ่มการเก็บค่า ETA (alloc)
                     chartDataMap[dateStr].ship += ship;
                     chartDataMap[dateStr].ordTotal += ordTotal;
                     
@@ -799,6 +800,65 @@ let ordFull = bData.full;
                 });
                 waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
             }
+
+            // ========================================================
+        // 🟢 อัปเดตการ์ด: AVG. FULFILLMENT RATE (ดึงวันล่าสุดที่มีข้อมูล Shipped)
+        // ========================================================
+        let latestShipDateStr = null;
+        let prevShipDateStr = null;
+        
+        for (let d of sortedDates) {
+            let s = chartDataMap[d]?.ship || 0;
+            if (s > 0) {
+                if (!latestShipDateStr) latestShipDateStr = d;
+                else if (!prevShipDateStr) { prevShipDateStr = d; break; }
+            }
+        }
+
+        const rateValEl = document.getElementById('ffm-rate-val');
+        const rateEtaEl = document.getElementById('ffm-rate-eta');
+        if (rateValEl && latestShipDateStr) {
+            let lReq = chartDataMap[latestShipDateStr].req || 0;
+            let lAlloc = chartDataMap[latestShipDateStr].alloc || 0; // ETA
+            let lShip = chartDataMap[latestShipDateStr].ship || 0;
+            
+            let pReq = prevShipDateStr ? (chartDataMap[prevShipDateStr].req || 0) : 0;
+            let pShip = prevShipDateStr ? (chartDataMap[prevShipDateStr].ship || 0) : 0;
+
+            let currentFfm = lReq > 0 ? (lShip / lReq) * 100 : 0;
+            let currentEtaFfm = lAlloc > 0 ? (lShip / lAlloc) * 100 : 0;
+            let prevFfm = pReq > 0 ? (pShip / pReq) * 100 : 0;
+
+            // 1. แบบ Req เทียบกับ Shipped (โชว์ตัวใหญ่)
+            let reqColor = currentFfm >= 99 ? '#10B981' : (currentFfm >= 95 ? '#F59E0B' : '#EF4444');
+            rateValEl.innerHTML = `<span style="color: ${reqColor}">Req: ${currentFfm.toFixed(1)}%</span>`;
+            
+            // 2. แบบ ETA เทียบกับ Shipped (โชว์บรรทัดรอง สีฟ้า)
+            if (rateEtaEl) rateEtaEl.innerHTML = `ETA: ${currentEtaFfm.toFixed(1)}%`;
+
+            // เทียบเปอร์เซ็นต์ (Req) กับวันก่อนหน้า
+            const rateTrendEl = document.getElementById('ffm-rate-trend');
+            const rateNoteEl = document.getElementById('ffm-rate-note');
+            
+            if (rateTrendEl && rateNoteEl) {
+                if (!prevShipDateStr) {
+                    rateTrendEl.className = "badge info"; rateTrendEl.innerText = "-"; rateNoteEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
+                } else {
+                    let diff = currentFfm - prevFfm;
+                    let prevDateText = formatShortDate(prevShipDateStr);
+                    if (diff > 0) { rateTrendEl.className = "badge up"; rateTrendEl.innerText = `↗ +${diff.toFixed(1)}%`; } 
+                    else if (diff < 0) { rateTrendEl.className = "badge down"; rateTrendEl.innerText = `↘ ${Math.abs(diff).toFixed(1)}%`; } 
+                    else { rateTrendEl.className = "badge info"; rateTrendEl.innerText = `0%`; }
+                    rateNoteEl.innerText = `vs ${prevDateText}`;
+                }
+            }
+
+            // วันที่อัปเดต (ยึดตามวันที่ Shipped ล่าสุด)
+            const rateUpdateEl = document.getElementById('ffm-rate-update');
+            if (rateUpdateEl) {
+                rateUpdateEl.innerText = `Updated: ${getDisplayDate(latestShipDateStr)}`;
+            }
+        }
             
             // 🟢 อัปเดตข้อความ Updated ของการ์ด WAVE PLAN SUMMARY
             let waveCard = waveSummaryTable.closest('.data-card, .card');
