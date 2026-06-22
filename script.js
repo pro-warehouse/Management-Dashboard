@@ -371,7 +371,7 @@ async function initFulfillmentRealtime() {
                     const estShort = Math.max(0, req - alloc);
 
                     // 🎯 แก้ไขสูตร Ord.SLA ตามเงื่อนไข All-or-Nothing (ผ่าน=100%, ตก=0%)
-                    const ordSLA = ordTotal > 0 ? ((ordFull >= ordTotal && ship >= req) ? 1 : 0) : null;
+                    const ordSLA = ordTotal > 0 ? Math.min(1, (ordFull / ordTotal)) : null;
                     const dcSLA = alloc > 0 ? Math.min(1, (ship / alloc)) : null;
                     const ffm = req > 0 ? Math.min(1, (ship / req)) : null;
                     const pcsPick = pu > 0 ? (req / pu) : null;
