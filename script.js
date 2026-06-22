@@ -557,7 +557,7 @@ async function initFulfillmentRealtime() {
                 let d = sortedDates[i];
                 if (new Date(d).getTime() > targetTimestamp) continue; // ข้ามวันที่เป็นอนาคต
                 
-                let totalReqForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d]?.buReq[bu] || 0), 0);
+                let totalReqForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d]?.buReq?.[bu] || 0), 0);
                 if (totalReqForDay > 0) { 
                     targetD = d; 
                     break; 
@@ -1046,7 +1046,7 @@ async function fetchSection(sectionName) {
         const response = await fetch(`${GAS_URL}?section=${sectionName}`);
         const textResponse = await response.text(); // 🟢 อ่านข้อมูลเป็น Text ดิบๆ ก่อนเพื่อดัก Error
         try {
-            const result = JSON.parse(textResponse); // 🟢 ลองแปลงเป็น JSON ถ้าพังมันจะกระโดดไป catch
+            const result = JSON.parse(textResponse); // 🟢 ลองแปลงเป็น JSON
             if (result.status === "success") {
                 Object.assign(globalData, result.data);
                 cleanDataBeforeLoad();
@@ -1056,7 +1056,7 @@ async function fetchSection(sectionName) {
                 refreshUIBySection(sectionName);
             }
         } catch (jsonErr) {
-            console.error(`❌ GAS API Error (${sectionName}): ข้อมูลที่ได้ไม่ใช่ JSON ->`, textResponse.substring(0, 100));
+            console.error(`❌ ข้อมูลที่ได้ไม่ใช่ JSON ในหมวด ${sectionName} ->`, textResponse.substring(0, 50));
         }
     } catch (e) { console.error(`Error loading ${sectionName}:`, e); }
 }
