@@ -393,9 +393,6 @@ async function initFulfillmentRealtime() {
         htmlTable += "</tbody></table></div></div>";
         wrapperEl.innerHTML = htmlTable;
 
-        // ==========================================
-        // 🌟 อัปเดตกราฟ FFM (ซ้าย: Stacked Bar | ขวา: Doughnut) 🌟
-        // ==========================================
         const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
         const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
         
@@ -403,24 +400,35 @@ async function initFulfillmentRealtime() {
         let allBUsArray = Array.from(buNamesSet).sort();
         const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-        // เปลี่ยนหัวกราฟให้ตรงกับความหมายใหม่ (จำนวนชิ้น Req)
+        // เปลี่ยนหัวกราฟ
         const trendTitle = document.querySelector('#ffmTrendChart')?.closest('.card')?.querySelector('h3');
         if (trendTitle) trendTitle.innerText = "DAILY REQUESTED VOLUME BY BU (PCS)";
         
         const volTitle = document.querySelector('#ffmVolumeChart')?.closest('.card')?.querySelector('h3');
         if (volTitle) volTitle.innerText = "REQUESTED MIX BY BU (PCS)";
 
+        // 🟢 1. จัดการ Filter Owner (BU)
+        const ffmBuFilter = document.getElementById('ffm-bu-filter');
+        if (ffmBuFilter && ffmBuFilter.options.length <= 1) {
+            allBUsArray.forEach(bu => ffmBuFilter.appendChild(new Option(bu, bu)));
+        }
+        
+        const ffmBuFilterVal = ffmBuFilter?.value || 'ALL';
+        let chartBUsArray = ffmBuFilterVal === 'ALL' ? allBUsArray : [ffmBuFilterVal];
+
+        // 🟢 2. อัปเดตกราฟแท่ง (Stacked Bar)
         if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
             let tpLabels = validChartDates.map(dStr => {
                 let parts = dStr.split('-');
                 return parts.length === 3 ? `${parseInt(parts[2])} ${shortMonths[parseInt(parts[1])-1]}` : dStr;
             });
             
-            let tpDatasets = allBUsArray.map((bu, i) => {
+            let tpDatasets = chartBUsArray.map((bu, i) => {
+                let colorIndex = allBUsArray.indexOf(bu) !== -1 ? allBUsArray.indexOf(bu) : i; 
                 return {
                     label: bu,
                     data: validChartDates.map(dStr => parseFloat(chartDataMap[dStr].buReq[bu] || 0)), 
-                    backgroundColor: chartPalette[i % chartPalette.length],
+                    backgroundColor: chartPalette[colorIndex % chartPalette.length],
                     borderRadius: 4
                 };
             });
@@ -437,6 +445,47 @@ async function initFulfillmentRealtime() {
             ffmTrendChartInstance.options.scales.y.beginAtZero = true;
             ffmTrendChartInstance.options.scales.y.border = { display: false };
             ffmTrendChartInstance.update();
+        }
+
+        // 🟢 3. อัปเดตกราฟโดนัท (Doughnut)
+        if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
+            let targetD = validChartDates[validChartDates.length - 1]; 
+            for (let i = validChartDates.length - 1; i >= 0; i--) {
+                let d = validChartDates[i];
+                let totalReqForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d].buReq[bu] || 0), 0);
+                if (totalReqForDay > 0) {
+                    targetD = d;
+                    break;
+                }
+            }
+
+            let mixLabels = [];
+            let mixData = [];
+            let mixColors = [];
+            
+            chartBUsArray.forEach((bu, i) => {
+                let reqPcs = chartDataMap[targetD].buReq[bu] || 0;
+                if (reqPcs > 0) {
+                    mixLabels.push(bu);
+                    mixData.push(reqPcs);
+                    let colorIndex = allBUsArray.indexOf(bu) !== -1 ? allBUsArray.indexOf(bu) : i;
+                    mixColors.push(chartPalette[colorIndex % chartPalette.length]);
+                }
+            });
+
+            ffmVolumeChartInstance.config.type = 'doughnut';
+            ffmVolumeChartInstance.data.labels = mixLabels;
+            ffmVolumeChartInstance.data.datasets = [{
+                data: mixData,
+                backgroundColor: mixColors,
+                borderWidth: 0
+            }];
+            
+            if (ffmVolumeChartInstance.options.scales) {
+                delete ffmVolumeChartInstance.options.scales;
+            }
+
+            ffmVolumeChartInstance.update();
         }
 
         if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
@@ -2559,3 +2608,4 @@ function saveTargets() {
 
 document.getElementById('prod-area-filter')?.addEventListener('change', renderProductivitySection);
 document.getElementById('prod-period-filter')?.addEventListener('change', renderProductivitySection);
+document.getElementById('ffm-bu-filter')?.addEventListener('change', initFulfillmentRealtime);
