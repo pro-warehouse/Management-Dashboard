@@ -403,12 +403,12 @@ async function initFulfillmentRealtime() {
         let allBUsArray = Array.from(buNamesSet).sort();
         const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-        // เปลี่ยนหัวกราฟให้ตรงกับความหมายใหม่
+        // เปลี่ยนหัวกราฟให้ตรงกับความหมายใหม่ (จำนวนชิ้น Req)
         const trendTitle = document.querySelector('#ffmTrendChart')?.closest('.data-card')?.querySelector('h3');
-        if (trendTitle && !trendTitle.innerText.includes('THROUGHPUT')) trendTitle.innerText = "DAILY THROUGHPUT BY BU";
+        if (trendTitle) trendTitle.innerText = "DAILY REQUESTED VOLUME BY BU (PCS)";
         
         const volTitle = document.querySelector('#ffmVolumeChart')?.closest('.data-card')?.querySelector('h3');
-        if (volTitle && !volTitle.innerText.includes('MIX')) volTitle.innerText = "ORDER MIX BY BU (PIECES)";
+        if (volTitle) volTitle.innerText = "REQUESTED MIX BY BU (PCS)";
 
         if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
             let tpLabels = validChartDates.map(dStr => {
@@ -419,7 +419,7 @@ async function initFulfillmentRealtime() {
             let tpDatasets = allBUsArray.map((bu, i) => {
                 return {
                     label: bu,
-                    data: validChartDates.map(dStr => parseFloat(chartDataMap[dStr].buShip[bu] || 0)), 
+                    data: validChartDates.map(dStr => parseFloat(chartDataMap[dStr].buReq[bu] || 0)), 
                     backgroundColor: chartPalette[i % chartPalette.length],
                     borderRadius: 4
                 };
