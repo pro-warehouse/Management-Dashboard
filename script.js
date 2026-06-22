@@ -383,9 +383,10 @@ async function initFulfillmentRealtime() {
                     chartDataMap[dateStr].ship += ship;
                     chartDataMap[dateStr].ordTotal += ordTotal;
                     
-                    // เก็บค่าไว้ใช้วาดกราฟ (ใช้ข้อมูลชิ้นล้วนๆ ห้าม fallback ไปใช้จำนวนบิล ordTotal เด็ดขาด)
+                    // เก็บค่าไว้ใช้วาดกราฟ
                     chartDataMap[dateStr].buShip[bu] = ship; 
                     chartDataMap[dateStr].buReq[bu] = req;
+                    chartDataMap[dateStr].buOrd[bu] = ordTotal; // เพิ่มบรรทัดนี้ เพื่อเก็บค่ายอดบิล (Orders)
                 });
             });
         }
@@ -405,7 +406,7 @@ async function initFulfillmentRealtime() {
         if (trendTitle) trendTitle.innerText = "DAILY REQUESTED VOLUME BY BU (PCS)";
         
         const volTitle = document.querySelector('#ffmVolumeChart')?.closest('.card')?.querySelector('h3');
-        if (volTitle) volTitle.innerText = "REQUESTED MIX BY BU (PCS)";
+        if (volTitle) volTitle.innerText = "ORDER MIX BY BU (ORDERS)";
 
         // 🟢 1. จัดการ Filter Owner (BU)
         const ffmBuFilter = document.getElementById('ffm-bu-filter');
@@ -452,8 +453,9 @@ async function initFulfillmentRealtime() {
             let targetD = validChartDates[validChartDates.length - 1]; 
             for (let i = validChartDates.length - 1; i >= 0; i--) {
                 let d = validChartDates[i];
-                let totalReqForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d].buReq[bu] || 0), 0);
-                if (totalReqForDay > 0) {
+                // เปลี่ยนมาเช็คหายอด Order ของวันล่าสุด
+                let totalOrdForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d].buOrd[bu] || 0), 0);
+                if (totalOrdForDay > 0) {
                     targetD = d;
                     break;
                 }
@@ -464,10 +466,10 @@ async function initFulfillmentRealtime() {
             let mixColors = [];
             
             chartBUsArray.forEach((bu, i) => {
-                let reqPcs = chartDataMap[targetD].buReq[bu] || 0;
-                if (reqPcs > 0) {
+                let ordCnt = chartDataMap[targetD].buOrd[bu] || 0; // ดึงยอด Order (buOrd) มาใช้
+                if (ordCnt > 0) {
                     mixLabels.push(bu);
-                    mixData.push(reqPcs);
+                    mixData.push(ordCnt);
                     let colorIndex = allBUsArray.indexOf(bu) !== -1 ? allBUsArray.indexOf(bu) : i;
                     mixColors.push(chartPalette[colorIndex % chartPalette.length]);
                 }
