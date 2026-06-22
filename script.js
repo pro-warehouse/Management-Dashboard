@@ -463,7 +463,7 @@ async function initFulfillmentRealtime() {
                     let colorIndex = allBUsArray.indexOf(bu) !== -1 ? allBUsArray.indexOf(bu) : i; 
                     return {
                         label: bu,
-                        data: validChartDates.map(dStr => parseFloat(chartDataMap[dStr].buReq[bu] || 0)), 
+                        data: validChartDates.map(dStr => parseFloat(chartDataMap[dStr]?.buReq?.[bu] || 0)), 
                         backgroundColor: chartPalette[colorIndex % chartPalette.length],
                         borderRadius: 4
                     };
@@ -493,7 +493,7 @@ async function initFulfillmentRealtime() {
                 
                 for (let i = validChartDates.length - 1; i >= 0; i--) {
                     let d = validChartDates[i];
-                    let totalOrdForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d].buOrd[bu] || 0), 0);
+                    let totalOrdForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d]?.buOrd?.[bu] || 0), 0);
                     if (totalOrdForDay > 0) {
                         targetD = d;
                         break;
@@ -512,7 +512,7 @@ async function initFulfillmentRealtime() {
                 let mixColors = [];
                 
                 chartBUsArray.forEach((bu, i) => {
-                    let ordCnt = chartDataMap[targetD].buOrd[bu] || 0; 
+                    let ordCnt = chartDataMap[targetD]?.buOrd?.[bu] || 0; 
                     if (ordCnt > 0) {
                         mixLabels.push(bu);
                         mixData.push(ordCnt);
@@ -570,7 +570,7 @@ async function initFulfillmentRealtime() {
             let utilData = [];
 
             chartBUsArray.forEach(bu => {
-                let vol = chartDataMap[targetD].buReq[bu] || 0; // ใช้ยอดชิ้น (Req)
+                let vol = chartDataMap[targetD]?.buReq?.[bu] || 0;
                 if (vol > 0 || mockCapacityMap[bu]) {
                     let cap = mockCapacityMap[bu] || DEFAULT_CAPACITY;
                     let utilPct = cap > 0 ? (vol / cap) * 100 : 0;
@@ -646,10 +646,10 @@ async function initFulfillmentRealtime() {
         if (validWaveKeys.length > 0) {
             let todayKey = validWaveKeys.find(k => new Date(k).getTime() <= targetTimestamp);
             if (todayKey) {
-                totalOrdersToday = chartDataMap[todayKey].ordTotal || 0;
-                let yIndex = validWaveKeys.indexOf(todayKey) + 1;
-                if (yIndex < validWaveKeys.length) totalOrdersYesterday = chartDataMap[validWaveKeys[yIndex]].ordTotal || 0;
-            }
+    totalOrdersToday = chartDataMap[todayKey]?.ordTotal || 0;
+    let yIndex = validWaveKeys.indexOf(todayKey) + 1;
+    if (yIndex < validWaveKeys.length) totalOrdersYesterday = chartDataMap[validWaveKeys[yIndex]]?.ordTotal || 0;
+}
             
             let reversedKeys = [...validWaveKeys].reverse();
             for (let k of reversedKeys) {
