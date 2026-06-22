@@ -535,6 +535,7 @@ async function initFulfillmentRealtime() {
             }
             
             ffmVolumeChartInstance.update();
+        } // <--- เพิ่มปีกกาปิดเงื่อนไข if ตรงนี้
         } catch(chartErr) {
             console.error("Chart Rendering Error:", chartErr);
         }
