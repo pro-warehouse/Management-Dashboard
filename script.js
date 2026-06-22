@@ -20,7 +20,7 @@ const chartPalette = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#1
 
 const fmtN = (v) => (v || 0).toLocaleString();
 
-// 🛠️ 1. Smart Date Normalizer (แก้ปัญหาวันที่ Invalid Date และปีหาย)
+// 🛠️ 1. Smart Date Normalizer
 const getStandardDate = (rawDate) => {
     if (!rawDate) return "";
     let str = String(rawDate).trim();
@@ -33,7 +33,7 @@ const getStandardDate = (rawDate) => {
             let m = parts[1].padStart(2, '0');
             let y = parts[2];
             if (y.length === 2) y = "20" + y; 
-            else if (y.length === 3 && y.startsWith("202")) y = y + "6"; // ซ่อมบั๊กปี 202 -> 2026
+            else if (y.length === 3 && y.startsWith("202")) y = y + "6";
             return `${y}-${m}-${d}`;
         }
     }
@@ -64,29 +64,32 @@ const dataLabelPlugin = {
         if(chart.config.type !== 'bar' || chart.canvas.id === 'productivityChart') return;
         const { ctx } = chart;
 
-        // 🟢 ถ้าเป็นกราฟ Stacked Bar ให้วาดผลรวม (Grand Total) ไว้บนยอด
+        // 🟢 ถ้าเป็นกราฟ Stacked Bar (ffmTrendChart) ให้วาดผลรวม (Grand Total) ไว้บนยอด
         if (chart.canvas.id === 'ffmTrendChart') {
-            let totals = [];
-            let xCoords = [];
-            chart.data.datasets.forEach((dataset, i) => {
-                if (!chart.isDatasetVisible(i)) return;
-                const meta = chart.getDatasetMeta(i);
-                dataset.data.forEach((val, index) => {
-                    totals[index] = (totals[index] || 0) + (val || 0);
-                    if (meta.data[index]) xCoords[index] = meta.data[index].x;
+            try {
+                let totals = [];
+                let xCoords = [];
+                chart.data.datasets.forEach((dataset, i) => {
+                    if (!chart.isDatasetVisible(i)) return;
+                    const meta = chart.getDatasetMeta(i);
+                    dataset.data.forEach((val, index) => {
+                        totals[index] = (totals[index] || 0) + (val || 0);
+                        if (meta.data[index]) xCoords[index] = meta.data[index].x;
+                    });
                 });
-            });
 
-            chart.data.labels.forEach((_, index) => {
-                if (totals[index] > 0 && xCoords[index]) {
-                    const y = chart.scales.y.getPixelForValue(totals[index]);
-                    ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F9FAFB' : '#111827';
-                    ctx.font = 'bold 11px Inter';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'bottom';
-                    ctx.fillText(fmtN(Math.round(totals[index])), xCoords[index], y - 5);
-                }
-            });
+                const yScale = chart.scales.y || chart.scales['y-axis-0']; // รองรับ ChartJS หลายเวอร์ชัน
+                chart.data.labels.forEach((_, index) => {
+                    if (totals[index] > 0 && xCoords[index] && yScale) {
+                        const y = yScale.getPixelForValue(totals[index]);
+                        ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F9FAFB' : '#111827';
+                        ctx.font = 'bold 11px Inter';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText(fmtN(Math.round(totals[index])), xCoords[index], y - 5);
+                    }
+                });
+            } catch(e) { console.warn("Grand Total Drawing Error:", e); }
             return; 
         }
 
@@ -155,7 +158,7 @@ if (ffmTrendCtx) ffmTrendChartInstance = new Chart(ffmTrendCtx, {
         plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 } } } }, 
         scales: { 
             x: { stacked: true, grid: { display: false } }, 
-            y: { stacked: true, border: { display: false }, beginAtZero: true } 
+            y: { stacked: true, border: { display: false }, beginAtZero: true, grace: '15%' } 
         } 
     } 
 });
@@ -219,7 +222,7 @@ async function initFulfillmentRealtime() {
     if (!wrapperEl) {
         const tableEl = document.getElementById('ffm-detail-table');
         if (!tableEl) return;
-        const targetCard = tableEl.closest('.data-card') || tableEl.parentElement;
+        const targetCard = tableEl.closest('.data-card, .card, .chart-card') || tableEl.parentElement;
         wrapperEl = document.createElement('div');
         wrapperEl.id = 'fulfillment-v3-wrapper';
         targetCard.parentNode.insertBefore(wrapperEl, targetCard);
@@ -367,9 +370,8 @@ async function initFulfillmentRealtime() {
 
                     const estShort = Math.max(0, req - alloc);
 
-                    // เช็คว่า บิลทำเสร็จครบไหม (ordFull >= ordTotal) และ ชิ้นส่งครบไหม (ship >= req)
-// ถ้าครบทั้งคู่ให้ 1 (100%) ถ้าขาดอย่างใดอย่างหนึ่งให้ 0 (0%)
-const ordSLA = ordTotal > 0 ? ((ordFull >= ordTotal && ship >= req) ? 1 : 0) : null;
+                    // 🎯 แก้ไขสูตร Ord.SLA ตามเงื่อนไข All-or-Nothing (ผ่าน=100%, ตก=0%)
+                    const ordSLA = ordTotal > 0 ? ((ordFull >= ordTotal && ship >= req) ? 1 : 0) : null;
                     const dcSLA = alloc > 0 ? Math.min(1, (ship / alloc)) : null;
                     const ffm = req > 0 ? Math.min(1, (ship / req)) : null;
                     const pcsPick = pu > 0 ? (req / pu) : null;
@@ -404,7 +406,7 @@ const ordSLA = ordTotal > 0 ? ((ordFull >= ordTotal && ship >= req) ? 1 : 0) : n
                     chartDataMap[dateStr].ship += ship;
                     chartDataMap[dateStr].ordTotal += ordTotal;
                     
-                    // เก็บค่าไว้ใช้วาดกราฟ
+                    // เก็บค่าไว้ใช้วาดกราฟ (รวมถึง buOrd ด้วย)
                     chartDataMap[dateStr].buShip[bu] = ship; 
                     chartDataMap[dateStr].buReq[bu] = req;
                     chartDataMap[dateStr].buOrd[bu] = ordTotal;
@@ -425,95 +427,106 @@ const ordSLA = ordTotal > 0 ? ((ordFull >= ordTotal && ship >= req) ? 1 : 0) : n
         let allBUsArray = Array.from(buNamesSet).sort();
         const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-        // 🟢 1. จัดการ Filter Owner (BU)
-        const ffmBuFilter = document.getElementById('ffm-bu-filter');
-        if (ffmBuFilter && ffmBuFilter.options.length <= 1) {
-            allBUsArray.forEach(bu => ffmBuFilter.appendChild(new Option(bu, bu)));
-        }
-        
-        const ffmBuFilterVal = ffmBuFilter?.value || 'ALL';
-        let chartBUsArray = ffmBuFilterVal === 'ALL' ? allBUsArray : [ffmBuFilterVal];
-
-        // 🟢 2. อัปเดตกราฟแท่ง (Stacked Bar) - จำนวนชิ้น (PCS)
-        if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance && validChartDates.length > 0) {
-            let tpLabels = validChartDates.map(dStr => {
-                let parts = dStr.split('-');
-                return parts.length === 3 ? `${parseInt(parts[2])} ${shortMonths[parseInt(parts[1])-1]}` : dStr;
-            });
-            
-            const trendTitle = document.querySelector('#ffmTrendChart')?.closest('.card')?.querySelector('h3');
-            if (trendTitle) {
-                trendTitle.innerText = `DAILY REQUESTED VOLUME BY BU (PCS) | ${tpLabels[0]} - ${tpLabels[tpLabels.length - 1]}`;
+        try {
+            // 🟢 1. จัดการ Filter Owner (BU)
+            const ffmBuFilter = document.getElementById('ffm-bu-filter');
+            if (ffmBuFilter && ffmBuFilter.options.length <= 1) {
+                allBUsArray.forEach(bu => ffmBuFilter.appendChild(new Option(bu, bu)));
             }
+            const ffmBuFilterVal = ffmBuFilter?.value || 'ALL';
+            let chartBUsArray = ffmBuFilterVal === 'ALL' ? allBUsArray : [ffmBuFilterVal];
 
-            let tpDatasets = chartBUsArray.map((bu, i) => {
-                let colorIndex = allBUsArray.indexOf(bu) !== -1 ? allBUsArray.indexOf(bu) : i; 
-                return {
-                    label: bu,
-                    data: validChartDates.map(dStr => parseFloat(chartDataMap[dStr].buReq[bu] || 0)), 
-                    backgroundColor: chartPalette[colorIndex % chartPalette.length],
-                    borderRadius: 4
-                };
-            });
-
-            ffmTrendChartInstance.config.type = 'bar';
-            ffmTrendChartInstance.data = {
-                labels: tpLabels,
-                datasets: tpDatasets
-            };
-            ffmTrendChartInstance.options.scales = {
-                x: { stacked: true, grid: { display: false } },
-                y: { stacked: true, beginAtZero: true, border: { display: false }, grace: '15%' }
-            };
-            ffmTrendChartInstance.update();
-        }
-
-        // 🟢 3. อัปเดตกราฟโดนัท (Doughnut) - ยอดบิล (ORDERS)
-        if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
-            let targetD = validChartDates[validChartDates.length - 1]; 
-            
-            for (let i = validChartDates.length - 1; i >= 0; i--) {
-                let d = validChartDates[i];
-                let totalOrdForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d].buOrd[bu] || 0), 0);
-                if (totalOrdForDay > 0) {
-                    targetD = d;
-                    break;
+            // 🟢 2. อัปเดตกราฟแท่ง (Stacked Bar) - จำนวนชิ้น (PCS)
+            if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance && validChartDates.length > 0) {
+                let tpLabels = validChartDates.map(dStr => {
+                    let parts = dStr.split('-');
+                    return parts.length === 3 ? `${parseInt(parts[2])} ${shortMonths[parseInt(parts[1])-1]}` : dStr;
+                });
+                
+                const trendTitle = document.querySelector('#ffmTrendChart')?.closest('.card, .data-card, .chart-card')?.querySelector('h3');
+                if (trendTitle && tpLabels.length > 0) {
+                    trendTitle.innerText = `DAILY REQUESTED VOLUME BY BU (PCS) | ${tpLabels[0]} - ${tpLabels[tpLabels.length - 1]}`;
                 }
+
+                let tpDatasets = chartBUsArray.map((bu, i) => {
+                    let colorIndex = allBUsArray.indexOf(bu) !== -1 ? allBUsArray.indexOf(bu) : i; 
+                    return {
+                        label: bu,
+                        data: validChartDates.map(dStr => parseFloat(chartDataMap[dStr].buReq[bu] || 0)), 
+                        backgroundColor: chartPalette[colorIndex % chartPalette.length],
+                        borderRadius: 4
+                    };
+                });
+
+                ffmTrendChartInstance.config.type = 'bar';
+                ffmTrendChartInstance.data.labels = tpLabels;
+                ffmTrendChartInstance.data.datasets = tpDatasets;
+                
+                if(!ffmTrendChartInstance.options.scales) ffmTrendChartInstance.options.scales = {};
+                if(!ffmTrendChartInstance.options.scales.x) ffmTrendChartInstance.options.scales.x = {};
+                if(!ffmTrendChartInstance.options.scales.y) ffmTrendChartInstance.options.scales.y = {};
+                
+                ffmTrendChartInstance.options.scales.x.stacked = true;
+                ffmTrendChartInstance.options.scales.x.grid = { display: false };
+                ffmTrendChartInstance.options.scales.y.stacked = true;
+                ffmTrendChartInstance.options.scales.y.beginAtZero = true;
+                ffmTrendChartInstance.options.scales.y.border = { display: false };
+                ffmTrendChartInstance.options.scales.y.grace = '15%'; 
+                
+                ffmTrendChartInstance.update();
             }
 
-            const volTitle = document.querySelector('#ffmVolumeChart')?.closest('.card')?.querySelector('h3');
-            if (volTitle) {
-                let parts = targetD.split('-');
-                let dispDate = parts.length === 3 ? `${parseInt(parts[2])} ${shortMonths[parseInt(parts[1])-1]} ${parts[0]}` : targetD;
-                volTitle.innerText = `ORDER MIX BY BU (ORDERS) | ข้อมูลวันที่ ${dispDate}`;
-            }
-
-            let mixLabels = [];
-            let mixData = [];
-            let mixColors = [];
-            
-            chartBUsArray.forEach((bu, i) => {
-                let ordCnt = chartDataMap[targetD].buOrd[bu] || 0; 
-                if (ordCnt > 0) {
-                    mixLabels.push(bu);
-                    mixData.push(ordCnt);
-                    let colorIndex = allBUsArray.indexOf(bu) !== -1 ? allBUsArray.indexOf(bu) : i;
-                    mixColors.push(chartPalette[colorIndex % chartPalette.length]);
+            // 🟢 3. อัปเดตกราฟโดนัท (Doughnut) - ยอดบิล (ORDERS)
+            if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
+                let targetD = validChartDates[validChartDates.length - 1]; 
+                
+                for (let i = validChartDates.length - 1; i >= 0; i--) {
+                    let d = validChartDates[i];
+                    let totalOrdForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d].buOrd[bu] || 0), 0);
+                    if (totalOrdForDay > 0) {
+                        targetD = d;
+                        break;
+                    }
                 }
-            });
 
-            ffmVolumeChartInstance.config.type = 'doughnut';
-            ffmVolumeChartInstance.data = {
-                labels: mixLabels,
-                datasets: [{
+                const volTitle = document.querySelector('#ffmVolumeChart')?.closest('.card, .data-card, .chart-card')?.querySelector('h3');
+                if (volTitle) {
+                    let parts = targetD.split('-');
+                    let dispDate = parts.length === 3 ? `${parseInt(parts[2])} ${shortMonths[parseInt(parts[1])-1]} ${parts[0]}` : targetD;
+                    volTitle.innerText = `ORDER MIX BY BU (ORDERS) | ข้อมูลวันที่ ${dispDate}`;
+                }
+
+                let mixLabels = [];
+                let mixData = [];
+                let mixColors = [];
+                
+                chartBUsArray.forEach((bu, i) => {
+                    let ordCnt = chartDataMap[targetD].buOrd[bu] || 0; 
+                    if (ordCnt > 0) {
+                        mixLabels.push(bu);
+                        mixData.push(ordCnt);
+                        let colorIndex = allBUsArray.indexOf(bu) !== -1 ? allBUsArray.indexOf(bu) : i;
+                        mixColors.push(chartPalette[colorIndex % chartPalette.length]);
+                    }
+                });
+
+                ffmVolumeChartInstance.config.type = 'doughnut';
+                ffmVolumeChartInstance.data.labels = mixLabels;
+                ffmVolumeChartInstance.data.datasets = [{
                     data: mixData,
                     backgroundColor: mixColors,
                     borderWidth: 0
-                }]
-            };
-            ffmVolumeChartInstance.options.scales = {};
-            
-            ffmVolumeChartInstance.update();
+                }];
+                
+                if (ffmVolumeChartInstance.options.scales) {
+                    delete ffmVolumeChartInstance.options.scales.x;
+                    delete ffmVolumeChartInstance.options.scales.y;
+                }
+                
+                ffmVolumeChartInstance.update();
+            }
+        } catch(chartErr) {
+            console.error("Chart Rendering Error:", chartErr);
         }
 
         // ========================================================
