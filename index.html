@@ -175,9 +175,18 @@
                 <div class="card metric-card">
                     <div>
                         <p class="card-subtitle">AVG. FULFILLMENT RATE</p>
-                        <h3 class="card-value" id="ffm-rate-val" style="font-size: 1.25rem; margin-bottom: 3px;">...</h3>
-                        <div id="ffm-rate-eta" style="font-size: 0.85rem; font-weight: 700; color: #3B82F6; margin-bottom: 12px;">...</div>
-                        <div class="card-footer"><span class="badge" id="ffm-rate-trend">-</span> <span class="footer-note" id="ffm-rate-note">Checking...</span></div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                            <h3 class="card-value" id="ffm-rate-val" style="font-size: 1.35rem; margin-bottom: 0; line-height: 1;">...</h3>
+                            <span class="badge" id="ffm-rate-trend" style="font-size: 0.75rem;">-</span>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; padding-top: 8px; border-top: 1px solid var(--border-color);">
+                            <div id="ffm-rate-eta" style="font-size: 1rem; font-weight: 700; color: #3B82F6; line-height: 1;">...</div>
+                            <span class="badge" id="eta-rate-trend" style="font-size: 0.7rem;">-</span>
+                        </div>
+                        
+                        <div class="card-footer"><span class="footer-note" id="ffm-rate-note" style="font-size: 0.75rem;">Checking...</span></div>
                     </div>
                     <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;" id="ffm-rate-update">Updated: --</div>
                 </div>
