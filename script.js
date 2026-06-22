@@ -117,7 +117,6 @@ let workforceChartInstance = null;
 const wfCtx = document.getElementById('workforceChart')?.getContext('2d');
 if (wfCtx) workforceChartInstance = new Chart(wfCtx, { type: 'bar', data: { labels: [], datasets: [{ label: 'จำนวนกำลังพล (คน)', data: [], backgroundColor: '#3B82F6', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, border: { display: false } } }, layout: { padding: { top: 20 } } }, plugins: [dataLabelPlugin] });
 
-// 🟢 กราฟซ้าย: Stacked Bar (Daily Throughput) แยกตาม Owner
 let ffmTrendChartInstance = null;
 const ffmTrendCtx = document.getElementById('ffmTrendChart')?.getContext('2d');
 if (ffmTrendCtx) ffmTrendChartInstance = new Chart(ffmTrendCtx, { 
@@ -133,7 +132,6 @@ if (ffmTrendCtx) ffmTrendChartInstance = new Chart(ffmTrendCtx, {
     } 
 });
 
-// 🟢 กราฟขวา: Doughnut (Order Mix) สัดส่วนจำนวนชิ้นแยกตาม Owner
 let ffmVolumeChartInstance = null;
 const ffmVolCtx = document.getElementById('ffmVolumeChart')?.getContext('2d');
 if (ffmVolCtx) ffmVolumeChartInstance = new Chart(ffmVolCtx, { 
@@ -203,7 +201,6 @@ async function initFulfillmentRealtime() {
     const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
     
     let bqDataList = [];
-    // 🛡️ Fail-Safe: ตรวจจับ API ล่ม ถ้าพังให้ข้ามไปใช้ข้อมูลเก่าจาก App Script
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -219,10 +216,8 @@ async function initFulfillmentRealtime() {
     }
 
     try {
-        // 🟢 1. สร้าง Map วันที่รวม เพื่อปลดล็อกให้ Orders โชว์ครบยันอดีต
         let unifiedDatesMap = {};
         
-        // 1.1 นำข้อมูล History Orders มาใส่
         if (globalData.fulfillment) {
             Object.keys(globalData.fulfillment).forEach(k => {
                 let sd = getStandardDate(k); 
@@ -240,7 +235,6 @@ async function initFulfillmentRealtime() {
             });
         }
 
-        // 1.2 นำข้อมูล Wave Ops ปัจจุบัน มาใส่
         if (globalData.wave_ops) {
             Object.keys(globalData.wave_ops).forEach(k => {
                 let sd = getStandardDate(k); 
@@ -256,7 +250,6 @@ async function initFulfillmentRealtime() {
             });
         }
 
-        // 1.3 นำข้อมูล Pieces จาก BQ มาใส่ (ถ้าไม่พัง)
         bqDataList.forEach(row => {
             let sd = getStandardDate(row.date);
             if (!unifiedDatesMap[sd]) unifiedDatesMap[sd] = { bq: {}, wave: {}, ffm: {} };
@@ -286,7 +279,6 @@ async function initFulfillmentRealtime() {
         delete unifiedDatesMap[""];
         let sortedDates = Object.keys(unifiedDatesMap).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
 
-        // 🌟 วาดตาราง HTML Matrix
         let htmlTable = `<div class="data-card" style="margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden;">
             <div class="card-header" style="padding: 15px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);"><h3 style="font-size:14px; font-weight:700; color:var(--text-main); margin:0;">📋 DAILY FULFILLMENT MATRIX RECORD</h3></div>
             <div style="max-height: 500px; overflow: auto; background: var(--bg-card);">
@@ -335,7 +327,6 @@ async function initFulfillmentRealtime() {
                     const wItem = wData[bu] || {};
                     const fItem = fData[bu] || {};
                     
-                    // 🟢 การรวมข้อมูลสุดยอด (Triple Merge)
                     const ordTotal = Math.max(parseFloat(bItem.ordTotal || 0), parseFloat(wItem.ordTotal || 0), parseFloat(fItem.ordTotal || 0));
                     const ordFull = Math.max(parseFloat(bItem.ordFull || 0), parseFloat(wItem.ordFull || 0), parseFloat(fItem.ordFull || 0));
                     
@@ -383,10 +374,10 @@ async function initFulfillmentRealtime() {
                     chartDataMap[dateStr].ship += ship;
                     chartDataMap[dateStr].ordTotal += ordTotal;
                     
-                    // เก็บค่าไว้ใช้วาดกราฟ
+                    // เก็บค่าไว้ใช้วาดกราฟ (ใช้ข้อมูลจริง)
                     chartDataMap[dateStr].buShip[bu] = ship; 
                     chartDataMap[dateStr].buReq[bu] = req;
-                    chartDataMap[dateStr].buOrd[bu] = ordTotal; // เพิ่มบรรทัดนี้ เพื่อเก็บค่ายอดบิล (Orders)
+                    chartDataMap[dateStr].buOrd[bu] = ordTotal;
                 });
             });
         }
@@ -394,6 +385,9 @@ async function initFulfillmentRealtime() {
         htmlTable += "</tbody></table></div></div>";
         wrapperEl.innerHTML = htmlTable;
 
+        // ==========================================
+        // 🌟 อัปเดตกราฟ FFM (ซ้าย: Stacked Bar | ขวา: Doughnut) 🌟
+        // ==========================================
         const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
         const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
         
@@ -417,7 +411,7 @@ async function initFulfillmentRealtime() {
         const ffmBuFilterVal = ffmBuFilter?.value || 'ALL';
         let chartBUsArray = ffmBuFilterVal === 'ALL' ? allBUsArray : [ffmBuFilterVal];
 
-        // 🟢 2. อัปเดตกราฟแท่ง (Stacked Bar)
+        // 🟢 2. อัปเดตกราฟแท่ง (Stacked Bar) - จำนวนชิ้น (PCS)
         if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
             let tpLabels = validChartDates.map(dStr => {
                 let parts = dStr.split('-');
@@ -448,12 +442,11 @@ async function initFulfillmentRealtime() {
             ffmTrendChartInstance.update();
         }
 
-        // 🟢 3. อัปเดตกราฟโดนัท (Doughnut)
+        // 🟢 3. อัปเดตกราฟโดนัท (Doughnut) - ยอดบิล (ORDERS)
         if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
             let targetD = validChartDates[validChartDates.length - 1]; 
             for (let i = validChartDates.length - 1; i >= 0; i--) {
                 let d = validChartDates[i];
-                // เปลี่ยนมาเช็คหายอด Order ของวันล่าสุด
                 let totalOrdForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d].buOrd[bu] || 0), 0);
                 if (totalOrdForDay > 0) {
                     targetD = d;
@@ -466,7 +459,7 @@ async function initFulfillmentRealtime() {
             let mixColors = [];
             
             chartBUsArray.forEach((bu, i) => {
-                let ordCnt = chartDataMap[targetD].buOrd[bu] || 0; // ดึงยอด Order (buOrd) มาใช้
+                let ordCnt = chartDataMap[targetD].buOrd[bu] || 0; 
                 if (ordCnt > 0) {
                     mixLabels.push(bu);
                     mixData.push(ordCnt);
@@ -490,47 +483,6 @@ async function initFulfillmentRealtime() {
             ffmVolumeChartInstance.update();
         }
 
-        if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
-            // 1. หาว่าวันไหนล่าสุดที่มียอดชิ้น (Req) > 0 เพื่อป้องกันกราฟว่างเปล่าถ้ายอดวันนี้ยังไม่เข้า
-            let targetD = validChartDates[validChartDates.length - 1]; 
-            for (let i = validChartDates.length - 1; i >= 0; i--) {
-                let d = validChartDates[i];
-                let totalReqForDay = allBUsArray.reduce((sum, bu) => sum + (chartDataMap[d].buReq[bu] || 0), 0);
-                if (totalReqForDay > 0) {
-                    targetD = d;
-                    break;
-                }
-            }
-
-            let mixLabels = [];
-            let mixData = [];
-            let mixColors = [];
-            
-            allBUsArray.forEach((bu, i) => {
-                let reqPcs = chartDataMap[targetD].buReq[bu] || 0;
-                if (reqPcs > 0) {
-                    mixLabels.push(bu);
-                    mixData.push(reqPcs);
-                    mixColors.push(chartPalette[i % chartPalette.length]);
-                }
-            });
-
-            ffmVolumeChartInstance.config.type = 'doughnut';
-            ffmVolumeChartInstance.data.labels = mixLabels;
-            ffmVolumeChartInstance.data.datasets = [{
-                data: mixData,
-                backgroundColor: mixColors,
-                borderWidth: 0
-            }];
-            
-            // 2. ลบ scales ทิ้ง เพราะกราฟ Doughnut ใน Chart.js ห้ามมีแกน (ถ้ามีกราฟจะพัง)
-            if (ffmVolumeChartInstance.options.scales) {
-                delete ffmVolumeChartInstance.options.scales;
-            }
-            
-            ffmVolumeChartInstance.update();
-        }
-
         // ========================================================
         // 🌟 อัปเดตการ์ด: Orders Shipped & Wave Plan Summary 🌟
         // ========================================================
@@ -550,7 +502,6 @@ async function initFulfillmentRealtime() {
                 if (yIndex < validWaveKeys.length) totalOrdersYesterday = chartDataMap[validWaveKeys[yIndex]].ordTotal || 0;
             }
             
-            // หา Active Wave (วันที่เก่าสุดที่ยังทำงานไม่เสร็จ 100%)
             let reversedKeys = [...validWaveKeys].reverse();
             for (let k of reversedKeys) {
                 let dayTot = 0, dayComp = 0;
@@ -559,14 +510,13 @@ async function initFulfillmentRealtime() {
                     dayComp += Math.max(parseFloat(unifiedDatesMap[k].bq[bu]?.ordFull||0), parseFloat(unifiedDatesMap[k].wave[bu]?.ordFull||0), parseFloat(unifiedDatesMap[k].ffm[bu]?.ordFull||0));
                 });
                 if (dayTot > 0 && dayComp < dayTot) { 
-                    if (dayComp === 0 && dayTot <= 5) continue; // ข้ามพวกบิลขยะ
+                    if (dayComp === 0 && dayTot <= 5) continue;
                     activeWaveKey = k; 
                     break; 
                 }
             }
             if (!activeWaveKey) activeWaveKey = reversedKeys[reversedKeys.length - 1];
             
-            // คำนวณบิลค้างในอนาคต
             let activeTime = activeWaveKey ? new Date(activeWaveKey).getTime() : 0;
             reversedKeys.forEach(k => {
                 if (new Date(k).getTime() > activeTime) {
@@ -579,7 +529,6 @@ async function initFulfillmentRealtime() {
             });
         }
 
-        // 🟢 อัปเดตการ์ด Orders Shipped
         const ordersEl = document.getElementById('ffm-orders-shipped');
         if (ordersEl) {
             ordersEl.innerText = totalOrdersToday > 0 ? fmtN(totalOrdersToday) : "0";
@@ -601,7 +550,6 @@ async function initFulfillmentRealtime() {
             }
         }
 
-        // 🟢 อัปเดตตาราง Wave Summary Table
         const waveSummaryTable = document.getElementById('wave-summary-table');
         if (waveSummaryTable) {
             if (validWaveKeys.length === 0 || allBUsArray.length === 0) {
@@ -642,7 +590,6 @@ async function initFulfillmentRealtime() {
             }
         }
 
-        // 🟢 อัปเดต Alerts และ Active Wave Detail
         let aTotal = 0, aComp = 0, aLate = 0, aDelay = 0;
         let worstBU = ""; 
         if (activeWaveKey) {
@@ -993,7 +940,6 @@ async function initDashboard() {
         await Promise.all(sections.map(s => fetchSection(s)));
     } catch(e) { console.error(e); }
     
-    // ดึงฐานข้อมูลเข้าสู่ตาราง Fulfillment หลังจากโหลดข้อมูล GAS เสร็จ
     await initFulfillmentRealtime();
     
     toggleLoader(false);
