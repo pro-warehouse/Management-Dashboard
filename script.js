@@ -55,16 +55,41 @@ const standardizeBU = (bu) => {
     return b;
 };
 
-// ==========================================
-// 🌟 1. Custom Plugins 🌟
-// ==========================================
 const dataLabelPlugin = {
     id: 'dataLabelPlugin',
     afterDatasetsDraw(chart) {
-        if(chart.config.type !== 'bar' || chart.canvas.id === 'productivityChart' || chart.canvas.id === 'ffmTrendChart') return;
+        if(chart.config.type !== 'bar' || chart.canvas.id === 'productivityChart') return;
         const { ctx } = chart;
+
+        // 🟢 เพิ่มใหม่: ถ้าเป็นกราฟ Stacked Bar ให้วาดผลรวม (Grand Total) ไว้บนยอด
+        if (chart.canvas.id === 'ffmTrendChart') {
+            let totals = [];
+            let xCoords = [];
+            chart.data.datasets.forEach((dataset, i) => {
+                if (!chart.isDatasetVisible(i)) return;
+                const meta = chart.getDatasetMeta(i);
+                dataset.data.forEach((val, index) => {
+                    totals[index] = (totals[index] || 0) + (val || 0);
+                    if (meta.data[index]) xCoords[index] = meta.data[index].x;
+                });
+            });
+
+            chart.data.labels.forEach((_, index) => {
+                if (totals[index] > 0 && xCoords[index]) {
+                    const y = chart.scales.y.getPixelForValue(totals[index]);
+                    ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F9FAFB' : '#111827';
+                    ctx.font = 'bold 11px Inter';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillText(fmtN(Math.round(totals[index])), xCoords[index], y - 5);
+                }
+            });
+            return; 
+        }
+
+        // --- ส่วนของกราฟ Bar อื่นๆ ทำงานตามปกติ ---
         chart.data.datasets.forEach((dataset, i) => {
-            if (dataset.type === 'line') return;
+            if (dataset.type === 'line' || !chart.isDatasetVisible(i)) return;
             const meta = chart.getDatasetMeta(i);
             meta.data.forEach((bar, index) => {
                 const data = dataset.data[index];
@@ -439,48 +464,8 @@ async function initFulfillmentRealtime() {
             ffmTrendChartInstance.options.scales.y.stacked = true;
             ffmTrendChartInstance.options.scales.y.beginAtZero = true;
             ffmTrendChartInstance.options.scales.y.border = { display: false };
+            ffmTrendChartInstance.options.scales.y.grace = '15%'; // <-- เพิ่มบรรทัดนี้
             ffmTrendChartInstance.update();
-        }
-
-        // 🟢 3. อัปเดตกราฟโดนัท (Doughnut) - ยอดบิล (ORDERS)
-        if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
-            let targetD = validChartDates[validChartDates.length - 1]; 
-            for (let i = validChartDates.length - 1; i >= 0; i--) {
-                let d = validChartDates[i];
-                let totalOrdForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d].buOrd[bu] || 0), 0);
-                if (totalOrdForDay > 0) {
-                    targetD = d;
-                    break;
-                }
-            }
-
-            let mixLabels = [];
-            let mixData = [];
-            let mixColors = [];
-            
-            chartBUsArray.forEach((bu, i) => {
-                let ordCnt = chartDataMap[targetD].buOrd[bu] || 0; 
-                if (ordCnt > 0) {
-                    mixLabels.push(bu);
-                    mixData.push(ordCnt);
-                    let colorIndex = allBUsArray.indexOf(bu) !== -1 ? allBUsArray.indexOf(bu) : i;
-                    mixColors.push(chartPalette[colorIndex % chartPalette.length]);
-                }
-            });
-
-            ffmVolumeChartInstance.config.type = 'doughnut';
-            ffmVolumeChartInstance.data.labels = mixLabels;
-            ffmVolumeChartInstance.data.datasets = [{
-                data: mixData,
-                backgroundColor: mixColors,
-                borderWidth: 0
-            }];
-            
-            if (ffmVolumeChartInstance.options.scales) {
-                delete ffmVolumeChartInstance.options.scales;
-            }
-
-            ffmVolumeChartInstance.update();
         }
 
         // ========================================================
