@@ -295,7 +295,8 @@ async function initFulfillmentRealtime() {
                         }
                         let bItem = rawBq[rawBu];
                         unifiedDatesMap[sd].bq[sBu].ordTotal += parseFloat(bItem.ordTotal || 0);
-                        unifiedDatesMap[sd].bq[sBu].ordFull += parseFloat(bItem.ordFull || 0);
+                        // เปลี่ยนจาก bItem.ordFull เป็นชื่อตัวแปรที่ API ส่งมาจริงๆ
+unifiedDatesMap[sd].bq[sBu].ordFull += parseFloat(bItem.ordFull || bItem.perfectOrders || 0);
                         unifiedDatesMap[sd].bq[sBu].req += parseFloat(bItem.req || 0);
                         unifiedDatesMap[sd].bq[sBu].alloc += parseFloat(bItem.alloc || 0);
                         unifiedDatesMap[sd].bq[sBu].ship += parseFloat(bItem.ship || 0);
