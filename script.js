@@ -239,11 +239,16 @@ async function initFulfillmentRealtime() {
             body: JSON.stringify({ fn: 'apiGetDashboardSummary', args: ["", ""] })
         });
         if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.data) bqDataList = result.data;
+            const textResponse = await response.text(); // 🟢 อ่านเป็น Text ก่อน
+            try {
+                const result = JSON.parse(textResponse);
+                if (result.success && result.data) bqDataList = result.data;
+            } catch (jsonErr) {
+                console.warn("⚠️ Backend API ไม่ได้ส่ง JSON กลับมา:", textResponse.substring(0, 100));
+            }
         }
     } catch (apiErr) {
-        console.warn("⚠️ API 502 Bad Gateway: Fallback to GAS data only.", apiErr);
+        console.warn("⚠️ API Error: Fallback to GAS data only.", apiErr);
     }
 
     try {
@@ -1039,14 +1044,19 @@ function resetTrendRoleFilter() {
 async function fetchSection(sectionName) {
     try {
         const response = await fetch(`${GAS_URL}?section=${sectionName}`);
-        const result = await response.json();
-        if (result.status === "success") {
-            Object.assign(globalData, result.data);
-            cleanDataBeforeLoad();
-            if (['executive', 'claims', 'inventory', 'transport'].includes(sectionName)) {
-                populateGlobalBUFilters();
+        const textResponse = await response.text(); // 🟢 อ่านข้อมูลเป็น Text ดิบๆ ก่อนเพื่อดัก Error
+        try {
+            const result = JSON.parse(textResponse); // 🟢 ลองแปลงเป็น JSON ถ้าพังมันจะกระโดดไป catch
+            if (result.status === "success") {
+                Object.assign(globalData, result.data);
+                cleanDataBeforeLoad();
+                if (['executive', 'claims', 'inventory', 'transport'].includes(sectionName)) {
+                    populateGlobalBUFilters();
+                }
+                refreshUIBySection(sectionName);
             }
-            refreshUIBySection(sectionName);
+        } catch (jsonErr) {
+            console.error(`❌ GAS API Error (${sectionName}): ข้อมูลที่ได้ไม่ใช่ JSON ->`, textResponse.substring(0, 100));
         }
     } catch (e) { console.error(`Error loading ${sectionName}:`, e); }
 }
