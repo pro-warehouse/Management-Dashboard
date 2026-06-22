@@ -110,23 +110,27 @@ const lineDataLabelPlugin = {
 // ==========================================
 // 🌟 2. Setup Chart Instances 🌟
 // ==========================================
+let throughputChartInstance = null;
 const throughputCtx = document.getElementById('throughputChart')?.getContext('2d');
-if (throughputCtx) new Chart(throughputCtx, { type: 'bar', data: { labels: ['Mon','Tue','Wed','Thu','Fri'], datasets: [{ label: 'Inbound', data: [45, 38, 52, 48, 50], backgroundColor: accentOrange, borderRadius: 6 }, { label: 'Outbound', data: [48, 42, 55, 50, 54], backgroundColor: accentGreen, borderRadius: 6 }]}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: {grid:{display:false}}, y: {border:{display:false}} } } });
+if (throughputCtx) throughputChartInstance = new Chart(throughputCtx, { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 } } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, border: { display: false } } } } });
 
+let orderMixChartInstance = null;
 const orderMixCtx = document.getElementById('orderMixChart')?.getContext('2d');
-if (orderMixCtx) new Chart(orderMixCtx, { type: 'doughnut', data: { labels: ['E-com', 'B2B', '3PL'], datasets: [{ data: [55, 30, 15], backgroundColor: [accentGreen, accentOrange, '#3B82F6'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins:{legend:{position: 'bottom'}} } });
+if (orderMixCtx) orderMixChartInstance = new Chart(orderMixCtx, { type: 'doughnut', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins:{ legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } } } });
 
 let workforceChartInstance = null;
 const wfCtx = document.getElementById('workforceChart')?.getContext('2d');
 if (wfCtx) workforceChartInstance = new Chart(wfCtx, { type: 'bar', data: { labels: [], datasets: [{ label: 'จำนวนกำลังพล (คน)', data: [], backgroundColor: '#3B82F6', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, border: { display: false } } }, layout: { padding: { top: 20 } } }, plugins: [dataLabelPlugin] });
 
+// เปลี่ยนกราฟ FFM เป็น Stacked Bar (Daily Throughput)
 let ffmTrendChartInstance = null;
 const ffmTrendCtx = document.getElementById('ffmTrendChart')?.getContext('2d');
-if (ffmTrendCtx) ffmTrendChartInstance = new Chart(ffmTrendCtx, { type: 'line', data: { labels: [], datasets: [{ label: 'Fulfillment %', data: [], borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: '#10B981' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, beginAtZero: true, max: 100 } } }, plugins: [lineDataLabelPlugin] });
+if (ffmTrendCtx) ffmTrendChartInstance = new Chart(ffmTrendCtx, { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 } } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, beginAtZero: true } } } });
 
+// เปลี่ยนกราฟ FFM เป็น Doughnut (Order Mix)
 let ffmVolumeChartInstance = null;
 const ffmVolCtx = document.getElementById('ffmVolumeChart')?.getContext('2d');
-if (ffmVolCtx) ffmVolumeChartInstance = new Chart(ffmVolCtx, { type: 'bar', data: { labels: [], datasets: [ { label: 'Completed (เสร็จ)', data: [], backgroundColor: '#10B981', borderRadius: 4 }, { label: 'Pending (ค้าง)', data: [], backgroundColor: '#EF4444', borderRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false } } }, plugins: { legend: { position: 'top' } } } });
+if (ffmVolCtx) ffmVolumeChartInstance = new Chart(ffmVolCtx, { type: 'doughnut', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } } } });
 
 let ontimeChart1Instance = null;
 const ot1Ctx = document.getElementById('ontimeChart')?.getContext('2d');
@@ -184,7 +188,6 @@ async function initFulfillmentRealtime() {
     }
 
     const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
-    console.log("🚀 กำลังผสานข้อมูล: ประวัติ (FFM) + ปัจจุบัน (WaveOps) + ของจริง (BQ)...");
     
     try {
         const response = await fetch(API_URL, {
@@ -289,8 +292,6 @@ async function initFulfillmentRealtime() {
                 </tr>
             </thead><tbody>`;
 
-        let trendLabels = [], trendValues = [];
-        let buVolumeCompleted = {}, buVolumePending = {};
         let buNamesSet = new Set();
         let chartDataMap = {};
         
@@ -365,74 +366,135 @@ async function initFulfillmentRealtime() {
                     if (!chartDataMap[dateStr]) chartDataMap[dateStr] = { req:0, ship:0 };
                     chartDataMap[dateStr].req += req;
                     chartDataMap[dateStr].ship += ship;
-
-                    if (!buVolumeCompleted[bu]) { buVolumeCompleted[bu] = 0; buVolumePending[bu] = 0; }
                 });
-            });
-
-            // ข้อมูลวาดกราฟแท่ง Volume (นับยอดชิ้นวันล่าสุดที่มีการส่ง)
-            const latestDate = Object.keys(chartDataMap).sort((a,b)=>new Date(b)-new Date(a))[0];
-            let bqLatest = unifiedDatesMap[latestDate]?.bq || {};
-            
-            Object.keys(bqLatest).forEach(bu => {
-                if (window.selectedBUs && !window.selectedBUs.includes('ALL') && !window.selectedBUs.includes(bu)) return;
-                if (bu !== 'UNKNOWN' && bu !== '') {
-                    const req = parseFloat(bqLatest[bu]?.req || 0);
-                    const ship = parseFloat(bqLatest[bu]?.ship || 0);
-                    buVolumeCompleted[bu] += ship;
-                    buVolumePending[bu] += Math.max(0, req - ship);
-                }
-            });
-
-            // วาดกราฟเส้น Trend ย้อน 14 วันล่าสุด
-            let sortedChartDates = Object.keys(chartDataMap).sort((a,b)=>new Date(a)-new Date(b)).slice(-14);
-            sortedChartDates.forEach(dStr => {
-                let dObj = new Date(dStr);
-                let disp = isNaN(dObj.getTime()) ? dStr : `${dObj.getDate()} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dObj.getMonth()]}`;
-                trendLabels.push(disp);
-                
-                let req = chartDataMap[dStr].req;
-                let ship = chartDataMap[dStr].ship;
-                let pct = req > 0 ? (ship / req) * 100 : 0;
-                trendValues.push(parseFloat(pct.toFixed(1)));
             });
         }
         
         htmlTable += "</tbody></table></div></div>";
         wrapperEl.innerHTML = htmlTable;
 
-        // --- 📊 อัปเดตกราฟ FFM Rate & Volume ---
+        // --- 📊 อัปเดตกราฟบนตามภาพแนบ (Throughput & Order Mix) ---
+        const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
+        const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
+        
+        let validChartDates = sortedDates.filter(d => new Date(d).getTime() <= targetTimestamp).slice(0, 7).reverse();
+        let allBUsArray = Array.from(buNamesSet).sort();
+        let chartColors = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#14B8A6', '#F43F5E', '#06B6D4'];
+
+        // กราฟ 1: Stacked Bar (Daily Throughput by Owner)
         if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
-            ffmTrendChartInstance.data.labels = trendLabels;
-            ffmTrendChartInstance.data.datasets[0].data = trendValues;
+            let tpLabels = validChartDates.map(dStr => {
+                let dObj = new Date(dStr);
+                return `${dObj.getDate()} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dObj.getMonth()]}`;
+            });
+            
+            let tpDatasets = allBUsArray.map((bu, i) => {
+                return {
+                    label: bu,
+                    data: validChartDates.map(dStr => {
+                        return parseFloat(unifiedDatesMap[dStr].bq[bu]?.ship || 0); // Using Shipped pieces
+                    }),
+                    backgroundColor: chartColors[i % chartColors.length],
+                    borderRadius: 4
+                };
+            });
+
+            ffmTrendChartInstance.config.type = 'bar';
+            ffmTrendChartInstance.data.labels = tpLabels;
+            ffmTrendChartInstance.data.datasets = tpDatasets;
+            ffmTrendChartInstance.options.scales = {
+                x: { stacked: true, grid: { display: false } },
+                y: { stacked: true, beginAtZero: true, border: { display: false } }
+            };
             ffmTrendChartInstance.update();
         }
 
-        if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance) {
-            let buNames = Array.from(buNamesSet).sort();
-            let volComp = buNames.map(b => buVolumeCompleted[b] || 0);
-            let volPend = buNames.map(b => buVolumePending[b] || 0);
+        // กราฟ 2: Doughnut (Order Mix by Owner ประจำวันล่าสุด)
+        if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
+            let targetD = validChartDates[validChartDates.length - 1]; // วันล่าสุด
+            let mixLabels = [];
+            let mixData = [];
+            let mixColors = [];
+            
+            allBUsArray.forEach((bu, i) => {
+                let bqItem = unifiedDatesMap[targetD].bq[bu] || {};
+                let wItem = unifiedDatesMap[targetD].wave[bu] || {};
+                let fItem = unifiedDatesMap[targetD].ffm[bu] || {};
+                // วัดจากจำนวน Order
+                let ord = Math.max(parseFloat(bqItem.ordTotal || 0), parseFloat(wItem.ordTotal || 0), parseFloat(fItem.ordTotal || 0));
+                
+                if (ord > 0) {
+                    mixLabels.push(bu);
+                    mixData.push(ord);
+                    mixColors.push(chartColors[i % chartColors.length]);
+                }
+            });
 
-            ffmVolumeChartInstance.data.labels = buNames;
-            ffmVolumeChartInstance.data.datasets[0].data = volComp;
-            ffmVolumeChartInstance.data.datasets[1].data = volPend;
+            ffmVolumeChartInstance.config.type = 'doughnut';
+            ffmVolumeChartInstance.data.labels = mixLabels;
+            ffmVolumeChartInstance.data.datasets = [{
+                data: mixData,
+                backgroundColor: mixColors,
+                borderWidth: 0
+            }];
+            ffmVolumeChartInstance.options.scales = { x: { display: false }, y: { display: false } }; // ซ่อนแกนกราฟเดิม
             ffmVolumeChartInstance.update();
         }
 
-        // อัปเดต % เฉลี่ยของการ์ด Avg Fulfillment
-        if (trendValues.length > 0) {
-            const currentFfmRate = trendValues[trendValues.length - 1];
+        // อัปเดต % เฉลี่ยของการ์ด Avg Fulfillment ด้านบน (ดึงจาก Throughput รวม 7 วัน)
+        if (validChartDates.length > 0) {
+            let targetD = validChartDates[validChartDates.length - 1];
+            let sumShip = 0, sumReq = 0;
+            allBUsArray.forEach(bu => {
+                sumShip += parseFloat(unifiedDatesMap[targetD].bq[bu]?.ship || 0);
+                let r = Math.max(parseFloat(unifiedDatesMap[targetD].bq[bu]?.req || 0), parseFloat(unifiedDatesMap[targetD].ffm[bu]?.req || 0));
+                sumReq += r;
+            });
+            const currentFfmRate = sumReq > 0 ? (sumShip / sumReq) * 100 : 0;
             const rateEl = document.getElementById('ffm-order-rate');
             if (rateEl) {
                 rateEl.innerText = currentFfmRate.toFixed(1) + "%";
                 let rateUpdateEl = rateEl.parentElement.nextElementSibling;
-                if (rateUpdateEl) rateUpdateEl.innerText = `Updated: วันที่ ${trendLabels[trendLabels.length - 1]}`;
+                if (rateUpdateEl) rateUpdateEl.innerText = `Updated: วันที่ ${targetD}`;
             }
+        }
+
+        // --- เพิ่มเติม: อัปเดตกราฟตัวบนสุด (ถ้ามี ID) ให้เป็นแบบเดียวกับภาพ ---
+        if (typeof throughputChartInstance !== 'undefined' && throughputChartInstance) {
+            let tpLabels = validChartDates.map(dStr => {
+                let dObj = new Date(dStr);
+                return `${dObj.getDate()} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dObj.getMonth()]}`;
+            });
+            let tpDatasets = allBUsArray.map((bu, i) => ({
+                label: bu,
+                data: validChartDates.map(dStr => parseFloat(unifiedDatesMap[dStr].bq[bu]?.ship || 0)),
+                backgroundColor: chartColors[i % chartColors.length],
+                borderRadius: 4
+            }));
+            throughputChartInstance.config.type = 'bar';
+            throughputChartInstance.data.labels = tpLabels;
+            throughputChartInstance.data.datasets = tpDatasets;
+            throughputChartInstance.options.scales = { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, border: { display: false } } };
+            throughputChartInstance.update();
+        }
+        if (typeof orderMixChartInstance !== 'undefined' && orderMixChartInstance && validChartDates.length > 0) {
+            let targetD = validChartDates[validChartDates.length - 1];
+            let mixLabels = [], mixData = [], mixColors = [];
+            allBUsArray.forEach((bu, i) => {
+                let bqItem = unifiedDatesMap[targetD].bq[bu] || {};
+                let wItem = unifiedDatesMap[targetD].wave[bu] || {};
+                let fItem = unifiedDatesMap[targetD].ffm[bu] || {};
+                let ord = Math.max(parseFloat(bqItem.ordTotal || 0), parseFloat(wItem.ordTotal || 0), parseFloat(fItem.ordTotal || 0));
+                if (ord > 0) { mixLabels.push(bu); mixData.push(ord); mixColors.push(chartColors[i % chartColors.length]); }
+            });
+            orderMixChartInstance.config.type = 'doughnut';
+            orderMixChartInstance.data.labels = mixLabels;
+            orderMixChartInstance.data.datasets = [{ data: mixData, backgroundColor: mixColors, borderWidth: 0 }];
+            orderMixChartInstance.update();
         }
 
     } catch (err) {
         console.error("❌ Fetch Matrix Error:", err);
-        wrapperEl.innerHTML = `<div class="data-card" style="padding:25px; text-align:center; color:var(--danger); font-weight:bold;">⚠️ เกิดข้อผิดพลาดในการโหลดตาราง Matrix</div>`;
     }
 }
 
@@ -1036,10 +1098,10 @@ function updateDashboardData(selectedDateStr) {
         }
     } catch(e) { console.error("Workforce Update Error:", e); }
 
-    // 🟢 Wave Ops & Orders Shipped Today 
+    // 🟢 8. WAVE OPS & ORDERS SHIPPED TODAY (ดึงจาก History เพื่อให้ได้ทุกวัน)
     try {
-        if(Object.keys(globalData.wave_ops || {}).length > 0) {
-            let waveDataForFFM = globalData.wave_ops;
+        if(Object.keys(globalData.fulfillment || {}).length > 0) {
+            let waveDataForFFM = globalData.fulfillment;
             let wKeysFFM = Object.keys(waveDataForFFM).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
             
             let targetWaveFfmKey = null; let totalOrdersToday = 0;
@@ -1049,7 +1111,10 @@ function updateDashboardData(selectedDateStr) {
                 if (new Date(k).getTime() <= targetTimestamp) {
                     let tot = 0;
                     Object.keys(waveDataForFFM[k].bu_data || {}).forEach(bu => {
-                        if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) tot += waveDataForFFM[k].bu_data[bu].total_orders || 0;
+                        if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
+                            let item = waveDataForFFM[k].bu_data[bu];
+                            tot += parseFloat(item.total_orders || item.orders || item.ordTotal || 0);
+                        }
                     });
                     if (tot > 0 || !window.selectedBUs.includes('ALL')) {
                         if (!targetWaveFfmKey) { targetWaveFfmKey = k; totalOrdersToday = tot; } 
@@ -1058,6 +1123,7 @@ function updateDashboardData(selectedDateStr) {
                 }
             }
 
+            // แสดงยอดการ์ด Orders Shipped
             const ordersEl = document.getElementById('ffm-orders-shipped');
             if (ordersEl) {
                 ordersEl.innerText = totalOrdersToday > 0 ? fmtN(totalOrdersToday) : "0";
@@ -1081,6 +1147,7 @@ function updateDashboardData(selectedDateStr) {
                 if (ordersUpdateEl && targetWaveFfmKey) ordersUpdateEl.innerText = `Updated: ${getDisplayDate(targetWaveFfmKey)}`;
             }
 
+            // แสดงตาราง Wave Summary
             const waveSummaryTable = document.getElementById('wave-summary-table');
             if (waveSummaryTable) {
                 let allBUs = new Set();
@@ -1101,12 +1168,15 @@ function updateDashboardData(selectedDateStr) {
                         let tr = `<tr><td class="role-cell" style="text-align:center;">${getShortDate(dKey)}</td>`;
                         let dayTot = 0, dayComp = 0;
                         sortedBUs.forEach(bu => {
-                            let buData = waveDataForFFM[dKey].bu_data[bu] || { total_orders: 0, completed_orders: 0 };
-                            dayTot += buData.total_orders; dayComp += buData.completed_orders;
-                            if (buData.total_orders === 0) { tr += `<td>-</td>`; } 
+                            let item = waveDataForFFM[dKey].bu_data[bu] || {};
+                            let buTot = parseFloat(item.total_orders || item.orders || item.ordTotal || 0);
+                            let buComp = parseFloat(item.completed_orders || item.completed || item.ordFull || 0);
+                            dayTot += buTot; dayComp += buComp;
+                            
+                            if (buTot === 0) { tr += `<td>-</td>`; } 
                             else {
-                                let color = (buData.completed_orders === buData.total_orders) ? 'var(--accent-primary)' : (buData.completed_orders > 0 ? 'var(--accent-secondary)' : 'var(--danger)');
-                                tr += `<td><span style="color:${color}; font-weight:800; font-size:0.9rem;">${fmtN(buData.completed_orders)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(buData.total_orders)}</span></td>`;
+                                let color = (buComp === buTot) ? 'var(--accent-primary)' : (buComp > 0 ? 'var(--accent-secondary)' : 'var(--danger)');
+                                tr += `<td><span style="color:${color}; font-weight:800; font-size:0.9rem;">${fmtN(buComp)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(buTot)}</span></td>`;
                             }
                         });
                         
@@ -1122,30 +1192,35 @@ function updateDashboardData(selectedDateStr) {
                     waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
                 }
             }
+        }
+        
+        // กู้คืนระบบ Active Wave
+        if(Object.keys(globalData.wave_ops || {}).length > 0) {
+            let activeData = globalData.wave_ops;
+            let wKeysAsc = Object.keys(activeData).sort((a,b) => new Date(a).getTime() - new Date(b).getTime());
             
-            let activeWaveKey = null; let pendingFutureOrders = 0; let wKeysAsc = [...wKeysFFM].reverse(); 
-            
+            let activeWaveKey = null; let pendingFutureOrders = 0;
             if (wKeysAsc.length > 0) {
                 for (let key of wKeysAsc) {
-                    let dTot = 0; let dComp = 0;
-                    Object.keys(waveDataForFFM[key].bu_data).forEach(bu => {
+                    let dTot = 0, dComp = 0;
+                    Object.keys(activeData[key].bu_data).forEach(bu => {
                         if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
-                            dTot += waveDataForFFM[key].bu_data[bu].total_orders || 0;
-                            dComp += waveDataForFFM[key].bu_data[bu].completed_orders || 0;
+                            dTot += activeData[key].bu_data[bu].total_orders || 0;
+                            dComp += activeData[key].bu_data[bu].completed_orders || 0;
                         }
                     });
                     if (dTot > 0 && dComp < dTot) { if (dComp === 0 && dTot <= 5) continue; activeWaveKey = key; break; }
                 }
-                if (!activeWaveKey) activeWaveKey = wKeysFFM[0]; 
+                if (!activeWaveKey) activeWaveKey = wKeysAsc[wKeysAsc.length - 1]; 
                 
                 let activeTime = activeWaveKey ? new Date(activeWaveKey).getTime() : 0;
                 for (let key of wKeysAsc) { 
                     if (new Date(key).getTime() > activeTime) { 
-                        let dTot = 0; let dComp = 0;
-                        Object.keys(waveDataForFFM[key].bu_data).forEach(bu => {
+                        let dTot = 0, dComp = 0;
+                        Object.keys(activeData[key].bu_data).forEach(bu => {
                             if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
-                                dTot += waveDataForFFM[key].bu_data[bu].total_orders || 0;
-                                dComp += waveDataForFFM[key].bu_data[bu].completed_orders || 0;
+                                dTot += activeData[key].bu_data[bu].total_orders || 0;
+                                dComp += activeData[key].bu_data[bu].completed_orders || 0;
                             }
                         });
                         pendingFutureOrders += (dTot - dComp); 
@@ -1153,7 +1228,7 @@ function updateDashboardData(selectedDateStr) {
                 }
             }
 
-            const aD = activeWaveKey ? waveDataForFFM[activeWaveKey].bu_data : {};
+            const aD = activeWaveKey ? activeData[activeWaveKey].bu_data : {};
             let aTotal = 0, aComp = 0, aLate = 0, aDelay = 0;
             let worstBU = ""; 
 
@@ -2094,7 +2169,7 @@ function renderTransportSection() {
                             let buPct = buD.total > 0 ? (buD.success / buD.total) * 100 : 0;
                             let buClr = buPct >= 99 ? '#166534' : (buPct >= 90 ? '#92400e' : '#991b1b');
                             
-                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; background-color:${buBg}; padding: 8px 4px;">
+                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; padding: 8px 4px;">
                                 <span style="display:block; color:${buClr}; font-weight:700; font-size:11px;">${buPct.toFixed(1)}%</span>
                                 <span style="font-size:8px; color:var(--text-muted);">${fmtN(buD.success)}/${fmtN(buD.total)}</span>
                             </td>`;
