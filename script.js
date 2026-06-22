@@ -530,15 +530,102 @@ async function initFulfillmentRealtime() {
                 }];
                 
                 if (ffmVolumeChartInstance.options.scales) {
-                    delete ffmVolumeChartInstance.options.scales.x;
-                    delete ffmVolumeChartInstance.options.scales.y;
-                }
-                
-                ffmVolumeChartInstance.update();
+                delete ffmVolumeChartInstance.options.scales.x;
+                delete ffmVolumeChartInstance.options.scales.y;
             }
+            
+            ffmVolumeChartInstance.update();
         } catch(chartErr) {
             console.error("Chart Rendering Error:", chartErr);
         }
+
+        // ==========================================
+        // 🟢 ให้วางโค้ดที่ก๊อปปี้ไป "ตรงนี้" ครับ 🟢
+        // ==========================================
+        const utilTableEl = document.getElementById('utilization-table');
+        if (utilTableEl && validChartDates.length > 0) {
+            let targetD = validChartDates[validChartDates.length - 1]; 
+            for (let i = validChartDates.length - 1; i >= 0; i--) {
+                let d = validChartDates[i];
+                let totalReqForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d].buReq[bu] || 0), 0);
+                if (totalReqForDay > 0) { targetD = d; break; }
+            }
+
+            // 💡 ตัวแปรจำลอง Capacity ราย BU (สมมติไปก่อน รอเชื่อม API)
+            const mockCapacityMap = {
+                'DM02': 400000, 
+                'DP02': 250000,
+                '1115': 2000,
+                'DCWN': 1500,
+                'DG02': 5000
+            };
+            const DEFAULT_CAPACITY = 10000;
+
+            let tbody = "<tbody>";
+            let utilData = [];
+
+            chartBUsArray.forEach(bu => {
+                let vol = chartDataMap[targetD].buReq[bu] || 0; // ใช้ยอดชิ้น (Req)
+                if (vol > 0 || mockCapacityMap[bu]) {
+                    let cap = mockCapacityMap[bu] || DEFAULT_CAPACITY;
+                    let utilPct = cap > 0 ? (vol / cap) * 100 : 0;
+                    utilData.push({ bu: bu, vol: vol, cap: cap, utilPct: utilPct });
+                }
+            });
+
+            utilData.sort((a, b) => b.utilPct - a.utilPct); // เรียงจาก % มากไปน้อย
+
+            if (utilData.length === 0) {
+                tbody += `<tr><td colspan="4" class="text-center" style="padding: 30px; color: var(--text-muted);">ไม่มีข้อมูล Volume</td></tr>`;
+            } else {
+                utilData.forEach(item => {
+                    let utilDisp = item.utilPct.toFixed(1);
+                    let barWidth = Math.min(100, item.utilPct); // ไม่ให้แถบทะลุ 100%
+                    
+                    // กำหนดสี Status แบบใน Mockup
+                    let statusObj = { text: "Available", color: "#166534", bg: "#dcfce7", barColor: "#3B82F6" }; 
+                    if (item.utilPct >= 100) {
+                        statusObj = { text: "Overloaded", color: "#991b1b", bg: "#fee2e2", barColor: "#EF4444" }; 
+                    } else if (item.utilPct >= 90) {
+                        statusObj = { text: "Near cap.", color: "#92400e", bg: "#fef3c7", barColor: "#F59E0B" }; 
+                    } else if (item.utilPct >= 70) {
+                        statusObj = { text: "Optimal", color: "#166534", bg: "#dcfce7", barColor: "#10B981" }; 
+                    }
+
+                    tbody += `
+                    <tr>
+                        <td style="padding:12px 15px; font-weight:800; text-align:left; border-bottom:1px dashed var(--border-color); color:var(--text-main);">${item.bu}</td>
+                        <td style="padding:12px 15px; text-align:right; font-weight:700; border-bottom:1px dashed var(--border-color); color:var(--text-main);">${fmtN(item.vol)}</td>
+                        <td style="padding:12px 15px; text-align:left; border-bottom:1px dashed var(--border-color);">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <span style="font-weight:700; font-size:12px; width:40px; text-align:right; color:var(--text-main);">${utilDisp}%</span>
+                                <div style="flex:1; background-color:var(--border-color); border-radius:10px; height:8px; overflow:hidden; position:relative;">
+                                    <div style="width:${barWidth}%; background-color:${statusObj.barColor}; height:100%; border-radius:10px; transition:0.5s ease;"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding:12px 15px; text-align:center; border-bottom:1px dashed var(--border-color);">
+                            <span style="padding:4px 10px; border-radius:12px; font-size:11px; font-weight:800; display:inline-block; width:85px; background:${statusObj.bg}; color:${statusObj.color};">${statusObj.text}</span>
+                        </td>
+                    </tr>`;
+                });
+            }
+            tbody += "</tbody>";
+            
+            const titleEl = document.getElementById('utilization-title');
+            if(titleEl) {
+                let parts = targetD.split('-');
+                let dispDate = parts.length === 3 ? `${parseInt(parts[2])} ${shortMonths[parseInt(parts[1]-1)]} ${parts[0]}` : targetD;
+                titleEl.innerText = `📊 VOLUME UTILIZATION BY OWNER | ข้อมูลวันที่ ${dispDate}`;
+            }
+
+            const theadHtml = utilTableEl.querySelector('thead').outerHTML;
+            utilTableEl.innerHTML = theadHtml + tbody;
+        }
+        // ==========================================
+        // 🟢 สิ้นสุดโค้ดที่ต้องวาง 🟢
+        // ==========================================
+
 
         // ========================================================
         // 🌟 อัปเดตการ์ด: Orders Shipped & Wave Plan Summary 🌟
