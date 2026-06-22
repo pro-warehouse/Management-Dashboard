@@ -420,13 +420,6 @@ async function initFulfillmentRealtime() {
         let allBUsArray = Array.from(buNamesSet).sort();
         const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-        // เปลี่ยนหัวกราฟ
-        const trendTitle = document.querySelector('#ffmTrendChart')?.closest('.card')?.querySelector('h3');
-        if (trendTitle) trendTitle.innerText = "DAILY REQUESTED VOLUME BY BU (PCS)";
-        
-        const volTitle = document.querySelector('#ffmVolumeChart')?.closest('.card')?.querySelector('h3');
-        if (volTitle) volTitle.innerText = "ORDER MIX BY BU (ORDERS)";
-
         // 🟢 1. จัดการ Filter Owner (BU)
         const ffmBuFilter = document.getElementById('ffm-bu-filter');
         if (ffmBuFilter && ffmBuFilter.options.length <= 1) {
@@ -443,6 +436,12 @@ async function initFulfillmentRealtime() {
                 return parts.length === 3 ? `${parseInt(parts[2])} ${shortMonths[parseInt(parts[1])-1]}` : dStr;
             });
             
+            // ✅ อัปเดตชื่อกราฟซ้าย: บอกช่วงวันที่
+            const trendTitle = document.querySelector('#ffmTrendChart')?.closest('.card')?.querySelector('h3');
+            if (trendTitle && tpLabels.length > 0) {
+                trendTitle.innerText = `DAILY REQUESTED VOLUME BY BU (PCS) | ${tpLabels[0]} - ${tpLabels[tpLabels.length - 1]}`;
+            }
+
             let tpDatasets = chartBUsArray.map((bu, i) => {
                 let colorIndex = allBUsArray.indexOf(bu) !== -1 ? allBUsArray.indexOf(bu) : i; 
                 return {
@@ -464,8 +463,57 @@ async function initFulfillmentRealtime() {
             ffmTrendChartInstance.options.scales.y.stacked = true;
             ffmTrendChartInstance.options.scales.y.beginAtZero = true;
             ffmTrendChartInstance.options.scales.y.border = { display: false };
-            ffmTrendChartInstance.options.scales.y.grace = '15%'; // <-- เพิ่มบรรทัดนี้
+            ffmTrendChartInstance.options.scales.y.grace = '15%'; // ดันกราฟลงมานิดนึงเพื่อโชว์ผลรวม
             ffmTrendChartInstance.update();
+        }
+
+        // 🟢 3. อัปเดตกราฟโดนัท (Doughnut) - ยอดบิล (ORDERS)
+        if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
+            let targetD = validChartDates[validChartDates.length - 1]; 
+            for (let i = validChartDates.length - 1; i >= 0; i--) {
+                let d = validChartDates[i];
+                let totalOrdForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d].buOrd[bu] || 0), 0);
+                if (totalOrdForDay > 0) {
+                    targetD = d;
+                    break;
+                }
+            }
+
+            // ✅ อัปเดตชื่อกราฟขวา: บอกวันที่ที่กำลังแสดงข้อมูลอยู่
+            const volTitle = document.querySelector('#ffmVolumeChart')?.closest('.card')?.querySelector('h3');
+            if (volTitle) {
+                let parts = targetD.split('-');
+                let dispDate = parts.length === 3 ? `${parseInt(parts[2])} ${shortMonths[parseInt(parts[1])-1]} ${parts[0]}` : targetD;
+                volTitle.innerText = `ORDER MIX BY BU (ORDERS) | ข้อมูลวันที่ ${dispDate}`;
+            }
+
+            let mixLabels = [];
+            let mixData = [];
+            let mixColors = [];
+            
+            chartBUsArray.forEach((bu, i) => {
+                let ordCnt = chartDataMap[targetD].buOrd[bu] || 0; 
+                if (ordCnt > 0) {
+                    mixLabels.push(bu);
+                    mixData.push(ordCnt);
+                    let colorIndex = allBUsArray.indexOf(bu) !== -1 ? allBUsArray.indexOf(bu) : i;
+                    mixColors.push(chartPalette[colorIndex % chartPalette.length]);
+                }
+            });
+
+            ffmVolumeChartInstance.config.type = 'doughnut';
+            ffmVolumeChartInstance.data.labels = mixLabels;
+            ffmVolumeChartInstance.data.datasets = [{
+                data: mixData,
+                backgroundColor: mixColors,
+                borderWidth: 0
+            }];
+            
+            if (ffmVolumeChartInstance.options.scales) {
+                delete ffmVolumeChartInstance.options.scales;
+            }
+
+            ffmVolumeChartInstance.update();
         }
 
         // ========================================================
