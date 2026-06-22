@@ -383,9 +383,9 @@ async function initFulfillmentRealtime() {
                     chartDataMap[dateStr].ship += ship;
                     chartDataMap[dateStr].ordTotal += ordTotal;
                     
-                    // เก็บค่าไว้ใช้วาดกราฟ (ถ้า ship เป็น 0 เพราะ BQ ล่ม ให้ใช้ ordTotal วาดแทนชั่วคราว กราฟจะได้ไม่แหว่ง)
-                    chartDataMap[dateStr].buShip[bu] = ship > 0 ? ship : ordTotal; 
-                    chartDataMap[dateStr].buReq[bu] = req > 0 ? req : ordTotal; 
+                    // เก็บค่าไว้ใช้วาดกราฟ (ใช้ข้อมูลชิ้นล้วนๆ ห้าม fallback ไปใช้จำนวนบิล ordTotal เด็ดขาด)
+                    chartDataMap[dateStr].buShip[bu] = ship; 
+                    chartDataMap[dateStr].buReq[bu] = req;
                 });
             });
         }
