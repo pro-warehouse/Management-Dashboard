@@ -367,7 +367,9 @@ async function initFulfillmentRealtime() {
 
                     const estShort = Math.max(0, req - alloc);
 
-                    const ordSLA = ordTotal > 0 ? Math.min(1, (ordFull / ordTotal)) : null;
+                    // เช็คว่า บิลทำเสร็จครบไหม (ordFull >= ordTotal) และ ชิ้นส่งครบไหม (ship >= req)
+// ถ้าครบทั้งคู่ให้ 1 (100%) ถ้าขาดอย่างใดอย่างหนึ่งให้ 0 (0%)
+const ordSLA = ordTotal > 0 ? ((ordFull >= ordTotal && ship >= req) ? 1 : 0) : null;
                     const dcSLA = alloc > 0 ? Math.min(1, (ship / alloc)) : null;
                     const ffm = req > 0 ? Math.min(1, (ship / req)) : null;
                     const pcsPick = pu > 0 ? (req / pu) : null;
