@@ -438,17 +438,20 @@ async function initFulfillmentRealtime() {
         let allBUsArray = Array.from(buNamesSet).sort();
         const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-        try {
-            // 🟢 1. จัดการ Filter Owner (BU)
-            const ffmBuFilter = document.getElementById('ffm-bu-filter');
-            if (ffmBuFilter && ffmBuFilter.options.length <= 1) {
-                allBUsArray.forEach(bu => ffmBuFilter.appendChild(new Option(bu, bu)));
-            }
-            const ffmBuFilterVal = ffmBuFilter?.value || 'ALL';
-            let chartBUsArray = ffmBuFilterVal === 'ALL' ? allBUsArray : [ffmBuFilterVal];
+        // --- ย้ายบล็อก 🟢 1. ออกมาไว้ตรงนี้ (นอก try) ---
+        // 🟢 1. จัดการ Filter Owner (BU)
+        const ffmBuFilter = document.getElementById('ffm-bu-filter');
+        if (ffmBuFilter && ffmBuFilter.options.length <= 1) {
+            allBUsArray.forEach(bu => ffmBuFilter.appendChild(new Option(bu, bu)));
+        }
+        const ffmBuFilterVal = ffmBuFilter?.value || 'ALL';
+        let chartBUsArray = ffmBuFilterVal === 'ALL' ? allBUsArray : [ffmBuFilterVal];
+        // ------------------------------------------
 
+        try {
             // 🟢 2. อัปเดตกราฟแท่ง (Stacked Bar) - จำนวนชิ้น (PCS)
             if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance && validChartDates.length > 0) {
+                 // ... โค้ดกราฟเดิม ...
                 let tpLabels = validChartDates.map(dStr => {
                     let parts = dStr.split('-');
                     return parts.length === 3 ? `${parseInt(parts[2])} ${shortMonths[parseInt(parts[1])-1]}` : dStr;
