@@ -163,4 +163,3 @@ body { font-family: 'Inter', sans-serif; background-color: var(--bg-main); color
     
     /* Filter เรียงเป็นแถวเดียวแนวตั้ง */
     .slicer-group { width: 100%; min-width: 100%; }
-}
