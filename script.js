@@ -404,10 +404,10 @@ async function initFulfillmentRealtime() {
         const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
         // เปลี่ยนหัวกราฟให้ตรงกับความหมายใหม่ (จำนวนชิ้น Req)
-        const trendTitle = document.querySelector('#ffmTrendChart')?.closest('.data-card')?.querySelector('h3');
+        const trendTitle = document.querySelector('#ffmTrendChart')?.closest('.card')?.querySelector('h3');
         if (trendTitle) trendTitle.innerText = "DAILY REQUESTED VOLUME BY BU (PCS)";
         
-        const volTitle = document.querySelector('#ffmVolumeChart')?.closest('.data-card')?.querySelector('h3');
+        const volTitle = document.querySelector('#ffmVolumeChart')?.closest('.card')?.querySelector('h3');
         if (volTitle) volTitle.innerText = "REQUESTED MIX BY BU (PCS)";
 
         if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
