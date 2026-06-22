@@ -819,36 +819,54 @@ let ordFull = bData.full;
         const rateEtaEl = document.getElementById('ffm-rate-eta');
         if (rateValEl && latestShipDateStr) {
             let lReq = chartDataMap[latestShipDateStr].req || 0;
-            let lAlloc = chartDataMap[latestShipDateStr].alloc || 0; // ETA
+            let lAlloc = chartDataMap[latestShipDateStr].alloc || 0; // DC SLA
             let lShip = chartDataMap[latestShipDateStr].ship || 0;
             
             let pReq = prevShipDateStr ? (chartDataMap[prevShipDateStr].req || 0) : 0;
+            let pAlloc = prevShipDateStr ? (chartDataMap[prevShipDateStr].alloc || 0) : 0; // ดึงข้อมูล DC SLA ของวันก่อนหน้า
             let pShip = prevShipDateStr ? (chartDataMap[prevShipDateStr].ship || 0) : 0;
 
             let currentFfm = lReq > 0 ? (lShip / lReq) * 100 : 0;
             let currentEtaFfm = lAlloc > 0 ? (lShip / lAlloc) * 100 : 0;
-            let prevFfm = pReq > 0 ? (pShip / pReq) * 100 : 0;
-
-            // 1. แบบ Req เทียบกับ Shipped (โชว์ตัวใหญ่)
-            let reqColor = currentFfm >= 99 ? '#10B981' : (currentFfm >= 95 ? '#F59E0B' : '#EF4444');
-            rateValEl.innerHTML = `<span style="color: ${reqColor}">Req: ${currentFfm.toFixed(1)}%</span>`;
             
-            // 2. แบบ ETA เทียบกับ Shipped (โชว์บรรทัดรอง สีฟ้า)
-            if (rateEtaEl) rateEtaEl.innerHTML = `ETA: ${currentEtaFfm.toFixed(1)}%`;
+            let prevFfm = pReq > 0 ? (pShip / pReq) * 100 : 0;
+            let prevEtaFfm = pAlloc > 0 ? (pShip / pAlloc) * 100 : 0;
 
-            // เทียบเปอร์เซ็นต์ (Req) กับวันก่อนหน้า
+            // 1. แบบ Req เทียบกับ Shipped (เปลี่ยนชื่อเป็น FFM)
+            let reqColor = currentFfm >= 99 ? '#10B981' : (currentFfm >= 95 ? '#F59E0B' : '#EF4444');
+            rateValEl.innerHTML = `<span style="color: ${reqColor}">FFM: ${currentFfm.toFixed(1)}%</span>`;
+            
+            // 2. แบบ ETA เทียบกับ Shipped (เปลี่ยนชื่อเป็น DC SLA)
+            if (rateEtaEl) rateEtaEl.innerHTML = `DC SLA: ${currentEtaFfm.toFixed(1)}%`;
+
+            // เทียบเปอร์เซ็นต์กับวันก่อนหน้า
             const rateTrendEl = document.getElementById('ffm-rate-trend');
+            const etaTrendEl = document.getElementById('eta-rate-trend'); // Badge ของ DC SLA
             const rateNoteEl = document.getElementById('ffm-rate-note');
             
-            if (rateTrendEl && rateNoteEl) {
+            if (rateNoteEl) {
                 if (!prevShipDateStr) {
-                    rateTrendEl.className = "badge info"; rateTrendEl.innerText = "-"; rateNoteEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
+                    if (rateTrendEl) { rateTrendEl.className = "badge info"; rateTrendEl.innerText = "-"; }
+                    if (etaTrendEl) { etaTrendEl.className = "badge info"; etaTrendEl.innerText = "-"; }
+                    rateNoteEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
                 } else {
-                    let diff = currentFfm - prevFfm;
+                    // คำนวณเทรนด์ของ FFM
+                    if (rateTrendEl) {
+                        let diffFfm = currentFfm - prevFfm;
+                        if (diffFfm > 0) { rateTrendEl.className = "badge up"; rateTrendEl.innerText = `↗ +${diffFfm.toFixed(1)}%`; } 
+                        else if (diffFfm < 0) { rateTrendEl.className = "badge down"; rateTrendEl.innerText = `↘ ${Math.abs(diffFfm).toFixed(1)}%`; } 
+                        else { rateTrendEl.className = "badge info"; rateTrendEl.innerText = `0%`; }
+                    }
+                    
+                    // คำนวณเทรนด์ของ DC SLA
+                    if (etaTrendEl) {
+                        let diffEta = currentEtaFfm - prevEtaFfm;
+                        if (diffEta > 0) { etaTrendEl.className = "badge up"; etaTrendEl.innerText = `↗ +${diffEta.toFixed(1)}%`; } 
+                        else if (diffEta < 0) { etaTrendEl.className = "badge down"; etaTrendEl.innerText = `↘ ${Math.abs(diffEta).toFixed(1)}%`; } 
+                        else { etaTrendEl.className = "badge info"; etaTrendEl.innerText = `0%`; }
+                    }
+
                     let prevDateText = formatShortDate(prevShipDateStr);
-                    if (diff > 0) { rateTrendEl.className = "badge up"; rateTrendEl.innerText = `↗ +${diff.toFixed(1)}%`; } 
-                    else if (diff < 0) { rateTrendEl.className = "badge down"; rateTrendEl.innerText = `↘ ${Math.abs(diff).toFixed(1)}%`; } 
-                    else { rateTrendEl.className = "badge info"; rateTrendEl.innerText = `0%`; }
                     rateNoteEl.innerText = `vs ${prevDateText}`;
                 }
             }
