@@ -539,16 +539,20 @@ async function initFulfillmentRealtime() {
             console.error("Chart Rendering Error:", chartErr);
         }
 
-        // ==========================================
-        // 🟢 ให้วางโค้ดที่ก๊อปปี้ไป "ตรงนี้" ครับ 🟢
-        // ==========================================
         const utilTableEl = document.getElementById('utilization-table');
-        if (utilTableEl && validChartDates.length > 0) {
-            let targetD = validChartDates[validChartDates.length - 1]; 
-            for (let i = validChartDates.length - 1; i >= 0; i--) {
-                let d = validChartDates[i];
-                let totalReqForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d].buReq[bu] || 0), 0);
-                if (totalReqForDay > 0) { targetD = d; break; }
+        if (utilTableEl && sortedDates.length > 0) {
+            // 🟢 เปลี่ยนจาก validChartDates (แค่ 7 วัน) เป็น sortedDates (วันที่ทั้งหมดในระบบ)
+            // ค้นหาวันที่ "ล่าสุด" (ที่อยู่ในอดีตหรือวันนี้) ที่มียอด Req > 0
+            let targetD = sortedDates[0]; 
+            for (let i = 0; i < sortedDates.length; i++) {
+                let d = sortedDates[i];
+                if (new Date(d).getTime() > targetTimestamp) continue; // ข้ามวันที่เป็นอนาคต
+                
+                let totalReqForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d]?.buReq[bu] || 0), 0);
+                if (totalReqForDay > 0) { 
+                    targetD = d; 
+                    break; 
+                }
             }
 
             // 💡 ตัวแปรจำลอง Capacity ราย BU (สมมติไปก่อน รอเชื่อม API)
