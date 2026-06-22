@@ -833,10 +833,12 @@ async function initFulfillmentRealtime() {
                 }
                 
                 // 🟢 อัปเดตข้อความ Updated ของการ์ด Wave Operations
-                let waveOpsCard = document.getElementById('wave-total').closest('.data-card, .card');
-                if (waveOpsCard && todayKeyStr) {
-                    let updateSpan = Array.from(waveOpsCard.querySelectorAll('span, p, div')).find(el => el.innerText.trim().startsWith('Updated:'));
-                    if (updateSpan) updateSpan.innerText = `Updated: ${getDisplayDate(todayKeyStr)}`;
+                if (todayKeyStr) {
+                    let dispDate = getDisplayDate(todayKeyStr);
+                    if(document.getElementById('wave-date-1')) document.getElementById('wave-date-1').innerText = `Updated: ${dispDate}`;
+                    if(document.getElementById('wave-date-2')) document.getElementById('wave-date-2').innerText = `Updated: ${dispDate}`;
+                    if(document.getElementById('wave-date-3')) document.getElementById('wave-date-3').innerText = `Updated: ${dispDate}`;
+                    if(document.getElementById('wave-date-4')) document.getElementById('wave-date-4').innerText = `Updated: ${dispDate}`;
                 }
             }
             if (typeof generateExecutiveAlerts === "function") generateExecutiveAlerts(targetTimestamp, activeWaveKey, aLate, aDelay, diffDays, worstBU);
