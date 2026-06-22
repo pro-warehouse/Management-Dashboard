@@ -20,7 +20,7 @@ const chartPalette = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#1
 
 const fmtN = (v) => (v || 0).toLocaleString();
 
-// 🛠️ 1. Smart Date Normalizer (แก้ปัญหาวันที่ Invalid Date เวลา Sort ข้อมูล)
+// 🛠️ 1. Smart Date Normalizer (แก้ปัญหาวันที่ Invalid Date และปีหาย)
 const getStandardDate = (rawDate) => {
     if (!rawDate) return "";
     let str = String(rawDate).trim();
@@ -33,7 +33,7 @@ const getStandardDate = (rawDate) => {
             let m = parts[1].padStart(2, '0');
             let y = parts[2];
             if (y.length === 2) y = "20" + y; 
-            else if (y.length === 3 && y.startsWith("202")) y = y + "6"; 
+            else if (y.length === 3 && y.startsWith("202")) y = y + "6"; // ซ่อมบั๊กปี 202 -> 2026
             return `${y}-${m}-${d}`;
         }
     }
@@ -117,13 +117,33 @@ let workforceChartInstance = null;
 const wfCtx = document.getElementById('workforceChart')?.getContext('2d');
 if (wfCtx) workforceChartInstance = new Chart(wfCtx, { type: 'bar', data: { labels: [], datasets: [{ label: 'จำนวนกำลังพล (คน)', data: [], backgroundColor: '#3B82F6', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, border: { display: false } } }, layout: { padding: { top: 20 } } }, plugins: [dataLabelPlugin] });
 
+// 🟢 กราฟซ้าย: Stacked Bar (Daily Throughput) แยกตาม Owner
 let ffmTrendChartInstance = null;
 const ffmTrendCtx = document.getElementById('ffmTrendChart')?.getContext('2d');
-if (ffmTrendCtx) ffmTrendChartInstance = new Chart(ffmTrendCtx, { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 } } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, beginAtZero: true } } } });
+if (ffmTrendCtx) ffmTrendChartInstance = new Chart(ffmTrendCtx, { 
+    type: 'bar', 
+    data: { labels: [], datasets: [] }, 
+    options: { 
+        responsive: true, maintainAspectRatio: false, 
+        plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 } } } }, 
+        scales: { 
+            x: { stacked: true, grid: { display: false } }, 
+            y: { stacked: true, border: { display: false }, beginAtZero: true } 
+        } 
+    } 
+});
 
+// 🟢 กราฟขวา: Doughnut (Order Mix) สัดส่วนจำนวนชิ้นแยกตาม Owner
 let ffmVolumeChartInstance = null;
 const ffmVolCtx = document.getElementById('ffmVolumeChart')?.getContext('2d');
-if (ffmVolCtx) ffmVolumeChartInstance = new Chart(ffmVolCtx, { type: 'doughnut', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } } } });
+if (ffmVolCtx) ffmVolumeChartInstance = new Chart(ffmVolCtx, { 
+    type: 'doughnut', 
+    data: { labels: [], datasets: [] }, 
+    options: { 
+        responsive: true, maintainAspectRatio: false, cutout: '70%', 
+        plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } } 
+    } 
+});
 
 let ontimeChart1Instance = null;
 const ot1Ctx = document.getElementById('ontimeChart')?.getContext('2d');
@@ -166,7 +186,7 @@ function toggleLoader(show) {
 }
 
 // ========================================================
-// 🌟 4. FULFILLMENT DATA BINDING (MATRIX PIVOT TABLE) 🌟
+// 🌟 4. FULFILLMENT DATA BINDING (MATRIX PIVOT & CHARTS) 🌟
 // ========================================================
 async function initFulfillmentRealtime() {
     let wrapperEl = document.getElementById('fulfillment-v3-wrapper');
@@ -183,7 +203,7 @@ async function initFulfillmentRealtime() {
     const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
     
     let bqDataList = [];
-    // 🛡️ Fail-Safe: ตรวจจับ API ล่ม ถ้าพังให้ข้ามไปใช้ข้อมูลเก่า
+    // 🛡️ Fail-Safe: ตรวจจับ API ล่ม ถ้าพังให้ข้ามไปใช้ข้อมูลเก่าจาก App Script
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -199,9 +219,10 @@ async function initFulfillmentRealtime() {
     }
 
     try {
+        // 🟢 1. สร้าง Map วันที่รวม เพื่อปลดล็อกให้ Orders โชว์ครบยันอดีต
         let unifiedDatesMap = {};
         
-        // 1. นำข้อมูล History Orders มาใส่
+        // 1.1 นำข้อมูล History Orders มาใส่
         if (globalData.fulfillment) {
             Object.keys(globalData.fulfillment).forEach(k => {
                 let sd = getStandardDate(k); 
@@ -219,7 +240,7 @@ async function initFulfillmentRealtime() {
             });
         }
 
-        // 2. นำข้อมูล Wave Ops ปัจจุบัน มาใส่
+        // 1.2 นำข้อมูล Wave Ops ปัจจุบัน มาใส่
         if (globalData.wave_ops) {
             Object.keys(globalData.wave_ops).forEach(k => {
                 let sd = getStandardDate(k); 
@@ -235,7 +256,7 @@ async function initFulfillmentRealtime() {
             });
         }
 
-        // 3. นำข้อมูล Pieces จาก BQ มาใส่ (ถ้าไม่พัง)
+        // 1.3 นำข้อมูล Pieces จาก BQ มาใส่ (ถ้าไม่พัง)
         bqDataList.forEach(row => {
             let sd = getStandardDate(row.date);
             if (!unifiedDatesMap[sd]) unifiedDatesMap[sd] = { bq: {}, wave: {}, ffm: {} };
@@ -289,7 +310,6 @@ async function initFulfillmentRealtime() {
                 </tr>
             </thead><tbody>`;
 
-        let trendLabels = [];
         let buNamesSet = new Set();
         let chartDataMap = {};
         
@@ -315,6 +335,7 @@ async function initFulfillmentRealtime() {
                     const wItem = wData[bu] || {};
                     const fItem = fData[bu] || {};
                     
+                    // 🟢 การรวมข้อมูลสุดยอด (Triple Merge)
                     const ordTotal = Math.max(parseFloat(bItem.ordTotal || 0), parseFloat(wItem.ordTotal || 0), parseFloat(fItem.ordTotal || 0));
                     const ordFull = Math.max(parseFloat(bItem.ordFull || 0), parseFloat(wItem.ordFull || 0), parseFloat(fItem.ordFull || 0));
                     
@@ -357,13 +378,14 @@ async function initFulfillmentRealtime() {
                         <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${plt > 0 ? plt.toFixed(1) : '-'}</td>
                     </tr>`;
 
-                    if (!chartDataMap[dateStr]) chartDataMap[dateStr] = { req:0, ship:0, ordTotal:0, buShip: {}, buReq: {} };
+                    if (!chartDataMap[dateStr]) chartDataMap[dateStr] = { req:0, ship:0, ordTotal:0, buShip: {}, buReq: {}, buOrd: {} };
                     chartDataMap[dateStr].req += req;
                     chartDataMap[dateStr].ship += ship;
                     chartDataMap[dateStr].ordTotal += ordTotal;
                     
-                    chartDataMap[dateStr].buShip[bu] = ship;
-                    chartDataMap[dateStr].buReq[bu] = req; // ใช้ Req วาดกราฟโดนัท
+                    // เก็บค่าไว้ใช้วาดกราฟ (ถ้า ship เป็น 0 เพราะ BQ ล่ม ให้ใช้ ordTotal วาดแทนชั่วคราว กราฟจะได้ไม่แหว่ง)
+                    chartDataMap[dateStr].buShip[bu] = ship > 0 ? ship : ordTotal; 
+                    chartDataMap[dateStr].buReq[bu] = req > 0 ? req : ordTotal; 
                 });
             });
         }
@@ -371,7 +393,9 @@ async function initFulfillmentRealtime() {
         htmlTable += "</tbody></table></div></div>";
         wrapperEl.innerHTML = htmlTable;
 
-        // --- 📊 วาดกราฟด้านบนตามภาพ ---
+        // ==========================================
+        // 🌟 อัปเดตกราฟ FFM (ซ้าย: Stacked Bar | ขวา: Doughnut) 🌟
+        // ==========================================
         const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
         const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
         
@@ -379,7 +403,13 @@ async function initFulfillmentRealtime() {
         let allBUsArray = Array.from(buNamesSet).sort();
         const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-        // 🟢 กราฟซ้าย: Stacked Bar (แยกตาม Owner)
+        // เปลี่ยนหัวกราฟให้ตรงกับความหมายใหม่
+        const trendTitle = document.querySelector('#ffmTrendChart')?.closest('.data-card')?.querySelector('h3');
+        if (trendTitle && !trendTitle.innerText.includes('THROUGHPUT')) trendTitle.innerText = "DAILY THROUGHPUT BY BU";
+        
+        const volTitle = document.querySelector('#ffmVolumeChart')?.closest('.data-card')?.querySelector('h3');
+        if (volTitle && !volTitle.innerText.includes('MIX')) volTitle.innerText = "ORDER MIX BY BU (PIECES)";
+
         if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
             let tpLabels = validChartDates.map(dStr => {
                 let parts = dStr.split('-');
@@ -409,7 +439,6 @@ async function initFulfillmentRealtime() {
             ffmTrendChartInstance.update();
         }
 
-        // 🟢 กราฟขวา: Doughnut (ใช้จำนวนชิ้น Req ล่าสุด)
         if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
             let targetD = validChartDates[validChartDates.length - 1]; 
             let mixLabels = [];
@@ -438,30 +467,174 @@ async function initFulfillmentRealtime() {
             ffmVolumeChartInstance.update();
         }
 
-        // อัปเดต % เฉลี่ยของการ์ด Avg Fulfillment 
-        if (validChartDates.length > 0) {
-            let lastD = validChartDates[validChartDates.length - 1];
-            let sReq = chartDataMap[lastD].req;
-            let sShip = chartDataMap[lastD].ship;
-            const currentFfmRate = sReq > 0 ? (sShip / sReq) * 100 : 0;
+        // ========================================================
+        // 🌟 อัปเดตการ์ด: Orders Shipped & Wave Plan Summary 🌟
+        // ========================================================
+        
+        let validWaveKeys = sortedDates.filter(k => new Date(k).getTime() <= targetTimestamp + (3 * 24 * 60 * 60 * 1000)).slice(0, 7);
+        
+        let totalOrdersToday = 0;
+        let totalOrdersYesterday = 0;
+        let activeWaveKey = null; 
+        let pendingFutureOrders = 0;
+
+        if (validWaveKeys.length > 0) {
+            let todayKey = validWaveKeys.find(k => new Date(k).getTime() <= targetTimestamp);
+            if (todayKey) {
+                totalOrdersToday = chartDataMap[todayKey].ordTotal || 0;
+                let yIndex = validWaveKeys.indexOf(todayKey) + 1;
+                if (yIndex < validWaveKeys.length) totalOrdersYesterday = chartDataMap[validWaveKeys[yIndex]].ordTotal || 0;
+            }
             
-            const rateEl = document.getElementById('ffm-order-rate');
-            if (rateEl) {
-                rateEl.innerText = currentFfmRate.toFixed(1) + "%";
-                let rateUpdateEl = rateEl.parentElement.nextElementSibling;
-                let parts = lastD.split('-');
-                let dispDate = parts.length === 3 ? `${parseInt(parts[2])} ${shortMonths[parseInt(parts[1])-1]}` : lastD;
-                if (rateUpdateEl) rateUpdateEl.innerText = `Updated: วันที่ ${dispDate}`;
+            // หา Active Wave (วันที่เก่าสุดที่ยังทำงานไม่เสร็จ 100%)
+            let reversedKeys = [...validWaveKeys].reverse();
+            for (let k of reversedKeys) {
+                let dayTot = 0, dayComp = 0;
+                allBUsArray.forEach(bu => {
+                    dayTot += Math.max(parseFloat(unifiedDatesMap[k].bq[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[k].wave[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[k].ffm[bu]?.ordTotal||0));
+                    dayComp += Math.max(parseFloat(unifiedDatesMap[k].bq[bu]?.ordFull||0), parseFloat(unifiedDatesMap[k].wave[bu]?.ordFull||0), parseFloat(unifiedDatesMap[k].ffm[bu]?.ordFull||0));
+                });
+                if (dayTot > 0 && dayComp < dayTot) { 
+                    if (dayComp === 0 && dayTot <= 5) continue; // ข้ามพวกบิลขยะ
+                    activeWaveKey = k; 
+                    break; 
+                }
+            }
+            if (!activeWaveKey) activeWaveKey = reversedKeys[reversedKeys.length - 1];
+            
+            // คำนวณบิลค้างในอนาคต
+            let activeTime = activeWaveKey ? new Date(activeWaveKey).getTime() : 0;
+            reversedKeys.forEach(k => {
+                if (new Date(k).getTime() > activeTime) {
+                    allBUsArray.forEach(bu => {
+                        let t = Math.max(parseFloat(unifiedDatesMap[k].bq[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[k].wave[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[k].ffm[bu]?.ordTotal||0));
+                        let c = Math.max(parseFloat(unifiedDatesMap[k].bq[bu]?.ordFull||0), parseFloat(unifiedDatesMap[k].wave[bu]?.ordFull||0), parseFloat(unifiedDatesMap[k].ffm[bu]?.ordFull||0));
+                        pendingFutureOrders += (t - c);
+                    });
+                }
+            });
+        }
+
+        // 🟢 อัปเดตการ์ด Orders Shipped
+        const ordersEl = document.getElementById('ffm-orders-shipped');
+        if (ordersEl) {
+            ordersEl.innerText = totalOrdersToday > 0 ? fmtN(totalOrdersToday) : "0";
+            const trendEl = document.getElementById('ffm-orders-trend');
+            const trendTextEl = document.getElementById('ffm-orders-note');
+            
+            if (trendEl) {
+                if (totalOrdersYesterday === 0 && totalOrdersToday === 0) {
+                    trendEl.className = "badge info"; trendEl.innerText = "-"; if(trendTextEl) trendTextEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
+                } else if (totalOrdersYesterday === 0) {
+                    trendEl.className = "badge up"; trendEl.innerText = "↗ 100%"; if(trendTextEl) trendTextEl.innerText = "vs previous";
+                } else {
+                    let pctDiff = ((totalOrdersToday - totalOrdersYesterday) / totalOrdersYesterday) * 100;
+                    if (pctDiff > 0) { trendEl.className = "badge up"; trendEl.innerText = `↗ +${pctDiff.toFixed(1)}%`; } 
+                    else if (pctDiff < 0) { trendEl.className = "badge down"; trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(1)}%`; } 
+                    else { trendEl.className = "badge info"; trendEl.innerText = `0%`; }
+                    if(trendTextEl) { trendTextEl.innerText = `vs วันก่อนหน้า`; }
+                }
             }
         }
 
+        // 🟢 อัปเดตตาราง Wave Summary Table
+        const waveSummaryTable = document.getElementById('wave-summary-table');
+        if (waveSummaryTable) {
+            if (validWaveKeys.length === 0 || allBUsArray.length === 0) {
+                waveSummaryTable.innerHTML = `<thead><tr><th class='text-center' style='padding:30px; color:var(--text-muted);'>ไม่มีข้อมูลออเดอร์</th></tr></thead>`;
+            } else {
+                let thead = `<thead><tr><th class="role-cell" style="text-align:center; min-width: 120px;">Planned Date</th>${allBUsArray.map(bu => `<th class="aff-header">${bu}</th>`).join('')}<th class="total-cell">Total (เสร็จ / ทั้งหมด)</th><th class="total-cell" style="text-align:center;">% Completed</th></tr></thead>`;
+                let tbody = "<tbody>";
+                
+                validWaveKeys.forEach(dStr => {
+                    let dObj = new Date(dStr);
+                    let dispDate = isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
+                    
+                    let tr = `<tr><td class="role-cell" style="text-align:center; font-weight:700;">${dispDate}</td>`;
+                    let dayTot = 0, dayComp = 0;
+                    
+                    allBUsArray.forEach(bu => {
+                        let ordTotal = Math.max(parseFloat(unifiedDatesMap[dStr].bq[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[dStr].wave[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[dStr].ffm[bu]?.ordTotal||0));
+                        let ordFull = Math.max(parseFloat(unifiedDatesMap[dStr].bq[bu]?.ordFull||0), parseFloat(unifiedDatesMap[dStr].wave[bu]?.ordFull||0), parseFloat(unifiedDatesMap[dStr].ffm[bu]?.ordFull||0));
+                        
+                        dayTot += ordTotal; dayComp += ordFull;
+                        if (ordTotal === 0) { tr += `<td>-</td>`; } 
+                        else {
+                            let color = (ordFull === ordTotal) ? 'var(--accent-primary)' : (ordFull > 0 ? 'var(--accent-secondary)' : 'var(--danger)');
+                            tr += `<td><span style="color:${color}; font-weight:800; font-size:0.9rem;">${fmtN(ordFull)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(ordTotal)}</span></td>`;
+                        }
+                    });
+                    
+                    let grandColor = (dayComp === dayTot && dayTot > 0) ? 'var(--accent-primary)' : (dayComp > 0 ? 'var(--accent-secondary)' : 'var(--danger)');
+                    tr += `<td class="total-cell"><span style="color:${grandColor}; font-weight:800; font-size:0.95rem;">${fmtN(dayComp)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(dayTot)}</span></td>`;
+                    
+                    let pct = dayTot > 0 ? ((dayComp / dayTot) * 100).toFixed(1) : 0;
+                    let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
+                    let pctColor = pct >= 100 ? '#166534' : (pct > 0 ? '#92400e' : '#991b1b');
+                    tr += `<td class="total-cell" style="text-align:center;"><span class="pct-pill" style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:600;">${pct}%</span></td></tr>`;
+                    tbody += tr;
+                });
+                waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
+            }
+        }
+
+        // 🟢 อัปเดต Alerts และ Active Wave Detail
+        let aTotal = 0, aComp = 0, aLate = 0, aDelay = 0;
+        let worstBU = ""; 
+        if (activeWaveKey) {
+            allBUsArray.forEach(bu => {
+                let ordTotal = Math.max(parseFloat(unifiedDatesMap[activeWaveKey].bq[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[activeWaveKey].wave[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[activeWaveKey].ffm[bu]?.ordTotal||0));
+                let ordFull = Math.max(parseFloat(unifiedDatesMap[activeWaveKey].bq[bu]?.ordFull||0), parseFloat(unifiedDatesMap[activeWaveKey].wave[bu]?.ordFull||0), parseFloat(unifiedDatesMap[activeWaveKey].ffm[bu]?.ordFull||0));
+                let late = parseFloat(unifiedDatesMap[activeWaveKey].wave[bu]?.late_orders || 0);
+                let delay = parseFloat(unifiedDatesMap[activeWaveKey].wave[bu]?.total_delay_mins || 0);
+
+                aTotal += ordTotal;
+                aComp += ordFull;
+                aLate += late;
+                if (delay > aDelay) { aDelay = delay; worstBU = bu; }
+            });
+            
+            let diffDays = 0;
+            let activeDateStr = "--";
+            if (activeWaveKey) { 
+                let dObj = new Date(activeWaveKey);
+                activeDateStr = isNaN(dObj.getTime()) ? activeWaveKey : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`; 
+                let todayD = new Date(); todayD.setHours(0,0,0,0); 
+                let workDMid = new Date(activeWaveKey); workDMid.setHours(0,0,0,0); 
+                diffDays = Math.floor((todayD - workDMid) / (1000 * 60 * 60 * 24)); 
+            }
+
+            if (document.getElementById('wave-total')) {
+                document.getElementById('wave-total').innerText = aTotal > 0 ? fmtN(aTotal) : "0";
+                document.getElementById('wave-completed').innerText = aComp > 0 ? fmtN(aComp) : "0";
+                document.getElementById('wave-late').innerText = aLate > 0 ? fmtN(aLate) : "0";
+                let delayEl = document.getElementById('wave-delay');
+                if (delayEl) {
+                    if (aDelay > 0) { delayEl.innerText = `${Math.floor(aDelay / 60)}h ${aDelay % 60}m`; delayEl.style.color = dangerRed; } 
+                    else { delayEl.innerText = `0h 0m`; delayEl.style.color = accentGreen; }
+                }
+                if(document.getElementById('wave-active-info-1')) document.getElementById('wave-active-info-1').innerHTML = `<span class="badge info">${activeDateStr}</span> ${pendingFutureOrders > 0 ? `รอ ${fmtN(pendingFutureOrders)} บิล` : `แผนล่าสุด`}${diffDays > 0 ? ` <span class="badge down">ดีเลย์ ${diffDays} วัน</span>` : ''}`;
+                let aCompPct = aTotal > 0 ? ((aComp / aTotal) * 100).toFixed(1) : 0;
+                if(document.getElementById('wave-active-info-2')) document.getElementById('wave-active-info-2').innerHTML = `<span class="badge up" style="background:${aCompPct>=100?'#dcfce7':'#fef3c7'}">${aCompPct}%</span> เสร็จ ${fmtN(aComp)} / ${fmtN(aTotal)}`;
+                if(document.getElementById('wave-active-info-3')) document.getElementById('wave-active-info-3').innerHTML = `<span class="badge down">หลุด SLA</span> แผน ${activeDateStr} &bull; ${fmtN(aLate)} บิล`;
+                if(document.getElementById('wave-active-info-4')) {
+                    if (aDelay > 0) {
+                        document.getElementById('wave-active-info-4').innerHTML = `<span class="badge down">ดีเลย์อยู่</span> ช้าสุดที่: <b>${worstBU}</b>`;
+                    } else {
+                        document.getElementById('wave-active-info-4').innerHTML = `<span class="badge up">ปกติ</span> ทำงานทันตามแผน`;
+                    }
+                }
+            }
+            if (typeof generateExecutiveAlerts === "function") generateExecutiveAlerts(targetTimestamp, activeWaveKey, aLate, aDelay, diffDays, worstBU);
+        }
+
     } catch (err) {
-        console.error("❌ Fetch Matrix Error:", err);
+        console.error("❌ Fulfillment Build Error:", err);
     }
 }
 
 // ========================================================
-// 🌟 6. ฟังก์ชันโหลดข้อมูลย่อย (ดึงจาก App Script) 🌟
+// 🌟 5. ฟังก์ชันอัปเดตข้อมูลอื่นๆ (ดึงมาจากระบบเดิม) 🌟
 // ========================================================
 
 function cleanDataBeforeLoad() {
@@ -1061,189 +1234,6 @@ function updateDashboardData(selectedDateStr) {
             updateTrendChart(selectedDateStr);
         }
     } catch(e) { console.error("Workforce Update Error:", e); }
-
-    // 🟢 8. WAVE OPS & ORDERS SHIPPED TODAY 
-    try {
-        if(Object.keys(globalData.fulfillment || {}).length > 0) {
-            let waveDataForFFM = globalData.fulfillment;
-            let wKeysFFM = Object.keys(waveDataForFFM).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
-            
-            let targetWaveFfmKey = null; let totalOrdersToday = 0;
-            let prevWaveKey = null; let totalOrdersYesterday = 0;
-
-            for (let k of wKeysFFM) {
-                if (new Date(getStandardDate(k)).getTime() <= targetTimestamp) {
-                    let tot = 0;
-                    Object.keys(waveDataForFFM[k].bu_data || {}).forEach(bu => {
-                        if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
-                            let item = waveDataForFFM[k].bu_data[bu];
-                            tot += parseFloat(item.total_orders || item.orders || item.ordTotal || 0);
-                        }
-                    });
-                    if (tot > 0 || !window.selectedBUs.includes('ALL')) {
-                        if (!targetWaveFfmKey) { targetWaveFfmKey = k; totalOrdersToday = tot; } 
-                        else if (!prevWaveKey) { prevWaveKey = k; totalOrdersYesterday = tot; break; }
-                    }
-                }
-            }
-
-            // แสดงยอดการ์ด Orders Shipped
-            const ordersEl = document.getElementById('ffm-orders-shipped');
-            if (ordersEl) {
-                ordersEl.innerText = totalOrdersToday > 0 ? fmtN(totalOrdersToday) : "0";
-                const trendEl = document.getElementById('ffm-orders-trend');
-                const trendTextEl = document.getElementById('ffm-orders-note');
-                
-                if (trendEl) {
-                    if (totalOrdersYesterday === 0 && totalOrdersToday === 0) {
-                        trendEl.className = "badge info"; trendEl.innerText = "-"; if(trendTextEl) trendTextEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
-                    } else if (totalOrdersYesterday === 0) {
-                        trendEl.className = "badge up"; trendEl.innerText = "↗ 100%"; if(trendTextEl) trendTextEl.innerText = "vs previous";
-                    } else {
-                        let pctDiff = ((totalOrdersToday - totalOrdersYesterday) / totalOrdersYesterday) * 100;
-                        if (pctDiff > 0) { trendEl.className = "badge up"; trendEl.innerText = `↗ +${pctDiff.toFixed(1)}%`; } 
-                        else if (pctDiff < 0) { trendEl.className = "badge down"; trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(1)}%`; } 
-                        else { trendEl.className = "badge info"; trendEl.innerText = `0%`; }
-                        if(trendTextEl && prevWaveKey) { trendTextEl.innerText = `vs ${getShortDate(prevWaveKey)}`; }
-                    }
-                }
-                let ordersUpdateEl = ordersEl.parentElement.nextElementSibling;
-                if (ordersUpdateEl && targetWaveFfmKey) ordersUpdateEl.innerText = `Updated: ${getDisplayDate(targetWaveFfmKey)}`;
-            }
-
-            // แสดงตาราง Wave Summary
-            const waveSummaryTable = document.getElementById('wave-summary-table');
-            if (waveSummaryTable) {
-                let allBUs = new Set();
-                wKeysFFM.forEach(k => Object.keys(waveDataForFFM[k].bu_data || {}).forEach(bu => {
-                    if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) allBUs.add(bu);
-                }));
-                let sortedBUs = Array.from(allBUs).sort();
-
-                if (wKeysFFM.length === 0 || sortedBUs.length === 0) {
-                    waveSummaryTable.innerHTML = `<thead><tr><th class='text-center' style='padding:30px; color:var(--text-muted);'>ไม่มีข้อมูลออเดอร์</th></tr></thead>`;
-                } else {
-                    let thead = `<thead><tr><th class="role-cell" style="text-align:center; min-width: 120px;">Planned Date</th>${sortedBUs.map(bu => `<th class="aff-header">${bu}</th>`).join('')}<th class="total-cell">Total (เสร็จ / ทั้งหมด)</th><th class="total-cell" style="text-align:center;">% Completed</th></tr></thead>`;
-                    let tbody = "<tbody>";
-                    
-                    let validWaveKeys = wKeysFFM.filter(k => new Date(getStandardDate(k)).getTime() <= targetTimestamp + (3 * 24 * 60 * 60 * 1000)).slice(0, 7);
-                    
-                    validWaveKeys.forEach(dKey => {
-                        let tr = `<tr><td class="role-cell" style="text-align:center;">${getShortDate(dKey)}</td>`;
-                        let dayTot = 0, dayComp = 0;
-                        sortedBUs.forEach(bu => {
-                            let item = waveDataForFFM[dKey].bu_data[bu] || {};
-                            let buTot = parseFloat(item.total_orders || item.orders || item.ordTotal || 0);
-                            let buComp = parseFloat(item.completed_orders || item.completed || item.ordFull || 0);
-                            dayTot += buTot; dayComp += buComp;
-                            
-                            if (buTot === 0) { tr += `<td>-</td>`; } 
-                            else {
-                                let color = (buComp === buTot) ? 'var(--accent-primary)' : (buComp > 0 ? 'var(--accent-secondary)' : 'var(--danger)');
-                                tr += `<td><span style="color:${color}; font-weight:800; font-size:0.9rem;">${fmtN(buComp)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(buTot)}</span></td>`;
-                            }
-                        });
-                        
-                        let grandColor = (dayComp === dayTot && dayTot > 0) ? 'var(--accent-primary)' : (dayComp > 0 ? 'var(--accent-secondary)' : 'var(--danger)');
-                        tr += `<td class="total-cell"><span style="color:${grandColor}; font-weight:800; font-size:0.95rem;">${fmtN(dayComp)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(dayTot)}</span></td>`;
-                        
-                        let pct = dayTot > 0 ? ((dayComp / dayTot) * 100).toFixed(1) : 0;
-                        let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
-                        let pctColor = pct >= 100 ? '#166534' : (pct > 0 ? '#92400e' : '#991b1b');
-                        tr += `<td class="total-cell" style="text-align:center;"><span class="pct-pill" style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:600;">${pct}%</span></td></tr>`;
-                        tbody += tr;
-                    });
-                    waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
-                }
-            }
-        }
-        
-        // 🟢 Active Wave Delay Alerts
-        if(Object.keys(globalData.wave_ops || {}).length > 0) {
-            let activeData = globalData.wave_ops;
-            let wKeysAsc = Object.keys(activeData).sort((a,b) => new Date(getStandardDate(a)).getTime() - new Date(getStandardDate(b)).getTime());
-            
-            let activeWaveKey = null; let pendingFutureOrders = 0;
-            if (wKeysAsc.length > 0) {
-                for (let key of wKeysAsc) {
-                    let dTot = 0, dComp = 0;
-                    Object.keys(activeData[key].bu_data).forEach(bu => {
-                        if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
-                            dTot += activeData[key].bu_data[bu].total_orders || 0;
-                            dComp += activeData[key].bu_data[bu].completed_orders || 0;
-                        }
-                    });
-                    if (dTot > 0 && dComp < dTot) { if (dComp === 0 && dTot <= 5) continue; activeWaveKey = key; break; }
-                }
-                if (!activeWaveKey) activeWaveKey = wKeysAsc[wKeysAsc.length - 1]; 
-                
-                let activeTime = activeWaveKey ? new Date(getStandardDate(activeWaveKey)).getTime() : 0;
-                for (let key of wKeysAsc) { 
-                    if (new Date(getStandardDate(key)).getTime() > activeTime) { 
-                        let dTot = 0, dComp = 0;
-                        Object.keys(activeData[key].bu_data).forEach(bu => {
-                            if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
-                                dTot += activeData[key].bu_data[bu].total_orders || 0;
-                                dComp += activeData[key].bu_data[bu].completed_orders || 0;
-                            }
-                        });
-                        pendingFutureOrders += (dTot - dComp); 
-                    } 
-                }
-            }
-
-            const aD = activeWaveKey ? activeData[activeWaveKey].bu_data : {};
-            let aTotal = 0, aComp = 0, aLate = 0, aDelay = 0;
-            let worstBU = ""; 
-
-            Object.keys(aD).forEach(bu => {
-                if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
-                    aTotal += aD[bu].total_orders || 0;
-                    aComp += aD[bu].completed_orders || 0;
-                    aLate += aD[bu].late_orders || 0;
-                    if ((aD[bu].total_delay_mins || 0) > aDelay) {
-                        aDelay = aD[bu].total_delay_mins;
-                        worstBU = bu;
-                    }
-                }
-            });
-
-            let diffDays = 0, activeDateStr = "--";
-            if (activeWaveKey) { 
-                activeDateStr = getShortDate(activeWaveKey); 
-                let todayD = new Date(); todayD.setHours(0,0,0,0); 
-                let workDMid = new Date(getStandardDate(activeWaveKey)); workDMid.setHours(0,0,0,0); 
-                diffDays = Math.floor((todayD - workDMid) / (1000 * 60 * 60 * 24)); 
-            }
-
-            if (document.getElementById('wave-total')) {
-                document.getElementById('wave-total').innerText = aTotal > 0 ? fmtN(aTotal) : "0";
-                document.getElementById('wave-completed').innerText = aComp > 0 ? fmtN(aComp) : "0";
-                document.getElementById('wave-late').innerText = aLate > 0 ? fmtN(aLate) : "0";
-                let delayEl = document.getElementById('wave-delay');
-                if (delayEl) {
-                    if (aDelay > 0) { delayEl.innerText = `${Math.floor(aDelay / 60)}h ${aDelay % 60}m`; delayEl.style.color = dangerRed; } 
-                    else { delayEl.innerText = `0h 0m`; delayEl.style.color = accentGreen; }
-                }
-                if(document.getElementById('wave-active-info-1')) document.getElementById('wave-active-info-1').innerHTML = `<span class="badge info">${activeDateStr}</span> ${pendingFutureOrders > 0 ? `รอ ${fmtN(pendingFutureOrders)} บิล` : `แผนล่าสุด`}${diffDays > 0 ? ` <span class="badge down">ดีเลย์ ${diffDays} วัน</span>` : ''}`;
-                let aCompPct = aTotal > 0 ? ((aComp / aTotal) * 100).toFixed(1) : 0;
-                if(document.getElementById('wave-active-info-2')) document.getElementById('wave-active-info-2').innerHTML = `<span class="badge up" style="background:${aCompPct>=100?'#dcfce7':'#fef3c7'}">${aCompPct}%</span> เสร็จ ${fmtN(aComp)} / ${fmtN(aTotal)}`;
-                if(document.getElementById('wave-active-info-3')) document.getElementById('wave-active-info-3').innerHTML = `<span class="badge down">หลุด SLA</span> แผน ${activeDateStr} &bull; ${fmtN(aLate)} บิล`;
-                if(document.getElementById('wave-active-info-4')) {
-                    if (aDelay > 0) {
-                        document.getElementById('wave-active-info-4').innerHTML = `<span class="badge down">ดีเลย์อยู่</span> ช้าสุดที่: <b>${worstBU}</b>`;
-                    } else {
-                        document.getElementById('wave-active-info-4').innerHTML = `<span class="badge up">ปกติ</span> ทำงานทันตามแผน`;
-                    }
-                }
-                [1, 2, 3, 4].forEach(i => { let el = document.getElementById(`wave-date-${i}`); if (el) el.innerText = `Updated: ข้อมูลแผน (${activeWaveKey ? getDisplayDate(activeWaveKey) : "--"})`; });
-            }
-            
-            if (typeof generateExecutiveAlerts === "function") {
-                generateExecutiveAlerts(targetTimestamp, activeWaveKey, aLate, aDelay, diffDays, worstBU);
-            }
-        }
-    } catch(e) { console.error("Wave Ops Update Error:", e); }
 }
 
 function updateTrendChart(baseDateStr) {
@@ -2139,7 +2129,7 @@ function renderTransportSection() {
                             let buClr = buPct >= 99 ? '#166534' : (buPct >= 90 ? '#92400e' : '#991b1b');
                             let buBg = buPct >= 99 ? 'transparent' : (buPct >= 90 ? 'rgba(245, 158, 11, 0.05)' : 'rgba(239, 68, 68, 0.05)'); 
                             
-                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; background-color:${buBg}; padding: 8px 4px;" title="💡 Total: ${fmtN(buD.total)} | Success: ${fmtN(buD.success)}">
+                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; background-color:${buBg}; padding: 8px 4px;">
                                 <span style="display:block; color:${buClr}; font-weight:700; font-size:11px;">${buPct.toFixed(1)}%</span>
                                 <span style="font-size:8px; color:var(--text-muted);">${fmtN(buD.success)}/${fmtN(buD.total)}</span>
                             </td>`;
