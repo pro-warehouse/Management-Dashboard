@@ -640,24 +640,28 @@ async function initFulfillmentRealtime() {
         // ==========================================
 
 
-        // ========================================================
-        // 🌟 อัปเดตการ์ด: Orders Shipped & Wave Plan Summary 🌟
-        // ========================================================
-        
         let validWaveKeys = sortedDates.filter(k => new Date(k).getTime() <= targetTimestamp + (3 * 24 * 60 * 60 * 1000)).slice(0, 7);
         
         let totalOrdersToday = 0;
         let totalOrdersYesterday = 0;
         let activeWaveKey = null; 
         let pendingFutureOrders = 0;
+        
+        // 🟢 เพิ่มตัวแปรเก็บวันที่ของวันนี้และเมื่อวาน
+        let todayKeyStr = null; 
+        let yesterdayKeyStr = null;
 
         if (validWaveKeys.length > 0) {
             let todayKey = validWaveKeys.find(k => new Date(k).getTime() <= targetTimestamp);
             if (todayKey) {
-    totalOrdersToday = chartDataMap[todayKey]?.ordTotal || 0;
-    let yIndex = validWaveKeys.indexOf(todayKey) + 1;
-    if (yIndex < validWaveKeys.length) totalOrdersYesterday = chartDataMap[validWaveKeys[yIndex]]?.ordTotal || 0;
-}
+                todayKeyStr = todayKey; // เก็บวันที่ปัจจุบัน
+                totalOrdersToday = chartDataMap[todayKey]?.ordTotal || 0;
+                let yIndex = validWaveKeys.indexOf(todayKey) + 1;
+                if (yIndex < validWaveKeys.length) {
+                    yesterdayKeyStr = validWaveKeys[yIndex]; // เก็บวันที่เมื่อวาน
+                    totalOrdersYesterday = chartDataMap[validWaveKeys[yIndex]]?.ordTotal || 0;
+                }
+            }
             
             let reversedKeys = [...validWaveKeys].reverse();
             for (let k of reversedKeys) {
@@ -692,18 +696,37 @@ async function initFulfillmentRealtime() {
             const trendEl = document.getElementById('ffm-orders-trend');
             const trendTextEl = document.getElementById('ffm-orders-note');
             
+            // 🟢 ฟังก์ชันแปลงวันที่
+            const formatShortDate = (dStr) => {
+                if (!dStr) return "";
+                let dObj = new Date(dStr);
+                return isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
+            };
+            const getDisplayDate = (dStr) => {
+                 if (!dStr) return "";
+                 let dObj = new Date(dStr);
+                 return isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]} ${dObj.getFullYear()}`;
+            };
+
             if (trendEl) {
+                let prevDateText = yesterdayKeyStr ? formatShortDate(yesterdayKeyStr) : "วันก่อนหน้า";
                 if (totalOrdersYesterday === 0 && totalOrdersToday === 0) {
                     trendEl.className = "badge info"; trendEl.innerText = "-"; if(trendTextEl) trendTextEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
                 } else if (totalOrdersYesterday === 0) {
-                    trendEl.className = "badge up"; trendEl.innerText = "↗ 100%"; if(trendTextEl) trendTextEl.innerText = "vs previous";
+                    trendEl.className = "badge up"; trendEl.innerText = "↗ 100%"; if(trendTextEl) trendTextEl.innerText = `vs ${prevDateText}`;
                 } else {
                     let pctDiff = ((totalOrdersToday - totalOrdersYesterday) / totalOrdersYesterday) * 100;
                     if (pctDiff > 0) { trendEl.className = "badge up"; trendEl.innerText = `↗ +${pctDiff.toFixed(1)}%`; } 
                     else if (pctDiff < 0) { trendEl.className = "badge down"; trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(1)}%`; } 
                     else { trendEl.className = "badge info"; trendEl.innerText = `0%`; }
-                    if(trendTextEl) { trendTextEl.innerText = `vs วันก่อนหน้า`; }
+                    if(trendTextEl) { trendTextEl.innerText = `vs ${prevDateText}`; }
                 }
+            }
+            
+            // 🟢 อัปเดตข้อความ Updated
+            let updateEl = ordersEl.parentElement.nextElementSibling;
+            if (updateEl && todayKeyStr) {
+                updateEl.innerText = `Updated: ${getDisplayDate(todayKeyStr)}`;
             }
         }
 
