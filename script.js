@@ -635,11 +635,10 @@ async function initFulfillmentRealtime() {
             const theadHtml = theadEl ? theadEl.outerHTML : '';
             utilTableEl.innerHTML = theadHtml + tbody;
         }
-        // ==========================================
-        // 🟢 สิ้นสุดโค้ดที่ต้องวาง 🟢
-        // ==========================================
-
-
+        // ========================================================
+        // 🌟 อัปเดตการ์ด: Orders Shipped & Wave Plan Summary 🌟
+        // ========================================================
+        
         let validWaveKeys = sortedDates.filter(k => new Date(k).getTime() <= targetTimestamp + (3 * 24 * 60 * 60 * 1000)).slice(0, 7);
         
         let totalOrdersToday = 0;
@@ -647,18 +646,18 @@ async function initFulfillmentRealtime() {
         let activeWaveKey = null; 
         let pendingFutureOrders = 0;
         
-        // 🟢 เพิ่มตัวแปรเก็บวันที่ของวันนี้และเมื่อวาน
+        // 🟢 เพิ่มตัวแปรเก็บวันที่
         let todayKeyStr = null; 
         let yesterdayKeyStr = null;
 
         if (validWaveKeys.length > 0) {
             let todayKey = validWaveKeys.find(k => new Date(k).getTime() <= targetTimestamp);
             if (todayKey) {
-                todayKeyStr = todayKey; // เก็บวันที่ปัจจุบัน
+                todayKeyStr = todayKey;
                 totalOrdersToday = chartDataMap[todayKey]?.ordTotal || 0;
                 let yIndex = validWaveKeys.indexOf(todayKey) + 1;
                 if (yIndex < validWaveKeys.length) {
-                    yesterdayKeyStr = validWaveKeys[yIndex]; // เก็บวันที่เมื่อวาน
+                    yesterdayKeyStr = validWaveKeys[yIndex];
                     totalOrdersYesterday = chartDataMap[validWaveKeys[yIndex]]?.ordTotal || 0;
                 }
             }
@@ -676,7 +675,16 @@ async function initFulfillmentRealtime() {
                     break; 
                 }
             }
-            if (!activeWaveKey) activeWaveKey = reversedKeys[reversedKeys.length - 1];
+            
+            // 🟢 แก้ไข: ถ้าออเดอร์เสร็จ 100% หมดแล้ว ให้ถอยไปหาวันล่าสุดที่มี "ออเดอร์จริงๆ" (ไม่ให้แสดงเป็นเลข 0)
+            if (!activeWaveKey) {
+                let dayWithOrders = validWaveKeys.find(k => {
+                     let t = 0;
+                     allBUsArray.forEach(bu => t += Math.max(parseFloat(unifiedDatesMap[k].bq[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[k].wave[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[k].ffm[bu]?.ordTotal||0)));
+                     return t > 0;
+                });
+                activeWaveKey = dayWithOrders || validWaveKeys[0];
+            }
             
             let activeTime = activeWaveKey ? new Date(activeWaveKey).getTime() : 0;
             reversedKeys.forEach(k => {
@@ -690,24 +698,24 @@ async function initFulfillmentRealtime() {
             });
         }
 
+        // 🟢 ฟังก์ชันจัดรูปแบบวันที่สั้นๆ สำหรับเปรียบเทียบ
+        const formatShortDate = (dStr) => {
+            if (!dStr) return "";
+            let dObj = new Date(dStr);
+            return isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
+        };
+        const getDisplayDate = (dStr) => {
+             if (!dStr) return "";
+             let dObj = new Date(dStr);
+             return isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]} ${dObj.getFullYear()}`;
+        };
+
         const ordersEl = document.getElementById('ffm-orders-shipped');
         if (ordersEl) {
             ordersEl.innerText = totalOrdersToday > 0 ? fmtN(totalOrdersToday) : "0";
             const trendEl = document.getElementById('ffm-orders-trend');
             const trendTextEl = document.getElementById('ffm-orders-note');
             
-            // 🟢 ฟังก์ชันแปลงวันที่
-            const formatShortDate = (dStr) => {
-                if (!dStr) return "";
-                let dObj = new Date(dStr);
-                return isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
-            };
-            const getDisplayDate = (dStr) => {
-                 if (!dStr) return "";
-                 let dObj = new Date(dStr);
-                 return isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]} ${dObj.getFullYear()}`;
-            };
-
             if (trendEl) {
                 let prevDateText = yesterdayKeyStr ? formatShortDate(yesterdayKeyStr) : "วันก่อนหน้า";
                 if (totalOrdersYesterday === 0 && totalOrdersToday === 0) {
@@ -722,11 +730,12 @@ async function initFulfillmentRealtime() {
                     if(trendTextEl) { trendTextEl.innerText = `vs ${prevDateText}`; }
                 }
             }
-            
-            // 🟢 อัปเดตข้อความ Updated
-            let updateEl = ordersEl.parentElement.nextElementSibling;
-            if (updateEl && todayKeyStr) {
-                updateEl.innerText = `Updated: ${getDisplayDate(todayKeyStr)}`;
+
+            // 🟢 อัปเดตข้อความ Updated ของการ์ด ORDERS SHIPPED
+            let ordersCard = ordersEl.closest('.data-card, .card');
+            if (ordersCard && todayKeyStr) {
+                let updateSpan = Array.from(ordersCard.querySelectorAll('span, p, div')).find(el => el.innerText.trim().startsWith('Updated:'));
+                if (updateSpan) updateSpan.innerText = `Updated: ${getDisplayDate(todayKeyStr)}`;
             }
         }
 
@@ -767,6 +776,13 @@ async function initFulfillmentRealtime() {
                     tbody += tr;
                 });
                 waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
+            }
+            
+            // 🟢 อัปเดตข้อความ Updated ของการ์ด WAVE PLAN SUMMARY
+            let waveCard = waveSummaryTable.closest('.data-card, .card');
+            if (waveCard && todayKeyStr) {
+                let updateSpan = Array.from(waveCard.querySelectorAll('span, p, div')).find(el => el.innerText.trim().startsWith('Updated:'));
+                if (updateSpan) updateSpan.innerText = `Updated: ${getDisplayDate(todayKeyStr)}`;
             }
         }
 
@@ -814,6 +830,13 @@ async function initFulfillmentRealtime() {
                     } else {
                         document.getElementById('wave-active-info-4').innerHTML = `<span class="badge up">ปกติ</span> ทำงานทันตามแผน`;
                     }
+                }
+                
+                // 🟢 อัปเดตข้อความ Updated ของการ์ด Wave Operations
+                let waveOpsCard = document.getElementById('wave-total').closest('.data-card, .card');
+                if (waveOpsCard && todayKeyStr) {
+                    let updateSpan = Array.from(waveOpsCard.querySelectorAll('span, p, div')).find(el => el.innerText.trim().startsWith('Updated:'));
+                    if (updateSpan) updateSpan.innerText = `Updated: ${getDisplayDate(todayKeyStr)}`;
                 }
             }
             if (typeof generateExecutiveAlerts === "function") generateExecutiveAlerts(targetTimestamp, activeWaveKey, aLate, aDelay, diffDays, worstBU);
