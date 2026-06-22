@@ -440,7 +440,17 @@ async function initFulfillmentRealtime() {
         }
 
         if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
+            // 1. หาว่าวันไหนล่าสุดที่มียอดชิ้น (Req) > 0 เพื่อป้องกันกราฟว่างเปล่าถ้ายอดวันนี้ยังไม่เข้า
             let targetD = validChartDates[validChartDates.length - 1]; 
+            for (let i = validChartDates.length - 1; i >= 0; i--) {
+                let d = validChartDates[i];
+                let totalReqForDay = allBUsArray.reduce((sum, bu) => sum + (chartDataMap[d].buReq[bu] || 0), 0);
+                if (totalReqForDay > 0) {
+                    targetD = d;
+                    break;
+                }
+            }
+
             let mixLabels = [];
             let mixData = [];
             let mixColors = [];
@@ -461,9 +471,12 @@ async function initFulfillmentRealtime() {
                 backgroundColor: mixColors,
                 borderWidth: 0
             }];
-            if(!ffmVolumeChartInstance.options.scales) ffmVolumeChartInstance.options.scales = {};
-            ffmVolumeChartInstance.options.scales.x = { display: false };
-            ffmVolumeChartInstance.options.scales.y = { display: false };
+            
+            // 2. ลบ scales ทิ้ง เพราะกราฟ Doughnut ใน Chart.js ห้ามมีแกน (ถ้ามีกราฟจะพัง)
+            if (ffmVolumeChartInstance.options.scales) {
+                delete ffmVolumeChartInstance.options.scales;
+            }
+            
             ffmVolumeChartInstance.update();
         }
 
