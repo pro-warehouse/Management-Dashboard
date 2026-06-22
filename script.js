@@ -456,7 +456,6 @@ async function initFulfillmentRealtime() {
         try {
             // 🟢 2. อัปเดตกราฟแท่ง (Stacked Bar) - จำนวนชิ้น (PCS)
             if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance && validChartDates.length > 0) {
-                 // ... โค้ดกราฟเดิม ...
                 let tpLabels = validChartDates.map(dStr => {
                     let parts = dStr.split('-');
                     return parts.length === 3 ? `${parseInt(parts[2])} ${shortMonths[parseInt(parts[1])-1]}` : dStr;
@@ -481,6 +480,8 @@ async function initFulfillmentRealtime() {
                 ffmTrendChartInstance.data.labels = tpLabels;
                 ffmTrendChartInstance.data.datasets = tpDatasets;
                 
+                // 🛠️ แก้จุดตายที่ 1: ดัก Error กรณี Chart.js สร้าง options หรือ scales ไม่ทัน
+                if(!ffmTrendChartInstance.options) ffmTrendChartInstance.options = {};
                 if(!ffmTrendChartInstance.options.scales) ffmTrendChartInstance.options.scales = {};
                 if(!ffmTrendChartInstance.options.scales.x) ffmTrendChartInstance.options.scales.x = {};
                 if(!ffmTrendChartInstance.options.scales.y) ffmTrendChartInstance.options.scales.y = {};
@@ -537,25 +538,24 @@ async function initFulfillmentRealtime() {
                     borderWidth: 0
                 }];
                 
-                if (ffmVolumeChartInstance.options.scales) {
-                delete ffmVolumeChartInstance.options.scales.x;
-                delete ffmVolumeChartInstance.options.scales.y;
-            }
+                // 🛠️ แก้จุดตายที่ 2: ดัก Error กราฟแทรกแซง
+                if (ffmVolumeChartInstance.options && ffmVolumeChartInstance.options.scales) {
+                    delete ffmVolumeChartInstance.options.scales.x;
+                    delete ffmVolumeChartInstance.options.scales.y;
+                }
             
-            ffmVolumeChartInstance.update();
-        } // <--- เพิ่มปีกกาปิดเงื่อนไข if ตรงนี้
+                ffmVolumeChartInstance.update();
+            } 
         } catch(chartErr) {
             console.error("Chart Rendering Error:", chartErr);
         }
 
         const utilTableEl = document.getElementById('utilization-table');
         if (utilTableEl && sortedDates.length > 0) {
-            // 🟢 เปลี่ยนจาก validChartDates (แค่ 7 วัน) เป็น sortedDates (วันที่ทั้งหมดในระบบ)
-            // ค้นหาวันที่ "ล่าสุด" (ที่อยู่ในอดีตหรือวันนี้) ที่มียอด Req > 0
             let targetD = sortedDates[0]; 
             for (let i = 0; i < sortedDates.length; i++) {
                 let d = sortedDates[i];
-                if (new Date(d).getTime() > targetTimestamp) continue; // ข้ามวันที่เป็นอนาคต
+                if (new Date(d).getTime() > targetTimestamp) continue; 
                 
                 let totalReqForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d]?.buReq?.[bu] || 0), 0);
                 if (totalReqForDay > 0) { 
@@ -564,7 +564,6 @@ async function initFulfillmentRealtime() {
                 }
             }
 
-            // 💡 ตัวแปรจำลอง Capacity ราย BU (สมมติไปก่อน รอเชื่อม API)
             const mockCapacityMap = {
                 'DM02': 400000, 
                 'DP02': 250000,
@@ -586,16 +585,15 @@ async function initFulfillmentRealtime() {
                 }
             });
 
-            utilData.sort((a, b) => b.utilPct - a.utilPct); // เรียงจาก % มากไปน้อย
+            utilData.sort((a, b) => b.utilPct - a.utilPct); 
 
             if (utilData.length === 0) {
                 tbody += `<tr><td colspan="4" class="text-center" style="padding: 30px; color: var(--text-muted);">ไม่มีข้อมูล Volume</td></tr>`;
             } else {
                 utilData.forEach(item => {
                     let utilDisp = item.utilPct.toFixed(1);
-                    let barWidth = Math.min(100, item.utilPct); // ไม่ให้แถบทะลุ 100%
+                    let barWidth = Math.min(100, item.utilPct); 
                     
-                    // กำหนดสี Status แบบใน Mockup
                     let statusObj = { text: "Available", color: "#166534", bg: "#dcfce7", barColor: "#3B82F6" }; 
                     if (item.utilPct >= 100) {
                         statusObj = { text: "Overloaded", color: "#991b1b", bg: "#fee2e2", barColor: "#EF4444" }; 
@@ -628,11 +626,13 @@ async function initFulfillmentRealtime() {
             const titleEl = document.getElementById('utilization-title');
             if(titleEl) {
                 let parts = targetD.split('-');
-                let dispDate = parts.length === 3 ? `${parseInt(parts[2])} ${shortMonths[parseInt(parts[1]-1)]} ${parts[0]}` : targetD;
+                let dispDate = parts.length === 3 ? `${parseInt(parts[2])} ${shortMonths[parseInt(parts[1])-1]} ${parts[0]}` : targetD;
                 titleEl.innerText = `📊 VOLUME UTILIZATION BY OWNER | ข้อมูลวันที่ ${dispDate}`;
             }
 
-            const theadHtml = utilTableEl.querySelector('thead').outerHTML;
+            // 🛠️ แก้จุดตายที่ 3: ดัก Error ป้องกันกรณีหน้าเว็บ HTML โหลด <thead> มาไม่ทันหรือไม่ครบ
+            const theadEl = utilTableEl.querySelector('thead');
+            const theadHtml = theadEl ? theadEl.outerHTML : '';
             utilTableEl.innerHTML = theadHtml + tbody;
         }
         // ==========================================
