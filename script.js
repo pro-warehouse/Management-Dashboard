@@ -20,11 +20,10 @@ const chartPalette = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#1
 
 const fmtN = (v) => (v || 0).toLocaleString();
 
-// 🛠️ 1. Smart Date Normalizer (แก้ปัญหา Timezone และวันที่แหว่ง 100%)
+// 🛠️ 1. Smart Date Normalizer (แก้ปัญหาวันที่ Invalid Date เวลา Sort ข้อมูล)
 const getStandardDate = (rawDate) => {
     if (!rawDate) return "";
     let str = String(rawDate).trim();
-    
     if (str.includes('T')) str = str.split('T')[0];
     
     if (str.includes('/')) {
@@ -38,7 +37,6 @@ const getStandardDate = (rawDate) => {
             return `${y}-${m}-${d}`;
         }
     }
-    
     if (str.length >= 10 && str.includes('-')) return str.substring(0, 10);
     
     let dObj = new Date(rawDate);
@@ -119,33 +117,13 @@ let workforceChartInstance = null;
 const wfCtx = document.getElementById('workforceChart')?.getContext('2d');
 if (wfCtx) workforceChartInstance = new Chart(wfCtx, { type: 'bar', data: { labels: [], datasets: [{ label: 'จำนวนกำลังพล (คน)', data: [], backgroundColor: '#3B82F6', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, border: { display: false } } }, layout: { padding: { top: 20 } } }, plugins: [dataLabelPlugin] });
 
-// 🟢 กราฟซ้าย: Stacked Bar (Daily Throughput) แยกตาม Owner
 let ffmTrendChartInstance = null;
 const ffmTrendCtx = document.getElementById('ffmTrendChart')?.getContext('2d');
-if (ffmTrendCtx) ffmTrendChartInstance = new Chart(ffmTrendCtx, { 
-    type: 'bar', 
-    data: { labels: [], datasets: [] }, 
-    options: { 
-        responsive: true, maintainAspectRatio: false, 
-        plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 } } } }, 
-        scales: { 
-            x: { stacked: true, grid: { display: false } }, 
-            y: { stacked: true, border: { display: false }, beginAtZero: true } 
-        } 
-    } 
-});
+if (ffmTrendCtx) ffmTrendChartInstance = new Chart(ffmTrendCtx, { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 } } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, beginAtZero: true } } } });
 
-// 🟢 กราฟขวา: Doughnut (Order Mix) สัดส่วนจำนวนชิ้นแยกตาม Owner
 let ffmVolumeChartInstance = null;
 const ffmVolCtx = document.getElementById('ffmVolumeChart')?.getContext('2d');
-if (ffmVolCtx) ffmVolumeChartInstance = new Chart(ffmVolCtx, { 
-    type: 'doughnut', 
-    data: { labels: [], datasets: [] }, 
-    options: { 
-        responsive: true, maintainAspectRatio: false, cutout: '70%', 
-        plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } } 
-    } 
-});
+if (ffmVolCtx) ffmVolumeChartInstance = new Chart(ffmVolCtx, { type: 'doughnut', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } } } });
 
 let ontimeChart1Instance = null;
 const ot1Ctx = document.getElementById('ontimeChart')?.getContext('2d');
@@ -188,7 +166,7 @@ function toggleLoader(show) {
 }
 
 // ========================================================
-// 🌟 4. FULFILLMENT DATA BINDING (MATRIX PIVOT & CHARTS) 🌟
+// 🌟 4. FULFILLMENT DATA BINDING (MATRIX PIVOT TABLE) 🌟
 // ========================================================
 async function initFulfillmentRealtime() {
     let wrapperEl = document.getElementById('fulfillment-v3-wrapper');
@@ -204,18 +182,26 @@ async function initFulfillmentRealtime() {
 
     const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
     
+    let bqDataList = [];
+    // 🛡️ Fail-Safe: ตรวจจับ API ล่ม ถ้าพังให้ข้ามไปใช้ข้อมูลเก่า
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fn: 'apiGetDashboardSummary', args: ["", ""] })
         });
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) bqDataList = result.data;
+        }
+    } catch (apiErr) {
+        console.warn("⚠️ API 502 Bad Gateway: Fallback to GAS data only.", apiErr);
+    }
 
-        const result = await response.json();
-        let bqDataList = result.success && result.data ? result.data : [];
-
+    try {
         let unifiedDatesMap = {};
         
+        // 1. นำข้อมูล History Orders มาใส่
         if (globalData.fulfillment) {
             Object.keys(globalData.fulfillment).forEach(k => {
                 let sd = getStandardDate(k); 
@@ -233,6 +219,7 @@ async function initFulfillmentRealtime() {
             });
         }
 
+        // 2. นำข้อมูล Wave Ops ปัจจุบัน มาใส่
         if (globalData.wave_ops) {
             Object.keys(globalData.wave_ops).forEach(k => {
                 let sd = getStandardDate(k); 
@@ -248,6 +235,7 @@ async function initFulfillmentRealtime() {
             });
         }
 
+        // 3. นำข้อมูล Pieces จาก BQ มาใส่ (ถ้าไม่พัง)
         bqDataList.forEach(row => {
             let sd = getStandardDate(row.date);
             if (!unifiedDatesMap[sd]) unifiedDatesMap[sd] = { bq: {}, wave: {}, ffm: {} };
@@ -275,8 +263,9 @@ async function initFulfillmentRealtime() {
         });
 
         delete unifiedDatesMap[""];
-        let sortedDates = Object.keys(unifiedDatesMap).sort((a,b) => new Date(b) - new Date(a));
+        let sortedDates = Object.keys(unifiedDatesMap).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
 
+        // 🌟 วาดตาราง HTML Matrix
         let htmlTable = `<div class="data-card" style="margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden;">
             <div class="card-header" style="padding: 15px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);"><h3 style="font-size:14px; font-weight:700; color:var(--text-main); margin:0;">📋 DAILY FULFILLMENT MATRIX RECORD</h3></div>
             <div style="max-height: 500px; overflow: auto; background: var(--bg-card);">
@@ -300,6 +289,7 @@ async function initFulfillmentRealtime() {
                 </tr>
             </thead><tbody>`;
 
+        let trendLabels = [];
         let buNamesSet = new Set();
         let chartDataMap = {};
         
@@ -373,7 +363,7 @@ async function initFulfillmentRealtime() {
                     chartDataMap[dateStr].ordTotal += ordTotal;
                     
                     chartDataMap[dateStr].buShip[bu] = ship;
-                    chartDataMap[dateStr].buReq[bu] = req; // ใช้ Req เพื่อวาดโดนัทตามจำนวนชิ้น
+                    chartDataMap[dateStr].buReq[bu] = req; // ใช้ Req วาดกราฟโดนัท
                 });
             });
         }
@@ -381,15 +371,15 @@ async function initFulfillmentRealtime() {
         htmlTable += "</tbody></table></div></div>";
         wrapperEl.innerHTML = htmlTable;
 
-        // --- 📊 อัปเดตกราฟบนตามภาพแนบ (Throughput & Order Mix) ---
+        // --- 📊 วาดกราฟด้านบนตามภาพ ---
         const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
         const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
         
-        let validChartDates = sortedDates.filter(d => new Date(d).getTime() <= targetTimestamp).slice(0, 7).reverse(); // ดึงมา 7 วันล่าสุดให้กราฟ
+        let validChartDates = sortedDates.filter(d => new Date(d).getTime() <= targetTimestamp).slice(0, 7).reverse(); 
         let allBUsArray = Array.from(buNamesSet).sort();
         const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-        // 🟢 กราฟ 1: Stacked Bar (Daily Throughput by Owner)
+        // 🟢 กราฟซ้าย: Stacked Bar (แยกตาม Owner)
         if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance) {
             let tpLabels = validChartDates.map(dStr => {
                 let parts = dStr.split('-');
@@ -399,7 +389,7 @@ async function initFulfillmentRealtime() {
             let tpDatasets = allBUsArray.map((bu, i) => {
                 return {
                     label: bu,
-                    data: validChartDates.map(dStr => parseFloat(chartDataMap[dStr].buShip[bu] || 0)), // ใช้ชิ้นที่จัดเสร็จ
+                    data: validChartDates.map(dStr => parseFloat(chartDataMap[dStr].buShip[bu] || 0)), 
                     backgroundColor: chartPalette[i % chartPalette.length],
                     borderRadius: 4
                 };
@@ -419,9 +409,9 @@ async function initFulfillmentRealtime() {
             ffmTrendChartInstance.update();
         }
 
-        // 🟢 กราฟ 2: Doughnut (Order Mix by Owner ใช้จำนวนชิ้น Req ประจำวันล่าสุด)
+        // 🟢 กราฟขวา: Doughnut (ใช้จำนวนชิ้น Req ล่าสุด)
         if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
-            let targetD = validChartDates[validChartDates.length - 1]; // ใช้วันล่าสุดในกราฟ
+            let targetD = validChartDates[validChartDates.length - 1]; 
             let mixLabels = [];
             let mixData = [];
             let mixColors = [];
@@ -448,7 +438,7 @@ async function initFulfillmentRealtime() {
             ffmVolumeChartInstance.update();
         }
 
-        // อัปเดต % เฉลี่ยของการ์ด Avg Fulfillment ด้านบนสุด
+        // อัปเดต % เฉลี่ยของการ์ด Avg Fulfillment 
         if (validChartDates.length > 0) {
             let lastD = validChartDates[validChartDates.length - 1];
             let sReq = chartDataMap[lastD].req;
@@ -467,12 +457,11 @@ async function initFulfillmentRealtime() {
 
     } catch (err) {
         console.error("❌ Fetch Matrix Error:", err);
-        wrapperEl.innerHTML = `<div class="data-card" style="padding:25px; text-align:center; color:var(--danger); font-weight:bold;">⚠️ เกิดข้อผิดพลาดในการโหลดตาราง Matrix</div>`;
     }
 }
 
 // ========================================================
-// 🌟 6. ฟังก์ชันอัปเดตข้อมูลอื่นๆ (ดึงมาจากระบบเดิม) 🌟
+// 🌟 6. ฟังก์ชันโหลดข้อมูลย่อย (ดึงจาก App Script) 🌟
 // ========================================================
 
 function cleanDataBeforeLoad() {
@@ -767,7 +756,9 @@ async function initDashboard() {
         await Promise.all(sections.map(s => fetchSection(s)));
     } catch(e) { console.error(e); }
     
+    // ดึงฐานข้อมูลเข้าสู่ตาราง Fulfillment หลังจากโหลดข้อมูล GAS เสร็จ
     await initFulfillmentRealtime();
+    
     toggleLoader(false);
 }
 
@@ -793,12 +784,12 @@ function updateDashboardData(selectedDateStr) {
     
     const getDisplayDate = (dateString) => {
         if (!dateString) return "--";
-        const dObj = new Date(dateString);
+        const dObj = new Date(getStandardDate(dateString));
         return isNaN(dObj.getTime()) ? dateString : `${String(dObj.getDate()).padStart(2, '0')} ${months[dObj.getMonth()]} ${dObj.getFullYear()}`;
     };
     const getShortDate = (dateString) => {
         if (!dateString) return "--";
-        const dObj = new Date(dateString);
+        const dObj = new Date(getStandardDate(dateString));
         return isNaN(dObj.getTime()) ? dateString : `${String(dObj.getDate()).padStart(2, '0')} ${months[dObj.getMonth()]}`;
     };
     
@@ -806,7 +797,7 @@ function updateDashboardData(selectedDateStr) {
     try {
         if(Object.keys(globalData.workforce || {}).length > 0) {
             let wfData = globalData.workforce;
-            let wfKeys = Object.keys(wfData).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
+            let wfKeys = Object.keys(wfData).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
             let targetWfKey = null; let opsTotal = 0;
             let prevWfKey = null; let opsYesterday = 0;
 
@@ -837,7 +828,7 @@ function updateDashboardData(selectedDateStr) {
             };
 
             for (let k of wfKeys) {
-                if (new Date(k).getTime() <= targetTimestamp) {
+                if (new Date(getStandardDate(k)).getTime() <= targetTimestamp) {
                     let ops = getFilteredOpsTotal(wfData[k]);
                     if (ops > 0 || !window.selectedBUs.includes('ALL')) {
                         if (!targetWfKey) { targetWfKey = k; opsTotal = ops; } 
@@ -949,7 +940,7 @@ function updateDashboardData(selectedDateStr) {
             let excelHtml = "";
             const tableRows = [ { key: 'Pick', label: 'Pick' }, { key: 'RT', label: 'RT' }, { key: 'QCQA', label: 'QC / QA' }, { key: 'Grouping', label: 'Grouping' }, { key: 'Putaway', label: 'Put-away' }, { key: 'Receive', label: 'Receive' } ];
             
-            let pastValidWfKeys = wfKeys.filter(k => new Date(k).getTime() <= targetTimestamp); 
+            let pastValidWfKeys = wfKeys.filter(k => new Date(getStandardDate(k)).getTime() <= targetTimestamp); 
             const calcAbs = (a, t) => (t===0&&a===0) ? '-' : (a-t<0 ? `<span class="text-red">${a-t}</span>` : a-t);
             const calcRate = (a, t) => t===0 ? '-' : `<span class="${(a/t*100)<95?'text-red':'text-green'}">${(a/t*100).toFixed(1)}%</span>`;
 
@@ -1075,13 +1066,13 @@ function updateDashboardData(selectedDateStr) {
     try {
         if(Object.keys(globalData.fulfillment || {}).length > 0) {
             let waveDataForFFM = globalData.fulfillment;
-            let wKeysFFM = Object.keys(waveDataForFFM).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
+            let wKeysFFM = Object.keys(waveDataForFFM).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
             
             let targetWaveFfmKey = null; let totalOrdersToday = 0;
             let prevWaveKey = null; let totalOrdersYesterday = 0;
 
             for (let k of wKeysFFM) {
-                if (new Date(k).getTime() <= targetTimestamp) {
+                if (new Date(getStandardDate(k)).getTime() <= targetTimestamp) {
                     let tot = 0;
                     Object.keys(waveDataForFFM[k].bu_data || {}).forEach(bu => {
                         if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
@@ -1135,7 +1126,7 @@ function updateDashboardData(selectedDateStr) {
                     let thead = `<thead><tr><th class="role-cell" style="text-align:center; min-width: 120px;">Planned Date</th>${sortedBUs.map(bu => `<th class="aff-header">${bu}</th>`).join('')}<th class="total-cell">Total (เสร็จ / ทั้งหมด)</th><th class="total-cell" style="text-align:center;">% Completed</th></tr></thead>`;
                     let tbody = "<tbody>";
                     
-                    let validWaveKeys = wKeysFFM.filter(k => new Date(k).getTime() <= targetTimestamp + (3 * 24 * 60 * 60 * 1000)).slice(0, 7);
+                    let validWaveKeys = wKeysFFM.filter(k => new Date(getStandardDate(k)).getTime() <= targetTimestamp + (3 * 24 * 60 * 60 * 1000)).slice(0, 7);
                     
                     validWaveKeys.forEach(dKey => {
                         let tr = `<tr><td class="role-cell" style="text-align:center;">${getShortDate(dKey)}</td>`;
@@ -1167,9 +1158,10 @@ function updateDashboardData(selectedDateStr) {
             }
         }
         
+        // 🟢 Active Wave Delay Alerts
         if(Object.keys(globalData.wave_ops || {}).length > 0) {
             let activeData = globalData.wave_ops;
-            let wKeysAsc = Object.keys(activeData).sort((a,b) => new Date(a).getTime() - new Date(b).getTime());
+            let wKeysAsc = Object.keys(activeData).sort((a,b) => new Date(getStandardDate(a)).getTime() - new Date(getStandardDate(b)).getTime());
             
             let activeWaveKey = null; let pendingFutureOrders = 0;
             if (wKeysAsc.length > 0) {
@@ -1185,9 +1177,9 @@ function updateDashboardData(selectedDateStr) {
                 }
                 if (!activeWaveKey) activeWaveKey = wKeysAsc[wKeysAsc.length - 1]; 
                 
-                let activeTime = activeWaveKey ? new Date(activeWaveKey).getTime() : 0;
+                let activeTime = activeWaveKey ? new Date(getStandardDate(activeWaveKey)).getTime() : 0;
                 for (let key of wKeysAsc) { 
-                    if (new Date(key).getTime() > activeTime) { 
+                    if (new Date(getStandardDate(key)).getTime() > activeTime) { 
                         let dTot = 0, dComp = 0;
                         Object.keys(activeData[key].bu_data).forEach(bu => {
                             if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
@@ -1217,7 +1209,12 @@ function updateDashboardData(selectedDateStr) {
             });
 
             let diffDays = 0, activeDateStr = "--";
-            if (activeWaveKey) { activeDateStr = getShortDate(activeWaveKey); let todayD = new Date(); todayD.setHours(0,0,0,0); let workDMid = new Date(activeWaveKey); workDMid.setHours(0,0,0,0); diffDays = Math.floor((todayD - workDMid) / (1000 * 60 * 60 * 24)); }
+            if (activeWaveKey) { 
+                activeDateStr = getShortDate(activeWaveKey); 
+                let todayD = new Date(); todayD.setHours(0,0,0,0); 
+                let workDMid = new Date(getStandardDate(activeWaveKey)); workDMid.setHours(0,0,0,0); 
+                diffDays = Math.floor((todayD - workDMid) / (1000 * 60 * 60 * 24)); 
+            }
 
             if (document.getElementById('wave-total')) {
                 document.getElementById('wave-total').innerText = aTotal > 0 ? fmtN(aTotal) : "0";
@@ -1254,11 +1251,11 @@ function updateTrendChart(baseDateStr) {
     const targetTimestamp = new Date(baseDateStr).setHours(23, 59, 59, 999);
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     let labels = [], dataPoints = [];
-    let wfKeys = Object.keys(globalData.workforce || {}).sort((a,b) => new Date(b).getTime() - new Date(a).getTime()).filter(k => new Date(k).getTime() <= targetTimestamp).slice(0, 7).reverse();
+    let wfKeys = Object.keys(globalData.workforce || {}).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime()).filter(k => new Date(getStandardDate(k)).getTime() <= targetTimestamp).slice(0, 7).reverse();
     const roleF = document.getElementById('trend-role-filter')?.value || 'All';
 
     wfKeys.forEach(k => {
-        let dObj = new Date(k); labels.push(`${String(dObj.getDate()).padStart(2,'0')} ${months[dObj.getMonth()]}`);
+        let dObj = new Date(getStandardDate(k)); labels.push(`${String(dObj.getDate()).padStart(2,'0')} ${months[dObj.getMonth()]}`);
         let dayD = globalData.workforce[k];
         let val = 0;
         Object.keys(dayD.matrix || {}).forEach(aff => {
@@ -1291,7 +1288,7 @@ function renderOnTimeSection() {
     
     let otArray = [];
     Object.keys(globalData.ontime).forEach(key => {
-        let dObj = new Date(key);
+        let dObj = new Date(getStandardDate(key));
         if(!isNaN(dObj.getTime())) otArray.push({ dateObj: dObj, ptglg: globalData.ontime[key], hub: globalData.ontime_hub[key] || null });
     });
     otArray.sort((a,b) => a.dateObj.getTime() - b.dateObj.getTime()); 
@@ -1420,7 +1417,7 @@ function renderClaimSection() {
         let allBUs = new Set();
         
         Object.keys(claimsData).forEach(dKey => {
-            let dObj = new Date(dKey);
+            let dObj = new Date(getStandardDate(dKey));
             if (!isNaN(dObj.getTime()) && dObj.getTime() <= targetTimestamp) {
                 let cData = claimsData[dKey].bu_data || {}; 
 
@@ -1911,7 +1908,7 @@ function renderInventorySection() {
             let dailyBUs = new Set();
             
             Object.keys(globalData.inventory_daily).forEach(dKey => {
-                let dObj = new Date(dKey);
+                let dObj = new Date(getStandardDate(dKey));
                 if (isNaN(dObj.getTime())) return;
                 let dData = globalData.inventory_daily[dKey];
                 
@@ -2011,7 +2008,7 @@ function renderTransportSection() {
         let allBUs = new Set();
         
         Object.keys(transData).forEach(dKey => {
-            let dObj = new Date(dKey);
+            let dObj = new Date(getStandardDate(dKey));
             if (isNaN(dObj.getTime())) return;
             
             let dayData = transData[dKey];
@@ -2140,8 +2137,9 @@ function renderTransportSection() {
                         } else {
                             let buPct = buD.total > 0 ? (buD.success / buD.total) * 100 : 0;
                             let buClr = buPct >= 99 ? '#166534' : (buPct >= 90 ? '#92400e' : '#991b1b');
+                            let buBg = buPct >= 99 ? 'transparent' : (buPct >= 90 ? 'rgba(245, 158, 11, 0.05)' : 'rgba(239, 68, 68, 0.05)'); 
                             
-                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; background-color:${buBg}; padding: 8px 4px;">
+                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; background-color:${buBg}; padding: 8px 4px;" title="💡 Total: ${fmtN(buD.total)} | Success: ${fmtN(buD.success)}">
                                 <span style="display:block; color:${buClr}; font-weight:700; font-size:11px;">${buPct.toFixed(1)}%</span>
                                 <span style="font-size:8px; color:var(--text-muted);">${fmtN(buD.success)}/${fmtN(buD.total)}</span>
                             </td>`;
@@ -2189,7 +2187,7 @@ function renderProductivitySection() {
 
         let validDates = Array.from(activeDates)
             .map(dKey => {
-                let d = new Date(dKey);
+                let d = new Date(getStandardDate(dKey));
                 return { key: dKey, time: d.getTime(), dObj: d };
             })
             .filter(item => !isNaN(item.time) && item.time <= targetTimestamp)
@@ -2461,8 +2459,8 @@ function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveD
     }
 
     if (globalData.workforce) {
-        let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
-        let latestWfKey = wfKeys.find(k => new Date(k).getTime() <= targetTimestamp);
+        let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
+        let latestWfKey = wfKeys.find(k => new Date(getStandardDate(k)).getTime() <= targetTimestamp);
         
         if (latestWfKey) {
             let dayData = globalData.workforce[latestWfKey];
