@@ -218,6 +218,24 @@ function toggleLoader(show) {
 // 🌟 4. FULFILLMENT DATA BINDING (MATRIX PIVOT & CHARTS) 🌟
 // ========================================================
 async function initFulfillmentRealtime() {
+    // 🟢 ฟังก์ชันช่วยกรองข้อมูลแบบเป็นคู่ (ไม่จับแยก Total กับ Full ข้ามฝั่งกัน)
+    const getBestOrderData = (bItem, wItem, fItem) => {
+        let bt = parseFloat(bItem?.ordTotal || 0), bf = parseFloat(bItem?.ordFull || 0);
+        let wt = parseFloat(wItem?.ordTotal || 0), wf = parseFloat(wItem?.ordFull || 0);
+        let ft = parseFloat(fItem?.ordTotal || 0), ff = parseFloat(fItem?.ordFull || 0);
+        
+        // ถ้า Google Sheet ระบุว่าเสร็จ 100% แล้ว (ยอดเสร็จ >= ยอดรวม) ให้ยึดตาม Sheet เป็นหลัก
+        if (wt > 0 && wf >= wt) return { tot: wt, full: wf };
+        if (ft > 0 && ff >= ft) return { tot: ft, full: ff };
+        
+        // ถ้ายังไม่ 100% ให้ยึดแหล่งข้อมูลที่มียอดเสร็จ (Completed) สูงสุด
+        let maxF = Math.max(bf, wf, ff);
+        if (maxF === bf && bt > 0) return { tot: bt, full: bf };
+        if (maxF === wf && wt > 0) return { tot: wt, full: wf };
+        if (maxF === ff && ft > 0) return { tot: ft, full: ff };
+        
+        return { tot: Math.max(bt, wt, ft), full: Math.max(bf, wf, ff) };
+    };
     let wrapperEl = document.getElementById('fulfillment-v3-wrapper');
     if (!wrapperEl) {
         const tableEl = document.getElementById('ffm-detail-table');
@@ -374,8 +392,9 @@ async function initFulfillmentRealtime() {
                     const wItem = wData[bu] || {};
                     const fItem = fData[bu] || {};
                     
-                    const ordTotal = Math.max(parseFloat(bItem.ordTotal || 0), parseFloat(wItem.ordTotal || 0), parseFloat(fItem.ordTotal || 0));
-                    const ordFull = Math.max(parseFloat(bItem.ordFull || 0), parseFloat(wItem.ordFull || 0), parseFloat(fItem.ordFull || 0));
+                    const bData = getBestOrderData(bItem, wItem, fItem);
+const ordTotal = bData.tot;
+const ordFull = bData.full;
                     
                     const req = Math.max(parseFloat(bItem.req || 0), parseFloat(fItem.req || 0));
                     const alloc = parseFloat(bItem.alloc || 0);
@@ -666,8 +685,9 @@ async function initFulfillmentRealtime() {
             for (let k of reversedKeys) {
                 let dayTot = 0, dayComp = 0;
                 allBUsArray.forEach(bu => {
-                    dayTot += Math.max(parseFloat(unifiedDatesMap[k].bq[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[k].wave[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[k].ffm[bu]?.ordTotal||0));
-                    dayComp += Math.max(parseFloat(unifiedDatesMap[k].bq[bu]?.ordFull||0), parseFloat(unifiedDatesMap[k].wave[bu]?.ordFull||0), parseFloat(unifiedDatesMap[k].ffm[bu]?.ordFull||0));
+                    let bData = getBestOrderData(unifiedDatesMap[k].bq[bu], unifiedDatesMap[k].wave[bu], unifiedDatesMap[k].ffm[bu]);
+dayTot += bData.tot;
+dayComp += bData.full;
                 });
                 if (dayTot > 0 && dayComp < dayTot) { 
                     if (dayComp === 0 && dayTot <= 5) continue;
@@ -690,8 +710,9 @@ async function initFulfillmentRealtime() {
             reversedKeys.forEach(k => {
                 if (new Date(k).getTime() > activeTime) {
                     allBUsArray.forEach(bu => {
-                        let t = Math.max(parseFloat(unifiedDatesMap[k].bq[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[k].wave[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[k].ffm[bu]?.ordTotal||0));
-                        let c = Math.max(parseFloat(unifiedDatesMap[k].bq[bu]?.ordFull||0), parseFloat(unifiedDatesMap[k].wave[bu]?.ordFull||0), parseFloat(unifiedDatesMap[k].ffm[bu]?.ordFull||0));
+                        let bData = getBestOrderData(unifiedDatesMap[k].bq[bu], unifiedDatesMap[k].wave[bu], unifiedDatesMap[k].ffm[bu]);
+let t = bData.tot;
+let c = bData.full;
                         pendingFutureOrders += (t - c);
                     });
                 }
@@ -755,8 +776,9 @@ async function initFulfillmentRealtime() {
                     let dayTot = 0, dayComp = 0;
                     
                     allBUsArray.forEach(bu => {
-                        let ordTotal = Math.max(parseFloat(unifiedDatesMap[dStr].bq[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[dStr].wave[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[dStr].ffm[bu]?.ordTotal||0));
-                        let ordFull = Math.max(parseFloat(unifiedDatesMap[dStr].bq[bu]?.ordFull||0), parseFloat(unifiedDatesMap[dStr].wave[bu]?.ordFull||0), parseFloat(unifiedDatesMap[dStr].ffm[bu]?.ordFull||0));
+                        let bData = getBestOrderData(unifiedDatesMap[dStr].bq[bu], unifiedDatesMap[dStr].wave[bu], unifiedDatesMap[dStr].ffm[bu]);
+let ordTotal = bData.tot;
+let ordFull = bData.full;
                         
                         dayTot += ordTotal; dayComp += ordFull;
                         if (ordTotal === 0) { tr += `<td>-</td>`; } 
@@ -790,8 +812,9 @@ async function initFulfillmentRealtime() {
         let worstBU = ""; 
         if (activeWaveKey) {
             allBUsArray.forEach(bu => {
-                let ordTotal = Math.max(parseFloat(unifiedDatesMap[activeWaveKey].bq[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[activeWaveKey].wave[bu]?.ordTotal||0), parseFloat(unifiedDatesMap[activeWaveKey].ffm[bu]?.ordTotal||0));
-                let ordFull = Math.max(parseFloat(unifiedDatesMap[activeWaveKey].bq[bu]?.ordFull||0), parseFloat(unifiedDatesMap[activeWaveKey].wave[bu]?.ordFull||0), parseFloat(unifiedDatesMap[activeWaveKey].ffm[bu]?.ordFull||0));
+                let bData = getBestOrderData(unifiedDatesMap[activeWaveKey].bq[bu], unifiedDatesMap[activeWaveKey].wave[bu], unifiedDatesMap[activeWaveKey].ffm[bu]);
+let ordTotal = bData.tot;
+let ordFull = bData.full;
                 let late = parseFloat(unifiedDatesMap[activeWaveKey].wave[bu]?.late_orders || 0);
                 let delay = parseFloat(unifiedDatesMap[activeWaveKey].wave[bu]?.total_delay_mins || 0);
 
