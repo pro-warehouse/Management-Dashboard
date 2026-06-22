@@ -348,9 +348,9 @@ async function initFulfillmentRealtime() {
 
                     const estShort = Math.max(0, req - alloc);
 
-                    const ordSLA = ordTotal > 0 ? (ordFull / ordTotal) : null;
-                    const dcSLA = alloc > 0 ? (ship / alloc) : null;
-                    const ffm = req > 0 ? (ship / req) : null;
+                    const ordSLA = ordTotal > 0 ? Math.min(1, (ordFull / ordTotal)) : null;
+                    const dcSLA = alloc > 0 ? Math.min(1, (ship / alloc)) : null;
+                    const ffm = req > 0 ? Math.min(1, (ship / req)) : null;
                     const pcsPick = pu > 0 ? (req / pu) : null;
                     const pcsOrd = ordTotal > 0 ? (req / ordTotal) : null;
 
@@ -568,7 +568,7 @@ async function initFulfillmentRealtime() {
                     let grandColor = (dayComp === dayTot && dayTot > 0) ? 'var(--accent-primary)' : (dayComp > 0 ? 'var(--accent-secondary)' : 'var(--danger)');
                     tr += `<td class="total-cell"><span style="color:${grandColor}; font-weight:800; font-size:0.95rem;">${fmtN(dayComp)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(dayTot)}</span></td>`;
                     
-                    let pct = dayTot > 0 ? ((dayComp / dayTot) * 100).toFixed(1) : 0;
+                    let pct = dayTot > 0 ? Math.min(100, (dayComp / dayTot) * 100).toFixed(1) : 0;
                     let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
                     let pctColor = pct >= 100 ? '#166534' : (pct > 0 ? '#92400e' : '#991b1b');
                     tr += `<td class="total-cell" style="text-align:center;"><span class="pct-pill" style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:600;">${pct}%</span></td></tr>`;
@@ -614,7 +614,7 @@ async function initFulfillmentRealtime() {
                     else { delayEl.innerText = `0h 0m`; delayEl.style.color = accentGreen; }
                 }
                 if(document.getElementById('wave-active-info-1')) document.getElementById('wave-active-info-1').innerHTML = `<span class="badge info">${activeDateStr}</span> ${pendingFutureOrders > 0 ? `รอ ${fmtN(pendingFutureOrders)} บิล` : `แผนล่าสุด`}${diffDays > 0 ? ` <span class="badge down">ดีเลย์ ${diffDays} วัน</span>` : ''}`;
-                let aCompPct = aTotal > 0 ? ((aComp / aTotal) * 100).toFixed(1) : 0;
+                let aCompPct = aTotal > 0 ? Math.min(100, (aComp / aTotal) * 100).toFixed(1) : 0;
                 if(document.getElementById('wave-active-info-2')) document.getElementById('wave-active-info-2').innerHTML = `<span class="badge up" style="background:${aCompPct>=100?'#dcfce7':'#fef3c7'}">${aCompPct}%</span> เสร็จ ${fmtN(aComp)} / ${fmtN(aTotal)}`;
                 if(document.getElementById('wave-active-info-3')) document.getElementById('wave-active-info-3').innerHTML = `<span class="badge down">หลุด SLA</span> แผน ${activeDateStr} &bull; ${fmtN(aLate)} บิล`;
                 if(document.getElementById('wave-active-info-4')) {
@@ -2013,7 +2013,7 @@ function renderTransportSection() {
                 }
             });
             
-            let pct = sumTot > 0 ? (sumSucc / sumTot) * 100 : null;
+            let pct = sumTot > 0 ? Math.min(100, (sumSucc / sumTot) * 100) : null;
             parsedData.push({ 
                 dateObj: dObj, 
                 total: sumTot, 
@@ -2125,7 +2125,7 @@ function renderTransportSection() {
                         if (!buD || buD.total === 0) {
                             tr += `<td style="text-align:center; color:var(--text-muted); white-space:nowrap; font-size:10px; padding: 8px 4px;">-</td>`;
                         } else {
-                            let buPct = buD.total > 0 ? (buD.success / buD.total) * 100 : 0;
+                            let buPct = buD.total > 0 ? Math.min(100, (buD.success / buD.total) * 100) : 0;
                             let buClr = buPct >= 99 ? '#166534' : (buPct >= 90 ? '#92400e' : '#991b1b');
                             let buBg = buPct >= 99 ? 'transparent' : (buPct >= 90 ? 'rgba(245, 158, 11, 0.05)' : 'rgba(239, 68, 68, 0.05)'); 
                             
