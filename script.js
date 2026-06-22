@@ -64,7 +64,7 @@ const dataLabelPlugin = {
         if(chart.config.type !== 'bar' || chart.canvas.id === 'productivityChart') return;
         const { ctx } = chart;
 
-        // 🟢 ถ้าเป็นกราฟ Stacked Bar (ffmTrendChart) ให้วาดผลรวม (Grand Total) ไว้บนยอด
+        // 🟢 กราฟ Stacked Bar (ffmTrendChart) ให้วาดผลรวม (Grand Total) ไว้บนยอด
         if (chart.canvas.id === 'ffmTrendChart') {
             try {
                 let totals = [];
@@ -78,7 +78,7 @@ const dataLabelPlugin = {
                     });
                 });
 
-                const yScale = chart.scales.y || chart.scales['y-axis-0']; // รองรับ ChartJS หลายเวอร์ชัน
+                const yScale = chart.scales.y || chart.scales['y-axis-0']; 
                 chart.data.labels.forEach((_, index) => {
                     if (totals[index] > 0 && xCoords[index] && yScale) {
                         const y = yScale.getPixelForValue(totals[index]);
@@ -93,7 +93,7 @@ const dataLabelPlugin = {
             return; 
         }
 
-        // --- ส่วนของกราฟ Bar อื่นๆ ทำงานตามปกติ ---
+        // --- ส่วนของกราฟ Bar อื่นๆ ---
         chart.data.datasets.forEach((dataset, i) => {
             if (dataset.type === 'line' || !chart.isDatasetVisible(i)) return;
             const meta = chart.getDatasetMeta(i);
@@ -295,8 +295,18 @@ async function initFulfillmentRealtime() {
                         }
                         let bItem = rawBq[rawBu];
                         unifiedDatesMap[sd].bq[sBu].ordTotal += parseFloat(bItem.ordTotal || 0);
-                        // เปลี่ยนจาก bItem.ordFull เป็นชื่อตัวแปรที่ API ส่งมาจริงๆ
-unifiedDatesMap[sd].bq[sBu].ordFull += parseFloat(bItem.ordFull || bItem.perfectOrders || 0);
+                        
+                        // 🟢 ดึงข้อมูลบิลที่สมบูรณ์ (ordFull) จาก API โดยรองรับหลายตัวแปร
+                        // หาก API ไม่ได้ส่งค่า ordFull มา เราจะใช้วิธีเช็คว่าถ้า (ship >= req && ship > 0) ให้ถือว่าบิลนั้นเสร็จสมบูรณ์ 100% 
+                        // เพื่อป้องกันค่า 0%
+                        let perfectOrders = parseFloat(bItem.ordFull || bItem.perfectOrders || 0);
+                        if (perfectOrders === 0 && parseFloat(bItem.ordTotal || 0) > 0) {
+                             if(parseFloat(bItem.ship || 0) >= parseFloat(bItem.req || 0) && parseFloat(bItem.req || 0) > 0) {
+                                 perfectOrders = parseFloat(bItem.ordTotal || 0);
+                             }
+                        }
+                        unifiedDatesMap[sd].bq[sBu].ordFull += perfectOrders;
+                        
                         unifiedDatesMap[sd].bq[sBu].req += parseFloat(bItem.req || 0);
                         unifiedDatesMap[sd].bq[sBu].alloc += parseFloat(bItem.alloc || 0);
                         unifiedDatesMap[sd].bq[sBu].ship += parseFloat(bItem.ship || 0);
@@ -373,7 +383,6 @@ unifiedDatesMap[sd].bq[sBu].ordFull += parseFloat(bItem.ordFull || bItem.perfect
 
                     // 🎯 คิด Ord.SLA แบบ Order-by-Order (สัดส่วนบิลที่เสร็จสมบูรณ์ / บิลทั้งหมด)
                     const ordSLA = ordTotal > 0 ? Math.min(1, (ordFull / ordTotal)) : null;
-                    
                     const dcSLA = alloc > 0 ? Math.min(1, (ship / alloc)) : null;
                     const ffm = req > 0 ? Math.min(1, (ship / req)) : null;
                     const pcsPick = pu > 0 ? (req / pu) : null;
