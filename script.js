@@ -926,38 +926,55 @@ async function initFulfillmentRealtime() {
                     }
                 }
                 
-                // 🟢 อัปเดต 3 กล่องใหม่: % Ontime, Picked, Shipped (อ้างอิงข้อมูลจาก wave_monitoring)
-if (document.getElementById('wave-pct-ontime')) {
-    
-    // ** จุดที่ต้องปรับตัวแปรมารับค่าที่ดึงมาจาก Status_Load และ Time_Load **
-    // สมมติว่า api ส่ง data กลับมาไว้ใน object ชื่อ waveData
-    // let aTotal = waveData.total_orders;
-    // let aLate = waveData.late_orders;      // นับจาก Time_Load
-    // let wReq = waveData.total_req_qty; 
-    // let wAlloc = waveData.picked_qty;      // นับจาก Status_Load ที่หยิบเสร็จ
-    // let wShip = waveData.shipped_qty;      // นับจาก Status_Load ที่ส่งออกเสร็จ
-    
-    // 1. % ON-TIME
-    let pctOntime = aTotal > 0 ? (((aTotal - aLate) / aTotal) * 100).toFixed(1) : 100;
-    let ontimeEl = document.getElementById('wave-pct-ontime');
-    ontimeEl.innerText = pctOntime + '%';
-    ontimeEl.style.color = pctOntime >= 99 ? '#10B981' : (pctOntime >= 90 ? '#F59E0B' : '#EF4444');
-    document.getElementById('wave-ontime-text').innerHTML = `รวมออเดอร์ <b>${fmtN(aTotal)}</b> บิล | ช้า <b>${fmtN(aLate)}</b> บิล`;
+                // 🟢 ดึงข้อมูลจาก API ใหม่ที่สร้างใน Backend
+                let waveStats = { total_orders: 0, late_orders: 0, picked_orders: 0, shipped_orders: 0 };
+                try {
+                    const waveResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fn: 'apiGetWaveMonitoring', args: ["", ""] })
+                    });
+                    if (waveResp.ok) {
+                        const waveJson = await waveResp.json();
+                        // ดึงข้อมูลแถวแรก (วันที่ล่าสุด) มาใช้งาน
+                        if (waveJson.success && waveJson.data && waveJson.data.length > 0) {
+                            waveStats = waveJson.data[0]; 
+                        }
+                    }
+                } catch (err) {
+                    console.error("Wave API Error:", err);
+                }
 
-    // 2. % PICKED (ใช้ข้อมูลจาก Status_Load)
-    let pctPicked = wReq > 0 ? ((wAlloc / wReq) * 100).toFixed(1) : 0;
-    let pickedEl = document.getElementById('wave-pct-picked');
-    pickedEl.innerText = pctPicked + '%';
-    pickedEl.style.color = pctPicked >= 100 ? '#10B981' : '#3B82F6';
-    document.getElementById('wave-picked-text').innerHTML = `หยิบไปแล้ว <b style="color:var(--text-main);">${fmtN(wAlloc)}</b> / ${fmtN(wReq)} ชิ้น`;
+                // 🟢 อัปเดต 3 กล่องใหม่ (แปลงเป็นบิลทั้งหมด)
+                if (document.getElementById('wave-pct-ontime')) {
+                    let aTotal = parseInt(waveStats.total_orders) || 0;
+                    let aLate = parseInt(waveStats.late_orders) || 0;
+                    let wPicked = parseInt(waveStats.picked_orders) || 0;
+                    let wShipped = parseInt(waveStats.shipped_orders) || 0;
 
-    // 3. % SHIPPED (ใช้ข้อมูลจาก Status_Load)
-    let pctShipped = wReq > 0 ? ((wShip / wReq) * 100).toFixed(1) : 0;
-    let shippedEl = document.getElementById('wave-pct-shipped');
-    shippedEl.innerText = pctShipped + '%';
-    shippedEl.style.color = pctShipped >= 100 ? '#10B981' : '#8B5CF6';
-    document.getElementById('wave-shipped-text').innerHTML = `ส่งออกแล้ว <b style="color:var(--text-main);">${fmtN(wShip)}</b> / ${fmtN(wReq)} ชิ้น`;
-}
+                    // กล่อง 1: On-Time
+                    let pctOntime = aTotal > 0 ? (((aTotal - aLate) / aTotal) * 100).toFixed(1) : 100;
+                    let ontimeEl = document.getElementById('wave-pct-ontime');
+                    ontimeEl.innerText = pctOntime + '%';
+                    ontimeEl.style.color = pctOntime >= 99 ? '#10B981' : (pctOntime >= 90 ? '#F59E0B' : '#EF4444');
+                    document.getElementById('wave-ontime-text').innerHTML = `รวมออเดอร์ <b>${fmtN(aTotal)}</b> บิล | ช้า <b>${fmtN(aLate)}</b> บิล`;
+
+                    // กล่อง 2: Picked
+                    let pctPicked = aTotal > 0 ? ((wPicked / aTotal) * 100).toFixed(1) : 0;
+                    let pickedEl = document.getElementById('wave-pct-picked');
+                    pickedEl.innerText = pctPicked + '%';
+                    pickedEl.style.color = pctPicked >= 100 ? '#10B981' : '#3B82F6';
+                    // เปลี่ยน Text จาก ชิ้น เป็น บิล
+                    document.getElementById('wave-picked-text').innerHTML = `หยิบไปแล้ว <b style="color:var(--text-main);">${fmtN(wPicked)}</b> / ${fmtN(aTotal)} บิล`;
+
+                    // กล่อง 3: Shipped
+                    let pctShipped = aTotal > 0 ? ((wShipped / aTotal) * 100).toFixed(1) : 0;
+                    let shippedEl = document.getElementById('wave-pct-shipped');
+                    shippedEl.innerText = pctShipped + '%';
+                    shippedEl.style.color = pctShipped >= 100 ? '#10B981' : '#8B5CF6';
+                    // เปลี่ยน Text จาก ชิ้น เป็น บิล
+                    document.getElementById('wave-shipped-text').innerHTML = `ส่งออกแล้ว <b style="color:var(--text-main);">${fmtN(wShipped)}</b> / ${fmtN(aTotal)} บิล`;
+                }
                 
                 let targetWaveDate = activeWaveKey || todayKeyStr;
                 if (targetWaveDate) {
