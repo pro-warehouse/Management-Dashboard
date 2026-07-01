@@ -4,19 +4,19 @@ themeToggleBtn.addEventListener('click', () => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
     themeToggleBtn.innerText = isDark ? '🌙 Dark Mode' : '☀️ Light Mode';
-    Chart.defaults.color = isDark ? '#9CA3AF' : '#6B7280';
+    Chart.defaults.color = isDark ? '#A3AED0' : '#A3AED0'; // ปรับสีแกนกราฟให้เข้ากับธีมใหม่
     Object.values(Chart.instances).forEach(chart => chart.update());
 });
 
 Chart.defaults.font.family = "'Inter', sans-serif";
-Chart.defaults.color = '#6B7280';
+Chart.defaults.color = '#A3AED0';
 
-const accentGreen = '#10B981';
-const accentOrange = '#F59E0B';
-const dangerRed = '#EF4444';
+const accentGreen = '#05CD99';
+const accentOrange = '#FFCE20';
+const dangerRed = '#EE5D50';
 
-// ชุดสีสำหรับแยกตาม BU
-const chartPalette = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#14B8A6', '#F43F5E', '#06B6D4', '#84CC16', '#A855F7'];
+// 🎨 ชุดสีใหม่สำหรับแยกตาม BU ให้เข้ากับ Corporate Solid Theme
+const chartPalette = ['#4318FF', '#6AD2FF', '#05CD99', '#FFCE20', '#EE5D50', '#8F9BBA', '#2B3674', '#06B6D4', '#84CC16', '#A855F7'];
 
 const fmtN = (v) => (v || 0).toLocaleString();
 
@@ -82,7 +82,7 @@ const dataLabelPlugin = {
                 chart.data.labels.forEach((_, index) => {
                     if (totals[index] > 0 && xCoords[index] && yScale) {
                         const y = yScale.getPixelForValue(totals[index]);
-                        ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F9FAFB' : '#111827';
+                        ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#FFFFFF' : '#2B3674';
                         ctx.font = 'bold 11px Inter';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'bottom';
@@ -100,7 +100,7 @@ const dataLabelPlugin = {
             meta.data.forEach((bar, index) => {
                 const data = dataset.data[index];
                 if(data > 0){
-                    ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F9FAFB' : '#111827';
+                    ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#FFFFFF' : '#2B3674';
                     ctx.font = 'bold 12px Inter';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'bottom';
@@ -123,7 +123,7 @@ const lineDataLabelPlugin = {
             meta.data.forEach((point, index) => {
                 const data = dataset.data[index];
                 if(data !== null && data !== undefined && data !== 0 && data !== "0.00"){
-                    ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F9FAFB' : '#111827';
+                    ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#FFFFFF' : '#2B3674';
                     ctx.font = 'bold 10px Inter';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = i === 0 ? 'bottom' : 'top'; 
@@ -142,11 +142,11 @@ const throughputCtx = document.getElementById('throughputChart')?.getContext('2d
 if (throughputCtx) new Chart(throughputCtx, { type: 'bar', data: { labels: ['Mon','Tue','Wed','Thu','Fri'], datasets: [{ label: 'Inbound', data: [45, 38, 52, 48, 50], backgroundColor: accentOrange, borderRadius: 6 }, { label: 'Outbound', data: [48, 42, 55, 50, 54], backgroundColor: accentGreen, borderRadius: 6 }]}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: {grid:{display:false}}, y: {border:{display:false}} } } });
 
 const orderMixCtx = document.getElementById('orderMixChart')?.getContext('2d');
-if (orderMixCtx) new Chart(orderMixCtx, { type: 'doughnut', data: { labels: ['E-com', 'B2B', '3PL'], datasets: [{ data: [55, 30, 15], backgroundColor: [accentGreen, accentOrange, '#3B82F6'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins:{legend:{position: 'bottom'}} } });
+if (orderMixCtx) new Chart(orderMixCtx, { type: 'doughnut', data: { labels: ['E-com', 'B2B', '3PL'], datasets: [{ data: [55, 30, 15], backgroundColor: [accentGreen, accentOrange, '#4318FF'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins:{legend:{position: 'bottom'}} } });
 
 let workforceChartInstance = null;
 const wfCtx = document.getElementById('workforceChart')?.getContext('2d');
-if (wfCtx) workforceChartInstance = new Chart(wfCtx, { type: 'bar', data: { labels: [], datasets: [{ label: 'จำนวนกำลังพล (คน)', data: [], backgroundColor: '#3B82F6', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, border: { display: false } } }, layout: { padding: { top: 20 } } }, plugins: [dataLabelPlugin] });
+if (wfCtx) workforceChartInstance = new Chart(wfCtx, { type: 'bar', data: { labels: [], datasets: [{ label: 'จำนวนกำลังพล (คน)', data: [], backgroundColor: '#4318FF', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, border: { display: false } } }, layout: { padding: { top: 20 } } }, plugins: [dataLabelPlugin] });
 
 let ffmTrendChartInstance = null;
 const ffmTrendCtx = document.getElementById('ffmTrendChart')?.getContext('2d');
@@ -176,27 +176,27 @@ if (ffmVolCtx) ffmVolumeChartInstance = new Chart(ffmVolCtx, {
 
 let ontimeChart1Instance = null;
 const ot1Ctx = document.getElementById('ontimeChart')?.getContext('2d');
-if (ot1Ctx) ontimeChart1Instance = new Chart(ot1Ctx, { type: 'line', data: { labels: [], datasets: [{ label: 'On-Time %', data: [], borderColor: accentGreen, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: accentGreen, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}}, scales: { x: {grid:{display:false}}, y: {border:{display:false}} }, layout: { padding: { top: 40 } } }, plugins: [lineDataLabelPlugin] });
+if (ot1Ctx) ontimeChart1Instance = new Chart(ot1Ctx, { type: 'line', data: { labels: [], datasets: [{ label: 'On-Time %', data: [], borderColor: accentGreen, backgroundColor: 'rgba(5, 205, 153, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: accentGreen, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}}, scales: { x: {grid:{display:false}}, y: {border:{display:false}} }, layout: { padding: { top: 40 } } }, plugins: [lineDataLabelPlugin] });
 
 let claimChart1Instance = null;
 const claim1Ctx = document.getElementById('claimChart')?.getContext('2d');
-if (claim1Ctx) claimChart1Instance = new Chart(claim1Ctx, { type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#EF4444', borderRadius: 4, yAxisID: 'y' }, { label: 'จำนวนชิ้น (Pcs)', data: [], borderColor: '#3B82F6', backgroundColor: '#3B82F6', type: 'line', tension: 0.4, yAxisID: 'y1', pointRadius: 2 } ] }, options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}}, scales: { x: {grid:{display:false}}, y: {position: 'left', beginAtZero: true}, y1: {position: 'right', beginAtZero: true, grid: {display:false}, display: false} }, layout: { padding: { top: 10 } } }, plugins: [dataLabelPlugin] });
+if (claim1Ctx) claimChart1Instance = new Chart(claim1Ctx, { type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#EE5D50', borderRadius: 4, yAxisID: 'y' }, { label: 'จำนวนชิ้น (Pcs)', data: [], borderColor: '#4318FF', backgroundColor: '#4318FF', type: 'line', tension: 0.4, yAxisID: 'y1', pointRadius: 2 } ] }, options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}}, scales: { x: {grid:{display:false}}, y: {position: 'left', beginAtZero: true}, y1: {position: 'right', beginAtZero: true, grid: {display:false}, display: false} }, layout: { padding: { top: 10 } } }, plugins: [dataLabelPlugin] });
 
 let claimChart2Instance = null;
 const claim2Ctx = document.getElementById('claimChart2')?.getContext('2d');
-if (claim2Ctx) claimChart2Instance = new Chart(claim2Ctx, { type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#EF4444', borderRadius: 6, yAxisID: 'y' }, { label: 'จำนวนชิ้น (Pcs)', data: [], borderColor: '#3B82F6', backgroundColor: '#3B82F6', type: 'line', tension: 0.4, yAxisID: 'y1', pointRadius: 4, borderWidth: 2 } ] }, options: { responsive: true, maintainAspectRatio: false, plugins:{ legend:{ display:true, position: 'top', labels: { padding: 20, boxWidth: 12, font: {size: 11} } } }, scales: { x: {grid:{display:false}}, y: {position: 'left', beginAtZero: true, grace: '25%', title: {display: true, text: 'มูลค่ารวม (บาท)', font: {size: 10}}}, y1: {position: 'right', beginAtZero: true, grace: '25%', grid: {display:false}, title: {display: true, text: 'จำนวนสินค้า (ชิ้น)', font: {size: 10}}} }, layout: { padding: { top: 10, left: 10, right: 10 } } }, plugins: [dataLabelPlugin] });
+if (claim2Ctx) claimChart2Instance = new Chart(claim2Ctx, { type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#EE5D50', borderRadius: 6, yAxisID: 'y' }, { label: 'จำนวนชิ้น (Pcs)', data: [], borderColor: '#4318FF', backgroundColor: '#4318FF', type: 'line', tension: 0.4, yAxisID: 'y1', pointRadius: 4, borderWidth: 2 } ] }, options: { responsive: true, maintainAspectRatio: false, plugins:{ legend:{ display:true, position: 'top', labels: { padding: 20, boxWidth: 12, font: {size: 11} } } }, scales: { x: {grid:{display:false}}, y: {position: 'left', beginAtZero: true, grace: '25%', title: {display: true, text: 'มูลค่ารวม (บาท)', font: {size: 10}}}, y1: {position: 'right', beginAtZero: true, grace: '25%', grid: {display:false}, title: {display: true, text: 'จำนวนสินค้า (ชิ้น)', font: {size: 10}}} }, layout: { padding: { top: 10, left: 10, right: 10 } } }, plugins: [dataLabelPlugin] });
 
 let ontimeChartInstance = null;
 const otChartEl = document.getElementById('ontimeChart2');
-if (otChartEl) ontimeChartInstance = new Chart(otChartEl.getContext('2d'), { type: 'line', data: { labels: [], datasets: [ { label: 'PTGLG %', data: [], borderColor: accentGreen, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: accentGreen, pointRadius: 4, spanGaps: true }, { label: 'HUB %', data: [], borderColor: '#3B82F6', backgroundColor: 'transparent', fill: false, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: '#3B82F6', borderDash: [5, 5], pointRadius: 4, spanGaps: true } ] }, options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:true, position: 'bottom'}}, scales: { x: {grid:{display:false}}, y: { border:{display:false} } }, layout: { padding: { top: 40 } } }, plugins: [lineDataLabelPlugin] });
+if (otChartEl) ontimeChartInstance = new Chart(otChartEl.getContext('2d'), { type: 'line', data: { labels: [], datasets: [ { label: 'PTGLG %', data: [], borderColor: accentGreen, backgroundColor: 'rgba(5, 205, 153, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: accentGreen, pointRadius: 4, spanGaps: true }, { label: 'HUB %', data: [], borderColor: '#4318FF', backgroundColor: 'transparent', fill: false, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: '#4318FF', borderDash: [5, 5], pointRadius: 4, spanGaps: true } ] }, options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:true, position: 'bottom'}}, scales: { x: {grid:{display:false}}, y: { border:{display:false} } }, layout: { padding: { top: 40 } } }, plugins: [lineDataLabelPlugin] });
 
 let inventoryChartInstance = null;
 const invCtx = document.getElementById('inventoryChart')?.getContext('2d');
-if (invCtx) inventoryChartInstance = new Chart(invCtx, { type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], borderColor: accentGreen, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: accentGreen, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}}, scales: { x: {grid:{display:false}}, y: {border:{display:false}} }, layout: { padding: { top: 40 } } }, plugins: [lineDataLabelPlugin] });
+if (invCtx) inventoryChartInstance = new Chart(invCtx, { type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], borderColor: accentGreen, backgroundColor: 'rgba(5, 205, 153, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#FFFFFF', pointBorderColor: accentGreen, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}}, scales: { x: {grid:{display:false}}, y: {border:{display:false}} }, layout: { padding: { top: 40 } } }, plugins: [lineDataLabelPlugin] });
 
 let productivityChartInstance = null;
 const prodCtx = document.getElementById('productivityChart')?.getContext('2d');
-if (prodCtx) productivityChartInstance = new Chart(prodCtx, { type: 'bar', data: { labels: [], datasets: [ { type: 'bar', label: 'Background', data: [], backgroundColor: [], borderRadius: 6, barPercentage: 0.6, categoryPercentage: 0.8, grouped: false }, { type: 'bar', label: 'Actual UPH', data: [], backgroundColor: [], borderRadius: 6, barPercentage: 0.6, categoryPercentage: 0.8, grouped: false }, { type: 'line', label: 'Target Line', data: [], borderColor: '#F59E0B', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, stacked: false }, y: { border: { display: false }, display: false, beginAtZero: true, grace: '25%' } }, layout: { padding: { top: 30 } } }, plugins: [{ id: 'customBarLabel', afterDatasetsDraw(chart) { const { ctx } = chart; if(chart.data.datasets.length > 1 && chart.getDatasetMeta(1)) { const meta = chart.getDatasetMeta(1); if (!meta.hidden && meta.data) { meta.data.forEach((bar, index) => { const uphVal = chart.data.datasets[1].data[index]; const picksVal = chart.data.datasets[1].customPicks ? chart.data.datasets[1].customPicks[index] : 0; if(uphVal > 0){ ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F9FAFB' : '#111827'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.font = 'bold 11px Inter'; ctx.fillText(uphVal, bar.x, bar.y - 14); let displayPicks = picksVal >= 10000 ? (picksVal / 1000).toFixed(1) + 'k' : fmtN(picksVal); ctx.fillStyle = '#6B7280'; ctx.font = 'normal 9px Inter'; ctx.fillText(`(${displayPicks})`, bar.x, bar.y - 4); } }); } } } }] });
+if (prodCtx) productivityChartInstance = new Chart(prodCtx, { type: 'bar', data: { labels: [], datasets: [ { type: 'bar', label: 'Background', data: [], backgroundColor: [], borderRadius: 6, barPercentage: 0.6, categoryPercentage: 0.8, grouped: false }, { type: 'bar', label: 'Actual UPH', data: [], backgroundColor: [], borderRadius: 6, barPercentage: 0.6, categoryPercentage: 0.8, grouped: false }, { type: 'line', label: 'Target Line', data: [], borderColor: '#FFCE20', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, stacked: false }, y: { border: { display: false }, display: false, beginAtZero: true, grace: '25%' } }, layout: { padding: { top: 30 } } }, plugins: [{ id: 'customBarLabel', afterDatasetsDraw(chart) { const { ctx } = chart; if(chart.data.datasets.length > 1 && chart.getDatasetMeta(1)) { const meta = chart.getDatasetMeta(1); if (!meta.hidden && meta.data) { meta.data.forEach((bar, index) => { const uphVal = chart.data.datasets[1].data[index]; const picksVal = chart.data.datasets[1].customPicks ? chart.data.datasets[1].customPicks[index] : 0; if(uphVal > 0){ ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#FFFFFF' : '#2B3674'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.font = 'bold 11px Inter'; ctx.fillText(uphVal, bar.x, bar.y - 14); let displayPicks = picksVal >= 10000 ? (picksVal / 1000).toFixed(1) + 'k' : fmtN(picksVal); ctx.fillStyle = '#A3AED0'; ctx.font = 'normal 9px Inter'; ctx.fillText(`(${displayPicks})`, bar.x, bar.y - 4); } }); } } } }] });
 
 // ==========================================
 // 🌟 3. Data Config & Setup 🌟
@@ -319,9 +319,6 @@ async function initFulfillmentRealtime() {
                         let bItem = rawBq[rawBu];
                         unifiedDatesMap[sd].bq[sBu].ordTotal += parseFloat(bItem.ordTotal || 0);
                         
-                        // 🟢 ดึงข้อมูลบิลที่สมบูรณ์ (ordFull) จาก API โดยรองรับหลายตัวแปร
-                        // หาก API ไม่ได้ส่งค่า ordFull มา เราจะใช้วิธีเช็คว่าถ้า (ship >= req && ship > 0) ให้ถือว่าบิลนั้นเสร็จสมบูรณ์ 100% 
-                        // เพื่อป้องกันค่า 0%
                         let perfectOrders = parseFloat(bItem.ordFull || bItem.perfectOrders || 0);
                         if (perfectOrders === 0 && parseFloat(bItem.ordTotal || 0) > 0) {
                              if(parseFloat(bItem.ship || 0) >= parseFloat(bItem.req || 0) && parseFloat(bItem.req || 0) > 0) {
@@ -344,26 +341,26 @@ async function initFulfillmentRealtime() {
         delete unifiedDatesMap[""];
         let sortedDates = Object.keys(unifiedDatesMap).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
 
-        let htmlTable = `<div class="data-card" style="margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden;">
-            <div class="card-header" style="padding: 15px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);"><h3 style="font-size:14px; font-weight:700; color:var(--text-main); margin:0;">📋 DAILY FULFILLMENT MATRIX RECORD</h3></div>
-            <div style="max-height: 500px; overflow: auto; background: var(--bg-card);">
-            <table style="min-width: 1200px; width:100%; border-collapse:separate; border-spacing:0; font-size:12px; text-align:right; white-space: nowrap;">
+        let htmlTable = `<div class="card mt-20" style="padding:0;">
+            <div class="card-header" style="padding: 20px 20px 10px 20px;"><h3 style="margin:0;">📋 DAILY FULFILLMENT MATRIX RECORD</h3></div>
+            <div style="max-height: 500px; overflow: auto;">
+            <table class="matrix-table" style="min-width: 1200px; text-align:right; white-space: nowrap;">
             <thead>
                 <tr>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); border-right:1px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; left:0; z-index:30;">Date</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Owner</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Orders</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Req</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">ETA</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Ship</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Est.Short</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Act.Short</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Ord.SLA</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">DC SLA</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">FFM%</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Pcs/Pick</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Pcs/Ord</th>
-                    <th style="padding:10px 15px; background:var(--bg-card); border-bottom:2px solid var(--border-color); color:var(--text-main); text-align:center; position:sticky; top:0; z-index:20;">Pallets</th>
+                    <th style="text-align:center; position:sticky; top:0; left:0; z-index:30;">Date</th>
+                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Owner</th>
+                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Orders</th>
+                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Req</th>
+                    <th style="text-align:center; position:sticky; top:0; z-index:20;">ETA</th>
+                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Ship</th>
+                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Est.Short</th>
+                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Act.Short</th>
+                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Ord.SLA</th>
+                    <th style="text-align:center; position:sticky; top:0; z-index:20;">DC SLA</th>
+                    <th style="text-align:center; position:sticky; top:0; z-index:20;">FFM%</th>
+                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Pcs/Pick</th>
+                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Pcs/Ord</th>
+                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Pallets</th>
                 </tr>
             </thead><tbody>`;
 
@@ -393,8 +390,8 @@ async function initFulfillmentRealtime() {
                     const fItem = fData[bu] || {};
                     
                     const bData = getBestOrderData(bItem, wItem, fItem);
-const ordTotal = bData.tot;
-const ordFull = bData.full;
+                    const ordTotal = bData.tot;
+                    const ordFull = bData.full;
                     
                     const req = Math.max(parseFloat(bItem.req || 0), parseFloat(fItem.req || 0));
                     const alloc = parseFloat(bItem.alloc || 0);
@@ -405,7 +402,6 @@ const ordFull = bData.full;
 
                     const estShort = Math.max(0, req - alloc);
 
-                    // 🎯 คิด Ord.SLA แบบ Order-by-Order (สัดส่วนบิลที่เสร็จสมบูรณ์ / บิลทั้งหมด)
                     const ordSLA = ordTotal > 0 ? Math.min(1, (ordFull / ordTotal)) : null;
                     const dcSLA = alloc > 0 ? Math.min(1, (ship / alloc)) : null;
                     const ffm = req > 0 ? Math.min(1, (ship / req)) : null;
@@ -414,35 +410,34 @@ const ordFull = bData.full;
 
                     const colorPct = (v) => {
                         if (v === null || v === undefined) return '<span style="color:var(--text-muted);">-</span>';
-                        if (v >= 0.99) return `<span style="color:#10B981; font-weight:600;">${(v*100).toFixed(1)}%</span>`;
-                        if (v >= 0.95) return `<span style="color:#F59E0B; font-weight:600;">${(v*100).toFixed(1)}%</span>`;
-                        return `<span style="color:#EF4444; font-weight:600;">${(v*100).toFixed(1)}%</span>`;
+                        if (v >= 0.99) return `<span style="color:var(--accent-primary); font-weight:600;">${(v*100).toFixed(1)}%</span>`;
+                        if (v >= 0.95) return `<span style="color:var(--accent-secondary); font-weight:600;">${(v*100).toFixed(1)}%</span>`;
+                        return `<span style="color:var(--danger); font-weight:600;">${(v*100).toFixed(1)}%</span>`;
                     };
 
-                    htmlTable += `<tr style="cursor: pointer; color:var(--text-main); white-space:nowrap;" onmouseover="this.style.backgroundColor='var(--bg-body)'" onmouseout="this.style.backgroundColor='transparent'">
-                        <td style="padding:10px 15px; text-align:center; position:sticky; left:0; background:var(--bg-card); border-bottom:1px solid var(--border-color); border-right:1px solid var(--border-color); z-index:10;">${displayDate}</td>
-                        <td style="padding:10px 15px; text-align:center; border-bottom:1px solid var(--border-color); font-weight:600;">${bu}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${ordTotal > 0 ? fmtN(ordTotal) : 0}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${req > 0 ? fmtN(req) : 0}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${alloc > 0 ? fmtN(alloc) : 0}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); color:#10B981; font-weight:600; text-align:right;">${ship > 0 ? fmtN(ship) : 0}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${estShort > 0 ? fmtN(estShort) : 0}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); color:${actShort > 0 ? '#EF4444' : 'inherit'}; text-align:right;">${actShort > 0 ? fmtN(actShort) : 0}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:center;">${colorPct(ordSLA)}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:center;">${colorPct(dcSLA)}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:center;">${colorPct(ffm)}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${pcsPick !== null ? pcsPick.toFixed(1) : '-'}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${pcsOrd !== null ? pcsOrd.toFixed(1) : '-'}</td>
-                        <td style="padding:10px 15px; border-bottom:1px solid var(--border-color); text-align:right;">${plt > 0 ? plt.toFixed(1) : '-'}</td>
+                    htmlTable += `<tr>
+                        <td style="text-align:center; position:sticky; left:0; z-index:10; background:var(--bg-card); border-right:1px solid var(--border-color);">${displayDate}</td>
+                        <td style="text-align:center; font-weight:600;">${bu}</td>
+                        <td>${ordTotal > 0 ? fmtN(ordTotal) : 0}</td>
+                        <td>${req > 0 ? fmtN(req) : 0}</td>
+                        <td>${alloc > 0 ? fmtN(alloc) : 0}</td>
+                        <td style="color:var(--accent-primary); font-weight:600;">${ship > 0 ? fmtN(ship) : 0}</td>
+                        <td>${estShort > 0 ? fmtN(estShort) : 0}</td>
+                        <td style="color:${actShort > 0 ? 'var(--danger)' : 'inherit'};">${actShort > 0 ? fmtN(actShort) : 0}</td>
+                        <td style="text-align:center;">${colorPct(ordSLA)}</td>
+                        <td style="text-align:center;">${colorPct(dcSLA)}</td>
+                        <td style="text-align:center;">${colorPct(ffm)}</td>
+                        <td>${pcsPick !== null ? pcsPick.toFixed(1) : '-'}</td>
+                        <td>${pcsOrd !== null ? pcsOrd.toFixed(1) : '-'}</td>
+                        <td>${plt > 0 ? plt.toFixed(1) : '-'}</td>
                     </tr>`;
 
                     if (!chartDataMap[dateStr]) chartDataMap[dateStr] = { req:0, alloc:0, ship:0, ordTotal:0, buShip: {}, buReq: {}, buOrd: {} };
                     chartDataMap[dateStr].req += req;
-                    chartDataMap[dateStr].alloc += alloc; // 🟢 เพิ่มการเก็บค่า ETA (alloc)
+                    chartDataMap[dateStr].alloc += alloc;
                     chartDataMap[dateStr].ship += ship;
                     chartDataMap[dateStr].ordTotal += ordTotal;
                     
-                    // เก็บค่าไว้ใช้วาดกราฟ (รวมถึง buOrd ด้วย)
                     chartDataMap[dateStr].buShip[bu] = ship; 
                     chartDataMap[dateStr].buReq[bu] = req;
                     chartDataMap[dateStr].buOrd[bu] = ordTotal;
@@ -453,9 +448,6 @@ const ordFull = bData.full;
         htmlTable += "</tbody></table></div></div>";
         wrapperEl.innerHTML = htmlTable;
 
-        // ==========================================
-        // 🌟 อัปเดตกราฟ FFM (ซ้าย: Stacked Bar | ขวา: Doughnut) 🌟
-        // ==========================================
         const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
         const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
         
@@ -463,18 +455,14 @@ const ordFull = bData.full;
         let allBUsArray = Array.from(buNamesSet).sort();
         const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-        // --- ย้ายบล็อก 🟢 1. ออกมาไว้ตรงนี้ (นอก try) ---
-        // 🟢 1. จัดการ Filter Owner (BU)
         const ffmBuFilter = document.getElementById('ffm-bu-filter');
         if (ffmBuFilter && ffmBuFilter.options.length <= 1) {
             allBUsArray.forEach(bu => ffmBuFilter.appendChild(new Option(bu, bu)));
         }
         const ffmBuFilterVal = ffmBuFilter?.value || 'ALL';
         let chartBUsArray = ffmBuFilterVal === 'ALL' ? allBUsArray : [ffmBuFilterVal];
-        // ------------------------------------------
 
         try {
-            // 🟢 2. อัปเดตกราฟแท่ง (Stacked Bar) - จำนวนชิ้น (PCS)
             if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance && validChartDates.length > 0) {
                 let tpLabels = validChartDates.map(dStr => {
                     let parts = dStr.split('-');
@@ -500,7 +488,6 @@ const ordFull = bData.full;
                 ffmTrendChartInstance.data.labels = tpLabels;
                 ffmTrendChartInstance.data.datasets = tpDatasets;
                 
-                // 🛠️ แก้จุดตายที่ 1: ดัก Error กรณี Chart.js สร้าง options หรือ scales ไม่ทัน
                 if(!ffmTrendChartInstance.options) ffmTrendChartInstance.options = {};
                 if(!ffmTrendChartInstance.options.scales) ffmTrendChartInstance.options.scales = {};
                 if(!ffmTrendChartInstance.options.scales.x) ffmTrendChartInstance.options.scales.x = {};
@@ -516,7 +503,6 @@ const ordFull = bData.full;
                 ffmTrendChartInstance.update();
             }
 
-            // 🟢 3. อัปเดตกราฟโดนัท (Doughnut) - ยอดบิล (ORDERS)
             if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
                 let targetD = validChartDates[validChartDates.length - 1]; 
                 
@@ -558,7 +544,6 @@ const ordFull = bData.full;
                     borderWidth: 0
                 }];
                 
-                // 🛠️ แก้จุดตายที่ 2: ดัก Error กราฟแทรกแซง
                 if (ffmVolumeChartInstance.options && ffmVolumeChartInstance.options.scales) {
                     delete ffmVolumeChartInstance.options.scales.x;
                     delete ffmVolumeChartInstance.options.scales.y;
@@ -614,20 +599,20 @@ const ordFull = bData.full;
                     let utilDisp = item.utilPct.toFixed(1);
                     let barWidth = Math.min(100, item.utilPct); 
                     
-                    let statusObj = { text: "Available", color: "#166534", bg: "#dcfce7", barColor: "#3B82F6" }; 
+                    let statusObj = { text: "Available", color: "#10B981", bg: "rgba(5, 205, 153, 0.1)", barColor: "#4318FF" }; 
                     if (item.utilPct >= 100) {
-                        statusObj = { text: "Overloaded", color: "#991b1b", bg: "#fee2e2", barColor: "#EF4444" }; 
+                        statusObj = { text: "Overloaded", color: "#EE5D50", bg: "rgba(238, 93, 80, 0.1)", barColor: "#EE5D50" }; 
                     } else if (item.utilPct >= 90) {
-                        statusObj = { text: "Near cap.", color: "#92400e", bg: "#fef3c7", barColor: "#F59E0B" }; 
+                        statusObj = { text: "Near cap.", color: "#FFCE20", bg: "rgba(255, 206, 32, 0.1)", barColor: "#FFCE20" }; 
                     } else if (item.utilPct >= 70) {
-                        statusObj = { text: "Optimal", color: "#166534", bg: "#dcfce7", barColor: "#10B981" }; 
+                        statusObj = { text: "Optimal", color: "#10B981", bg: "rgba(5, 205, 153, 0.1)", barColor: "#05CD99" }; 
                     }
 
                     tbody += `
                     <tr>
-                        <td style="padding:12px 15px; font-weight:800; text-align:left; border-bottom:1px dashed var(--border-color); color:var(--text-main);">${item.bu}</td>
-                        <td style="padding:12px 15px; text-align:right; font-weight:700; border-bottom:1px dashed var(--border-color); color:var(--text-main);">${fmtN(item.vol)}</td>
-                        <td style="padding:12px 15px; text-align:left; border-bottom:1px dashed var(--border-color);">
+                        <td style="font-weight:800; text-align:left; color:var(--text-main); padding-left:15px;">${item.bu}</td>
+                        <td style="text-align:right; font-weight:700; color:var(--text-main);">${fmtN(item.vol)}</td>
+                        <td style="text-align:left;">
                             <div style="display:flex; align-items:center; gap:12px;">
                                 <span style="font-weight:700; font-size:12px; width:40px; text-align:right; color:var(--text-main);">${utilDisp}%</span>
                                 <div style="flex:1; background-color:var(--border-color); border-radius:10px; height:8px; overflow:hidden; position:relative;">
@@ -635,8 +620,8 @@ const ordFull = bData.full;
                                 </div>
                             </div>
                         </td>
-                        <td style="padding:12px 15px; text-align:center; border-bottom:1px dashed var(--border-color);">
-                            <span style="padding:4px 10px; border-radius:12px; font-size:11px; font-weight:800; display:inline-block; width:85px; background:${statusObj.bg}; color:${statusObj.color};">${statusObj.text}</span>
+                        <td style="text-align:center;">
+                            <span class="badge" style="background:${statusObj.bg}; color:${statusObj.color};">${statusObj.text}</span>
                         </td>
                     </tr>`;
                 });
@@ -650,15 +635,11 @@ const ordFull = bData.full;
                 titleEl.innerText = `📊 VOLUME UTILIZATION BY OWNER | ข้อมูลวันที่ ${dispDate}`;
             }
 
-            // 🛠️ แก้จุดตายที่ 3: ดัก Error ป้องกันกรณีหน้าเว็บ HTML โหลด <thead> มาไม่ทันหรือไม่ครบ
             const theadEl = utilTableEl.querySelector('thead');
             const theadHtml = theadEl ? theadEl.outerHTML : '';
             utilTableEl.innerHTML = theadHtml + tbody;
         }
-        // ========================================================
-        // 🌟 อัปเดตการ์ด: Orders Shipped & Wave Plan Summary 🌟
-        // ========================================================
-        
+
         let validWaveKeys = sortedDates.filter(k => new Date(k).getTime() <= targetTimestamp + (3 * 24 * 60 * 60 * 1000)).slice(0, 7);
         
         let totalOrdersToday = 0;
@@ -666,7 +647,6 @@ const ordFull = bData.full;
         let activeWaveKey = null; 
         let pendingFutureOrders = 0;
         
-        // 🟢 เพิ่มตัวแปรเก็บวันที่
         let todayKeyStr = null; 
         let yesterdayKeyStr = null;
 
@@ -687,8 +667,8 @@ const ordFull = bData.full;
                 let dayTot = 0, dayComp = 0;
                 allBUsArray.forEach(bu => {
                     let bData = getBestOrderData(unifiedDatesMap[k].bq[bu], unifiedDatesMap[k].wave[bu], unifiedDatesMap[k].ffm[bu]);
-dayTot += bData.tot;
-dayComp += bData.full;
+                    dayTot += bData.tot;
+                    dayComp += bData.full;
                 });
                 if (dayTot > 0 && dayComp < dayTot) { 
                     if (dayComp === 0 && dayTot <= 5) continue;
@@ -697,7 +677,6 @@ dayComp += bData.full;
                 }
             }
             
-            // 🟢 แก้ไข: ถ้าออเดอร์เสร็จ 100% หมดแล้ว ให้ถอยไปหาวันล่าสุดที่มี "ออเดอร์จริงๆ" (ไม่ให้แสดงเป็นเลข 0)
             if (!activeWaveKey) {
                 let dayWithOrders = validWaveKeys.find(k => {
                      let t = 0;
@@ -712,15 +691,14 @@ dayComp += bData.full;
                 if (new Date(k).getTime() > activeTime) {
                     allBUsArray.forEach(bu => {
                         let bData = getBestOrderData(unifiedDatesMap[k].bq[bu], unifiedDatesMap[k].wave[bu], unifiedDatesMap[k].ffm[bu]);
-let t = bData.tot;
-let c = bData.full;
+                        let t = bData.tot;
+                        let c = bData.full;
                         pendingFutureOrders += (t - c);
                     });
                 }
             });
         }
 
-        // 🟢 ฟังก์ชันจัดรูปแบบวันที่สั้นๆ สำหรับเปรียบเทียบ
         const formatShortDate = (dStr) => {
             if (!dStr) return "";
             let dObj = new Date(dStr);
@@ -753,7 +731,6 @@ let c = bData.full;
                 }
             }
 
-            // 🟢 อัปเดตข้อความ Updated ของการ์ด ORDERS SHIPPED
             let ordersCard = ordersEl.closest('.data-card, .card');
             if (ordersCard && todayKeyStr) {
                 let updateSpan = Array.from(ordersCard.querySelectorAll('span, p, div')).find(el => el.innerText.trim().startsWith('Updated:'));
@@ -766,44 +743,41 @@ let c = bData.full;
             if (validWaveKeys.length === 0 || allBUsArray.length === 0) {
                 waveSummaryTable.innerHTML = `<thead><tr><th class='text-center' style='padding:30px; color:var(--text-muted);'>ไม่มีข้อมูลออเดอร์</th></tr></thead>`;
             } else {
-                let thead = `<thead><tr><th class="role-cell" style="text-align:center; min-width: 120px;">Planned Date</th>${allBUsArray.map(bu => `<th class="aff-header">${bu}</th>`).join('')}<th class="total-cell">Total (เสร็จ / ทั้งหมด)</th><th class="total-cell" style="text-align:center;">% Completed</th></tr></thead>`;
+                let thead = `<thead><tr><th class="role-cell" style="text-align:center; min-width: 120px;">Planned Date</th>${allBUsArray.map(bu => `<th class="aff-header" style="text-align:center;">${bu}</th>`).join('')}<th class="total-cell" style="text-align:center;">Total (เสร็จ / ทั้งหมด)</th><th class="total-cell" style="text-align:center;">% Completed</th></tr></thead>`;
                 let tbody = "<tbody>";
                 
                 validWaveKeys.forEach(dStr => {
                     let dObj = new Date(dStr);
                     let dispDate = isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
                     
-                    let tr = `<tr><td class="role-cell" style="text-align:center; font-weight:700;">${dispDate}</td>`;
+                    let tr = `<tr><td class="role-cell" style="text-align:center;">${dispDate}</td>`;
                     let dayTot = 0, dayComp = 0;
                     
                     allBUsArray.forEach(bu => {
                         let bData = getBestOrderData(unifiedDatesMap[dStr].bq[bu], unifiedDatesMap[dStr].wave[bu], unifiedDatesMap[dStr].ffm[bu]);
-let ordTotal = bData.tot;
-let ordFull = bData.full;
+                        let ordTotal = bData.tot;
+                        let ordFull = bData.full;
                         
                         dayTot += ordTotal; dayComp += ordFull;
-                        if (ordTotal === 0) { tr += `<td>-</td>`; } 
+                        if (ordTotal === 0) { tr += `<td style="text-align:center;">-</td>`; } 
                         else {
                             let color = (ordFull === ordTotal) ? 'var(--accent-primary)' : (ordFull > 0 ? 'var(--accent-secondary)' : 'var(--danger)');
-                            tr += `<td><span style="color:${color}; font-weight:800; font-size:0.9rem;">${fmtN(ordFull)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(ordTotal)}</span></td>`;
+                            tr += `<td style="text-align:center;"><span style="color:${color}; font-weight:800; font-size:0.9rem;">${fmtN(ordFull)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(ordTotal)}</span></td>`;
                         }
                     });
                     
                     let grandColor = (dayComp === dayTot && dayTot > 0) ? 'var(--accent-primary)' : (dayComp > 0 ? 'var(--accent-secondary)' : 'var(--danger)');
-                    tr += `<td class="total-cell"><span style="color:${grandColor}; font-weight:800; font-size:0.95rem;">${fmtN(dayComp)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(dayTot)}</span></td>`;
+                    tr += `<td class="total-cell" style="text-align:center;"><span style="color:${grandColor}; font-weight:800; font-size:0.95rem;">${fmtN(dayComp)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(dayTot)}</span></td>`;
                     
                     let pct = dayTot > 0 ? Math.min(100, (dayComp / dayTot) * 100).toFixed(1) : 0;
-                    let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
-                    let pctColor = pct >= 100 ? '#166534' : (pct > 0 ? '#92400e' : '#991b1b');
-                    tr += `<td class="total-cell" style="text-align:center;"><span class="pct-pill" style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:600;">${pct}%</span></td></tr>`;
+                    let pctBg = pct >= 100 ? 'rgba(5, 205, 153, 0.1)' : (pct > 0 ? 'rgba(255, 206, 32, 0.1)' : 'rgba(238, 93, 80, 0.1)');
+                    let pctColor = pct >= 100 ? 'var(--accent-primary)' : (pct > 0 ? 'var(--accent-secondary)' : 'var(--danger)');
+                    tr += `<td class="total-cell" style="text-align:center;"><span class="badge" style="background:${pctBg}; color:${pctColor};">${pct}%</span></td></tr>`;
                     tbody += tr;
                 });
                 waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
             }
 
-            // ========================================================
-        // 🟢 อัปเดตการ์ด: AVG. FULFILLMENT RATE (ดึงวันล่าสุดที่มีข้อมูล Shipped)
-        // ========================================================
         let latestShipDateStr = null;
         let prevShipDateStr = null;
         
@@ -819,11 +793,11 @@ let ordFull = bData.full;
         const rateEtaEl = document.getElementById('ffm-rate-eta');
         if (rateValEl && latestShipDateStr) {
             let lReq = chartDataMap[latestShipDateStr].req || 0;
-            let lAlloc = chartDataMap[latestShipDateStr].alloc || 0; // DC SLA
+            let lAlloc = chartDataMap[latestShipDateStr].alloc || 0;
             let lShip = chartDataMap[latestShipDateStr].ship || 0;
             
             let pReq = prevShipDateStr ? (chartDataMap[prevShipDateStr].req || 0) : 0;
-            let pAlloc = prevShipDateStr ? (chartDataMap[prevShipDateStr].alloc || 0) : 0; // ดึงข้อมูล DC SLA ของวันก่อนหน้า
+            let pAlloc = prevShipDateStr ? (chartDataMap[prevShipDateStr].alloc || 0) : 0;
             let pShip = prevShipDateStr ? (chartDataMap[prevShipDateStr].ship || 0) : 0;
 
             let currentFfm = lReq > 0 ? (lShip / lReq) * 100 : 0;
@@ -832,16 +806,13 @@ let ordFull = bData.full;
             let prevFfm = pReq > 0 ? (pShip / pReq) * 100 : 0;
             let prevEtaFfm = pAlloc > 0 ? (pShip / pAlloc) * 100 : 0;
 
-            // 1. แบบ Req เทียบกับ Shipped (เปลี่ยนชื่อเป็น FFM)
-            let reqColor = currentFfm >= 99 ? '#10B981' : (currentFfm >= 95 ? '#F59E0B' : '#EF4444');
+            let reqColor = currentFfm >= 99 ? 'var(--accent-primary)' : (currentFfm >= 95 ? 'var(--accent-secondary)' : 'var(--danger)');
             rateValEl.innerHTML = `<span style="color: ${reqColor}">FFM: ${currentFfm.toFixed(1)}%</span>`;
             
-            // 2. แบบ ETA เทียบกับ Shipped (เปลี่ยนชื่อเป็น DC SLA)
             if (rateEtaEl) rateEtaEl.innerHTML = `DC SLA: ${currentEtaFfm.toFixed(1)}%`;
 
-            // เทียบเปอร์เซ็นต์กับวันก่อนหน้า
             const rateTrendEl = document.getElementById('ffm-rate-trend');
-            const etaTrendEl = document.getElementById('eta-rate-trend'); // Badge ของ DC SLA
+            const etaTrendEl = document.getElementById('eta-rate-trend');
             const rateNoteEl = document.getElementById('ffm-rate-note');
             
             if (rateNoteEl) {
@@ -850,7 +821,6 @@ let ordFull = bData.full;
                     if (etaTrendEl) { etaTrendEl.className = "badge info"; etaTrendEl.innerText = "-"; }
                     rateNoteEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
                 } else {
-                    // คำนวณเทรนด์ของ FFM
                     if (rateTrendEl) {
                         let diffFfm = currentFfm - prevFfm;
                         if (diffFfm > 0) { rateTrendEl.className = "badge up"; rateTrendEl.innerText = `↗ +${diffFfm.toFixed(1)}%`; } 
@@ -858,7 +828,6 @@ let ordFull = bData.full;
                         else { rateTrendEl.className = "badge info"; rateTrendEl.innerText = `0%`; }
                     }
                     
-                    // คำนวณเทรนด์ของ DC SLA
                     if (etaTrendEl) {
                         let diffEta = currentEtaFfm - prevEtaFfm;
                         if (diffEta > 0) { etaTrendEl.className = "badge up"; etaTrendEl.innerText = `↗ +${diffEta.toFixed(1)}%`; } 
@@ -871,14 +840,12 @@ let ordFull = bData.full;
                 }
             }
 
-            // วันที่อัปเดต (ยึดตามวันที่ Shipped ล่าสุด)
             const rateUpdateEl = document.getElementById('ffm-rate-update');
             if (rateUpdateEl) {
                 rateUpdateEl.innerText = `Updated: ${getDisplayDate(latestShipDateStr)}`;
             }
         }
             
-            // 🟢 อัปเดตข้อความ Updated ของการ์ด WAVE PLAN SUMMARY
             let waveCard = waveSummaryTable.closest('.data-card, .card');
             if (waveCard && todayKeyStr) {
                 let updateSpan = Array.from(waveCard.querySelectorAll('span, p, div')).find(el => el.innerText.trim().startsWith('Updated:'));
@@ -891,8 +858,8 @@ let ordFull = bData.full;
         if (activeWaveKey) {
             allBUsArray.forEach(bu => {
                 let bData = getBestOrderData(unifiedDatesMap[activeWaveKey].bq[bu], unifiedDatesMap[activeWaveKey].wave[bu], unifiedDatesMap[activeWaveKey].ffm[bu]);
-let ordTotal = bData.tot;
-let ordFull = bData.full;
+                let ordTotal = bData.tot;
+                let ordFull = bData.full;
                 let late = parseFloat(unifiedDatesMap[activeWaveKey].wave[bu]?.late_orders || 0);
                 let delay = parseFloat(unifiedDatesMap[activeWaveKey].wave[bu]?.total_delay_mins || 0);
 
@@ -923,7 +890,7 @@ let ordFull = bData.full;
                 }
                 if(document.getElementById('wave-active-info-1')) document.getElementById('wave-active-info-1').innerHTML = `<span class="badge info">${activeDateStr}</span> ${pendingFutureOrders > 0 ? `รอ ${fmtN(pendingFutureOrders)} บิล` : `แผนล่าสุด`}${diffDays > 0 ? ` <span class="badge down">ดีเลย์ ${diffDays} วัน</span>` : ''}`;
                 let aCompPct = aTotal > 0 ? Math.min(100, (aComp / aTotal) * 100).toFixed(1) : 0;
-                if(document.getElementById('wave-active-info-2')) document.getElementById('wave-active-info-2').innerHTML = `<span class="badge up" style="background:${aCompPct>=100?'#dcfce7':'#fef3c7'}">${aCompPct}%</span> เสร็จ ${fmtN(aComp)} / ${fmtN(aTotal)}`;
+                if(document.getElementById('wave-active-info-2')) document.getElementById('wave-active-info-2').innerHTML = `<span class="badge up" style="background:${aCompPct>=100?'rgba(5, 205, 153, 0.1)':'rgba(255, 206, 32, 0.1)'}">${aCompPct}%</span> เสร็จ ${fmtN(aComp)} / ${fmtN(aTotal)}`;
                 if(document.getElementById('wave-active-info-3')) document.getElementById('wave-active-info-3').innerHTML = `<span class="badge down">หลุด SLA</span> แผน ${activeDateStr} &bull; ${fmtN(aLate)} บิล`;
                 if(document.getElementById('wave-active-info-4')) {
                     if (aDelay > 0) {
@@ -933,15 +900,14 @@ let ordFull = bData.full;
                     }
                 }
                 
-                // 🟢 อัปเดตข้อความ Updated ของการ์ด Wave Operations
-let targetWaveDate = activeWaveKey || todayKeyStr; // ใช้ activeWaveKey เป็นหลัก เพราะคือวันที่ของข้อมูลที่กำลังแสดงอยู่จริงๆ
-if (targetWaveDate) {
-    let dispDate = getDisplayDate(targetWaveDate);
-    if(document.getElementById('wave-date-1')) document.getElementById('wave-date-1').innerText = `Updated: ${dispDate}`;
-    if(document.getElementById('wave-date-2')) document.getElementById('wave-date-2').innerText = `Updated: ${dispDate}`;
-    if(document.getElementById('wave-date-3')) document.getElementById('wave-date-3').innerText = `Updated: ${dispDate}`;
-    if(document.getElementById('wave-date-4')) document.getElementById('wave-date-4').innerText = `Updated: ${dispDate}`;
-}
+                let targetWaveDate = activeWaveKey || todayKeyStr;
+                if (targetWaveDate) {
+                    let dispDate = getDisplayDate(targetWaveDate);
+                    if(document.getElementById('wave-date-1')) document.getElementById('wave-date-1').innerText = `Updated: ${dispDate}`;
+                    if(document.getElementById('wave-date-2')) document.getElementById('wave-date-2').innerText = `Updated: ${dispDate}`;
+                    if(document.getElementById('wave-date-3')) document.getElementById('wave-date-3').innerText = `Updated: ${dispDate}`;
+                    if(document.getElementById('wave-date-4')) document.getElementById('wave-date-4').innerText = `Updated: ${dispDate}`;
+                }
             }
             if (typeof generateExecutiveAlerts === "function") generateExecutiveAlerts(targetTimestamp, activeWaveKey, aLate, aDelay, diffDays, worstBU);
         }
@@ -1194,9 +1160,9 @@ function resetTrendRoleFilter() {
 async function fetchSection(sectionName) {
     try {
         const response = await fetch(`${GAS_URL}?section=${sectionName}`);
-        const textResponse = await response.text(); // 🟢 อ่านข้อมูลเป็น Text ดิบๆ ก่อนเพื่อดัก Error
+        const textResponse = await response.text();
         try {
-            const result = JSON.parse(textResponse); // 🟢 ลองแปลงเป็น JSON
+            const result = JSON.parse(textResponse);
             if (result.status === "success") {
                 Object.assign(globalData, result.data);
                 cleanDataBeforeLoad();
@@ -1373,46 +1339,46 @@ function updateDashboardData(selectedDateStr) {
             if (affiliations.length === 0) {
                 if(matrixTable) matrixTable.innerHTML = `<thead><tr><th class='text-center' style='padding:30px; color:var(--text-muted);'>ไม่มีข้อมูล MATRIX ของวันที่เลือก</th></tr></thead>`;
             } else {
-                let headerHtml = `<thead><tr><th rowspan="2" class="role-cell" style="position:sticky; left:0; z-index:15; background:var(--bg-card);">Role / หน้าที่</th>`;
+                let headerHtml = `<thead><tr><th rowspan="2" class="role-cell" style="position:sticky; left:0; z-index:15;">Role / หน้าที่</th>`;
                 affiliations.forEach(aff => {
-                    headerHtml += `<th colspan="${dynamicTeams.length + 1}" class="aff-header">${aff}</th>`;
+                    headerHtml += `<th colspan="${dynamicTeams.length + 1}" class="aff-header" style="text-align:center;">${aff}</th>`;
                 });
-                headerHtml += `<th rowspan="2" class="total-cell">Grand Total</th><th rowspan="2" class="total-cell">% Ratio</th></tr><tr>`;
+                headerHtml += `<th rowspan="2" class="total-cell" style="text-align:center;">Grand Total</th><th rowspan="2" class="total-cell" style="text-align:center;">% Ratio</th></tr><tr>`;
                 
                 affiliations.forEach(() => {
-                    dynamicTeams.forEach(t => { headerHtml += `<th>${t}</th>`; });
-                    headerHtml += `<th class="total-cell">Total</th>`;
+                    dynamicTeams.forEach(t => { headerHtml += `<th style="text-align:center;">${t}</th>`; });
+                    headerHtml += `<th class="total-cell" style="text-align:center;">Total</th>`;
                 });
                 headerHtml += `</tr></thead>`;
 
                 let bodyHtml = "<tbody>";
                 roles.forEach(role => {
-                    let roleGrandTotal = 0; let roleRowHtml = `<td class="role-cell" style="position:sticky; left:0; z-index:5; background:var(--bg-card);">${role}</td>`;
+                    let roleGrandTotal = 0; let roleRowHtml = `<td class="role-cell" style="position:sticky; left:0; z-index:5;">${role}</td>`;
                     affiliations.forEach(aff => {
                         let affRoleTotal = 0; let teamCells = "";
                         dynamicTeams.forEach(team => {
                             let count = todayWf.matrix[aff]?.[role]?.[team] || 0;
-                            affRoleTotal += count; teamCells += `<td>${count > 0 ? count : '-'}</td>`;
+                            affRoleTotal += count; teamCells += `<td style="text-align:center;">${count > 0 ? count : '-'}</td>`;
                         });
                         roleGrandTotal += affRoleTotal;
-                        roleRowHtml += teamCells + `<td class="total-cell">${affRoleTotal > 0 ? affRoleTotal : '-'}</td>`;
+                        roleRowHtml += teamCells + `<td class="total-cell" style="text-align:center;">${affRoleTotal > 0 ? affRoleTotal : '-'}</td>`;
                     });
                     let grandPct = opsTotal > 0 ? ((roleGrandTotal / opsTotal) * 100).toFixed(1) + "%" : "0%";
-                    bodyHtml += `<tr>${roleRowHtml}<td class="total-cell">${roleGrandTotal > 0 ? roleGrandTotal : '-'}</td><td class="pct-cell">${roleGrandTotal > 0 ? grandPct : '-'}</td></tr>`;
+                    bodyHtml += `<tr>${roleRowHtml}<td class="total-cell" style="text-align:center;">${roleGrandTotal > 0 ? roleGrandTotal : '-'}</td><td class="pct-cell" style="text-align:center;">${roleGrandTotal > 0 ? grandPct : '-'}</td></tr>`;
                 });
 
-                let footerHtml = `<tfoot><tr><td class="role-cell" style="position:sticky; left:0; z-index:15; background:var(--bg-card);">TOTAL BY AFF.</td>`;
+                let footerHtml = `<tfoot><tr><td class="role-cell" style="position:sticky; left:0; z-index:15;">TOTAL BY AFF.</td>`;
                 affiliations.forEach(aff => {
                     let affTotal = 0;
                     dynamicTeams.forEach(t => {
                         let colTot = 0;
                         roles.forEach(r => colTot += (todayWf.matrix[aff]?.[r]?.[t] || 0));
-                        footerHtml += `<td>-</td>`;
+                        footerHtml += `<td style="text-align:center;">-</td>`;
                     });
                     roles.forEach(r => dynamicTeams.forEach(t => affTotal += (todayWf.matrix[aff]?.[r]?.[t] || 0)));
-                    footerHtml += `<td class="total-cell">${affTotal}</td>`;
+                    footerHtml += `<td class="total-cell" style="text-align:center;">${affTotal}</td>`;
                 });
-                footerHtml += `<td class="total-cell">${opsTotal}</td><td class="total-cell">100%</td></tr></tfoot>`;
+                footerHtml += `<td class="total-cell" style="text-align:center;">${opsTotal}</td><td class="total-cell" style="text-align:center;">100%</td></tr></tfoot>`;
                 if(matrixTable) matrixTable.innerHTML = headerHtml + bodyHtml + footerHtml;
             }
 
@@ -1420,7 +1386,7 @@ function updateDashboardData(selectedDateStr) {
             if (attHeadEl) {
                 let attHead = `
                     <tr class="header-row-1">
-                        <th rowspan="2" style="min-width: 150px; text-align: left; padding-left: 15px; position: sticky; left: 0; z-index: 15; background: var(--bg-card);">DATE / DEPT.</th>
+                        <th rowspan="2" style="min-width: 150px; text-align: left; padding-left: 15px; position: sticky; left: 0; z-index: 15; border-right: 1px solid var(--border-color);">DATE / DEPT.</th>
                         <th rowspan="2">TARGET</th>
                         <th rowspan="2">ACTUAL</th>
                         <th rowspan="2">ABSENT</th>
@@ -1441,7 +1407,7 @@ function updateDashboardData(selectedDateStr) {
 
             pastValidWfKeys.forEach(dateKey => {
                 const data = wfData[dateKey];
-                excelHtml += `<tr><td colspan="${5 + (dynamicTeams.length * 4)}" class="date-header" style="background:#f8fafc; font-weight:600; padding:12px 15px;">Date: ${getDisplayDate(dateKey)}</td></tr>`;
+                excelHtml += `<tr><td colspan="${5 + (dynamicTeams.length * 4)}" class="date-header" style="padding:12px 15px;">Date: ${getDisplayDate(dateKey)}</td></tr>`;
                 
                 tableRows.forEach(r => {
                     let act = 0, trgTot = 0;
@@ -1455,7 +1421,7 @@ function updateDashboardData(selectedDateStr) {
 
                     let rowHtml = `<tr>
                         <td class="dept-cell">${r.label}</td>
-                        <td>${trgTot>0?trgTot:'-'}</td><td>${act>0?act:'-'}</td><td>${calcAbs(act, trgTot)}</td><td>${calcRate(act, trgTot)}</td>`;
+                        <td style="text-align:center;">${trgTot>0?trgTot:'-'}</td><td style="text-align:center;">${act>0?act:'-'}</td><td style="text-align:center;">${calcAbs(act, trgTot)}</td><td style="text-align:center;">${calcRate(act, trgTot)}</td>`;
                     
                     dynamicTeams.forEach(t => {
                         let tTrg = 0, tAct = 0;
@@ -1466,7 +1432,7 @@ function updateDashboardData(selectedDateStr) {
                             tAct = data.roleByTeam?.[r.key]?.[t] || 0;
                             tTrg = data.targetByTeam?.[r.key]?.[t] || 0;
                         }
-                        rowHtml += `<td class="team-divider">${tTrg>0?tTrg:'-'}</td><td>${tAct>0?tAct:'-'}</td><td>${calcAbs(tAct, tTrg)}</td><td>${calcRate(tAct, tTrg)}</td>`;
+                        rowHtml += `<td class="team-divider" style="text-align:center;">${tTrg>0?tTrg:'-'}</td><td style="text-align:center;">${tAct>0?tAct:'-'}</td><td style="text-align:center;">${calcAbs(tAct, tTrg)}</td><td style="text-align:center;">${calcRate(tAct, tTrg)}</td>`;
                     });
                     
                     rowHtml += `</tr>`;
@@ -1480,12 +1446,12 @@ function updateDashboardData(selectedDateStr) {
             const hcSummaryTable = document.getElementById('hc-summary-table');
             if (hcSummaryTable && todayWf.hc_summary_list) {
                 let hcHtml = `<thead><tr>
-                    <th class="role-cell" style="position:sticky; top:0; z-index:10; background:var(--bg-card);">HC Type (Lv3)</th>
-                    <th class="role-cell" style="position:sticky; top:0; z-index:10; background:var(--bg-card);">Detail (Lv4)</th>
-                    <th class="text-center" style="position:sticky; top:0; z-index:10; background:var(--bg-card);">Target</th>
-                    <th class="text-center" style="position:sticky; top:0; z-index:10; background:var(--bg-card);">Actual</th>
-                    <th class="text-center" style="position:sticky; top:0; z-index:10; background:var(--bg-card);">Absent</th>
-                    <th class="text-center" style="position:sticky; top:0; z-index:10; background:var(--bg-card);">% Rate</th>
+                    <th class="role-cell" style="position:sticky; top:0; z-index:10;">HC Type (Lv3)</th>
+                    <th class="role-cell" style="position:sticky; top:0; z-index:10;">Detail (Lv4)</th>
+                    <th class="text-center" style="position:sticky; top:0; z-index:10;">Target</th>
+                    <th class="text-center" style="position:sticky; top:0; z-index:10;">Actual</th>
+                    <th class="text-center" style="position:sticky; top:0; z-index:10;">Absent</th>
+                    <th class="text-center" style="position:sticky; top:0; z-index:10;">% Rate</th>
                 </tr></thead><tbody>`;
                 
                 let groupedHC = {};
@@ -1526,11 +1492,11 @@ function updateDashboardData(selectedDateStr) {
             const resignedTable = document.getElementById('resigned-table');
             if (resignedTable) {
                 let resHtml = `<thead><tr>
-                    <th style="position:sticky; top:0; z-index:10; background:var(--bg-card); text-align:left; padding-left:15px; font-size:10px;">ชื่อ-นามสกุล</th>
-                    <th style="position:sticky; top:0; z-index:10; background:var(--bg-card); text-align:left; font-size:10px;">ตำแหน่ง (Lv3)</th>
-                    <th style="position:sticky; top:0; z-index:10; background:var(--bg-card); text-align:left; font-size:10px;">รายละเอียด (Lv4)</th>
-                    <th style="position:sticky; top:0; z-index:10; background:var(--bg-card); text-align:center; font-size:10px;">สังกัด</th>
-                    <th style="position:sticky; top:0; z-index:10; background:var(--bg-card); text-align:center; font-size:10px;">วันที่สิ้นสุด</th>
+                    <th style="position:sticky; top:0; z-index:10; text-align:left; padding-left:15px; font-size:10px;">ชื่อ-นามสกุล</th>
+                    <th style="position:sticky; top:0; z-index:10; text-align:left; font-size:10px;">ตำแหน่ง (Lv3)</th>
+                    <th style="position:sticky; top:0; z-index:10; text-align:left; font-size:10px;">รายละเอียด (Lv4)</th>
+                    <th style="position:sticky; top:0; z-index:10; text-align:center; font-size:10px;">สังกัด</th>
+                    <th style="position:sticky; top:0; z-index:10; text-align:center; font-size:10px;">วันที่สิ้นสุด</th>
                 </tr></thead><tbody>`;
                 
                 let resignedList = todayWf.resigned || [];
@@ -1630,8 +1596,8 @@ function renderOnTimeSection() {
             else { d0.push(null); d1.push(avgH!==null?parseFloat(avgH.toFixed(2)):null); }
         });
         ontimeChartInstance.data.labels = labels; ontimeChartInstance.data.datasets[0].data = d0; ontimeChartInstance.data.datasets[1].data = d1;
-        ontimeChartInstance.data.datasets[0].label = otType + ' %'; ontimeChartInstance.data.datasets[0].borderColor = otType === 'HUB' ? '#3B82F6' : accentGreen;
-        ontimeChartInstance.data.datasets[0].backgroundColor = otType === 'HUB' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)';
+        ontimeChartInstance.data.datasets[0].label = otType + ' %'; ontimeChartInstance.data.datasets[0].borderColor = otType === 'HUB' ? '#4318FF' : accentGreen;
+        ontimeChartInstance.data.datasets[0].backgroundColor = otType === 'HUB' ? 'rgba(67, 24, 255, 0.1)' : 'rgba(5, 205, 153, 0.1)';
         ontimeChartInstance.update();
     }
     
@@ -1655,8 +1621,8 @@ function renderOnTimeSection() {
         const getV = (o, isH) => isH ? (o.cntHub>0?o.sumHub/o.cntHub:null) : (o.cntPt>0?o.sumPt/o.cntPt:null);
         let vPt = getV(curr, false), vHub = getV(curr, true);
         
-        let t1 = `<b>PTGLG:</b> <span style="color:${vPt>=99?'#10B981':(vPt>=95?'#F59E0B':'#EF4444')}; font-weight:700;">${vPt!==null?vPt.toFixed(2)+'%':'-'}</span>`;
-        let t2 = `<b>HUB:</b> <span style="color:${vHub>=99?'#10B981':(vHub>=95?'#F59E0B':'#EF4444')}; font-weight:700;">${vHub!==null?vHub.toFixed(2)+'%':'-'}</span>`;
+        let t1 = `<b>PTGLG:</b> <span style="color:${vPt>=99?'var(--accent-primary)':(vPt>=95?'var(--accent-secondary)':'var(--danger)')}; font-weight:700;">${vPt!==null?vPt.toFixed(2)+'%':'-'}</span>`;
+        let t2 = `<b>HUB:</b> <span style="color:${vHub>=99?'var(--accent-primary)':(vHub>=95?'var(--accent-secondary)':'var(--danger)')}; font-weight:700;">${vHub!==null?vHub.toFixed(2)+'%':'-'}</span>`;
         let timeWord = otPeriod === 'Daily' ? 'ช่วงที่ผ่านมา' : (otPeriod === 'Monthly' ? 'เดือนที่แล้ว' : 'ปีที่แล้ว');
         
         if(otType === 'Overview') {
@@ -1670,16 +1636,16 @@ function renderOnTimeSection() {
 
     const otTable = document.getElementById('ontime-detail-table');
     if (otTable) {
-        let thead = `<thead><tr><th class="role-cell" style="text-align:center; position:sticky; top:0; left:0; z-index:20; background:var(--bg-card); white-space:nowrap; padding: 12px 6px;">Date</th><th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); padding: 12px 6px;">ภาพรวม</th><th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); padding: 12px 6px;">PTGLG</th><th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); padding: 12px 6px;">HUB</th></tr></thead>`;
+        let thead = `<thead><tr><th class="role-cell" style="text-align:center; position:sticky; top:0; left:0; z-index:20; white-space:nowrap; padding: 12px 6px;">Date</th><th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; padding: 12px 6px;">ภาพรวม</th><th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; padding: 12px 6px;">PTGLG</th><th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; padding: 12px 6px;">HUB</th></tr></thead>`;
         let tbody = "<tbody>" + validOtArray.slice().reverse().map(i => {
             let over = (i.ptglg !== null && i.hub !== null) ? (i.ptglg+i.hub)/2 : (i.ptglg !== null ? i.ptglg : (i.hub !== null ? i.hub : null));
             const p = (v) => {
                 if (v === null || v === undefined) return '<span style="color:var(--text-muted); font-size:11px;">-</span>';
-                let bg = v >= 99 ? '#dcfce7' : (v >= 95 ? '#fef3c7' : '#fee2e2');
-                let clr = v >= 99 ? '#166534' : (v >= 95 ? '#92400e' : '#991b1b');
-                return `<span style="display:inline-block; background:${bg}; color:${clr}; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600;">${v.toFixed(2)}%</span>`;
+                let bg = v >= 99 ? 'rgba(5, 205, 153, 0.1)' : (v >= 95 ? 'rgba(255, 206, 32, 0.1)' : 'rgba(238, 93, 80, 0.1)');
+                let clr = v >= 99 ? 'var(--accent-primary)' : (v >= 95 ? 'var(--accent-secondary)' : 'var(--danger)');
+                return `<span class="badge" style="background:${bg}; color:${clr};">${v.toFixed(2)}%</span>`;
             };
-            return `<tr><td class="role-cell" style="text-align:center; position:sticky; left:0; z-index:10; background:var(--bg-card); white-space:nowrap; font-size: 11px;">${getDisplayDate(i.dateObj)}</td><td class="total-cell" style="text-align:center;">${p(over)}</td><td class="total-cell" style="text-align:center;">${p(i.ptglg)}</td><td class="total-cell" style="text-align:center;">${p(i.hub)}</td></tr>`;
+            return `<tr><td class="role-cell" style="text-align:center; position:sticky; left:0; z-index:10; white-space:nowrap; font-size: 11px;">${getDisplayDate(i.dateObj)}</td><td class="total-cell" style="text-align:center;">${p(over)}</td><td class="total-cell" style="text-align:center;">${p(i.ptglg)}</td><td class="total-cell" style="text-align:center;">${p(i.hub)}</td></tr>`;
         }).join('') + "</tbody>";
         otTable.innerHTML = thead + tbody;
     }
@@ -1791,16 +1757,16 @@ function renderClaimSection() {
                 
                 if (diffCost > 0) {
                     html += `<br><span style="margin-top:6px; display:inline-block;">📈 เทียบกับ${periodText}: <span style="color:var(--danger); font-weight:700;">แย่ลง (ยอดเคลมพุ่งขึ้น +${fmtN(diffCost)} ฿)</span> <span style="color:var(--text-muted); font-size:0.85em; margin-left:8px;">จำนวนชิ้น ${diffQty > 0 ? '+' : ''}${fmtN(diffQty)} ชิ้น</span></span>`;
-                    summaryBox.style.borderLeftColor = '#EF4444';
-                    summaryBox.style.background = 'rgba(239, 68, 68, 0.05)';
+                    summaryBox.style.borderLeftColor = 'var(--danger)';
+                    summaryBox.style.background = 'rgba(238, 93, 80, 0.05)';
                 } else if (diffCost < 0) {
-                    html += `<br><span style="margin-top:6px; display:inline-block;">📉 เทียบกับ${periodText}: <span style="color:#10B981; font-weight:700;">ดีขึ้น (ยอดเคลมลดลง ${fmtN(Math.abs(diffCost))} ฿)</span> <span style="color:var(--text-muted); font-size:0.85em; margin-left:8px;">จำนวนชิ้น ${diffQty > 0 ? '+' : ''}${fmtN(diffQty)} ชิ้น</span></span>`;
-                    summaryBox.style.borderLeftColor = '#10B981';
-                    summaryBox.style.background = 'rgba(16, 185, 129, 0.05)';
+                    html += `<br><span style="margin-top:6px; display:inline-block;">📉 เทียบกับ${periodText}: <span style="color:var(--accent-primary); font-weight:700;">ดีขึ้น (ยอดเคลมลดลง ${fmtN(Math.abs(diffCost))} ฿)</span> <span style="color:var(--text-muted); font-size:0.85em; margin-left:8px;">จำนวนชิ้น ${diffQty > 0 ? '+' : ''}${fmtN(diffQty)} ชิ้น</span></span>`;
+                    summaryBox.style.borderLeftColor = 'var(--accent-primary)';
+                    summaryBox.style.background = 'rgba(5, 205, 153, 0.05)';
                 } else {
                     html += `<br><span style="margin-top:6px; display:inline-block;">➖ เทียบกับ${periodText}: <span style="color:var(--text-muted); font-weight:700;">เท่าเดิม (ไม่เปลี่ยนแปลง)</span></span>`;
-                    summaryBox.style.borderLeftColor = '#F59E0B';
-                    summaryBox.style.background = 'rgba(245, 158, 11, 0.05)';
+                    summaryBox.style.borderLeftColor = 'var(--accent-secondary)';
+                    summaryBox.style.background = 'rgba(255, 206, 32, 0.05)';
                 }
             } else {
                 html += `<br><span style="margin-top:6px; display:inline-block; color:var(--text-muted); font-size:0.85em;">ไม่มีข้อมูลก่อนหน้าเพื่อนำมาเปรียบเทียบ</span>`;
@@ -1850,14 +1816,14 @@ function renderClaimSection() {
             tableEl.parentElement.style.width = '100%';
 
             let thead = `<thead><tr>
-                <th class="role-cell" style="text-align:center; position:sticky; top:0; left:0; z-index:20; background:var(--bg-card); min-width: 60px; white-space:nowrap; border-right: 1px solid var(--border-color); padding: 8px 4px; font-size: 10px;">Date / Month</th>`;
+                <th class="role-cell" style="text-align:center; position:sticky; top:0; left:0; z-index:20; min-width: 60px; white-space:nowrap; padding: 14px 10px; font-size: 10px;">Date / Month</th>`;
             
             sortedBUs.forEach(bu => {
-                thead += `<th class="aff-header" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); min-width: 45px; white-space:nowrap; padding: 8px 4px; font-size: 10px;">${bu}</th>`;
+                thead += `<th class="aff-header" style="text-align:center; position:sticky; top:0; z-index:10; min-width: 45px; white-space:nowrap; padding: 14px 10px; font-size: 10px;">${bu}</th>`;
             });
             
-            thead += `<th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); min-width: 65px; white-space:nowrap; padding: 8px 4px; font-size: 10px;">มูลค่ารวม (฿)</th>
-                      <th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); min-width: 65px; white-space:nowrap; padding: 8px 4px; font-size: 10px;">เทียบเดือนก่อน</th>
+            thead += `<th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; min-width: 65px; white-space:nowrap; padding: 14px 10px; font-size: 10px;">มูลค่ารวม (฿)</th>
+                      <th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; min-width: 65px; white-space:nowrap; padding: 14px 10px; font-size: 10px;">เทียบเดือนก่อน</th>
             </tr></thead>`;
             
             let tbody = "<tbody>";
@@ -1867,14 +1833,14 @@ function renderClaimSection() {
             } else {
                 let tableItems = sortedG.slice().reverse();
                 tableItems.forEach((item, index) => {
-                    let tr = `<tr><td class="role-cell" style="text-align:center; position:sticky; left:0; z-index:10; background:var(--bg-card); border-right: 1px solid var(--border-color); white-space:nowrap; font-weight:600; font-size:10px; padding: 8px 4px;">${item.label}</td>`;
+                    let tr = `<tr><td class="role-cell" style="text-align:center; position:sticky; left:0; z-index:10; white-space:nowrap; font-weight:600; font-size:10px; padding: 14px 10px;">${item.label}</td>`;
                     
                     sortedBUs.forEach(bu => {
                         let buCost = item.bu[bu].cost;
                         if (buCost === 0) {
-                            tr += `<td style="text-align:center; color:var(--text-muted); white-space:nowrap; font-size:10px; padding: 8px 4px;">-</td>`;
+                            tr += `<td style="text-align:center; color:var(--text-muted); white-space:nowrap; font-size:10px; padding: 14px 10px;">-</td>`;
                         } else {
-                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; padding: 8px 4px; font-weight:700; color:var(--danger);">${fmtN(buCost)}</td>`;
+                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; padding: 14px 10px; font-weight:700; color:var(--danger);">${fmtN(buCost)}</td>`;
                         }
                     });
 
@@ -1885,7 +1851,7 @@ function renderClaimSection() {
                         if (diff > 0) {
                             diffHtml = `<span style="color:var(--danger); font-size:10px; font-weight:800;">↗ +${fmtN(diff)}</span>`;
                         } else if (diff < 0) {
-                            diffHtml = `<span style="color:#10B981; font-size:10px; font-weight:800;">↘ ${fmtN(diff)}</span>`;
+                            diffHtml = `<span style="color:var(--accent-primary); font-size:10px; font-weight:800;">↘ ${fmtN(diff)}</span>`;
                         } else {
                             diffHtml = `<span style="color:var(--text-muted); font-size:10px; font-weight:600;">➖ 0</span>`;
                         }
@@ -1893,8 +1859,8 @@ function renderClaimSection() {
                         diffHtml = `<span style="color:var(--text-muted); font-size:10px;">-</span>`;
                     }
 
-                    tr += `<td class="total-cell" style="text-align:center; white-space:nowrap; font-size:11px; padding: 8px 4px; color:var(--danger); font-weight:700;">${fmtN(item.cost)}</td>
-                           <td class="total-cell" style="text-align:center; white-space:nowrap; padding: 8px 4px; background-color:#F8FAFC;">${diffHtml}</td>
+                    tr += `<td class="total-cell" style="text-align:center; white-space:nowrap; font-size:11px; padding: 14px 10px; color:var(--danger); font-weight:700;">${fmtN(item.cost)}</td>
+                           <td class="total-cell" style="text-align:center; white-space:nowrap; padding: 14px 10px; background-color:rgba(17, 24, 39, 0.02);">${diffHtml}</td>
                     </tr>`;
                     
                     tbody += tr;
@@ -1996,12 +1962,12 @@ function renderLocationAccuracy() {
         filteredArr.sort((a, b) => b.wrong - a.wrong);
 
         let thead = `<thead><tr>
-            <th style="position:sticky; top:0; z-index:10; background:var(--bg-card); padding:10px; font-size:11px;">BU</th>
-            <th style="position:sticky; top:0; z-index:10; background:var(--bg-card); padding:10px; font-size:11px;">Location Type</th>
-            <th style="position:sticky; top:0; z-index:10; background:var(--bg-card); padding:10px; font-size:11px;">Zone</th>
-            <th style="position:sticky; top:0; z-index:10; background:var(--bg-card); padding:10px; font-size:11px; text-align:center;">Locations Checked</th>
-            <th style="position:sticky; top:0; z-index:10; background:var(--bg-card); padding:10px; font-size:11px; text-align:center;">Wrong Location</th>
-            <th style="position:sticky; top:0; z-index:10; background:var(--bg-card); padding:10px; font-size:11px; text-align:center;">Accuracy %</th>
+            <th style="position:sticky; top:0; z-index:10; padding:14px 10px; font-size:11px;">BU</th>
+            <th style="position:sticky; top:0; z-index:10; padding:14px 10px; font-size:11px;">Location Type</th>
+            <th style="position:sticky; top:0; z-index:10; padding:14px 10px; font-size:11px;">Zone</th>
+            <th style="position:sticky; top:0; z-index:10; padding:14px 10px; font-size:11px; text-align:center;">Locations Checked</th>
+            <th style="position:sticky; top:0; z-index:10; padding:14px 10px; font-size:11px; text-align:center;">Wrong Location</th>
+            <th style="position:sticky; top:0; z-index:10; padding:14px 10px; font-size:11px; text-align:center;">Accuracy %</th>
         </tr></thead>`;
 
         let tbody = "<tbody>";
@@ -2013,17 +1979,17 @@ function renderLocationAccuracy() {
             filteredArr.forEach((item, idx) => {
                 if (idx === 0 && item.wrong > 0) worstZone = item;
                 
-                let accClr = item.acc >= 99 ? '#166534' : '#991b1b';
-                let accBg = item.acc >= 99 ? '#dcfce7' : '#fee2e2';
+                let accClr = item.acc >= 99 ? 'var(--accent-primary)' : 'var(--danger)';
+                let accBg = item.acc >= 99 ? 'rgba(5, 205, 153, 0.1)' : 'rgba(238, 93, 80, 0.1)';
                 
                 tbody += `<tr>
-                    <td style="padding:10px; font-size:11px; font-weight:600;">${item.bu}</td>
-                    <td style="padding:10px; font-size:11px; color:var(--text-muted);">${item.type}</td>
-                    <td style="padding:10px; font-size:11px; font-weight:700;">${item.zone}</td>
-                    <td style="padding:10px; font-size:11px; text-align:center;">${fmtN(item.checked)}</td>
-                    <td style="padding:10px; font-size:11px; text-align:center; color:${item.wrong>0?dangerRed:'inherit'}; font-weight:${item.wrong>0?'700':'400'};">${fmtN(item.wrong)}</td>
-                    <td style="padding:10px; font-size:11px; text-align:center;">
-                        <span style="display:inline-block; background:${accBg}; color:${accClr}; padding:2px 8px; border-radius:12px; font-weight:700;">${item.acc.toFixed(2)}%</span>
+                    <td style="padding:14px 10px; font-size:11px; font-weight:600;">${item.bu}</td>
+                    <td style="padding:14px 10px; font-size:11px; color:var(--text-muted);">${item.type}</td>
+                    <td style="padding:14px 10px; font-size:11px; font-weight:700;">${item.zone}</td>
+                    <td style="padding:14px 10px; font-size:11px; text-align:center;">${fmtN(item.checked)}</td>
+                    <td style="padding:14px 10px; font-size:11px; text-align:center; color:${item.wrong>0?'var(--danger)':'inherit'}; font-weight:${item.wrong>0?'700':'400'};">${fmtN(item.wrong)}</td>
+                    <td style="padding:14px 10px; font-size:11px; text-align:center;">
+                        <span class="badge" style="background:${accBg}; color:${accClr};">${item.acc.toFixed(2)}%</span>
                     </td>
                 </tr>`;
             });
@@ -2035,7 +2001,7 @@ function renderLocationAccuracy() {
         let filteredWrong = filteredArr.reduce((s, i) => s + i.wrong, 0);
         let filteredAcc = filteredChecked > 0 ? ((filteredChecked - filteredWrong) / filteredChecked) * 100 : 0;
         
-        let analysisHtml = `<b>📊 วิเคราะห์ความแม่นยำ Location (เดือน ${mLabel}):</b> ภาพรวมความแม่นยำอยู่ที่ <b style="color:${filteredAcc>=99?'#10B981':'#EF4444'};">${filteredAcc.toFixed(2)}%</b> (ตรวจ ${fmtN(filteredChecked)} จุด พบผิด ${fmtN(filteredWrong)} จุด)`;
+        let analysisHtml = `<b>📊 วิเคราะห์ความแม่นยำ Location (เดือน ${mLabel}):</b> ภาพรวมความแม่นยำอยู่ที่ <b style="color:${filteredAcc>=99?'var(--accent-primary)':'var(--danger)'};">${filteredAcc.toFixed(2)}%</b> (ตรวจ ${fmtN(filteredChecked)} จุด พบผิด ${fmtN(filteredWrong)} จุด)`;
         
         if (worstZone) {
             analysisHtml += `<br>🚨 <b>จุดเฝ้าระวัง (Hotspot):</b> BU: <b>${worstZone.bu}</b> โซน <b>${worstZone.zone}</b> (ประเภท ${worstZone.type}) พบสินค้าวางผิด Location สูงสุด <b>${fmtN(worstZone.wrong)} จุด</b> แนะนำให้ตรวจสอบด่วน`;
@@ -2134,13 +2100,13 @@ function renderInventorySection() {
             tableEl.parentElement.style.width = '100%';
 
             let thead = `<thead><tr>
-                <th class="role-cell" style="text-align:center; position:sticky; top:0; left:0; z-index:20; background:var(--bg-card); min-width: 60px; white-space:nowrap; border-right: 1px solid var(--border-color); padding: 8px 4px; font-size: 10px;">Month</th>`;
+                <th class="role-cell" style="text-align:center; position:sticky; top:0; left:0; z-index:20; min-width: 60px; white-space:nowrap; padding: 14px 10px; font-size: 10px;">Month</th>`;
             
             sortedBUs.forEach(bu => {
-                thead += `<th class="aff-header" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); min-width: 45px; white-space:nowrap; padding: 8px 4px; font-size: 10px;">${bu}</th>`;
+                thead += `<th class="aff-header" style="text-align:center; position:sticky; top:0; z-index:10; min-width: 45px; white-space:nowrap; padding: 14px 10px; font-size: 10px;">${bu}</th>`;
             });
             
-            thead += `<th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); min-width: 60px; white-space:nowrap; padding: 8px 4px; font-size: 10px;">% Overall</th></tr></thead>`;
+            thead += `<th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; min-width: 60px; white-space:nowrap; padding: 14px 10px; font-size: 10px;">% Overall</th></tr></thead>`;
             
             let tbody = "<tbody>";
 
@@ -2151,27 +2117,27 @@ function renderInventorySection() {
                 tableItems.forEach(item => {
                     let pctOverall = item.overallPct;
                     let pctPill = pctOverall !== null 
-                        ? `<span style="display:inline-block; background:${pctOverall>=99?'#dcfce7':'#fee2e2'}; color:${pctOverall>=99?'#166534':'#991b1b'}; padding:2px 6px; border-radius:10px; font-size:10px; font-weight:600;">${pctOverall.toFixed(2)}%</span>`
+                        ? `<span class="badge" style="background:${pctOverall>=99?'rgba(5, 205, 153, 0.1)':'rgba(238, 93, 80, 0.1)'}; color:${pctOverall>=99?'var(--accent-primary)':'var(--danger)'};">${pctOverall.toFixed(2)}%</span>`
                         : `<span style="color:var(--text-muted); font-size:10px;">-</span>`;
 
-                    let tr = `<tr><td class="role-cell" style="text-align:center; position:sticky; left:0; z-index:10; background:var(--bg-card); border-right: 1px solid var(--border-color); white-space:nowrap; font-weight:600; font-size:10px; padding: 8px 4px;">${item.label}</td>`;
+                    let tr = `<tr><td class="role-cell" style="text-align:center; position:sticky; left:0; z-index:10; white-space:nowrap; font-weight:600; font-size:10px; padding: 14px 10px;">${item.label}</td>`;
                     
                     sortedBUs.forEach(bu => {
                         let buD = item.bu_data[bu];
                         if (!buD || buD.count === 0) {
-                            tr += `<td style="text-align:center; color:var(--text-muted); white-space:nowrap; font-size:10px; padding: 8px 4px;">-</td>`;
+                            tr += `<td style="text-align:center; color:var(--text-muted); white-space:nowrap; font-size:10px; padding: 14px 10px;">-</td>`;
                         } else {
                             let buPct = buD.onhand > 0 ? Math.max(0, (1 - (buD.diff / buD.onhand)) * 100) : (buD.diff === 0 ? 100 : 0);
-                            let buClr = buPct >= 99 ? '#166534' : '#991b1b';
-                            let buBg = buPct >= 99 ? 'transparent' : 'rgba(239, 68, 68, 0.05)'; 
+                            let buClr = buPct >= 99 ? 'var(--accent-primary)' : 'var(--danger)';
+                            let buBg = buPct >= 99 ? 'transparent' : 'rgba(238, 93, 80, 0.05)'; 
                             
-                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; background-color:${buBg}; padding: 8px 4px;">
+                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; background-color:${buBg}; padding: 14px 10px;">
                                 <span style="display:inline-block; color:${buClr}; font-weight:700; font-size:11px;">${buPct.toFixed(2)}%</span>
                             </td>`;
                         }
                     });
 
-                    tr += `<td class="total-cell" style="text-align:center; white-space:nowrap; padding: 8px 4px;">${pctPill}</td></tr>`;
+                    tr += `<td class="total-cell" style="text-align:center; white-space:nowrap; padding: 14px 10px;">${pctPill}</td></tr>`;
                     tbody += tr;
                 });
             }
@@ -2256,13 +2222,13 @@ function renderInventorySection() {
             let sortedDailyBUs = Array.from(dailyBUs).sort();
 
             let thead = `<thead><tr>
-                <th class="role-cell" style="text-align:center; position:sticky; top:0; left:0; z-index:20; background:var(--bg-card); min-width: 60px; white-space:nowrap; border-right: 1px solid var(--border-color); padding: 8px 4px; font-size: 10px;">Date</th>`;
+                <th class="role-cell" style="text-align:center; position:sticky; top:0; left:0; z-index:20; min-width: 60px; white-space:nowrap; padding: 14px 10px; font-size: 10px;">Date</th>`;
             
             sortedDailyBUs.forEach(bu => {
-                thead += `<th class="aff-header" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); min-width: 45px; white-space:nowrap; padding: 8px 4px; font-size: 10px;">${bu}</th>`;
+                thead += `<th class="aff-header" style="text-align:center; position:sticky; top:0; z-index:10; min-width: 45px; white-space:nowrap; padding: 14px 10px; font-size: 10px;">${bu}</th>`;
             });
             
-            thead += `<th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); min-width: 60px; white-space:nowrap; padding: 8px 4px; font-size: 10px;">% Overall</th></tr></thead>`;
+            thead += `<th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; min-width: 60px; white-space:nowrap; padding: 14px 10px; font-size: 10px;">% Overall</th></tr></thead>`;
             
             let tbody = "<tbody>";
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -2273,28 +2239,28 @@ function renderInventorySection() {
                 validDailyData.forEach(item => {
                     let pctOverall = item.overallPct;
                     let pctPill = pctOverall !== null 
-                        ? `<span style="display:inline-block; background:${pctOverall>=99?'#dcfce7':'#fee2e2'}; color:${pctOverall>=99?'#166534':'#991b1b'}; padding:2px 6px; border-radius:10px; font-size:10px; font-weight:600;">${pctOverall.toFixed(2)}%</span>`
+                        ? `<span class="badge" style="background:${pctOverall>=99?'rgba(5, 205, 153, 0.1)':'rgba(238, 93, 80, 0.1)'}; color:${pctOverall>=99?'var(--accent-primary)':'var(--danger)'};">${pctOverall.toFixed(2)}%</span>`
                         : `<span style="color:var(--text-muted); font-size:10px;">-</span>`;
 
                     let dStr = String(item.dateObj.getDate()).padStart(2, '0') + " " + monthNames[item.dateObj.getMonth()];
-                    let tr = `<tr><td class="role-cell" style="text-align:center; position:sticky; left:0; z-index:10; background:var(--bg-card); border-right: 1px solid var(--border-color); white-space:nowrap; font-weight:600; font-size:10px; padding: 8px 4px;">${dStr}</td>`;
+                    let tr = `<tr><td class="role-cell" style="text-align:center; position:sticky; left:0; z-index:10; white-space:nowrap; font-weight:600; font-size:10px; padding: 14px 10px;">${dStr}</td>`;
                     
                     sortedDailyBUs.forEach(bu => {
                         let buD = item.bu_data[bu];
                         if (!buD || buD.count === 0) {
-                            tr += `<td style="text-align:center; color:var(--text-muted); white-space:nowrap; font-size:10px; padding: 8px 4px;">-</td>`;
+                            tr += `<td style="text-align:center; color:var(--text-muted); white-space:nowrap; font-size:10px; padding: 14px 10px;">-</td>`;
                         } else {
                             let buPct = buD.onhand > 0 ? Math.max(0, (1 - (buD.diff / buD.onhand)) * 100) : (buD.diff === 0 ? 100 : 0);
-                            let buClr = buPct >= 99 ? '#166534' : '#991b1b';
-                            let buBg = buPct >= 99 ? 'transparent' : 'rgba(239, 68, 68, 0.05)'; 
+                            let buClr = buPct >= 99 ? 'var(--accent-primary)' : 'var(--danger)';
+                            let buBg = buPct >= 99 ? 'transparent' : 'rgba(238, 93, 80, 0.05)'; 
                             
-                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; background-color:${buBg}; padding: 8px 4px;" title="💡 OnHand: ${fmtN(buD.onhand)} | Diff: ${fmtN(buD.diff)}">
+                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; background-color:${buBg}; padding: 14px 10px;" title="💡 OnHand: ${fmtN(buD.onhand)} | Diff: ${fmtN(buD.diff)}">
                                 <span style="display:inline-block; color:${buClr}; font-weight:700; font-size:11px; cursor:help; border-bottom: 1px dashed ${buClr};">${buPct.toFixed(2)}%</span>
                             </td>`;
                         }
                     });
 
-                    tr += `<td class="total-cell" style="text-align:center; white-space:nowrap; padding: 8px 4px;" title="💡 Total OnHand: ${fmtN(item.onhand)} | Total Diff: ${fmtN(item.diff)}">${pctPill}</td></tr>`;
+                    tr += `<td class="total-cell" style="text-align:center; white-space:nowrap; padding: 14px 10px;" title="💡 Total OnHand: ${fmtN(item.onhand)} | Total Diff: ${fmtN(item.diff)}">${pctPill}</td></tr>`;
                     tbody += tr;
                 });
             }
@@ -2371,17 +2337,17 @@ function renderTransportSection() {
                 carrierTableEl.innerHTML = `<tr><td class="text-center" style="padding:20px; color:var(--text-muted); font-size: 10px;">ไม่มีข้อมูลสถานะขนส่ง</td></tr>`;
             } else {
                 let thead = `<thead><tr>
-                    <th class="role-cell" style="text-align:left; position:sticky; top:0; left:0; z-index:20; background:var(--bg-card); min-width: 100px; white-space:nowrap; border-right: 1px solid var(--border-color); padding: 10px; font-size: 11px;">Carrier (บริษัทขนส่ง)</th>`;
+                    <th class="role-cell" style="text-align:left; position:sticky; top:0; left:0; z-index:20; min-width: 100px; white-space:nowrap; padding: 14px 10px; font-size: 11px;">Carrier (บริษัทขนส่ง)</th>`;
                 
                 sortedStatuses.forEach(s => {
                     let sColor = "var(--text-main)";
-                    if(s.includes("สำเร็จ") || s.includes("แล้ว")) sColor = "#166534";
-                    else if(s.includes("ไม่") || s.includes("ยกเลิก") || s.includes("fail")) sColor = "#991b1b";
-                    else if(s.includes("ตรวจสอบ")) sColor = "#92400e";
+                    if(s.includes("สำเร็จ") || s.includes("แล้ว")) sColor = "var(--accent-primary)";
+                    else if(s.includes("ไม่") || s.includes("ยกเลิก") || s.includes("fail")) sColor = "var(--danger)";
+                    else if(s.includes("ตรวจสอบ")) sColor = "var(--accent-secondary)";
 
-                    thead += `<th class="aff-header" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); min-width: 80px; white-space:nowrap; padding: 10px; font-size: 11px; color: ${sColor};">${s}</th>`;
+                    thead += `<th class="aff-header" style="text-align:center; position:sticky; top:0; z-index:10; min-width: 80px; white-space:nowrap; padding: 14px 10px; font-size: 11px; color: ${sColor};">${s}</th>`;
                 });
-                thead += `<th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); min-width: 60px; white-space:nowrap; padding: 10px; font-size: 11px;">Total</th></tr></thead>`;
+                thead += `<th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; min-width: 60px; white-space:nowrap; padding: 14px 10px; font-size: 11px;">Total</th></tr></thead>`;
 
                 let tbody = "<tbody>";
                 let grandTotals = { total: 0 };
@@ -2389,7 +2355,7 @@ function renderTransportSection() {
 
                 carriers.forEach(c => {
                     let rowTotal = 0;
-                    let tr = `<tr><td class="role-cell" style="text-align:left; position:sticky; left:0; z-index:10; background:var(--bg-card); border-right: 1px solid var(--border-color); white-space:nowrap; font-weight:700; font-size:11px; padding: 10px;">${c}</td>`;
+                    let tr = `<tr><td class="role-cell" style="text-align:left; position:sticky; left:0; z-index:10; white-space:nowrap; font-weight:700; font-size:11px; padding: 14px 10px;">${c}</td>`;
                     
                     sortedStatuses.forEach(s => {
                         let count = cData[c][s] || 0;
@@ -2399,17 +2365,17 @@ function renderTransportSection() {
 
                         let txtColor = count > 0 ? (s.includes("ไม่") || s.includes("ยกเลิก") ? "var(--danger)" : "var(--text-main)") : "var(--text-muted)";
                         let fw = count > 0 ? "700" : "400";
-                        tr += `<td style="text-align:center; white-space:nowrap; font-size:11px; padding: 10px; color:${txtColor}; font-weight:${fw};">${count > 0 ? fmtN(count) : '-'}</td>`;
+                        tr += `<td style="text-align:center; white-space:nowrap; font-size:11px; padding: 14px 10px; color:${txtColor}; font-weight:${fw};">${count > 0 ? fmtN(count) : '-'}</td>`;
                     });
-                    tr += `<td class="total-cell" style="text-align:center; white-space:nowrap; font-size:11px; padding: 10px; font-weight:800; color:var(--accent-primary);">${fmtN(rowTotal)}</td></tr>`;
+                    tr += `<td class="total-cell" style="text-align:center; white-space:nowrap; font-size:11px; padding: 14px 10px; font-weight:800; color:var(--text-main);">${fmtN(rowTotal)}</td></tr>`;
                     tbody += tr;
                 });
 
-                let tfoot = `<tfoot><tr><td class="role-cell" style="text-align:left; position:sticky; bottom:0; left:0; z-index:20; background:var(--bg-card); border-right: 1px solid var(--border-color); white-space:nowrap; font-weight:800; font-size:11px; padding: 10px; border-top: 1px solid var(--border-color);">GRAND TOTAL</td>`;
+                let tfoot = `<tfoot><tr><td class="role-cell" style="text-align:left; position:sticky; bottom:0; left:0; z-index:20; white-space:nowrap; font-weight:800; font-size:11px; padding: 14px 10px; border-top: 1px solid var(--border-color);">GRAND TOTAL</td>`;
                 sortedStatuses.forEach(s => {
-                    tfoot += `<td style="text-align:center; white-space:nowrap; font-size:11px; padding: 10px; font-weight:800; border-top: 1px solid var(--border-color); position:sticky; bottom:0; z-index:10; background:var(--bg-card);">${grandTotals[s] > 0 ? fmtN(grandTotals[s]) : '-'}</td>`;
+                    tfoot += `<td style="text-align:center; white-space:nowrap; font-size:11px; padding: 14px 10px; font-weight:800; position:sticky; bottom:0; z-index:10;">${grandTotals[s] > 0 ? fmtN(grandTotals[s]) : '-'}</td>`;
                 });
-                tfoot += `<td class="total-cell" style="text-align:center; white-space:nowrap; font-size:12px; padding: 10px; font-weight:800; color:var(--accent-primary); border-top: 1px solid var(--border-color); position:sticky; bottom:0; z-index:10; background:var(--bg-card);">${fmtN(grandTotals.total)}</td></tr></tfoot>`;
+                tfoot += `<td class="total-cell" style="text-align:center; white-space:nowrap; font-size:12px; padding: 14px 10px; font-weight:800; color:var(--text-main); position:sticky; bottom:0; z-index:10;">${fmtN(grandTotals.total)}</td></tr></tfoot>`;
 
                 carrierTableEl.innerHTML = thead + tbody + "</tbody>" + tfoot;
             }
@@ -2421,13 +2387,13 @@ function renderTransportSection() {
         if (tableEl) {
             let limitData = validData.slice(0, 14);
             let thead = `<thead><tr>
-                <th class="role-cell" style="text-align:center; position:sticky; top:0; left:0; z-index:20; background:var(--bg-card); min-width: 60px; white-space:nowrap; border-right: 1px solid var(--border-color); padding: 8px 4px; font-size: 10px;">Date</th>`;
+                <th class="role-cell" style="text-align:center; position:sticky; top:0; left:0; z-index:20; min-width: 60px; white-space:nowrap; padding: 14px 10px; font-size: 10px;">Date</th>`;
             
             sortedBUs.forEach(bu => {
-                thead += `<th class="aff-header" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); min-width: 55px; white-space:nowrap; padding: 8px 4px; font-size: 10px;">${bu}</th>`;
+                thead += `<th class="aff-header" style="text-align:center; position:sticky; top:0; z-index:10; min-width: 55px; white-space:nowrap; padding: 14px 10px; font-size: 10px;">${bu}</th>`;
             });
             
-            thead += `<th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; background:var(--bg-card); min-width: 60px; white-space:nowrap; padding: 8px 4px; font-size: 10px;">% Success</th></tr></thead>`;
+            thead += `<th class="total-cell" style="text-align:center; position:sticky; top:0; z-index:10; min-width: 60px; white-space:nowrap; padding: 14px 10px; font-size: 10px;">% Success</th></tr></thead>`;
             
             let tbody = "<tbody>";
             
@@ -2436,29 +2402,29 @@ function renderTransportSection() {
             } else {
                 limitData.forEach(item => {
                     let pctPill = item.pct !== null 
-                        ? `<span style="display:inline-block; background:${item.pct>=99?'#dcfce7':(item.pct>=90?'#fef3c7':'#fee2e2')}; color:${item.pct>=99?'#166534':(item.pct>=90?'#92400e':'#991b1b')}; padding:2px 6px; border-radius:10px; font-size:10px; font-weight:600;">${item.pct.toFixed(2)}%</span>`
+                        ? `<span class="badge" style="background:${item.pct>=99?'rgba(5, 205, 153, 0.1)':(item.pct>=90?'rgba(255, 206, 32, 0.1)':'rgba(238, 93, 80, 0.1)')}; color:${item.pct>=99?'var(--accent-primary)':(item.pct>=90?'var(--accent-secondary)':'var(--danger)')};">${item.pct.toFixed(2)}%</span>`
                         : `<span style="color:var(--text-muted); font-size:10px;">-</span>`;
 
                     let dStr = String(item.dateObj.getDate()).padStart(2, '0') + " " + months[item.dateObj.getMonth()];
-                    let tr = `<tr><td class="role-cell" style="text-align:center; position:sticky; left:0; z-index:10; background:var(--bg-card); border-right: 1px solid var(--border-color); white-space:nowrap; font-weight:600; font-size:10px; padding: 8px 4px;">${dStr}</td>`;
+                    let tr = `<tr><td class="role-cell" style="text-align:center; position:sticky; left:0; z-index:10; white-space:nowrap; font-weight:600; font-size:10px; padding: 14px 10px;">${dStr}</td>`;
                     
                     sortedBUs.forEach(bu => {
                         let buD = item.bu_data[bu];
                         if (!buD || buD.total === 0) {
-                            tr += `<td style="text-align:center; color:var(--text-muted); white-space:nowrap; font-size:10px; padding: 8px 4px;">-</td>`;
+                            tr += `<td style="text-align:center; color:var(--text-muted); white-space:nowrap; font-size:10px; padding: 14px 10px;">-</td>`;
                         } else {
                             let buPct = buD.total > 0 ? Math.min(100, (buD.success / buD.total) * 100) : 0;
-                            let buClr = buPct >= 99 ? '#166534' : (buPct >= 90 ? '#92400e' : '#991b1b');
-                            let buBg = buPct >= 99 ? 'transparent' : (buPct >= 90 ? 'rgba(245, 158, 11, 0.05)' : 'rgba(239, 68, 68, 0.05)'); 
+                            let buClr = buPct >= 99 ? 'var(--accent-primary)' : (buPct >= 90 ? 'var(--accent-secondary)' : 'var(--danger)');
+                            let buBg = buPct >= 99 ? 'transparent' : (buPct >= 90 ? 'rgba(255, 206, 32, 0.05)' : 'rgba(238, 93, 80, 0.05)'); 
                             
-                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; background-color:${buBg}; padding: 8px 4px;">
+                            tr += `<td style="text-align:center; white-space:nowrap; vertical-align:middle; background-color:${buBg}; padding: 14px 10px;">
                                 <span style="display:block; color:${buClr}; font-weight:700; font-size:11px;">${buPct.toFixed(1)}%</span>
                                 <span style="font-size:8px; color:var(--text-muted);">${fmtN(buD.success)}/${fmtN(buD.total)}</span>
                             </td>`;
                         }
                     });
 
-                    tr += `<td class="total-cell" style="text-align:center; white-space:nowrap; padding: 8px 4px;" title="💡 Total Success: ${fmtN(item.success)} | Total Orders: ${fmtN(item.total)}">${pctPill}</td></tr>`;
+                    tr += `<td class="total-cell" style="text-align:center; white-space:nowrap; padding: 14px 10px;" title="💡 Total Success: ${fmtN(item.success)} | Total Orders: ${fmtN(item.total)}">${pctPill}</td></tr>`;
                     tbody += tr;
                 });
             }
@@ -2593,8 +2559,8 @@ function renderProductivitySection() {
                 
                 dataActual.push(uph); dataBackground.push(barCeiling); dataTarget.push(currentTarget); customPicks.push(picks);
                 
-                if (uph >= currentTarget) { bgColorsActual.push('#10B981'); bgColorsBg.push('rgba(16, 185, 129, 0.15)'); } 
-                else { bgColorsActual.push('#EF4444'); bgColorsBg.push('rgba(239, 68, 68, 0.15)'); }
+                if (uph >= currentTarget) { bgColorsActual.push('#05CD99'); bgColorsBg.push('rgba(5, 205, 153, 0.15)'); } 
+                else { bgColorsActual.push('#EE5D50'); bgColorsBg.push('rgba(238, 93, 80, 0.15)'); }
             });
 
             productivityChartInstance.data.labels = labels;
@@ -2620,12 +2586,12 @@ function renderProductivitySection() {
             }
             
             let gap = uph - currentTarget;
-            let statusHtml = gap >= 0 ? `<span style="color:#10B981; font-weight:700;">(สูงกว่าเป้า +${gap})</span>` : `<span style="color:var(--danger); font-weight:700;">(ต่ำกว่าเป้า ${Math.abs(gap)})</span>`;
+            let statusHtml = gap >= 0 ? `<span style="color:var(--accent-primary); font-weight:700;">(สูงกว่าเป้า +${gap})</span>` : `<span style="color:var(--danger); font-weight:700;">(ต่ำกว่าเป้า ${Math.abs(gap)})</span>`;
             let costPerPick = uph > 0 ? (hourlyRate / uph) : 0;
             
             summaryEl.innerHTML = `💡 <b>ภาพรวมล่าสุด (${latest.label}):</b> ${selectedArea === 'ALL' ? 'ภาพรวมทั้งหมด' : `พื้นที่ ${selectedArea}`} ทำความเร็วเฉลี่ย <b style="color:var(--text-main); font-size:1.1em;">${uph} UPH</b> ${statusHtml} <br><span style="font-size:0.8em; color:var(--text-muted);">(หยิบ ${fmtN(Math.round(pks))} รายการ / ${hrs.toFixed(1)} ชม.)</span> <span style="margin-left:15px; padding-left:15px; border-left:1px solid var(--border-color); color:var(--text-main); font-size: 0.9em;">💰 <b>Cost per Pick: <span style="color:#3B82F6; font-size:1.1em;">${costPerPick.toFixed(2)} ฿</span></b></span>`;
-            summaryEl.style.borderLeftColor = uph >= currentTarget ? '#10B981' : '#EF4444';
-            summaryEl.style.background = uph >= currentTarget ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.05)';
+            summaryEl.style.borderLeftColor = uph >= currentTarget ? 'var(--accent-primary)' : 'var(--danger)';
+            summaryEl.style.background = uph >= currentTarget ? 'rgba(5, 205, 153, 0.1)' : 'rgba(238, 93, 80, 0.05)';
         }
 
         const areaTableEl = document.getElementById('prod-area-table');
@@ -2637,12 +2603,12 @@ function renderProductivitySection() {
             });
 
             let html = `<thead><tr>
-                <th style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; text-align:left; border-bottom: 1px solid var(--border-color);">Area Type</th>
-                <th class="text-center" style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; border-bottom: 1px solid var(--border-color);">Picks (รายการ)</th>
-                <th class="text-center" style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; border-bottom: 1px solid var(--border-color);">Hours (ชม.)</th>
-                <th class="text-center" style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; border-bottom: 1px solid var(--border-color);">Actual UPH</th>
-                <th class="text-center" style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; border-bottom: 1px solid var(--border-color);">Gap</th>
-                <th class="text-center" style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; border-bottom: 1px solid var(--border-color); color:#3B82F6;">Cost/Pick (฿)</th>
+                <th style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; text-align:left; border-bottom: 1px solid var(--border-color);">Area Type</th>
+                <th class="text-center" style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; border-bottom: 1px solid var(--border-color);">Picks (รายการ)</th>
+                <th class="text-center" style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; border-bottom: 1px solid var(--border-color);">Hours (ชม.)</th>
+                <th class="text-center" style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; border-bottom: 1px solid var(--border-color);">Actual UPH</th>
+                <th class="text-center" style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; border-bottom: 1px solid var(--border-color);">Gap</th>
+                <th class="text-center" style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; border-bottom: 1px solid var(--border-color); color:#3B82F6;">Cost/Pick (฿)</th>
             </tr></thead><tbody>`;
             
             if(sortedAreas.length === 0) {
@@ -2657,12 +2623,12 @@ function renderProductivitySection() {
                     let cost = uph > 0 ? (hourlyRate / uph) : 0;
                     
                     html += `<tr>
-                        <td style="padding:10px 12px; border-bottom: 1px dashed var(--border-color);"><b style="color:var(--text-main); font-size:11px;">${a}</b></td>
-                        <td class="text-center" style="padding:10px 12px; border-bottom: 1px dashed var(--border-color); font-size:11px; font-weight:600;">${fmtN(Math.round(d.picks))}</td>
-                        <td class="text-center" style="padding:10px 12px; border-bottom: 1px dashed var(--border-color); font-size:11px; color:var(--text-muted);">${d.hours.toFixed(2)}</td>
-                        <td class="text-center" style="padding:10px 12px; border-bottom: 1px dashed var(--border-color);"><span class="badge" style="background:${uph>=trg?'#dcfce7':'#fee2e2'}; color:${uph>=trg?'#166534':'#991b1b'}">${uph}</span></td>
-                        <td class="text-center" style="padding:10px 12px; border-bottom: 1px dashed var(--border-color); font-size:11px; color:${gap>=0?'#10B981':'#EF4444'}"><b>${gap > 0 ? '+'+gap : gap}</b></td>
-                        <td class="text-center" style="padding:10px 12px; border-bottom: 1px dashed var(--border-color); font-size:11px; font-weight:700; color:#3B82F6;">${cost.toFixed(2)}</td>
+                        <td style="padding:14px 10px; border-bottom: 1px solid var(--border-color);"><b style="color:var(--text-main); font-size:11px;">${a}</b></td>
+                        <td class="text-center" style="padding:14px 10px; border-bottom: 1px solid var(--border-color); font-size:11px; font-weight:600;">${fmtN(Math.round(d.picks))}</td>
+                        <td class="text-center" style="padding:14px 10px; border-bottom: 1px solid var(--border-color); font-size:11px; color:var(--text-muted);">${d.hours.toFixed(2)}</td>
+                        <td class="text-center" style="padding:14px 10px; border-bottom: 1px solid var(--border-color);"><span class="badge" style="background:${uph>=trg?'rgba(5, 205, 153, 0.1)':'rgba(238, 93, 80, 0.1)'}; color:${uph>=trg?'var(--accent-primary)':'var(--danger)'}">${uph}</span></td>
+                        <td class="text-center" style="padding:14px 10px; border-bottom: 1px solid var(--border-color); font-size:11px; color:${gap>=0?'var(--accent-primary)':'var(--danger)'}"><b>${gap > 0 ? '+'+gap : gap}</b></td>
+                        <td class="text-center" style="padding:14px 10px; border-bottom: 1px solid var(--border-color); font-size:11px; font-weight:700; color:#3B82F6;">${cost.toFixed(2)}</td>
                     </tr>`;
                 });
             }
@@ -2680,12 +2646,12 @@ function renderProductivitySection() {
             });
 
             let html = `<thead><tr>
-                <th style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; text-align:left; border-bottom: 1px solid var(--border-color);">Name (ID)</th>
-                <th class="text-center" style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; border-bottom: 1px solid var(--border-color);">Zone</th>
-                <th class="text-center" style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; border-bottom: 1px solid var(--border-color);">Picks</th>
-                <th class="text-center" style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; border-bottom: 1px solid var(--border-color);">Hours</th>
-                <th class="text-center" style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; border-bottom: 1px solid var(--border-color);">UPH</th>
-                <th class="text-center" style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; border-bottom: 1px solid var(--border-color); color:#3B82F6;">Cost/Pick (฿)</th>
+                <th style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; text-align:left; border-bottom: 1px solid var(--border-color);">Name (ID)</th>
+                <th class="text-center" style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; border-bottom: 1px solid var(--border-color);">Zone</th>
+                <th class="text-center" style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; border-bottom: 1px solid var(--border-color);">Picks</th>
+                <th class="text-center" style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; border-bottom: 1px solid var(--border-color);">Hours</th>
+                <th class="text-center" style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; border-bottom: 1px solid var(--border-color);">UPH</th>
+                <th class="text-center" style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; border-bottom: 1px solid var(--border-color); color:#3B82F6;">Cost/Pick (฿)</th>
             </tr></thead><tbody>`;
             
             if(users.length === 0) {
@@ -2701,17 +2667,17 @@ function renderProductivitySection() {
                     let cost = uph > 0 ? (hourlyRate / uph) : 0;
                     
                     html += `<tr style="${isBulk ? 'opacity:0.5' : ''}">
-                        <td style="padding:10px 12px; border-bottom: 1px dashed var(--border-color);">
+                        <td style="padding:14px 10px; border-bottom: 1px solid var(--border-color);">
                             <b style="color:var(--text-main); font-size:11px;">${fullName}</b><br>
                             <span style="font-size:9px; color:var(--text-muted);">ID: ${u}</span>
                         </td>
-                        <td class="text-center" style="padding:10px 12px; border-bottom: 1px dashed var(--border-color);">${zoneText}</td>
-                        <td class="text-center" style="padding:10px 12px; border-bottom: 1px dashed var(--border-color); font-size:11px; font-weight:600;">${fmtN(Math.round(d.picks))}</td>
-                        <td class="text-center" style="padding:10px 12px; border-bottom: 1px dashed var(--border-color); font-size:11px; color:var(--text-muted);">${d.hours.toFixed(2)}</td>
-                        <td class="text-center" style="padding:10px 12px; border-bottom: 1px dashed var(--border-color); font-size:12px;">
-                            <b style="color:${uph >= userTrg ? '#10B981' : '#EF4444'}">${isBulk ? '<span style="font-size:9px; color:var(--text-muted);">Bulk/Error</span>' : uph}</b>
+                        <td class="text-center" style="padding:14px 10px; border-bottom: 1px solid var(--border-color);">${zoneText}</td>
+                        <td class="text-center" style="padding:14px 10px; border-bottom: 1px solid var(--border-color); font-size:11px; font-weight:600;">${fmtN(Math.round(d.picks))}</td>
+                        <td class="text-center" style="padding:14px 10px; border-bottom: 1px solid var(--border-color); font-size:11px; color:var(--text-muted);">${d.hours.toFixed(2)}</td>
+                        <td class="text-center" style="padding:14px 10px; border-bottom: 1px solid var(--border-color); font-size:12px;">
+                            <b style="color:${uph >= userTrg ? 'var(--accent-primary)' : 'var(--danger)'}">${isBulk ? '<span style="font-size:9px; color:var(--text-muted);">Bulk/Error</span>' : uph}</b>
                         </td>
-                        <td class="text-center" style="padding:10px 12px; border-bottom: 1px dashed var(--border-color); font-size:11px; font-weight:700; color:#3B82F6;">${isBulk ? '-' : cost.toFixed(2)}</td>
+                        <td class="text-center" style="padding:14px 10px; border-bottom: 1px solid var(--border-color); font-size:11px; font-weight:700; color:#3B82F6;">${isBulk ? '-' : cost.toFixed(2)}</td>
                     </tr>`;
                 });
             }
@@ -2723,25 +2689,25 @@ function renderProductivitySection() {
         const overallTableEl = document.getElementById('prod-overall-table');
         if (overallTableEl) {
             let html = `<thead><tr>
-                <th style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; text-align:left; border-bottom: 1px solid var(--border-color);">Date</th>
-                <th class="text-center" style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; border-bottom: 1px solid var(--border-color);">Active Pickers</th>
-                <th class="text-center" style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; border-bottom: 1px solid var(--border-color);">Total Picks</th>
-                <th class="text-center" style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; border-bottom: 1px solid var(--border-color);">Overall UPH</th>
-                <th class="text-center" style="position:sticky; top:0; background:var(--bg-card); padding:12px; font-size:11px; border-bottom: 1px solid var(--border-color); color:#3B82F6;">Avg Cost/Pick (฿)</th>
+                <th style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; text-align:left; border-bottom: 1px solid var(--border-color);">Date</th>
+                <th class="text-center" style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; border-bottom: 1px solid var(--border-color);">Active Pickers</th>
+                <th class="text-center" style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; border-bottom: 1px solid var(--border-color);">Total Picks</th>
+                <th class="text-center" style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; border-bottom: 1px solid var(--border-color);">Overall UPH</th>
+                <th class="text-center" style="position:sticky; top:0; background:var(--bg-body); padding:14px 10px; font-size:11px; border-bottom: 1px solid var(--border-color); color:#3B82F6;">Avg Cost/Pick (฿)</th>
             </tr></thead><tbody>`;
             
             sortedGroups.slice().reverse().forEach(item => {
                 let uph = item.user_hours > 0 ? Math.round(item.user_picks / item.user_hours) : 0;
                 let trg = getTarget(selectedArea);
-                let uphHtml = uph >= trg ? `<b style="color:#10B981;">${uph}</b>` : `<b style="color:#EF4444;">${uph}</b>`;
+                let uphHtml = uph >= trg ? `<b style="color:var(--accent-primary);">${uph}</b>` : `<b style="color:var(--danger);">${uph}</b>`;
                 let cost = uph > 0 ? (hourlyRate / uph) : 0;
                 
                 html += `<tr>
-                    <td style="padding:10px 12px; border-bottom: 1px dashed var(--border-color);"><b style="font-size:11px;">${item.label}</b></td>
-                    <td class="text-center" style="padding:10px 12px; border-bottom: 1px dashed var(--border-color);"><span class="badge info" style="font-size:10px;">${item.activePickers.size} คน</span></td>
-                    <td class="text-center" style="padding:10px 12px; border-bottom: 1px dashed var(--border-color); font-weight:600; font-size:11px;">${fmtN(Math.round(item.user_picks))}</td>
-                    <td class="text-center" style="padding:10px 12px; border-bottom: 1px dashed var(--border-color); font-size:12px;">${uphHtml}</td>
-                    <td class="text-center" style="padding:10px 12px; border-bottom: 1px dashed var(--border-color); font-size:12px; font-weight:700; color:#3B82F6;">${cost.toFixed(2)}</td>
+                    <td style="padding:14px 10px; border-bottom: 1px solid var(--border-color);"><b style="font-size:11px;">${item.label}</b></td>
+                    <td class="text-center" style="padding:14px 10px; border-bottom: 1px solid var(--border-color);"><span class="badge info" style="font-size:10px;">${item.activePickers.size} คน</span></td>
+                    <td class="text-center" style="padding:14px 10px; border-bottom: 1px solid var(--border-color); font-weight:600; font-size:11px;">${fmtN(Math.round(item.user_picks))}</td>
+                    <td class="text-center" style="padding:14px 10px; border-bottom: 1px solid var(--border-color); font-size:12px;">${uphHtml}</td>
+                    <td class="text-center" style="padding:14px 10px; border-bottom: 1px solid var(--border-color); font-size:12px; font-weight:700; color:#3B82F6;">${cost.toFixed(2)}</td>
                 </tr>`;
             });
             overallTableEl.innerHTML = html + "</tbody>";
@@ -2831,7 +2797,7 @@ function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveD
 
     if (alerts.length === 0) {
         alertBox.innerHTML = `
-            <div style="padding:10px 15px; border-radius:6px; background:#dcfce7; color:#166534; font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px;">
+            <div style="padding:10px 15px; border-radius:6px; background:rgba(5, 205, 153, 0.1); color:var(--accent-primary); font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                 สถานการณ์ปกติ ไม่พบความเสี่ยงหรือเหตุขัดข้องที่ต้องแจ้งเตือนในขณะนี้
             </div>`;
@@ -2839,10 +2805,10 @@ function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveD
         alerts.forEach(al => {
             let bg, color, icon;
             if (al.type === 'critical') {
-                bg = '#fee2e2'; color = '#991b1b';
+                bg = 'rgba(238, 93, 80, 0.1)'; color = 'var(--danger)';
                 icon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
             } else {
-                bg = '#fef3c7'; color = '#92400e';
+                bg = 'rgba(255, 206, 32, 0.1)'; color = 'var(--accent-secondary)';
                 icon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
             }
             alertBox.innerHTML += `
