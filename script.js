@@ -308,9 +308,16 @@ async function initFulfillmentRealtime() {
                 let wData = globalData.wave_ops[k].bu_data || {};
                 Object.keys(wData).forEach(rawBu => {
                     let sBu = standardizeBU(rawBu);
-                    if (!unifiedDatesMap[sd].wave[sBu]) unifiedDatesMap[sd].wave[sBu] = { ordTotal: 0, ordFull: 0 };
+                    // เพิ่มการรับค่า late_orders และ total_delay_mins
+                    if (!unifiedDatesMap[sd].wave[sBu]) unifiedDatesMap[sd].wave[sBu] = { ordTotal: 0, ordFull: 0, late_orders: 0, total_delay_mins: 0 };
                     unifiedDatesMap[sd].wave[sBu].ordTotal += parseFloat(wData[rawBu].total_orders || 0);
                     unifiedDatesMap[sd].wave[sBu].ordFull += parseFloat(wData[rawBu].completed_orders || 0);
+                    unifiedDatesMap[sd].wave[sBu].late_orders += parseFloat(wData[rawBu].late_orders || 0);
+                    
+                    let delay = parseFloat(wData[rawBu].total_delay_mins || 0);
+                    if (delay > unifiedDatesMap[sd].wave[sBu].total_delay_mins) {
+                        unifiedDatesMap[sd].wave[sBu].total_delay_mins = delay; // เก็บค่า Delay สูงสุดของ BU นั้น
+                    }
                 });
             });
         }
