@@ -917,12 +917,39 @@ async function initFulfillmentRealtime() {
                 let aCompPct = aTotal > 0 ? Math.min(100, (aComp / aTotal) * 100).toFixed(1) : 0;
                 if(document.getElementById('wave-active-info-2')) document.getElementById('wave-active-info-2').innerHTML = `<span class="badge up" style="background:${aCompPct>=100?'#dcfce7':'#fef3c7'}">${aCompPct}%</span> เสร็จ ${fmtN(aComp)} / ${fmtN(aTotal)}`;
                 if(document.getElementById('wave-active-info-3')) document.getElementById('wave-active-info-3').innerHTML = `<span class="badge down">หลุด SLA</span> แผน ${activeDateStr} &bull; ${fmtN(aLate)} บิล`;
+                // (โค้ดเก่า) อัปเดตกล่องที่ 4 ของเดิม
                 if(document.getElementById('wave-active-info-4')) {
                     if (aDelay > 0) {
                         document.getElementById('wave-active-info-4').innerHTML = `<span class="badge down">ดีเลย์อยู่</span> ช้าสุดที่: <b>${worstBU}</b>`;
                     } else {
                         document.getElementById('wave-active-info-4').innerHTML = `<span class="badge up">ปกติ</span> ทำงานทันตามแผน`;
                     }
+                }
+                
+                // 🟢 (วางโค้ดเพิ่มตรงนี้) อัปเดต 3 กล่องใหม่: % Ontime, Picked, Shipped
+                if (document.getElementById('wave-pct-ontime')) {
+                    // คำนวณเปอร์เซ็นต์
+                    let pctOntime = aTotal > 0 ? (((aTotal - aLate) / aTotal) * 100).toFixed(1) : 100;
+                    let pctPicked = wReq > 0 ? ((wAlloc / wReq) * 100).toFixed(1) : 0;
+                    let pctShipped = wReq > 0 ? ((wShip / wReq) * 100).toFixed(1) : 0;
+
+                    // กล่อง 1: On-Time
+                    let ontimeEl = document.getElementById('wave-pct-ontime');
+                    ontimeEl.innerText = pctOntime + '%';
+                    ontimeEl.style.color = pctOntime >= 99 ? '#10B981' : (pctOntime >= 90 ? '#F59E0B' : '#EF4444');
+                    document.getElementById('wave-ontime-text').innerHTML = `รวมออเดอร์ <b>${fmtN(aTotal)}</b> บิล | ช้า <b>${fmtN(aLate)}</b> บิล`;
+
+                    // กล่อง 2: Picked
+                    let pickedEl = document.getElementById('wave-pct-picked');
+                    pickedEl.innerText = pctPicked + '%';
+                    pickedEl.style.color = pctPicked >= 100 ? '#10B981' : '#3B82F6';
+                    document.getElementById('wave-picked-text').innerHTML = `หยิบไปแล้ว <b style="color:var(--text-main);">${fmtN(wAlloc)}</b> / ${fmtN(wReq)} ชิ้น`;
+
+                    // กล่อง 3: Shipped
+                    let shippedEl = document.getElementById('wave-pct-shipped');
+                    shippedEl.innerText = pctShipped + '%';
+                    shippedEl.style.color = pctShipped >= 100 ? '#10B981' : '#8B5CF6';
+                    document.getElementById('wave-shipped-text').innerHTML = `ส่งออกแล้ว <b style="color:var(--text-main);">${fmtN(wShip)}</b> / ${fmtN(wReq)} ชิ้น`;
                 }
                 
                 let targetWaveDate = activeWaveKey || todayKeyStr;
