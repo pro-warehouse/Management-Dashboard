@@ -926,17 +926,19 @@ async function initFulfillmentRealtime() {
                     }
                 }
                 
-                // 🟢 ดึงข้อมูลจาก API ใหม่ที่สร้างใน Backend
-                let waveStats = { total_orders: 0, late_orders: 0, picked_orders: 0, shipped_orders: 0 };
+                // 🟢 ดึงข้อมูลจาก API ใหม่ที่สร้างใน Backend (ส่งวันที่ให้ตรงกับกล่องด้านบน)
+                let waveStats = { total_orders: 0, late_orders: 0, total_req_qty: 0, picked_qty: 0, shipped_qty: 0 };
                 try {
+                    // แปลงวันที่ activeWaveKey ให้เป็น YYYY-MM-DD เพื่อส่งไปถาม Backend
+                    let queryDate = activeWaveKey ? new Date(activeWaveKey).toISOString().split('T')[0] : "";
+                    
                     const waveResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ fn: 'apiGetWaveMonitoring', args: ["", ""] })
+                        body: JSON.stringify({ fn: 'apiGetWaveMonitoring', args: [queryDate, queryDate] })
                     });
                     if (waveResp.ok) {
                         const waveJson = await waveResp.json();
-                        // ดึงข้อมูลแถวแรก (วันที่ล่าสุด) มาใช้งาน
                         if (waveJson.success && waveJson.data && waveJson.data.length > 0) {
                             waveStats = waveJson.data[0]; 
                         }
@@ -950,8 +952,8 @@ async function initFulfillmentRealtime() {
                     let aTotal = parseInt(waveStats.total_orders) || 0;
                     let aLate = parseInt(waveStats.late_orders) || 0;
                     let wReq = parseInt(waveStats.total_req_qty) || 0;     // ยอดชิ้นรวม
-                    let wPicked = parseInt(waveStats.picked_qty) || 0;     // ยอดชิ้นหยิบ
-                    let wShipped = parseInt(waveStats.shipped_qty) || 0;   // ยอดชิ้นส่ง
+                    let wPicked = parseInt(waveStats.picked_qty) || 0;     // ยอดชิ้นหยิบเสร็จ
+                    let wShipped = parseInt(waveStats.shipped_qty) || 0;   // ยอดชิ้นส่งออก
 
                     // กล่อง 1: On-Time (ยังคงคิดจากจำนวนบิล/ออเดอร์)
                     let pctOntime = aTotal > 0 ? (((aTotal - aLate) / aTotal) * 100).toFixed(1) : 100;
