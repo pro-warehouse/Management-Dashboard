@@ -12,110 +12,251 @@
     
     <style>
         :root { 
-            --bg-body: #F8FAFC; 
-            --glass-bg: rgba(255, 255, 255, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.8);
-            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+            --bg-body: #F4F7FE; 
+            --bg-card: #FFFFFF;
+            --text-main: #2B3674;
+            --text-muted: #A3AED0;
+            --border-color: #E9EDF7;
+            --sidebar-bg: #114EE8;
+            --shadow-card: 0px 18px 40px rgba(112, 144, 176, 0.08);
         }
         
         [data-theme="dark"] { 
-            --bg-body: #0F172A; 
-            --glass-bg: rgba(30, 41, 59, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            --bg-body: #0B1437; 
+            --bg-card: #111C44;
+            --text-main: #FFFFFF;
+            --text-muted: #A3AED0;
+            --border-color: #1B254B;
+            --sidebar-bg: #111C44;
+            --shadow-card: 0px 18px 40px rgba(0, 0, 0, 0.2);
         }
         
         body { 
             background-color: var(--bg-body); 
-            background-image: 
-                radial-gradient(circle at 0% 0%, rgba(167, 139, 250, 0.25) 0%, transparent 50%),
-                radial-gradient(circle at 100% 0%, rgba(94, 234, 212, 0.25) 0%, transparent 50%),
-                radial-gradient(circle at 100% 100%, rgba(147, 197, 253, 0.25) 0%, transparent 50%),
-                radial-gradient(circle at 0% 100%, rgba(253, 164, 175, 0.25) 0%, transparent 50%);
-            background-attachment: fixed;
-            background-size: cover;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            transition: all 0.3s ease;
         }
 
-        [data-theme="dark"] body {
-            background-image: 
-                radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 100% 0%, rgba(20, 184, 166, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 0% 100%, rgba(244, 63, 94, 0.15) 0%, transparent 50%);
+        /* Layout Structure */
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
         }
 
-        .charts-grid-2 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); 
-            gap: 20px;
+        /* Sidebar Styling */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            color: white;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 30px 20px;
+            box-shadow: 14px 0px 20px rgba(112, 144, 176, 0.05);
+            z-index: 100;
+        }
+        .sidebar-brand {
+            padding-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+        }
+        .sidebar-brand h2 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+        .sidebar-brand span {
+            font-size: 0.85rem;
+            opacity: 0.7;
+            font-weight: 500;
+        }
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+        .sidebar-footer {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .user-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        .user-email {
+            font-size: 0.75rem;
+            opacity: 0.6;
         }
 
+        /* Main Content Container */
+        .main-content { 
+            flex: 1;
+            padding: 30px; 
+            max-width: calc(100vw - 260px);
+            overflow-x: hidden;
+        }
+
+        /* Solid Dashboard Cards */
         .card, .data-card, .chart-card { 
-            background: var(--glass-bg) !important;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border) !important;
-            box-shadow: var(--glass-shadow) !important;
-            border-radius: 16px;
+            background: var(--bg-card) !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            border: none !important;
+            box-shadow: var(--shadow-card) !important;
+            border-radius: 20px;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             min-width: 0 !important; 
             max-width: 100% !important;
             overflow: hidden; 
         }
-        
         .card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.08) !important;
+            box-shadow: 0px 24px 50px rgba(112, 144, 176, 0.15) !important;
         }
 
-        .executive-wrapper:first-of-type .metric-card:nth-child(1) { background: linear-gradient(135deg, rgba(209,250,229,0.7) 0%, rgba(255,255,255,0.4) 100%) !important; } 
-        .executive-wrapper:first-of-type .metric-card:nth-child(2) { background: linear-gradient(135deg, rgba(219,234,254,0.7) 0%, rgba(255,255,255,0.4) 100%) !important; } 
-        .executive-wrapper:first-of-type .metric-card:nth-child(3) { background: linear-gradient(135deg, rgba(237,233,254,0.7) 0%, rgba(255,255,255,0.4) 100%) !important; } 
-        .executive-wrapper:first-of-type .metric-card:nth-child(4) { background: linear-gradient(135deg, rgba(241,245,249,0.7) 0%, rgba(255,255,255,0.4) 100%) !important; } 
-        .executive-wrapper:first-of-type .metric-card:nth-child(5) { background: linear-gradient(135deg, rgba(255,237,213,0.7) 0%, rgba(255,255,255,0.4) 100%) !important; } 
-        .executive-wrapper:first-of-type .metric-card:nth-child(6) { background: linear-gradient(135deg, rgba(204,251,241,0.7) 0%, rgba(255,255,255,0.4) 100%) !important; } 
-
-        [data-theme="dark"] .executive-wrapper:first-of-type .metric-card {
-            background: var(--glass-bg) !important;
+        /* Welcome Hero Banner */
+        .welcome-banner {
+            background: linear-gradient(135deg, #114EE8 0%, #3B82F6 100%) !important;
+            color: white !important;
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+        }
+        .welcome-banner h1 {
+            margin: 0 0 8px 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .welcome-banner p {
+            margin: 0;
+            font-size: 0.95rem;
+            opacity: 0.85;
+            font-weight: 500;
         }
 
-        .dashboard-logo {
-            height: 38px;
-            width: auto;
-            border-radius: 8px;
-            margin-right: 12px;
+        /* Executive Grid Override */
+        .executive-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
         }
 
-        .compact-matrix table {
-            font-size: 0.75rem; 
+        .metric-card {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .card-subtitle {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+        .card-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0 0 12px 0;
+        }
+
+        /* Beautiful Clean Tables */
+        .matrix-table {
             width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            background: transparent;
         }
-        .compact-matrix th, .compact-matrix td {
-            padding: 6px 4px !important;
+        .matrix-table th {
+            background-color: var(--bg-body);
+            color: var(--text-muted);
+            font-weight: 700;
+            padding: 14px 10px;
+            border-bottom: 1px solid var(--border-color);
+            border-right: none;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.5px;
+        }
+        .matrix-table td {
+            padding: 14px 10px;
+            border-bottom: 1px solid var(--border-color);
+            border-right: none;
+            color: var(--text-main);
+            background: transparent;
+        }
+        .matrix-table .aff-header {
+            background: rgba(16, 185, 129, 0.05);
+            color: #10B981;
+            font-weight: 700;
+        }
+        .matrix-table .role-cell {
+            font-weight: 700;
+            color: var(--text-main);
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
         }
 
+        /* Source Badges */
         .source-badge {
             display: inline-flex;
             align-items: center;
             gap: 5px;
             font-size: 0.65rem;
-            background: rgba(59, 130, 246, 0.1);
-            color: #3B82F6;
-            padding: 4px 10px;
-            border-radius: 6px;
+            background: rgba(17, 24, 39, 0.05);
+            color: var(--text-main);
+            padding: 5px 12px;
+            border-radius: 8px;
             text-decoration: none;
-            vertical-align: middle;
+            font-weight: 700;
             margin-left: 12px;
-            font-weight: 600;
-            transition: all 0.2s;
-            border: 1px solid rgba(59, 130, 246, 0.2);
+            border: 1px solid var(--border-color);
             text-transform: uppercase;
         }
-        .source-badge:hover {
-            background: #3B82F6;
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.25);
+        [data-theme="dark"] .source-badge {
+            background: rgba(255, 255, 255, 0.05);
         }
 
         @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -123,664 +264,605 @@
     </style>
 </head>
 <body>
-    <div class="app-container">
+    <div class="app-layout">
         <aside class="sidebar">
-            <div class="logo">Afghan Product</div>
-            <nav>
-                <a href="#" class="active">Dashboard</a>
-                <a href="#">Users</a>
-                </nav>
+            <div class="sidebar-brand">
+                <h2>Afghan Product</h2>
+                <span>Admin Panel Dashboard</span>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="#executive-section" class="active">📊 Executive Summary</a>
+                <a href="#wave-section">🌊 Wave Operations</a>
+                <a href="#fulfillment-section">📦 Fulfillment Stats</a>
+                <a href="#workforce-section">👥 Active Workforce</a>
+                <a href="#ontime-section">🚚 Delivery & Transport</a>
+                <a href="#claim-section">💰 Claim Incidents</a>
+                <a href="#inventory-section">📍 Stock Accuracy</a>
+                <a href="#productivity-section">📈 UPH Productivity</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-avatar">AU</div>
+                <div class="user-info">
+                    <span class="user-name">Admin User</span>
+                    <span class="user-email">admin@afghan.com</span>
+                </div>
+            </div>
         </aside>
-    <main class="main-content">
-        <header class="topbar card" style="overflow: visible;">
-            <div class="logo-area">
-                <img src="https://i.postimg.cc/L4qLLFNj/Black-White-Modern-Handwritten-Square-Studio-Logo-(15)-Photoroom-0.png" alt="Ops Management Logo" class="dashboard-logo">
-                <h2>Ops Management <span>Dashboard</span></h2>
-            </div>
-            <div class="header-controls">
-                <div id="global-loader" style="display: none; align-items: center; gap: 8px; color: #F59E0B; font-weight: 600; font-size: 0.85rem; margin-right: 15px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
-                    Loading...
-                </div>
 
-                <div class="slicer-group">
-                    <span class="slicer-label">Date:</span>
-                    <input type="date" class="slicer-input" id="date-picker">
+        <main class="main-content">
+            <header class="topbar card" style="overflow: visible; margin-bottom: 25px; padding: 15px 25px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 15px;">
+                    <div class="logo-area" style="display: flex; align-items: center; gap: 10px;">
+                        <h2 style="font-size: 1.3rem; margin: 0; font-weight: 700;">Ops Management Dashboard</h2>
+                    </div>
+                    <div class="header-controls" style="display: flex; align-items: center; gap: 15px;">
+                        <div id="global-loader" style="display: none; align-items: center; gap: 8px; color: #F59E0B; font-weight: 600; font-size: 0.85rem;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                            Loading...
+                        </div>
+                        <div class="slicer-group">
+                            <span class="slicer-label">Date:</span>
+                            <input type="date" class="slicer-input" id="date-picker">
+                        </div>
+                        <div class="slicer-group" style="position: relative;">
+                            <span class="slicer-label">BU:</span>
+                            <div id="bu-multi-select" class="slicer-input" style="cursor: pointer; min-width: 160px; display: flex; justify-content: space-between; align-items: center;">
+                                <span id="bu-multi-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;">All BUs</span>
+                                <span style="font-size: 10px; color: var(--text-muted);">▼</span>
+                            </div>
+                            <div id="bu-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-card); z-index: 999; max-height: 280px; overflow-y: auto; padding: 15px; margin-top: 5px;">
+                                <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 700; cursor: pointer;">
+                                    <input type="checkbox" id="bu-select-all" checked> All BUs
+                                </label>
+                                <div style="border-bottom: 1px dashed var(--border-color); margin: 8px 0;"></div>
+                                <div id="bu-checkbox-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                                <button id="bu-apply-btn" style="margin-top: 12px; width: 100%; padding: 8px; background: #114EE8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Apply Filter</button>
+                            </div>
+                        </div>
+                        <button id="theme-toggle" class="btn-theme">🌙 Dark Mode</button>
+                    </div>
+                </div>
+            </header>
+
+            <section id="executive-section" class="executive-wrapper">
+                <div class="welcome-banner card">
+                    <h1>Welcome back, Admin</h1>
+                    <p>Here's your operations performance and platform overview strategy report.</p>
                 </div>
                 
-                <div class="slicer-group" style="position: relative;">
-                    <span class="slicer-label">BU:</span>
-                    <div id="bu-multi-select" class="slicer-input" style="cursor: pointer; min-width: 160px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-card);">
-                        <span id="bu-multi-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;">All BUs</span>
-                        <span style="font-size: 10px; color: var(--text-muted);">▼</span>
-                    </div>
-                    <div id="bu-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 40px; right: 0; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 999; max-height: 280px; overflow-y: auto; padding: 10px; margin-top: 5px;">
-                        <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 700; cursor: pointer; color: var(--text-main);">
-                            <input type="checkbox" id="bu-select-all" checked> All BUs
-                        </label>
-                        <div style="border-bottom: 1px dashed var(--border-color); margin: 8px 0;"></div>
-                        <div id="bu-checkbox-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
-                        <button id="bu-apply-btn" style="margin-top: 12px; width: 100%; padding: 6px; background: #10B981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Apply Filter</button>
-                    </div>
-                </div>
-
-                <button id="theme-toggle" class="btn-theme">🌙 Dark Mode</button>
-            </div>
-        </header>
-
-        <div class="executive-wrapper mt-20">
-            <h1 class="page-title">Executive Dashboard</h1>
-            <div class="executive-grid">
-                <div class="card metric-card">
-                    <div>
-                        <p class="card-subtitle">ORDERS SHIPPED TODAY</p>
-                        <h3 class="card-value" id="ffm-orders-shipped">...</h3>
-                        <div class="card-footer"><span class="badge" id="ffm-orders-trend">-</span> <span class="footer-note" id="ffm-orders-note">vs yesterday</span></div>
-                    </div>
-                    <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;">Updated: --</div>
-                </div>
-
-                <div class="card metric-card">
-                    <div>
-                        <p class="card-subtitle">AVG. FULFILLMENT RATE</p>
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
-                            <h3 class="card-value" id="ffm-rate-val" style="font-size: 1.35rem; margin-bottom: 0; line-height: 1;">...</h3>
-                            <span class="badge" id="ffm-rate-trend" style="font-size: 0.75rem;">-</span>
+                <div class="executive-grid">
+                    <div class="card metric-card">
+                        <div>
+                            <p class="card-subtitle">ORDERS SHIPPED TODAY</p>
+                            <h3 class="card-value" id="ffm-orders-shipped">...</h3>
+                            <div class="card-footer"><span class="badge" id="ffm-orders-trend">-</span> <span class="footer-note" id="ffm-orders-note">vs yesterday</span></div>
                         </div>
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; padding-top: 8px; border-top: 1px solid var(--border-color);">
-                            <div id="ffm-rate-eta" style="font-size: 1rem; font-weight: 700; color: #3B82F6; line-height: 1;">...</div>
-                            <span class="badge" id="eta-rate-trend" style="font-size: 0.7rem;">-</span>
+                        <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;">Updated: --</div>
+                    </div>
+
+                    <div class="card metric-card">
+                        <div>
+                            <p class="card-subtitle">AVG. FULFILLMENT RATE</p>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                                <h3 class="card-value" id="ffm-rate-val" style="font-size: 1.35rem; margin-bottom: 0; line-height: 1;">...</h3>
+                                <span class="badge" id="ffm-rate-trend" style="font-size: 0.75rem;">-</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; padding-top: 8px; border-top: 1px solid var(--border-color);">
+                                <div id="ffm-rate-eta" style="font-size: 1rem; font-weight: 700; color: #3B82F6; line-height: 1;">...</div>
+                                <span class="badge" id="eta-rate-trend" style="font-size: 0.7rem;">-</span>
+                            </div>
+                            <div class="card-footer"><span class="footer-note" id="ffm-rate-note" style="font-size: 0.75rem;">Checking...</span></div>
                         </div>
-                        
-                        <div class="card-footer"><span class="footer-note" id="ffm-rate-note" style="font-size: 0.75rem;">Checking...</span></div>
+                        <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;" id="ffm-rate-update">Updated: --</div>
                     </div>
-                    <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;" id="ffm-rate-update">Updated: --</div>
-                </div>
 
-                <div class="card metric-card">
-                    <div>
-                        <p class="card-subtitle">ACTIVE WORKFORCE (OPS)</p>
-                        <h3 class="card-value" id="headcount-total">...</h3>
-                        <div class="card-footer"><span class="badge info" id="headcount-trend">-</span> <span class="footer-note" id="headcount-note">Checking...</span></div>
+                    <div class="card metric-card">
+                        <div>
+                            <p class="card-subtitle">ACTIVE WORKFORCE (OPS)</p>
+                            <h3 class="card-value" id="headcount-total">...</h3>
+                            <div class="card-footer"><span class="badge info" id="headcount-trend">-</span> <span class="footer-note" id="headcount-note">Checking...</span></div>
+                        </div>
+                        <div class="updated-time" style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;">Updated: --</div>
                     </div>
-                    <div class="updated-time" style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;">Updated: --</div>
-                </div>
 
-                <div class="card metric-card">
-                    <div>
-                        <p class="card-subtitle">ON-TIME DELIVERY (ภาพรวม)</p>
-                        <h3 class="card-value" id="ontime-val">...</h3>
-                        <div class="card-footer"><span class="badge info" id="ontime-trend">-</span> <span class="footer-note" id="ontime-note">Checking...</span></div>
+                    <div class="card metric-card">
+                        <div>
+                            <p class="card-subtitle">ON-TIME DELIVERY (ภาพรวม)</p>
+                            <h3 class="card-value" id="ontime-val">...</h3>
+                            <div class="card-footer"><span class="badge info" id="ontime-trend">-</span> <span class="footer-note" id="ontime-note">Checking...</span></div>
+                        </div>
+                        <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;">Updated: --</div>
                     </div>
-                    <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;">Updated: --</div>
-                </div>
 
-                <div class="card metric-card">
-                    <div>
-                        <p class="card-subtitle">CLAIM COST (มูลค่าเคลม)</p>
-                        <h3 class="card-value" id="claim-val">...</h3>
-                        <div class="card-footer"><span class="badge info" id="claim-trend">-</span> <span class="footer-note" id="claim-note">Checking...</span></div>
+                    <div class="card metric-card">
+                        <div>
+                            <p class="card-subtitle">CLAIM COST (มูลค่าเคลม)</p>
+                            <h3 class="card-value" id="claim-val">...</h3>
+                            <div class="card-footer"><span class="badge info" id="claim-trend">-</span> <span class="footer-note" id="claim-note">Checking...</span></div>
+                        </div>
+                        <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;" id="claim-update">Updated: --</div>
                     </div>
-                    <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;" id="claim-update">Updated: --</div>
-                </div>
 
-                <div class="card metric-card">
-                    <div>
-                        <p class="card-subtitle">INVENTORY ACCURACY</p>
-                        <h3 class="card-value" id="inv-val">...</h3>
-                        <div class="card-footer"><span class="badge info" id="inv-trend">-</span> <span class="footer-note" id="inv-note">Checking...</span></div>
+                    <div class="card metric-card">
+                        <div>
+                            <p class="card-subtitle">INVENTORY ACCURACY</p>
+                            <h3 class="card-value" id="inv-val">...</h3>
+                            <div class="card-footer"><span class="badge info" id="inv-trend">-</span> <span class="footer-note" id="inv-note">Checking...</span></div>
+                        </div>
+                        <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;" id="inv-update">Updated: --</div>
                     </div>
-                    <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;" id="inv-update">Updated: --</div>
                 </div>
-            </div>
 
-            <div class="card mt-20" style="padding: 15px 20px;">
-                <h3 style="margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; font-size: 1.1rem;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-main);"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                    Key Daily Incidents
-                </h3>
-                <div id="smart-alerts-container" style="display: flex; flex-direction: column; gap: 8px;">
-                    <div style="color: var(--text-muted); font-size: 0.85rem;">กำลังวิเคราะห์ข้อมูล...</div>
+                <div class="card mt-20" style="padding: 20px;">
+                    <h3 style="margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; font-size: 1.1rem;">
+                        💡 Key Daily Incidents Alerts
+                    </h3>
+                    <div id="smart-alerts-container" style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="color: var(--text-muted); font-size: 0.85rem;">กำลังวิเคราะห์ข้อมูลเหตุการณ์...</div>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </section>
 
-        <div class="executive-wrapper mt-40" style="padding-top: 30px; border-top: 2px solid rgba(0,0,0,0.05);">
-            <h1 class="page-title" style="margin-bottom: 0;">Daily Monitoring</h1>
-        </div>
-
-        <div class="executive-wrapper mt-20">
-            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+            <section id="wave-section" class="executive-wrapper mt-40">
                 <h2 class="section-title">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-main); opacity: 0.7; margin-right: 5px; vertical-align: bottom;">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line>
-                    </svg>
                     Wave Operations & SLA Status
-                    <span class="source-badge" style="background: rgba(107, 114, 128, 0.1); color: var(--text-muted); border-color: transparent;">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
-                        BigQuery
-                    </span>
+                    <span class="source-badge">BigQuery</span>
                 </h2>
-            </div>
-            <div class="executive-grid" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="executive-grid" style="grid-template-columns: repeat(4, 1fr);">
+                    <div class="card metric-card">
+                        <div>
+                            <p class="card-subtitle" id="wave-title-1">TOTAL ORDERS</p>
+                            <h3 class="card-value" id="wave-total">...</h3>
+                            <div class="card-footer" id="wave-active-info-1" style="color: var(--text-muted); font-size: 0.75rem; margin-top: 8px;">กำลังตรวจสอบ...</div>
+                        </div>
+                        <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;" id="wave-date-1">Updated: --</div>
+                    </div>
+                    <div class="card metric-card">
+                        <div>
+                            <p class="card-subtitle" id="wave-title-2">COMPLETED ORDERS</p>
+                            <h3 class="card-value" id="wave-completed">...</h3>
+                            <div class="card-footer" id="wave-active-info-2" style="color: var(--text-muted); font-size: 0.75rem; margin-top: 8px;">กำลังตรวจสอบ...</div>
+                        </div>
+                        <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;" id="wave-date-2">Updated: --</div>
+                    </div>
+                    <div class="card metric-card">
+                        <div>
+                            <p class="card-subtitle" id="wave-title-3">LATE ORDERS (ช้ากว่าแผน)</p>
+                            <h3 class="card-value" id="wave-late" style="color: var(--danger)">...</h3>
+                            <div class="card-footer" id="wave-active-info-3" style="color: var(--text-muted); font-size: 0.75rem; margin-top: 8px;">กำลังตรวจสอบ...</div>
+                        </div>
+                        <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;" id="wave-date-3">Updated: --</div>
+                    </div>
+                    <div class="card metric-card">
+                        <div>
+                            <p class="card-subtitle" id="wave-title-4">CURRENT DELAY (ดีเลย์ปัจจุบัน)</p>
+                            <h3 class="card-value" id="wave-delay" style="color: var(--danger)">...</h3>
+                            <div class="card-footer" id="wave-active-info-4" style="color: var(--text-muted); font-size: 0.75rem; margin-top: 8px;">กำลังตรวจสอบ...</div>
+                        </div>
+                        <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;" id="wave-date-4">Updated: --</div>
+                    </div>
+                </div> 
                 
-                <div class="card metric-card">
-                    <div>
-                        <p class="card-subtitle" id="wave-title-1">TOTAL ORDERS</p>
-                        <h3 class="card-value" id="wave-total">...</h3>
-                        <div class="card-footer" id="wave-active-info-1" style="color: var(--text-muted); font-size: 0.75rem; margin-top: 8px;">กำลังตรวจสอบ...</div>
-                    </div>
-                    <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;" id="wave-date-1">Updated: --</div>
-                </div>
-
-                <div class="card metric-card">
-                    <div>
-                        <p class="card-subtitle" id="wave-title-2">COMPLETED ORDERS</p>
-                        <h3 class="card-value" id="wave-completed">...</h3>
-                        <div class="card-footer" id="wave-active-info-2" style="color: var(--text-muted); font-size: 0.75rem; margin-top: 8px;">กำลังตรวจสอบ...</div>
-                    </div>
-                    <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;" id="wave-date-2">Updated: --</div>
-                </div>
-
-                <div class="card metric-card">
-                    <div>
-                        <p class="card-subtitle" id="wave-title-3">LATE ORDERS (ช้ากว่าแผน)</p>
-                        <h3 class="card-value" id="wave-late" style="color: var(--danger)">...</h3>
-                        <div class="card-footer" id="wave-active-info-3" style="color: var(--text-muted); font-size: 0.75rem; margin-top: 8px;">กำลังตรวจสอบ...</div>
-                    </div>
-                    <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;" id="wave-date-3">Updated: --</div>
-                </div>
-
-                <div class="card metric-card">
-                    <div>
-                        <p class="card-subtitle" id="wave-title-4">CURRENT DELAY (ดีเลย์ปัจจุบัน)</p>
-                        <h3 class="card-value" id="wave-delay" style="color: var(--danger)">...</h3>
-                        <div class="card-footer" id="wave-active-info-4" style="color: var(--text-muted); font-size: 0.75rem; margin-top: 8px;">กำลังตรวจสอบ...</div>
-                    </div>
-                    <div style="margin-top: 15px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px;" id="wave-date-4">Updated: --</div>
-                </div>
-
-            </div> <div class="card data-card mt-20">
-                <div class="card-header"><h3>WAVE PLAN SUMMARY BY BU (COMPLETED / TOTAL)</h3></div>
-                <div style="width: 100%; overflow-x: auto;">
-                    <table class="matrix-table" id="wave-summary-table">
-                        <thead>
-                            <tr><th class="text-center" style="padding: 30px; color: var(--text-muted);">Loading Wave Summary Data...</th></tr>
-                        </thead>
-                    </table>
-                </div>
-            </div>
-            </div>
-
-        <section id="fulfillment-section" class="section-container mt-40">
-    <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px;">
-        <div>
-            <h2 class="section-title">
-                1. Orders Shipped & Avg. Fulfillment
-                <span class="source-badge" style="background: rgba(16, 185, 129, 0.1); color: #10B981; border-color: transparent;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>
-                    Live Node API
-                </span>
-            </h2>
-            <p class="section-desc">ปริมาณออเดอร์รายสาขา (BU) อัตราความสำเร็จ และการควบคุมสถานะบิลคงค้างในแต่ละวัน</p>
-        </div>
-    </div>
-    
-    <div class="charts-grid-2 mt-20">
-            <div class="card chart-card">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <h3 style="margin: 0;">DAILY REQUESTED VOLUME BY BU (PCS)</h3>
-                    <select id="ffm-bu-filter" class="slicer-input dropdown-slicer" style="padding: 4px 8px; font-size: 0.8rem; border-color: #10B981;">
-                        <option value="ALL">All BUs (รวม)</option>
-                    </select>
-                </div>
-                <div class="chart-wrapper" style="height: 280px; position: relative;">
-                    <canvas id="ffmTrendChart"></canvas>
-                </div>
-            </div>
-            
-            <div class="card chart-card">
-                <div class="card-header">
-                    <h3>ORDER MIX BY BU (ORDERS)</h3>
-                </div>
-                <div class="chart-wrapper" style="height: 280px; position: relative;">
-                    <canvas id="ffmVolumeChart"></canvas>
-                </div>
-            </div>
-
-            <div class="card chart-card" style="display: flex; flex-direction: column;">
-                <div class="card-header">
-                    <h3 id="utilization-title" style="margin: 0;">📊 VOLUME UTILIZATION BY OWNER</h3>
-                </div>
-                <div style="width: 100%; overflow-x: auto; flex: 1; max-height: 280px; overflow-y: auto;">
-                    <table class="matrix-table" id="utilization-table" style="min-width: 100%; text-align: left;">
-                        <thead>
-                            <tr>
-                                <th style="text-align:left; padding: 12px 15px; position:sticky; top:0; z-index:10; background:var(--bg-card);">OWNER (BU)</th>
-                                <th style="text-align:right; padding: 12px 15px; position:sticky; top:0; z-index:10; background:var(--bg-card);">VOLUME (PCS)</th>
-                                <th style="text-align:left; padding: 12px 15px; position:sticky; top:0; z-index:10; background:var(--bg-card); width: 35%;">UTILIZATION %</th>
-                                <th style="text-align:center; padding: 12px 15px; position:sticky; top:0; z-index:10; background:var(--bg-card);">STATUS</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td colspan="4" class="text-center" style="padding: 30px; color: var(--text-muted);">Loading Utilization Data...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    <div class="card data-card mt-20">
-        <div class="card-header"><h3>DAILY FULFILLMENT MATRIX RECORD</h3></div>
-        <div style="width: 100%; overflow-x: auto; max-height: 400px; overflow-y: auto;">
-            <table class="matrix-table" id="ffm-detail-table">
-                <thead>
-                    <tr><th class="text-center" style="padding: 30px; color: var(--text-muted);">กำลังเรียกขอข้อมูลจากเซิร์ฟเวอร์หลังบ้าน...</th></tr>
-                </thead>
-            </table>
-        </div>
-    </div>
-</section>
-
-        <section id="monitoring" class="section-container mt-40">
-            
-            <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px;">
-                <div>
-                    <h2 class="section-title">
-                        2. Active Workforce Details
-                        <a href="#" onclick="alert('ข้อมูลกำลังพลถูกดึงมาจาก Google Sheets ไฟล์ปัจจุบันที่คุณกำลังเปิดใช้งาน Script นี้อยู่ครับ'); return false;" class="source-badge">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                            Current Sheet
-                        </a>
-                    </h2>
-                    <p class="section-desc">รายละเอียดพนักงานปฏิบัติการ, สัดส่วนสังกัด/หน้าที่/กะ, และบันทึกรายวัน <span class="updated-time" style="margin-left:10px; font-weight:normal; font-size:0.8rem; color:var(--text-muted)"></span></p>
-                </div>
-                
-                <div class="card" style="padding: 10px 15px; display: flex; gap: 15px; align-items: center; border-radius: 12px; white-space: nowrap; box-shadow: 0 4px 6px rgba(0,0,0,0.02) !important;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">🇹🇭 พนักงานไทย</div>
-                        <div style="font-size: 1.4rem; font-weight: 800; color: #10B981; line-height: 1.2;" id="wf-thai">0</div>
-                    </div>
-                    <div style="width: 1px; height: 35px; background: var(--border-color);"></div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">🌐 ต่างชาติ (FTE/พม่า)</div>
-                        <div style="font-size: 1.4rem; font-weight: 800; color: #3B82F6; line-height: 1.2;" id="wf-foreign">0</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="charts-grid-2">
-                <div class="card chart-card chart-container workforce-trend-box">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px;">
-                        <h3>WORKFORCE HEADCOUNT TREND</h3>
-                        <select id="trend-role-filter" class="slicer-input dropdown-slicer">
-                            <option value="All">All Ops (รวม)</option>
-                            <option value="Pick">Pick</option>
-                            <option value="RT">RT</option>
-                            <option value="QCQA">QC & QA</option>
-                            <option value="Grouping">Grouping</option>
-                            <option value="Putaway">Put-away</option>
-                            <option value="Receive">Receive</option>
-                        </select>
-                    </div>
-                    <div class="chart-wrapper" style="position: relative; height: 350px; width: 100%;">
-                        <canvas id="workforceChart"></canvas>
-                    </div>
-                </div>
-                
-                <div class="card data-card" style="grid-column: span 1;">
-                    <div class="card-header"><h3>WORKFORCE MATRIX (AFFILIATION & ROLE)</h3></div>
-                    <div class="table-container compact-matrix" style="max-height: 380px; overflow-y: auto;">
-                        <table class="matrix-table" id="wf-matrix-table">
+                <div class="card data-card mt-20">
+                    <div class="card-header" style="padding: 20px;"><h3>WAVE PLAN SUMMARY BY BU (COMPLETED / TOTAL)</h3></div>
+                    <div style="width: 100%; overflow-x: auto;">
+                        <table class="matrix-table" id="wave-summary-table">
                             <thead>
-                                <tr><th class="text-center" style="padding: 30px;">Loading Matrix Data...</th></tr>
+                                <tr><th class="text-center" style="padding: 30px; color: var(--text-muted);">Loading Wave Summary Data...</th></tr>
                             </thead>
                         </table>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="card smart-card excel-card mt-20" style="padding: 0;"> 
-                <div class="card-header" style="padding: 24px 24px 10px 24px;">
-                    <h3>DAILY ATTENDANCE RECORD (DETAILED)</h3>
+            <section id="fulfillment-section" class="section-container mt-40">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        Orders Shipped & Avg. Fulfillment
+                        <span class="source-badge" style="color: #10B981; border-color: rgba(16, 185, 129, 0.2);">Live Node API</span>
+                    </h2>
+                    <p class="section-desc">ปริมาณออเดอร์รายสาขา (BU) อัตราความสำเร็จ และสัดส่วนบิล</p>
                 </div>
-                <div style="width: 100%; overflow-x: auto; max-height: 400px; overflow-y: auto;">
-                    <table class="excel-table sticky-header" style="min-width: 1000px;">
-                        <thead id="daily-attendance-head">
-                            <tr><th class="text-center" style="padding: 30px; color: var(--text-muted);">Loading Data...</th></tr>
-                        </thead>
-                        <tbody id="daily-attendance-body">
-                            <tr><td colspan="100%" style="text-align: center; padding: 30px; color: var(--text-muted);">Loading data from Google Sheets...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="charts-grid-2 mt-20">
-                <div class="card data-card" style="grid-column: span 1;">
-                    <div class="card-header"><h3>ALL STAFF SUMMARY (BY HC TYPE)</h3></div>
-                    <div style="width: 100%; overflow-x: auto; max-height: 350px; overflow-y: auto;">
-                        <table class="matrix-table" id="hc-summary-table">
-                            <thead><tr><th class="text-center" style="padding:30px;">Loading Data...</th></tr></thead>
-                        </table>
-                    </div>
-                </div>
-                <div class="card data-card" style="grid-column: span 1;">
-                    <div class="card-header"><h3 style="color: var(--danger);">RESIGNED STAFF (STATUS: L)</h3></div>
-                    <div style="width: 100%; overflow-x: auto; max-height: 350px; overflow-y: auto;">
-                        <table class="matrix-table" id="resigned-table">
-                            <thead><tr><th class="text-center" style="padding:30px;">Loading Data...</th></tr></thead>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            
-        </section>
-
-        <section class="section-container mt-40">
-            <div class="section-header">
-                <h2 class="section-title">
-                    3. On-Time Delivery Details
-                    <a href="https://docs.google.com/spreadsheets/d/1Z67e0LMZsGQWFtwaoHggVZdbCMznMJEjdaIo0o_ceBc" target="_blank" class="source-badge">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                        Data Source
-                    </a>
-                </h2>
-            </div>
-            <div class="charts-grid-2">
-                <div class="card chart-card">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <h3 style="margin: 0;">ON-TIME TREND</h3>
-                        <div style="display: flex; gap: 5px;">
-                            <select id="ontime-period-filter" class="slicer-input dropdown-slicer" style="padding: 4px 8px; font-size: 0.8rem;">
-                                <option value="Daily">รายวัน (Day)</option>
-                                <option value="Monthly">รายเดือน (Month)</option>
-                                <option value="Yearly">รายปี (Year)</option>
-                            </select>
-                            <select id="ontime-filter" class="slicer-input dropdown-slicer" style="padding: 4px 8px; font-size: 0.8rem;">
-                                <option value="Overview">ภาพรวม (All)</option>
-                                <option value="PTGLG">PTGLG (ปกติ)</option>
-                                <option value="HUB">HUB</option>
+                
+                <div class="charts-grid-2 mt-20">
+                    <div class="card chart-card">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px;">
+                            <h3 style="margin: 0;">DAILY REQUESTED VOLUME BY BU (PCS)</h3>
+                            <select id="ffm-bu-filter" class="slicer-input dropdown-slicer" style="padding: 4px 8px; font-size: 0.8rem;">
+                                <option value="ALL">All BUs (รวม)</option>
                             </select>
                         </div>
-                    </div>
-                    <div id="ontime-summary-box" style="margin: 15px 20px 0 20px; padding: 10px 15px; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10B981; border-radius: 4px; font-size: 0.85rem; color: var(--text-main);">
-                        💡 กำลังวิเคราะห์ข้อมูล...
-                    </div>
-                    <div style="height: 250px; position: relative; padding: 10px 10px 0 10px;"><canvas id="ontimeChart2"></canvas></div>
-                </div>
-                <div class="card data-card">
-                    <div class="card-header"><h3>DAILY ON-TIME RECORD</h3></div>
-                    <div style="width: 100%; overflow-x: auto; max-height: 350px; overflow-y: auto;">
-                        <table class="matrix-table" id="ontime-detail-table">
-                            <thead><tr><th class="text-center" style="padding:30px;">Loading Data...</th></tr></thead>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card data-card mt-20">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <h3>🚚 TRANSPORT DELIVERY STATUS (สถานะจากขนส่ง)</h3>
-                    <a href="https://docs.google.com/spreadsheets/d/1zrEmK2xaFYnsT2s4B2Fg9juk2gcmkNsYxJzIQefSg1I" target="_blank" class="source-badge">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                        Data Source
-                    </a>
-                </div>
-                <div style="width: 100%; overflow-x: auto; max-height: 350px; overflow-y: auto;">
-                    <table class="matrix-table" id="transport-status-table" style="min-width: 800px;">
-                        <thead><tr><th class="text-center" style="padding:30px;">Loading Transport Data...</th></tr></thead>
-                    </table>
-                </div>
-            </div>
-
-            <div class="card data-card mt-20">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <h3>🚛 CARRIER STATUS SUMMARY (สรุปสถานะรายบริษัทขนส่ง)</h3>
-                    <span class="updated-time" id="carrier-update-time" style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;"></span>
-                </div>
-                <div style="width: 100%; overflow-x: auto; max-height: 350px; overflow-y: auto;">
-                    <table class="matrix-table" id="transport-carrier-table" style="min-width: 600px;">
-                        <thead><tr><th class="text-center" style="padding:30px;">Loading Carrier Data...</th></tr></thead>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <section class="section-container mt-40">
-            <div class="section-header">
-                <h2 class="section-title">
-                    4. Claim Details (มูลค่าและจำนวนชิ้น)
-                    <a href="https://docs.google.com/spreadsheets/d/1S1TcUl9tpqrjpU8ivFCCxmShQIEI2hiuYtKZrWJvub0" target="_blank" class="source-badge">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                        Data Source
-                    </a>
-                </h2>
-            </div>
-            <div class="charts-grid-2">
-                <div class="card chart-card">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <h3 style="margin: 0;">CLAIM TREND</h3>
-                        <select id="claim-period-filter" class="slicer-input dropdown-slicer" style="padding: 4px 8px; font-size: 0.8rem;">
-                            <option value="Monthly">รายเดือน (Month)</option>
-                            <option value="Daily">รายวัน (Day)</option>
-                        </select>
-                    </div>
-                    
-                    <div id="claim-summary-box" style="margin: 15px 20px 0 20px; padding: 12px 15px; background: rgba(239, 68, 68, 0.05); border-left: 4px solid #EF4444; border-radius: 6px; font-size: 0.85rem; color: var(--text-main); line-height: 1.6;">
-                        💡 กำลังวิเคราะห์ข้อมูลเคลม...
-                    </div>
-                    
-                    <div style="height: 280px; position: relative; padding: 15px 10px 0 10px;"><canvas id="claimChart2"></canvas></div>
-                </div>
-                <div class="card data-card">
-                    <div class="card-header"><h3>DAILY / MONTHLY CLAIM RECORD</h3></div>
-                    <div style="width: 100%; overflow-x: auto; max-height: 350px; overflow-y: auto;">
-                        <table class="matrix-table" id="claim-detail-table">
-                            <thead><tr><th class="text-center" style="padding:30px;">Loading Data...</th></tr></thead>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="section-container mt-40">
-            <div class="section-header">
-                <h2 class="section-title">
-                    5. Inventory & Location Accuracy Details
-                    <a href="https://docs.google.com/spreadsheets/d/1okLwWxxxnsewnwVZB_-UHSIJ0nf5vx9_SW3CvbYnrX8" target="_blank" class="source-badge">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                        Data Source
-                    </a>
-                </h2>
-            </div>
-            
-            <div class="charts-grid-2">
-                <div class="card chart-card">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <h3 style="margin: 0;">INVENTORY ACCURACY TREND</h3>
-                        <select id="inv-bu-filter" class="slicer-input dropdown-slicer" style="padding: 4px 8px; font-size: 0.8rem;">
-                            <option value="ALL">All BUs (ภาพรวม)</option>
-                        </select>
-                    </div>
-                    <div style="height: 300px; position: relative; padding: 10px 10px 0 10px;"><canvas id="inventoryChart"></canvas></div>
-                </div>
-                <div class="card data-card">
-                    <div class="card-header"><h3>MONTHLY ACCURACY RECORD BY BU</h3></div>
-                    <div style="width: 100%; overflow-x: auto; max-height: 350px; overflow-y: auto;">
-                        <table class="matrix-table" id="inv-detail-table">
-                            <thead><tr><th class="text-center" style="padding:30px;">Loading Data...</th></tr></thead>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card data-card mt-20" style="overflow: visible;">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <h3>📍 LOCATION ACCURACY & ANALYSIS (พบสินค้าผิด Location)</h3>
-                    
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                        <div class="slicer-group" style="position: relative; margin: 0;">
-                            <div id="loc-bu-select" class="slicer-input" style="cursor: pointer; min-width: 100px; display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; font-size: 0.75rem;">
-                                <span id="loc-bu-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px;">BU: All</span>
-                                <span style="font-size: 8px; color: var(--text-muted);">▼</span>
-                            </div>
-                            <div id="loc-bu-menu" style="display: none; position: absolute; top: 100%; right: 0; min-width: 150px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 999; max-height: 200px; overflow-y: auto; padding: 8px; margin-top: 4px;">
-                                <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-weight: 700; cursor: pointer; font-size: 0.75rem;"><input type="checkbox" id="loc-bu-all" checked> All BUs</label>
-                                <div style="border-bottom: 1px dashed var(--border-color); margin: 6px 0;"></div>
-                                <div id="loc-bu-list" style="display: flex; flex-direction: column; gap: 4px;"></div>
-                                <button id="loc-bu-apply" style="margin-top: 8px; width: 100%; padding: 4px; background: #10B981; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;">Apply</button>
-                            </div>
+                        <div class="chart-wrapper" style="height: 280px; padding: 0 15px 15px 15px;">
+                            <canvas id="ffmTrendChart"></canvas>
                         </div>
-                        <div class="slicer-group" style="position: relative; margin: 0;">
-                            <div id="loc-type-select" class="slicer-input" style="cursor: pointer; min-width: 100px; display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; font-size: 0.75rem;">
-                                <span id="loc-type-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px;">Type: All</span>
-                                <span style="font-size: 8px; color: var(--text-muted);">▼</span>
-                            </div>
-                            <div id="loc-type-menu" style="display: none; position: absolute; top: 100%; right: 0; min-width: 150px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 999; max-height: 200px; overflow-y: auto; padding: 8px; margin-top: 4px;">
-                                <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-weight: 700; cursor: pointer; font-size: 0.75rem;"><input type="checkbox" id="loc-type-all" checked> All Types</label>
-                                <div style="border-bottom: 1px dashed var(--border-color); margin: 6px 0;"></div>
-                                <div id="loc-type-list" style="display: flex; flex-direction: column; gap: 4px;"></div>
-                                <button id="loc-type-apply" style="margin-top: 8px; width: 100%; padding: 4px; background: #10B981; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;">Apply</button>
-                            </div>
+                    </div>
+                    
+                    <div class="card chart-card">
+                        <div class="card-header" style="padding: 20px;"><h3 style="margin:0;">ORDER MIX BY BU (ORDERS)</h3></div>
+                        <div class="chart-wrapper" style="height: 280px; padding: 0 15px 15px 15px;">
+                            <canvas id="ffmVolumeChart"></canvas>
                         </div>
-                        <div class="slicer-group" style="position: relative; margin: 0;">
-                            <div id="loc-zone-select" class="slicer-input" style="cursor: pointer; min-width: 100px; display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; font-size: 0.75rem;">
-                                <span id="loc-zone-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px;">Zone: All</span>
-                                <span style="font-size: 8px; color: var(--text-muted);">▼</span>
-                            </div>
-                            <div id="loc-zone-menu" style="display: none; position: absolute; top: 100%; right: 0; min-width: 150px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 999; max-height: 200px; overflow-y: auto; padding: 8px; margin-top: 4px;">
-                                <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-weight: 700; cursor: pointer; font-size: 0.75rem;"><input type="checkbox" id="loc-zone-all" checked> All Zones</label>
-                                <div style="border-bottom: 1px dashed var(--border-color); margin: 6px 0;"></div>
-                                <div id="loc-zone-list" style="display: flex; flex-direction: column; gap: 4px;"></div>
-                                <button id="loc-zone-apply" style="margin-top: 8px; width: 100%; padding: 4px; background: #10B981; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;">Apply</button>
-                            </div>
+                    </div>
+
+                    <div class="card chart-card" style="display: flex; flex-direction: column;">
+                        <div class="card-header" style="padding: 20px;"><h3 id="utilization-title" style="margin: 0;">📊 VOLUME UTILIZATION BY OWNER</h3></div>
+                        <div style="width: 100%; overflow-x: auto; flex: 1; max-height: 280px; overflow-y: auto;">
+                            <table class="matrix-table" id="utilization-table">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align:left; padding-left:15px;">OWNER (BU)</th>
+                                        <th>VOLUME (PCS)</th>
+                                        <th style="text-align:left; width: 35%;">UTILIZATION %</th>
+                                        <th style="text-align:center;">STATUS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="4" class="text-center" style="padding: 30px; color: var(--text-muted);">Loading Utilization Data...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card data-card mt-20">
+                    <div class="card-header" style="padding: 20px;"><h3>DAILY FULFILLMENT MATRIX RECORD</h3></div>
+                    <div style="width: 100%; overflow-x: auto; max-height: 400px; overflow-y: auto;">
+                        <table class="matrix-table" id="ffm-detail-table">
+                            <thead>
+                                <tr><th class="text-center" style="padding: 30px; color: var(--text-muted);">Loading Server Matrix Data...</th></tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="workforce-section" class="section-container mt-40">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h2 class="section-title">Active Workforce Details <span class="source-badge">Current Sheet</span></h2>
+                        <p class="section-desc">รายละเอียดพนักงานกะปฏิบัติการ หน้าที่ และอัตราการขาดลามาสาย <span class="updated-time"></span></p>
+                    </div>
+                    
+                    <div class="card" style="padding: 12px 20px; display: flex; gap: 20px; align-items: center; border-radius: 16px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">🇹🇭 พนักงานไทย</div>
+                            <div style="font-size: 1.4rem; font-weight: 800; color: #10B981;" id="wf-thai">0</div>
+                        </div>
+                        <div style="width: 1px; height: 35px; background: var(--border-color);"></div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">🌐 ต่างชาติ (FTE)</div>
+                            <div style="font-size: 1.4rem; font-weight: 800; color: #3B82F6;" id="wf-foreign">0</div>
                         </div>
                     </div>
                 </div>
                 
-                <div id="loc-analysis-box" style="margin: 15px 20px 0 20px; padding: 12px 15px; background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3B82F6; border-radius: 6px; font-size: 0.85rem; color: var(--text-main); line-height: 1.5;">
-                    💡 กำลังวิเคราะห์ข้อมูล Location...
-                </div>
-                <div style="width: 100%; overflow-x: auto; max-height: 350px; overflow-y: auto; margin-top: 10px;">
-                    <table class="matrix-table" id="loc-accuracy-table" style="min-width: 800px;">
-                        <thead><tr><th class="text-center" style="padding:30px;">Loading Location Data...</th></tr></thead>
-                    </table>
-                </div>
-            </div>
-
-            <div class="card data-card mt-20">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <h3>DAILY ACCURACY RECORD BY BU (ตรวจสอบความผิดปกติรายวันย้อนหลัง 14 วัน)</h3>
-                </div>
-                <div style="width: 100%; overflow-x: auto; max-height: 350px; overflow-y: auto;">
-                    <table class="matrix-table" id="inv-daily-table" style="min-width: 600px;">
-                        <thead><tr><th class="text-center" style="padding:30px;">Loading Daily Data...</th></tr></thead>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- 🌟 หมวดที่ 6: Productivity Details (เพิ่ม Dropdown ตรงนี้แหละครับ) 🌟 -->
-        <section class="section-container mt-40">
-            <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px;">
-                <h2 class="section-title">
-                    6. Productivity Details (Picking Efficiency & Cost)
-                    <a href="https://docs.google.com/spreadsheets/d/11EJrhJEcpGk50NzEpQ-5l6t11gPgwhwktjfrpThIsEc" target="_blank" class="source-badge">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                        Data Source
-                    </a>
-                </h2>
-                
-                <div class="card" style="padding: 10px 15px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; border-radius: 12px; border: 1px dashed #10B981; background: rgba(16, 185, 129, 0.05);">
-                    <div style="font-size: 0.75rem; font-weight: 800; color: #10B981;">🎯 UPH TARGET:</div>
-                    <div style="display: flex; gap: 8px;">
-                        <div style="display: flex; flex-direction: column;">
-                            <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">Overall</label>
-                            <input type="number" id="trg-all" value="150" style="width: 50px; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border-color); font-size: 11px; background: var(--bg-card); color: var(--text-main);">
+                <div class="charts-grid-2 mt-20">
+                    <div class="card chart-card workforce-trend-box">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px;">
+                            <h3 style="margin:0;">WORKFORCE HEADCOUNT TREND</h3>
+                            <select id="trend-role-filter" class="slicer-input dropdown-slicer">
+                                <option value="All">All Ops (รวม)</option>
+                            </select>
                         </div>
-                        <div style="display: flex; flex-direction: column;">
-                            <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">Full Rack</label>
-                            <input type="number" id="trg-full" value="150" style="width: 50px; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border-color); font-size: 11px; background: var(--bg-card); color: var(--text-main);">
-                        </div>
-                        <div style="display: flex; flex-direction: column;">
-                            <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">Half Rack</label>
-                            <input type="number" id="trg-half" value="150" style="width: 50px; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border-color); font-size: 11px; background: var(--bg-card); color: var(--text-main);">
-                        </div>
-                        <div style="display: flex; flex-direction: column;">
-                            <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">EA</label>
-                            <input type="number" id="trg-ea" value="150" style="width: 50px; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border-color); font-size: 11px; background: var(--bg-card); color: var(--text-main);">
+                        <div class="chart-wrapper" style="height: 350px;">
+                            <canvas id="workforceChart"></canvas>
                         </div>
                     </div>
                     
-                    <div style="font-size: 0.75rem; font-weight: 800; color: #3B82F6; margin-left: 10px; padding-left: 15px; border-left: 1px dashed var(--border-color);">💰 COST BASE:</div>
-                    <div style="display: flex; gap: 8px;">
-                        <div style="display: flex; flex-direction: column;">
-                            <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">Salary (฿/Mo)</label>
-                            <input type="number" id="cost-salary" value="15000" style="width: 70px; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border-color); font-size: 11px; background: var(--bg-card); color: var(--text-main);">
-                        </div>
-                        <div style="display: flex; flex-direction: column;">
-                            <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">Days/Mo</label>
-                            <input type="number" id="cost-days" value="26" style="width: 45px; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border-color); font-size: 11px; background: var(--bg-card); color: var(--text-main);">
+                    <div class="card data-card">
+                        <div class="card-header" style="padding: 20px;"><h3>WORKFORCE MATRIX (AFFILIATION & ROLE)</h3></div>
+                        <div style="max-height: 350px; overflow-y: auto;">
+                            <table class="matrix-table" id="wf-matrix-table">
+                                <thead>
+                                    <tr><th class="text-center" style="padding: 30px;">Loading Matrix Data...</th></tr>
+                                </thead>
+                            </table>
                         </div>
                     </div>
-
-                    <button onclick="saveTargets()" style="background: #10B981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700;">Save & Calc</button>
                 </div>
-            </div>
-            
-            <div class="charts-grid-2 mt-20">
-                <div class="card chart-card">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <h3 style="margin: 0;">UPH HEAT TREND (แยกโซน)</h3>
-                        <div style="display: flex; gap: 5px;">
-                            <select id="prod-area-filter" class="slicer-input dropdown-slicer" style="padding: 4px 8px; font-size: 0.8rem; border-color: #10B981;">
-                                <option value="ALL">All Areas (ภาพรวม)</option>
-                            </select>
-                            <select id="prod-period-filter" class="slicer-input dropdown-slicer" style="padding: 4px 8px; font-size: 0.8rem;">
-                                <option value="Daily">รายวัน (Day)</option>
+
+                <div class="card data-card mt-20" style="padding: 0;"> 
+                    <div class="card-header" style="padding: 20px 20px 10px 20px;"><h3>DAILY ATTENDANCE RECORD (DETAILED)</h3></div>
+                    <div style="width: 100%; overflow-x: auto; max-height: 400px; overflow-y: auto;">
+                        <table class="excel-table sticky-header" id="attendance-table-detailed" style="width:100%; border-collapse:collapse;">
+                            <thead id="daily-attendance-head">
+                                <tr><th class="text-center" style="padding: 30px; color: var(--text-muted);">Loading Data Header...</th></tr>
+                            </thead>
+                            <tbody id="daily-attendance-body">
+                                <tr><td style="text-align: center; padding: 30px; color: var(--text-muted);">Loading data from Sheets...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="charts-grid-2 mt-20">
+                    <div class="card data-card">
+                        <div class="card-header" style="padding: 20px;"><h3>ALL STAFF SUMMARY (BY HC TYPE)</h3></div>
+                        <div style="max-height: 350px; overflow-y: auto;">
+                            <table class="matrix-table" id="hc-summary-table">
+                                <thead><tr><th class="text-center" style="padding:30px;">Loading Data...</th></tr></thead>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card data-card">
+                        <div class="card-header" style="padding: 20px;"><h3 style="color: var(--danger); margin:0;">RESIGNED STAFF (STATUS: L)</h3></div>
+                        <div style="max-height: 350px; overflow-y: auto;">
+                            <table class="matrix-table" id="resigned-table">
+                                <thead><tr><th class="text-center" style="padding:30px;">Loading Data...</th></tr></thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="ontime-section" class="section-container mt-40">
+                <div class="section-header">
+                    <h2 class="section-title">On-Time Delivery & Transport <span class="source-badge">Data Source</span></h2>
+                </div>
+                <div class="charts-grid-2 mt-20">
+                    <div class="card chart-card">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px;">
+                            <h3 style="margin: 0;">ON-TIME TREND</h3>
+                            <div style="display: flex; gap: 5px;">
+                                <select id="ontime-period-filter" class="slicer-input dropdown-slicer">
+                                    <option value="Daily">รายวัน (Day)</option>
+                                    <option value="Monthly">รายเดือน (Month)</option>
+                                    <option value="Yearly">รายปี (Year)</option>
+                                </select>
+                                <select id="ontime-filter" class="slicer-input dropdown-slicer">
+                                    <option value="Overview">ภาพรวม (All)</option>
+                                    <option value="PTGLG">PTGLG (ปกติ)</option>
+                                    <option value="HUB">HUB</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="ontime-summary-box" style="margin: 0 20px; padding: 12px 15px; background: rgba(16, 185, 129, 0.05); border-left: 4px solid #10B981; border-radius: 6px; font-size: 0.85rem;">
+                            💡 กำลังประมวลผลข้อมูลจัดส่งสินค้า...
+                        </div>
+                        <div style="height: 250px; padding: 15px 10px;"><canvas id="ontimeChart2"></canvas></div>
+                    </div>
+                    <div class="card data-card">
+                        <div class="card-header" style="padding: 20px;"><h3>DAILY ON-TIME RECORD</h3></div>
+                        <div style="max-height: 350px; overflow-y: auto;">
+                            <table class="matrix-table" id="ontime-detail-table">
+                                <thead><tr><th class="text-center" style="padding:30px;">Loading Data...</th></tr></thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card data-card mt-20">
+                    <div class="card-header" style="padding: 20px;"><h3>🚚 TRANSPORT DELIVERY STATUS (สถานะจากขนส่ง)</h3></div>
+                    <div style="max-height: 350px; overflow-y: auto;">
+                        <table class="matrix-table" id="transport-status-table">
+                            <thead><tr><th class="text-center" style="padding:30px;">Loading Transport Data...</th></tr></thead>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card data-card mt-20">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px;">
+                        <h3 style="margin:0;">ใช้งาน 🚛 CARRIER STATUS SUMMARY (สรุปบริษัทขนส่ง)</h3>
+                        <span id="carrier-update-time" style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;"></span>
+                    </div>
+                    <div style="max-height: 350px; overflow-y: auto;">
+                        <table class="matrix-table" id="transport-carrier-table">
+                            <thead><tr><th class="text-center" style="padding:30px;">Loading Carrier Data...</th></tr></thead>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="claim-section" class="section-container mt-40">
+                <div class="section-header">
+                    <h2 class="section-title">Claim Cost & Damaged Incidents <span class="source-badge">Data Source</span></h2>
+                </div>
+                <div class="charts-grid-2 mt-20">
+                    <div class="card chart-card">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px;">
+                            <h3 style="margin: 0;">CLAIM TREND</h3>
+                            <select id="claim-period-filter" class="slicer-input dropdown-slicer">
                                 <option value="Monthly">รายเดือน (Month)</option>
+                                <option value="Daily">รายวัน (Day)</option>
                             </select>
                         </div>
+                        <div id="claim-summary-box" style="margin: 0 20px; padding: 12px 15px; background: rgba(239, 68, 68, 0.05); border-left: 4px solid #EF4444; border-radius: 6px; font-size: 0.85rem; line-height: 1.6;">
+                            💡 กำลังประเมินมูลค่าสินค้าเสียหาย...
+                        </div>
+                        <div style="height: 280px; padding: 15px 10px;"><canvas id="claimChart2"></canvas></div>
                     </div>
-                    <div id="prod-summary-box" style="margin: 15px 20px 0 20px; padding: 12px 15px; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10B981; border-radius: 6px; font-size: 0.85rem; color: var(--text-main); line-height: 1.5;">
-                        💡 กำลังวิเคราะห์ข้อมูล Productivity...
+                    <div class="card data-card">
+                        <div class="card-header" style="padding: 20px;"><h3>DAILY / MONTHLY CLAIM RECORD</h3></div>
+                        <div style="max-height: 350px; overflow-y: auto;">
+                            <table class="matrix-table" id="claim-detail-table">
+                                <thead><tr><th class="text-center" style="padding:30px;">Loading Data...</th></tr></thead>
+                            </table>
+                        </div>
                     </div>
-                    <div style="height: 250px; position: relative; padding: 20px 10px 0 10px;"><canvas id="productivityChart"></canvas></div>
+                </div>
+            </section>
+
+            <section id="inventory-section" class="section-container mt-40">
+                <div class="section-header">
+                    <h2 class="section-title">Inventory & Location Accuracy <span class="source-badge">Data Source</span></h2>
+                </div>
+                
+                <div class="charts-grid-2 mt-20">
+                    <div class="card chart-card">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px;">
+                            <h3 style="margin: 0;">INVENTORY ACCURACY TREND</h3>
+                            <select id="inv-bu-filter" class="slicer-input dropdown-slicer">
+                                <option value="ALL">All BUs (ภาพรวม)</option>
+                            </select>
+                        </div>
+                        <div style="height: 300px; padding: 10px 15px;"><canvas id="inventoryChart"></canvas></div>
+                    </div>
+                    <div class="card data-card">
+                        <div class="card-header" style="padding: 20px;"><h3>MONTHLY ACCURACY RECORD BY BU</h3></div>
+                        <div style="max-height: 350px; overflow-y: auto;">
+                            <table class="matrix-table" id="inv-detail-table">
+                                <thead><tr><th class="text-center" style="padding:30px;">Loading Data...</th></tr></thead>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="card data-card">
-                    <div class="card-header"><h3 id="prod-area-title">PERFORMANCE BY AREA (แยกโซน)</h3></div>
-                    <div style="width: 100%; overflow-x: auto; max-height: 350px; overflow-y: auto;">
-                        <table class="matrix-table" id="prod-area-table" style="min-width: 500px;">
-                            <thead><tr><th class="text-center" style="padding:30px;">Loading Area Data...</th></tr></thead>
+                <div class="card data-card mt-20" style="overflow: visible;">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 20px;">
+                        <h3 style="margin:0;">📍 LOCATION ACCURACY & ANALYSIS</h3>
+                        
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                            <div class="slicer-group" style="position: relative; margin: 0;">
+                                <div id="loc-bu-select" class="slicer-input" style="cursor: pointer; min-width: 100px; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; font-size: 0.75rem;">
+                                    <span id="loc-bu-text">BU: All</span> <span>▼</span>
+                                </div>
+                                <div id="loc-bu-menu" style="display: none; position: absolute; top: 100%; right: 0; min-width: 160px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow-card); z-index: 999; max-height: 200px; overflow-y: auto; padding: 10px; margin-top: 4px;">
+                                    <label style="font-size:0.75rem; font-weight:700;"><input type="checkbox" id="loc-bu-all" checked> All BUs</label>
+                                    <div style="border-bottom: 1px dashed var(--border-color); margin: 6px 0;"></div>
+                                    <div id="loc-bu-list" style="display:flex; flex-direction:column; gap:4px;"></div>
+                                    <button id="loc-bu-apply" style="margin-top: 8px; width: 100%; padding: 4px; background: #114EE8; color: white; border: none; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer;">Apply</button>
+                                </div>
+                            </div>
+                            <div class="slicer-group" style="position: relative; margin: 0;">
+                                <div id="loc-type-select" class="slicer-input" style="cursor: pointer; min-width: 100px; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; font-size: 0.75rem;">
+                                    <span id="loc-type-text">Type: All</span> <span>▼</span>
+                                </div>
+                                <div id="loc-type-menu" style="display: none; position: absolute; top: 100%; right: 0; min-width: 160px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow-card); z-index: 999; max-height: 200px; overflow-y: auto; padding: 10px; margin-top: 4px;">
+                                    <label style="font-size:0.75rem; font-weight:700;"><input type="checkbox" id="loc-type-all" checked> All Types</label>
+                                    <div style="border-bottom: 1px dashed var(--border-color); margin: 6px 0;"></div>
+                                    <div id="loc-type-list" style="display:flex; flex-direction:column; gap:4px;"></div>
+                                    <button id="loc-type-apply" style="margin-top: 8px; width: 100%; padding: 4px; background: #114EE8; color: white; border: none; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer;">Apply</button>
+                                </div>
+                            </div>
+                            <div class="slicer-group" style="position: relative; margin: 0;">
+                                <div id="loc-zone-select" class="slicer-input" style="cursor: pointer; min-width: 100px; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; font-size: 0.75rem;">
+                                    <span id="loc-zone-text">Zone: All</span> <span>▼</span>
+                                </div>
+                                <div id="loc-zone-menu" style="display: none; position: absolute; top: 100%; right: 0; min-width: 160px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow-card); z-index: 999; max-height: 200px; overflow-y: auto; padding: 10px; margin-top: 4px;">
+                                    <label style="font-size:0.75rem; font-weight:700;"><input type="checkbox" id="loc-zone-all" checked> All Zones</label>
+                                    <div style="border-bottom: 1px dashed var(--border-color); margin: 6px 0;"></div>
+                                    <div id="loc-zone-list" style="display:flex; flex-direction:column; gap:4px;"></div>
+                                    <button id="loc-zone-apply" style="margin-top: 8px; width: 100%; padding: 4px; background: #114EE8; color: white; border: none; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer;">Apply</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="loc-analysis-box" style="margin: 0 20px; padding: 12px 15px; background: rgba(59, 130, 246, 0.05); border-left: 4px solid #3B82F6; border-radius: 6px; font-size: 0.85rem; line-height: 1.5;">
+                        💡 กำลังคำนวณและวิเคราะห์พื้นที่ความแม่นยำต่ำ...
+                    </div>
+                    <div style="width: 100%; overflow-x: auto; max-height: 350px; overflow-y: auto; margin-top: 15px;">
+                        <table class="matrix-table" id="loc-accuracy-table">
+                            <thead><tr><th class="text-center" style="padding:30px;">Loading Location Data...</th></tr></thead>
                         </table>
                     </div>
                 </div>
-            </div>
 
-            <div class="charts-grid-2 mt-20">
-                <div class="card data-card">
-                    <div class="card-header"><h3 id="prod-user-title">PRODUCTIVITY BY USER (รายบุคคล)</h3></div>
-                    <div style="width: 100%; overflow-x: auto; max-height: 400px; overflow-y: auto;">
-                        <table class="matrix-table" id="prod-user-table" style="min-width: 600px;">
-                            <thead><tr><th class="text-center" style="padding:30px;">Loading User Data...</th></tr></thead>
+                <div class="card data-card mt-20">
+                    <div class="card-header" style="padding: 20px;"><h3>DAILY ACCURACY RECORD BY BU (ย้อนหลัง 14 วัน)</h3></div>
+                    <div style="max-height: 350px; overflow-y: auto;">
+                        <table class="matrix-table" id="inv-daily-table">
+                            <thead><tr><th class="text-center" style="padding:30px;">Loading Daily Data...</th></tr></thead>
                         </table>
                     </div>
                 </div>
+            </section>
 
-                <div class="card data-card">
-                    <div class="card-header"><h3>📅 DAILY OVERALL SUMMARY (ภาพรวมรายวัน)</h3></div>
-                    <div style="width: 100%; overflow-x: auto; max-height: 400px; overflow-y: auto;">
-                        <table class="matrix-table" id="prod-overall-table" style="min-width: 500px;">
-                            <thead><tr><th class="text-center" style="padding:30px;">Loading Daily Summary...</th></tr></thead>
-                        </table>
+            <section id="productivity-section" class="section-container mt-40" style="margin-bottom: 50px;">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h2 class="section-title">Productivity & Financial Efficiency <span class="source-badge">Data Source</span></h2>
+                        <p class="section-desc">คำนวณประสิทธิภาพความเร็วและต้นทุนแรงงานเฉลี่ยต่อชิ้น (Cost per Pick)</p>
+                    </div>
+                    
+                    <div class="card" style="padding: 15px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; border-radius: 16px; border: 1px dashed #10B981; background: rgba(16, 185, 129, 0.02);">
+                        <div style="font-size: 0.75rem; font-weight: 800; color: #10B981;">🎯 UPH TARGET:</div>
+                        <div style="display: flex; gap: 8px;">
+                            <div style="display: flex; flex-direction: column;">
+                                <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">Overall</label>
+                                <input type="number" id="trg-all" value="150" style="width: 50px; padding: 3px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 11px; background:var(--bg-card); color:var(--text-main);">
+                            </div>
+                            <div style="display: flex; flex-direction: column;">
+                                <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">Full Rack</label>
+                                <input type="number" id="trg-full" value="150" style="width: 50px; padding: 3px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 11px; background:var(--bg-card); color:var(--text-main);">
+                            </div>
+                            <div style="display: flex; flex-direction: column;">
+                                <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">Half Rack</label>
+                                <input type="number" id="trg-half" value="150" style="width: 50px; padding: 3px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 11px; background:var(--bg-card); color:var(--text-main);">
+                            </div>
+                            <div style="display: flex; flex-direction: column;">
+                                <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">EA</label>
+                                <input type="number" id="trg-ea" value="150" style="width: 50px; padding: 3px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 11px; background:var(--bg-card); color:var(--text-main);">
+                            </div>
+                        </div>
+                        
+                        <div style="font-size: 0.75rem; font-weight: 800; color: #3B82F6; margin-left: 5px; padding-left: 10px; border-left: 1px dashed var(--border-color);">💰 COST BASE:</div>
+                        <div style="display: flex; gap: 8px;">
+                            <div style="display: flex; flex-direction: column;">
+                                <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">Salary (฿/Mo)</label>
+                                <input type="number" id="cost-salary" value="15000" style="width: 65px; padding: 3px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 11px; background:var(--bg-card); color:var(--text-main);">
+                            </div>
+                            <div style="display: flex; flex-direction: column;">
+                                <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">Days/Mo</label>
+                                <input type="number" id="cost-days" value="26" style="width: 40px; padding: 3px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 11px; background:var(--bg-card); color:var(--text-main);">
+                            </div>
+                        </div>
+                        <button onclick="saveTargets()" style="background: #10B981; color: white; border: none; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 700;">Save & Calc</button>
                     </div>
                 </div>
-            </div>
-        </section>
-    </main>
+                
+                <div class="charts-grid-2 mt-20">
+                    <div class="card chart-card">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px;">
+                            <h3 style="margin: 0;">UPH HEAT TREND (แยกพื้นที่หยิบ)</h3>
+                            <div style="display: flex; gap: 5px;">
+                                <select id="prod-area-filter" class="slicer-input dropdown-slicer" style="padding: 4px 8px; font-size: 0.8rem;">
+                                    <option value="ALL">All Areas (ภาพรวม)</option>
+                                </select>
+                                <select id="prod-period-filter" class="slicer-input dropdown-slicer" style="padding: 4px 8px; font-size: 0.8rem;">
+                                    <option value="Daily">รายวัน (Day)</option>
+                                    <option value="Monthly">รายเดือน (Month)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="prod-summary-box" style="margin: 0 20px; padding: 12px 15px; background: rgba(16, 185, 129, 0.05); border-left: 4px solid #10B981; border-radius: 6px; font-size: 0.85rem; line-height: 1.5;">
+                            💡 กำลังประมวลผลความเร็ว UPH รายแผนก...
+                        </div>
+                        <div style="height: 250px; padding: 15px 10px;"><canvas id="productivityChart"></canvas></div>
+                    </div>
+
+                    <div class="card data-card">
+                        <div class="card-header" style="padding: 20px;"><h3 id="prod-area-title" style="margin:0;">PERFORMANCE BY AREA</h3></div>
+                        <div style="max-height: 350px; overflow-y: auto;">
+                            <table class="matrix-table" id="prod-area-table">
+                                <thead><tr><th class="text-center" style="padding:30px;">Loading Area Data...</th></tr></thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-grid-2 mt-20">
+                    <div class="card data-card">
+                        <div class="card-header" style="padding: 20px;"><h3 id="prod-user-title" style="margin:0;">PRODUCTIVITY BY USER (รายบุคคล)</h3></div>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            <table class="matrix-table" id="prod-user-table">
+                                <thead><tr><th class="text-center" style="padding:30px;">Loading User Data...</th></tr></thead>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card data-card">
+                        <div class="card-header" style="padding: 20px;"><h3>📅 DAILY OVERALL SUMMARY (ภาพรวมรายวัน)</h3></div>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            <table class="matrix-table" id="prod-overall-table">
+                                <thead><tr><th class="text-center" style="padding:30px;">Loading Daily Summary...</th></tr></thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
     <script src="script.js?v=2"></script>
 </body>
 </html>
