@@ -871,6 +871,7 @@ async function initFulfillmentRealtime() {
         }
 
         let aTotal = 0, aComp = 0, aLate = 0, aDelay = 0;
+        let wReq = 0, wAlloc = 0, wShip = 0; // 🟢 เพิ่ม 3 ตัวแปรนี้เพื่อเก็บจำนวนชิ้น (Pieces)
         let worstBU = ""; 
         if (activeWaveKey) {
             allBUsArray.forEach(bu => {
@@ -884,6 +885,13 @@ async function initFulfillmentRealtime() {
                 aComp += ordFull;
                 aLate += late;
                 if (delay > aDelay) { aDelay = delay; worstBU = bu; }
+                
+                // 🟢 เพิ่มโค้ดชุดนี้สำหรับนับจำนวนชิ้น (Pcs) ที่ต้องหยิบและส่ง
+                let bq = unifiedDatesMap[activeWaveKey].bq[bu] || {};
+                let fItem = unifiedDatesMap[activeWaveKey].ffm[bu] || {};
+                wReq += Math.max(parseFloat(bq.req || 0), parseFloat(fItem.req || 0));
+                wAlloc += parseFloat(bq.alloc || 0);
+                wShip += parseFloat(bq.ship || 0);
             });
             
             let diffDays = 0;
