@@ -1,21 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-/* ==========================================
-   🎨 1. Theme Variables (Clean Corporate Style)
-   ========================================== */
+/* 1. เปลี่ยนตัวแปรสีให้เป็น Solid Theme สว่างและคลีน */
 :root {
-    --bg-main: #F4F7FE;
-    --bg-card: #FFFFFF;
-    --text-main: #2B3674;
-    --text-muted: #A3AED0;
+    --bg-main: #F4F7FE;      /* สีพื้นหลังสีเทาอมฟ้าอ่อนๆ แบบในภาพ */
+    --bg-card: #FFFFFF;      /* การ์ดสีขาวล้วน */
+    --text-main: #2B3674;    /* ตัวหนังสือสีน้ำเงินเข้ม */
+    --text-muted: #A3AED0;   /* ตัวหนังสือสีเทา */
     --accent-primary: #05CD99;
     --accent-secondary: #FFCE20;
     --danger: #EE5D50;
     --border-color: #E9EDF7;
-    --sidebar-bg: #114EE8;
-    --shadow-card: 0px 18px 40px rgba(112, 144, 176, 0.08);
-    --shadow-hover: 0px 24px 50px rgba(112, 144, 176, 0.15);
-    --radius-lg: 20px; 
+    --shadow-card: 0px 18px 40px rgba(112, 144, 176, 0.12); /* เงาแบบฟุ้งๆ นุ่มๆ */
+    --radius-lg: 20px;       /* มุมโค้งมนมากขึ้นแบบในรูป */
     --radius-md: 12px;
 }
 
@@ -24,13 +20,42 @@
     --bg-card: #111C44;
     --text-main: #FFFFFF;
     --text-muted: #A3AED0;
-    --accent-primary: #05CD99;
-    --accent-secondary: #FFCE20;
-    --danger: #EE5D50;
     --border-color: #1B254B;
-    --sidebar-bg: #111C44;
-    --shadow-card: 0px 18px 40px rgba(0, 0, 0, 0.2);
-    --shadow-hover: 0px 24px 50px rgba(0, 0, 0, 0.3);
+    --shadow-card: 0px 18px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* 2. บังคับล้างค่า Glassmorphism ของการ์ดทั้งหมด */
+.card, .data-card, .chart-card {
+    background: var(--bg-card) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: var(--shadow-card) !important;
+    border-radius: var(--radius-lg) !important;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0px 24px 50px rgba(112, 144, 176, 0.18) !important;
+}
+
+/* 3. สไตล์สำหรับแบนเนอร์ด้านบนสุด (Welcome back) */
+.welcome-banner {
+    background: linear-gradient(135deg, #114EE8 0%, #3B82F6 100%) !important;
+    color: white !important;
+    border-radius: var(--radius-lg);
+    padding: 35px 40px !important;
+    margin-bottom: 25px;
+    box-shadow: 0px 15px 30px rgba(17, 78, 232, 0.2) !important;
+}
+.welcome-banner h2 { margin: 0 0 8px 0; font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+.welcome-banner p { margin: 0; font-size: 1rem; opacity: 0.85; font-weight: 400; }
+
+/* 4. สไตล์ไอคอนในการ์ด */
+.icon-wrapper {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
 }
 
 /* ==========================================
