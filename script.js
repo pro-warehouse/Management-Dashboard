@@ -225,20 +225,27 @@ function toggleLoader(show) {
 // 🌟 4. FULFILLMENT DATA BINDING (MATRIX PIVOT & CHARTS) 🌟
 // ========================================================
 async function initFulfillmentRealtime() {
+    // 🟢 วางโค้ดชุดนี้ทับ getBestOrderData ตัวเดิมทั้งหมด
     const getBestOrderData = (bItem, wItem, fItem) => {
         let bt = parseFloat(bItem?.ordTotal || 0), bf = parseFloat(bItem?.ordFull || 0);
         let wt = parseFloat(wItem?.ordTotal || 0), wf = parseFloat(wItem?.ordFull || 0);
         let ft = parseFloat(fItem?.ordTotal || 0), ff = parseFloat(fItem?.ordFull || 0);
         
-        if (wt > 0 && wf >= wt) return { tot: wt, full: wf };
-        if (ft > 0 && ff >= ft) return { tot: ft, full: ff };
+        // 1. หาว่าแหล่งข้อมูลไหนมี "ยอดออเดอร์รวม (Total Orders)" สูงที่สุด (แปลว่าข้อมูลก้อนใหญ่สุด/ครบสุด)
+        let maxTotal = Math.max(bt, wt, ft);
         
-        let maxF = Math.max(bf, wf, ff);
-        if (maxF === bf && bt > 0) return { tot: bt, full: bf };
-        if (maxF === wf && wt > 0) return { tot: wt, full: wf };
-        if (maxF === ff && ft > 0) return { tot: ft, full: ff };
+        if (maxTotal === 0) return { tot: 0, full: 0 };
         
-        return { tot: Math.max(bt, wt, ft), full: Math.max(bf, wf, ff) };
+        // 2. คัดเฉพาะแหล่งข้อมูลที่มียอดรวมใกล้เคียงกับของจริงมากที่สุด (ยอมให้ต่างได้นิดหน่อยเผื่อดีเลย์)
+        let validSources = [];
+        if (bt >= maxTotal * 0.9) validSources.push({ tot: bt, full: bf });
+        if (wt >= maxTotal * 0.9) validSources.push({ tot: wt, full: wf });
+        if (ft >= maxTotal * 0.9) validSources.push({ tot: ft, full: ff });
+        
+        // 3. ในบรรดาแหล่งที่ข้อมูลครบสุด ให้เลือกแหล่งที่มียอด "ทำเสร็จแล้ว (Completed)" สูงที่สุดมาโชว์
+        validSources.sort((a, b) => b.full - a.full);
+        
+        return { tot: validSources[0].tot, full: validSources[0].full };
     };
     let wrapperEl = document.getElementById('fulfillment-v3-wrapper');
     if (!wrapperEl) {
