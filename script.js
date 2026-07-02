@@ -1355,11 +1355,12 @@ function updateDashboardData(selectedDateStr) {
                 let sum = 0;
                 Object.keys(data.matrix).forEach(aff => {
                     if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(aff)) {
-                        ["Pick", "RT", "QC", "QA", "Grouping", "Putaway", "Receive"].forEach(r => {
-                            if(data.matrix[aff][r]) {
-                                Object.values(data.matrix[aff][r]).forEach(val => sum += val);
-                            }
-                        });
+                        // ✅ โค้ดใหม่ (อ่านทุกตำแหน่งอัตโนมัติ)
+Object.keys(data.matrix[aff]).forEach(r => {
+    if(data.matrix[aff][r]) {
+        Object.values(data.matrix[aff][r]).forEach(val => sum += val);
+    }
+});
                     }
                 });
                 return sum;
@@ -1406,7 +1407,12 @@ function updateDashboardData(selectedDateStr) {
                 document.querySelectorAll('#monitoring .updated-time').forEach(el => el.innerText = `(ข้อมูลล่าสุด: ${getDisplayDate(targetWfKey)})`);
             }
             
-            const roles = ["Pick", "RT", "QC", "QA", "Grouping", "Putaway", "Receive"];
+            // ✅ โค้ดใหม่
+let rolesSet = new Set();
+affiliations.forEach(aff => {
+    if(todayWf.matrix[aff]) Object.keys(todayWf.matrix[aff]).forEach(r => rolesSet.add(r));
+});
+const roles = Array.from(rolesSet);
             const matrixTable = document.getElementById('wf-matrix-table');
             let affiliations = Object.keys(todayWf.matrix || {}).sort();
             if (!window.selectedBUs.includes('ALL')) {
@@ -2821,7 +2827,10 @@ function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveD
             let dayData = globalData.workforce[latestWfKey];
             let absCount = 0; let trgCount = 0;
             
-            ["Pick","RT","QC","QA","Grouping","Putaway","Receive"].forEach(role => {
+            // ✅ โค้ดใหม่
+let allRoles = new Set([...Object.keys(dayData.targets || {}), ...Object.keys(dayData.roles || {})]);
+allRoles.forEach(role => {
+    let trg = dayData.targets?.[role] || 0;
                 let trg = dayData.targets?.[role] || 0;
                 let act = dayData.roles?.[role] || 0;
                 if (window.selectedBUs.includes('ALL')) {
