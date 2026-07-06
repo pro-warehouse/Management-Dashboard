@@ -926,6 +926,8 @@ async function initFulfillmentRealtime() {
                     }
                 }
                 
+                // (โค้ดเก่า) ยกเลิกไป และแทนที่ด้วย Logic ใหม่ด้านล่างนี้
+                
                 // 🟢 ดึงข้อมูลจาก API ใหม่ที่สร้างใน Backend (ส่งวันที่ให้ตรงกับกล่องด้านบน)
                 let waveStats = { total_orders: 0, late_pick_orders: 0, late_load_orders: 0, max_pick_delay_mins: 0, max_load_delay_mins: 0, min_pick_early_mins: null, min_load_early_mins: null, picked_orders: 0, shipped_orders: 0 };
                 try {
@@ -945,55 +947,95 @@ async function initFulfillmentRealtime() {
                     console.warn("Wave API หลับ (สลับไปใช้ข้อมูลสำรองแทน):", err);
                 }
 
-                // 🟢 Fallback Logic: ถ้า API ล่ม หรือกำลังตื่น ให้ใช้ข้อมูลรวมจาก GAS/BQ แทนชั่วคราว
+                // 🟢 Fallback Logic (ยางอะไหล่): ถ้าระบบหลังบ้าน Render ล่ม หรือกำลังตื่น ให้ใช้ข้อมูลรวมจาก GAS ด้านบนแทนทันที!
                 let isApiSuccess = (parseInt(waveStats.total_orders) > 0);
                 
                 let latePick = isApiSuccess ? (parseInt(waveStats.late_pick_orders) || 0) : 0;
                 let lateLoad = isApiSuccess ? (parseInt(waveStats.late_load_orders) || 0) : aLate;
                 let totalLate = isApiSuccess ? (latePick + lateLoad) : aLate;
 
-                let maxPickDelay = parseInt(waveStats.max_pick_delay_mins) || 0;
-                let maxLoadDelay = parseInt(waveStats.max_load_delay_mins) || (aDelay > 0 ? aDelay : 0);
+                let maxPickDelay = isApiSuccess ? (parseInt(waveStats.max_pick_delay_mins) || 0) : 0;
+                let maxLoadDelay = isApiSuccess ? (parseInt(waveStats.max_load_delay_mins) || 0) : (aDelay > 0 ? aDelay : 0);
                 let maxOverallDelay = Math.max(maxPickDelay, maxLoadDelay);
 
-                let pEarly = parseInt(waveStats.min_pick_early_mins);
-                let lEarly = parseInt(waveStats.min_load_early_mins);
+                let pEarly = isApiSuccess ? parseInt(waveStats.min_pick_early_mins) : null;
+                let lEarly = isApiSuccess ? parseInt(waveStats.min_load_early_mins) : null;
 
                 const formatTime = (mins) => `${Math.floor(mins/60)}h ${mins%60}m`;
 
-                // อัปเดตกล่องที่ 3: จำนวนบิลที่หลุดแผน
+                // อัปเดตกล่องที่ 3: LATE ORDERS
                 if (document.getElementById('wave-late')) {
                     let lateEl = document.getElementById('wave-late');
                     lateEl.innerText = totalLate > 0 ? fmtN(totalLate) : "0";
                     lateEl.style.color = totalLate > 0 ? "var(--danger)" : "var(--text-main)";
 
                     document.getElementById('wave-title-3').innerText = "LATE ORDERS (บิลช้ากว่าแผน)";
-                    document.getElementById('wave-active-info-3').innerHTML = totalLate > 0
-                        ? `<span class="badge down">หลุด SLA</span> Pick: <b>${fmtN(latePick)}</b> | Load: <b>${fmtN(lateLoad)}</b> บิล`
-                        : `<span class="badge up">On-time</span> ไม่มีบิลช้ากว่าแผน`;
+                    if (isApiSuccess) {
+                        document.getElementById('wave-active-info-3').innerHTML = totalLate > 0
+                            ? `<span class="badge down">หลุด SLA</span> Pick: <b>${fmtN(latePick)}</b> | Load: <b>${fmtN(lateLoad)}</b> บิล`
+                            : `<span class="badge up">On-time</span> ไม่มีบิลช้ากว่าแผน`;
+                    } else {
+                        document.getElementById('wave-active-info-3').innerHTML = totalLate > 0
+                            ? `<span class="badge down">หลุด SLA</span> แผน ${activeDateStr} &bull; ${fmtN(totalLate)} บิล`
+                            : `<span class="badge up">On-time</span> ไม่มีบิลช้ากว่าแผน`;
+                    }
                 }
 
-                // อัปเดตกล่องที่ 4: สถานะเวลาแบบละเอียด (เปลี่ยนเป็นคำเต็ม Pick / Load)
+                // อัปเดตกล่องที่ 4: CURRENT STATUS (Pick / Load)
                 if (document.getElementById('wave-delay')) {
                     let delayEl = document.getElementById('wave-delay');
                     let pStr = "", lStr = "", overallMainText = "0h 0m", overallColor = "#10B981";
 
-                    // คำนวณ Pick Text
-                    if (maxPickDelay > 0) { pStr = `<span style="color:var(--danger); font-weight:700;">Delay ${formatTime(maxPickDelay)}</span>`; overallMainText = formatTime(maxOverallDelay); overallColor = "var(--danger)"; }
-                    else if (!isNaN(pEarly)) { pStr = `<span style="color:#10B981; font-weight:700;">Early ${formatTime(pEarly)}</span>`; }
-                    else { pStr = `<span style="color:var(--text-muted);">Done/ไม่ค้าง</span>`; }
+                    if (isApiSuccess) {
+                        if (maxPickDelay > 0) { pStr = `<span style="color:var(--danger); font-weight:700;">Delay ${formatTime(maxPickDelay)}</span>`; overallMainText = formatTime(maxOverallDelay); overallColor = "var(--danger)"; }
+                        else if (!isNaN(pEarly) && pEarly !== null) { pStr = `<span style="color:#10B981; font-weight:700;">Early ${formatTime(pEarly)}</span>`; }
+                        else { pStr = `<span style="color:var(--text-muted);">Done/ไม่ค้าง</span>`; }
 
-                    // คำนวณ Load Text
-                    if (maxLoadDelay > 0) { lStr = `<span style="color:var(--danger); font-weight:700;">Delay ${formatTime(maxLoadDelay)}</span>`; overallMainText = formatTime(maxOverallDelay); overallColor = "var(--danger)"; }
-                    else if (!isNaN(lEarly)) { lStr = `<span style="color:#10B981; font-weight:700;">Early ${formatTime(lEarly)}</span>`; }
-                    else { lStr = `<span style="color:var(--text-muted);">Done/ไม่ค้าง</span>`; }
+                        if (maxLoadDelay > 0) { lStr = `<span style="color:var(--danger); font-weight:700;">Delay ${formatTime(maxLoadDelay)}</span>`; overallMainText = formatTime(maxOverallDelay); overallColor = "var(--danger)"; }
+                        else if (!isNaN(lEarly) && lEarly !== null) { lStr = `<span style="color:#10B981; font-weight:700;">Early ${formatTime(lEarly)}</span>`; }
+                        else { lStr = `<span style="color:var(--text-muted);">Done/ไม่ค้าง</span>`; }
+                        
+                        document.getElementById('wave-active-info-4').innerHTML = `Pick: ${pStr} &bull; Load: ${lStr}`;
+                    } else {
+                        if (aDelay > 0) {
+                            overallMainText = formatTime(aDelay);
+                            overallColor = "var(--danger)";
+                            document.getElementById('wave-active-info-4').innerHTML = `<span class="badge down">ดีเลย์อยู่</span> ช้าสุดที่: <b>${worstBU}</b>`;
+                        } else {
+                            document.getElementById('wave-active-info-4').innerHTML = `<span class="badge up">ปกติ</span> ทำงานทันตามแผน`;
+                        }
+                    }
 
                     document.getElementById('wave-title-4').innerText = "CURRENT STATUS (สถานะเวลา)";
                     delayEl.innerText = overallMainText;
                     delayEl.style.color = overallColor;
-                    
-                    // 🔥 ระบุคำว่า Pick และ Load ชัดๆ
-                    document.getElementById('wave-active-info-4').innerHTML = `Pick: ${pStr} &bull; Load: ${lStr}`;
+                }
+
+                // 🟢 อัปเดต 3 กล่องเปอร์เซ็นต์ด้านล่าง
+                if (document.getElementById('wave-pct-ontime')) {
+                    // 🔥 นี่คือจุดสำคัญ! ถ้า API พัง จะเอายอดรวมด้านบนมาโชว์แทน ไม่ให้เป็น 0
+                    let fTotal = isApiSuccess ? (parseInt(waveStats.total_orders) || 0) : aTotal;
+                    let fLate = lateLoad;
+                    let fPicked = isApiSuccess ? (parseInt(waveStats.picked_orders) || 0) : aComp;
+                    let fShipped = isApiSuccess ? (parseInt(waveStats.shipped_orders) || 0) : aComp;
+
+                    let pctOntime = fTotal > 0 ? (((fTotal - fLate) / fTotal) * 100).toFixed(1) : 100;
+                    let ontimeEl = document.getElementById('wave-pct-ontime');
+                    ontimeEl.innerText = pctOntime + '%';
+                    ontimeEl.style.color = pctOntime >= 99 ? '#10B981' : (pctOntime >= 90 ? '#F59E0B' : '#EF4444');
+                    document.getElementById('wave-ontime-text').innerHTML = `รวมออเดอร์ <b>${fmtN(fTotal)}</b> บิล | ช้า <b>${fmtN(fLate)}</b> บิล`;
+
+                    let pctPicked = fTotal > 0 ? ((fPicked / fTotal) * 100).toFixed(1) : 0;
+                    let pickedEl = document.getElementById('wave-pct-picked');
+                    pickedEl.innerText = pctPicked + '%';
+                    pickedEl.style.color = pctPicked >= 100 ? '#10B981' : '#3B82F6';
+                    document.getElementById('wave-picked-text').innerHTML = `หยิบไปแล้ว <b style="color:var(--text-main);">${fmtN(fPicked)}</b> / ${fmtN(fTotal)} บิล`;
+
+                    let pctShipped = fTotal > 0 ? ((fShipped / fTotal) * 100).toFixed(1) : 0;
+                    let shippedEl = document.getElementById('wave-pct-shipped');
+                    shippedEl.innerText = pctShipped + '%';
+                    shippedEl.style.color = pctShipped >= 100 ? '#10B981' : '#8B5CF6';
+                    document.getElementById('wave-shipped-text').innerHTML = `ส่งออกแล้ว <b style="color:var(--text-main);">${fmtN(fShipped)}</b> / ${fmtN(fTotal)} บิล`;
                 }
 
                 // 🟢 อัปเดต 3 กล่องเปอร์เซ็นต์ด้านล่าง (มียางอะไหล่กันบั๊ก 0%)
