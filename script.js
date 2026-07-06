@@ -1412,33 +1412,15 @@ Object.keys(data.matrix[aff]).forEach(r => {
                 document.querySelectorAll('#monitoring .updated-time').forEach(el => el.innerText = `(ข้อมูลล่าสุด: ${getDisplayDate(targetWfKey)})`);
             }
             
-            // ✅ โค้ดใหม่
-let rolesSet = new Set();
-affiliations.forEach(aff => {
-    if(todayWf.matrix[aff]) Object.keys(todayWf.matrix[aff]).forEach(r => rolesSet.add(r));
-});
-const roles = Array.from(rolesSet);
-            const matrixTable = document.getElementById('wf-matrix-table');
-            // ✅ โค้ดที่ถูกต้อง (สลับ affiliations ขึ้นมาก่อน)
-            let affiliations = Object.keys(todayWf.matrix || {}).sort();
-            if (!window.selectedBUs.includes('ALL')) {
-                affiliations = affiliations.filter(a => window.selectedBUs.includes(a));
-            }
-
-            let rolesSet = new Set();
-            affiliations.forEach(aff => {
-                if(todayWf.matrix[aff]) Object.keys(todayWf.matrix[aff]).forEach(r => rolesSet.add(r));
-            });
-            const roles = Array.from(rolesSet);
             const matrixTable = document.getElementById('wf-matrix-table');
             
-            // 1. สร้าง affiliations ก่อน
+            // 1. ดึงและกรอง affiliations ก่อน
             let affiliations = Object.keys(todayWf.matrix || {}).sort();
             if (!window.selectedBUs.includes('ALL')) {
                 affiliations = affiliations.filter(a => window.selectedBUs.includes(a));
             }
 
-            // 2. ค่อยเอา affiliations มาใช้สร้าง rolesSet
+            // 2. ค่อยนำ affiliations มาใช้งานเพื่อสร้าง roles
             let rolesSet = new Set();
             affiliations.forEach(aff => {
                 if(todayWf.matrix[aff]) Object.keys(todayWf.matrix[aff]).forEach(r => rolesSet.add(r));
