@@ -312,64 +312,77 @@ body {
    🚀 Stage Cards Design (PICK > QC > SHIP)
    ========================================== */
 .stage-card {
-    padding: 0 !important; /* ยกเลิก padding เดิมเพื่อใช้เลย์เอาต์ใหม่ */
+    padding: 24px !important; /* คืนค่า Padding ให้การ์ดดูมี Space หายใจ */
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    justify-content: space-between;
 }
 .stage-header {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 24px 24px 10px;
+    margin-bottom: 20px;
 }
 .stage-title {
     margin: 0;
     font-size: 1.05rem;
     font-weight: 800;
     color: var(--text-main);
-    letter-spacing: 0.5px;
 }
 .stage-body {
     display: flex;
-    justify-content: space-between;
     align-items: flex-end;
-    padding: 10px 24px 24px;
+    justify-content: space-between;
+    margin-bottom: 16px;
 }
 .stage-percent {
-    font-size: 3.2rem;
+    font-size: 2.8rem; /* ปรับขนาดให้พอดี ไม่แย่งซีนตัวเลขหลัก */
     font-weight: 800;
     margin: 0;
-    line-height: 0.9;
+    line-height: 1;
     letter-spacing: -1px;
 }
 .stage-stats {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    font-size: 0.85rem;
-    color: var(--text-muted);
+    gap: 8px;
     text-align: right;
-    min-width: 110px;
+    min-width: 120px;
 }
 .stage-stats .stat-row { 
     display: flex; 
     justify-content: space-between; 
     gap: 15px; 
-    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 600;
 }
 .stage-stats strong { 
     color: var(--text-main); 
-    font-size: 1rem; 
+    font-size: 1.05rem; 
     font-weight: 800;
 }
-.stage-footer {
-    padding: 14px 24px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    text-align: center;
-    border-top: 1px dashed var(--border-color);
+/* เพิ่ม Progress Bar */
+.stage-progress-bg {
+    width: 100%; height: 8px;
+    background: var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 16px;
+    overflow: hidden;
 }
-.bg-blue-light { background: rgba(59, 130, 246, 0.04); color: #3B82F6; }
-.bg-orange-light { background: rgba(245, 158, 11, 0.04); color: #F59E0B; }
-.bg-green-light { background: rgba(16, 185, 129, 0.04); color: #10B981; }
+.stage-progress-fill {
+    height: 100%; border-radius: 4px;
+    transition: width 0.8s ease-in-out;
+}
+.stage-footer {
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.bg-blue-light { background: rgba(59, 130, 246, 0.1); color: #3B82F6; }
+.bg-orange-light { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
+.bg-green-light { background: rgba(16, 185, 129, 0.1); color: #10B981; }
