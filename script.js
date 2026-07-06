@@ -1014,28 +1014,46 @@ if (document.getElementById('stage-pick-pct')) {
     
     let fTotal = aTotal > 0 ? aTotal : (parseInt(waveStats.total_orders) || 0);
     let isDataIncomplete = isApiSuccess === false || (parseInt(waveStats.total_orders) || 0) < (fTotal * 0.5);
-    let warningBadge = !isDataIncomplete ? "" : ` <span style="background:#fef3c7; color:#92400e; padding:3px 8px; border-radius:6px; font-size:10px; margin-left:8px;">⚠️ ใช้ข้อมูลสำรอง</span>`;
+    let warningBadge = !isDataIncomplete ? "" : ` <span style="background:#fef3c7; color:#92400e; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:auto;">⚠️ ใช้ข้อมูลสำรอง</span>`;
 
     let fPicked = isDataIncomplete ? aComp : (parseInt(waveStats.picked_orders) || 0);
     let fShipped = isDataIncomplete ? aComp : (parseInt(waveStats.shipped_orders) || 0);
     let fLate = isDataIncomplete ? aLate : lateLoad; 
+
+    // ป้องกันค่าติดลบ หรือค่าเพี้ยน
+    fPicked = Math.min(fPicked, fTotal);
+    fShipped = Math.min(fShipped, fPicked); 
+    
+    // คำนวณ Logic สำหรับ QC (ของที่หยิบแล้ว แต่ยังไม่ได้ส่ง)
+    let fQcPending = Math.max(0, fPicked - fShipped);
 
     // 📦 1. PICK
     let pctPick = fTotal > 0 ? ((fPicked / fTotal) * 100).toFixed(1) : 0;
     document.getElementById('stage-pick-pct').innerText = pctPick + '%';
     document.getElementById('stage-pick-done').innerText = fmtN(fPicked);
     document.getElementById('stage-pick-total').innerText = fmtN(fTotal);
-    document.getElementById('stage-pick-text').innerHTML = `⏳ รอดำเนินการ: <b>${fmtN(fTotal - fPicked)}</b> บิล` + warningBadge;
+    if(document.getElementById('stage-pick-bar')) document.getElementById('stage-pick-bar').style.width = pctPick + '%';
+    document.getElementById('stage-pick-text').innerHTML = `⏳ รอดำเนินการหยิบ: <b>${fmtN(fTotal - fPicked)}</b> บิล` + warningBadge;
 
-    // 🔎 2. QC (Placeholder ไว้รอเชื่อมต่อ API)
-    // ตรงนี้ข้ามไปก่อนจนกว่าจะมีข้อมูล QC
+    // 🔎 2. QC (คำนวณจาก Pipeline)
+    // % ของ QC คือ: ของที่หยิบมาแล้ว ผ่านการตรวจสอบจนแพ็คส่งได้กี่เปอร์เซ็นต์
+    let pctQc = fPicked > 0 ? ((fShipped / fPicked) * 100).toFixed(1) : 0;
+    document.getElementById('stage-qc-pct').innerText = pctQc + '%';
+    document.getElementById('stage-qc-done').innerText = fmtN(fShipped); 
+    document.getElementById('stage-qc-pending').innerText = fmtN(fQcPending);
+    if(document.getElementById('stage-qc-bar')) document.getElementById('stage-qc-bar').style.width = pctQc + '%';
+    document.getElementById('stage-qc-text').innerHTML = `🔍 ค้างตรวจ/รอแพ็ค: <b>${fmtN(fQcPending)}</b> บิล` + warningBadge;
 
     // 🚚 3. SHIPPED
     let pctShip = fTotal > 0 ? ((fShipped / fTotal) * 100).toFixed(1) : 0;
+    let pendingShip = Math.max(0, fTotal - fShipped);
     document.getElementById('stage-ship-pct').innerText = pctShip + '%';
     document.getElementById('stage-ship-done').innerText = fmtN(fShipped);
-    document.getElementById('stage-ship-late').innerText = fmtN(fLate);
-    document.getElementById('stage-ship-text').innerHTML = `📦 คงเหลือยังไม่ส่งออก: <b>${fmtN(fTotal - fShipped)}</b> บิล` + warningBadge;
+    document.getElementById('stage-ship-pending').innerText = fmtN(pendingShip);
+    if(document.getElementById('stage-ship-bar')) document.getElementById('stage-ship-bar').style.width = pctShip + '%';
+    
+    let shipAlert = fLate > 0 ? `<span style="color:#EF4444; font-weight:800; margin-left:8px;">(ดีเลย์ ${fmtN(fLate)} บิล)</span>` : ``;
+    document.getElementById('stage-ship-text').innerHTML = `📦 คงเหลือยังไม่ส่งออก: <b>${fmtN(pendingShip)}</b> บิล` + shipAlert + warningBadge;
 }
                 
                 let targetWaveDate = activeWaveKey || todayKeyStr;
