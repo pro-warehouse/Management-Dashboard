@@ -1009,44 +1009,33 @@ async function initFulfillmentRealtime() {
                     delayEl.style.color = overallColor;
                 }
 
-                // 🟢 อัปเดต 3 กล่องเปอร์เซ็นต์ด้านล่าง
-if (document.getElementById('wave-pct-ontime')) {
+                // 🟢 อัปเดต 3 กล่องเปอร์เซ็นต์ด้านล่าง (ดีไซน์ใหม่ PICK > QC > SHIP)
+if (document.getElementById('stage-pick-pct')) {
     
-    // 1. บังคับใช้ aTotal (ยอดหลัก 3,732) เป็นฐานในการคำนวณเสมอ เพื่อให้ตรงกับ TOTAL ORDERS
     let fTotal = aTotal > 0 ? aTotal : (parseInt(waveStats.total_orders) || 0);
-
-    // 2. ตรวจสอบว่าข้อมูลจาก BigQuery มาครบหรือไม่?
-    // (ถ้าข้อมูล API น้อยกว่ายอดจริงมากๆ เช่นน้อยกว่าครึ่งหนึ่ง แสดงว่าข้อมูลใน DB มาไม่ครบ)
     let isDataIncomplete = isApiSuccess === false || (parseInt(waveStats.total_orders) || 0) < (fTotal * 0.5);
+    let warningBadge = !isDataIncomplete ? "" : ` <span style="background:#fef3c7; color:#92400e; padding:3px 8px; border-radius:6px; font-size:10px; margin-left:8px;">⚠️ ใช้ข้อมูลสำรอง</span>`;
 
-    // 3. แสดงป้ายเตือนถ้าระบบดึงข้อมูลสำรองมาใช้
-    let warningBadge = !isDataIncomplete ? "" : ` <span style="background:#fef3c7; color:#92400e; padding:2px 6px; border-radius:4px; font-size:9px; font-weight:bold; margin-left:5px;">⚠️ OFFLINE MODE</span>`;
-
-    // 4. สับสวิตช์เลือกข้อมูล (ถ้าข้อมูล DB มาไม่ครบ ให้ดึง aComp มาโชว์แทนชั่วคราว)
-    let fLate = isDataIncomplete ? aLate : lateLoad; 
     let fPicked = isDataIncomplete ? aComp : (parseInt(waveStats.picked_orders) || 0);
     let fShipped = isDataIncomplete ? aComp : (parseInt(waveStats.shipped_orders) || 0);
+    let fLate = isDataIncomplete ? aLate : lateLoad; 
 
-    // 1. % ON-TIME
-    let pctOntime = fTotal > 0 ? (((fTotal - fLate) / fTotal) * 100).toFixed(1) : 100;
-    let ontimeEl = document.getElementById('wave-pct-ontime');
-    ontimeEl.innerText = pctOntime + '%';
-    ontimeEl.style.color = pctOntime >= 99 ? '#10B981' : (pctOntime >= 90 ? '#F59E0B' : '#EF4444');
-    document.getElementById('wave-ontime-text').innerHTML = `รวมออเดอร์ <b>${fmtN(fTotal)}</b> บิล | ช้า <b>${fmtN(fLate)}</b> บิล` + warningBadge;
+    // 📦 1. PICK
+    let pctPick = fTotal > 0 ? ((fPicked / fTotal) * 100).toFixed(1) : 0;
+    document.getElementById('stage-pick-pct').innerText = pctPick + '%';
+    document.getElementById('stage-pick-done').innerText = fmtN(fPicked);
+    document.getElementById('stage-pick-total').innerText = fmtN(fTotal);
+    document.getElementById('stage-pick-text').innerHTML = `⏳ รอดำเนินการ: <b>${fmtN(fTotal - fPicked)}</b> บิล` + warningBadge;
 
-    // 2. % PICKED
-    let pctPicked = fTotal > 0 ? ((fPicked / fTotal) * 100).toFixed(1) : 0;
-    let pickedEl = document.getElementById('wave-pct-picked');
-    pickedEl.innerText = pctPicked + '%';
-    pickedEl.style.color = pctPicked >= 100 ? '#10B981' : '#3B82F6';
-    document.getElementById('wave-picked-text').innerHTML = `หยิบไปแล้ว <b style="color:var(--text-main);">${fmtN(fPicked)}</b> / ${fmtN(fTotal)} บิล` + warningBadge;
+    // 🔎 2. QC (Placeholder ไว้รอเชื่อมต่อ API)
+    // ตรงนี้ข้ามไปก่อนจนกว่าจะมีข้อมูล QC
 
-    // 3. % SHIPPED
-    let pctShipped = fTotal > 0 ? ((fShipped / fTotal) * 100).toFixed(1) : 0;
-    let shippedEl = document.getElementById('wave-pct-shipped');
-    shippedEl.innerText = pctShipped + '%';
-    shippedEl.style.color = pctShipped >= 100 ? '#10B981' : '#8B5CF6';
-    document.getElementById('wave-shipped-text').innerHTML = `ส่งออกแล้ว <b style="color:var(--text-main);">${fmtN(fShipped)}</b> / ${fmtN(fTotal)} บิล` + warningBadge;
+    // 🚚 3. SHIPPED
+    let pctShip = fTotal > 0 ? ((fShipped / fTotal) * 100).toFixed(1) : 0;
+    document.getElementById('stage-ship-pct').innerText = pctShip + '%';
+    document.getElementById('stage-ship-done').innerText = fmtN(fShipped);
+    document.getElementById('stage-ship-late').innerText = fmtN(fLate);
+    document.getElementById('stage-ship-text').innerHTML = `📦 คงเหลือยังไม่ส่งออก: <b>${fmtN(fTotal - fShipped)}</b> บิล` + warningBadge;
 }
                 
                 let targetWaveDate = activeWaveKey || todayKeyStr;
