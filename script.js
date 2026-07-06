@@ -1431,6 +1431,19 @@ const roles = Array.from(rolesSet);
             });
             const roles = Array.from(rolesSet);
             const matrixTable = document.getElementById('wf-matrix-table');
+            
+            // 1. สร้าง affiliations ก่อน
+            let affiliations = Object.keys(todayWf.matrix || {}).sort();
+            if (!window.selectedBUs.includes('ALL')) {
+                affiliations = affiliations.filter(a => window.selectedBUs.includes(a));
+            }
+
+            // 2. ค่อยเอา affiliations มาใช้สร้าง rolesSet
+            let rolesSet = new Set();
+            affiliations.forEach(aff => {
+                if(todayWf.matrix[aff]) Object.keys(todayWf.matrix[aff]).forEach(r => rolesSet.add(r));
+            });
+            const roles = Array.from(rolesSet);
 
             if (affiliations.length === 0) {
                 if(matrixTable) matrixTable.innerHTML = `<thead><tr><th class='text-center' style='padding:30px; color:var(--text-muted);'>ไม่มีข้อมูล MATRIX ของวันที่เลือก</th></tr></thead>`;
