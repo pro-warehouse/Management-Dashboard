@@ -1009,111 +1009,35 @@ async function initFulfillmentRealtime() {
                     delayEl.style.color = overallColor;
                 }
 
-                // 🟢 อัปเดต 3 กล่องเปอร์เซ็นต์ด้านล่าง
-                if (document.getElementById('wave-pct-ontime')) {
-                    let fTotal = isApiSuccess ? (parseInt(waveStats.total_orders) || 0) : aTotal;
-                    let fLate = lateLoad;
-                    let fPicked = isApiSuccess ? (parseInt(waveStats.picked_orders) || 0) : aComp;
-                    let fShipped = isApiSuccess ? (parseInt(waveStats.shipped_orders) || 0) : aComp;
+                // 🟢 อัปเดต 3 กล่องเปอร์เซ็นต์ด้านล่าง (ใช้ Fallback เมื่อ API ล่ม)
+if (document.getElementById('wave-pct-ontime')) {
+    // ถ้าระบบ API ปกติให้ใช้ waveStats ถ้าล่มให้ใช้ข้อมูลตาราง (aTotal, aComp)
+    let fTotal = isApiSuccess ? (parseInt(waveStats.total_orders) || 0) : aTotal;
+    let fLate = lateLoad; // ใช้ lateLoad ที่คำนวณ fallback ไว้แล้วด้านบน
+    let fPicked = isApiSuccess ? (parseInt(waveStats.picked_orders) || 0) : aComp;
+    let fShipped = isApiSuccess ? (parseInt(waveStats.shipped_orders) || 0) : aComp;
 
-                    let pctOntime = fTotal > 0 ? (((fTotal - fLate) / fTotal) * 100).toFixed(1) : 100;
-                    let ontimeEl = document.getElementById('wave-pct-ontime');
-                    ontimeEl.innerText = pctOntime + '%';
-                    ontimeEl.style.color = pctOntime >= 99 ? '#10B981' : (pctOntime >= 90 ? '#F59E0B' : '#EF4444');
-                    document.getElementById('wave-ontime-text').innerHTML = `รวมออเดอร์ <b>${fmtN(fTotal)}</b> บิล | ช้า <b>${fmtN(fLate)}</b> บิล`;
+    // 1. % ON-TIME
+    let pctOntime = fTotal > 0 ? (((fTotal - fLate) / fTotal) * 100).toFixed(1) : 100;
+    let ontimeEl = document.getElementById('wave-pct-ontime');
+    ontimeEl.innerText = pctOntime + '%';
+    ontimeEl.style.color = pctOntime >= 99 ? '#10B981' : (pctOntime >= 90 ? '#F59E0B' : '#EF4444');
+    document.getElementById('wave-ontime-text').innerHTML = `รวมออเดอร์ <b>${fmtN(fTotal)}</b> บิล | ช้า <b>${fmtN(fLate)}</b> บิล`;
 
-                    let pctPicked = fTotal > 0 ? ((fPicked / fTotal) * 100).toFixed(1) : 0;
-                    let pickedEl = document.getElementById('wave-pct-picked');
-                    pickedEl.innerText = pctPicked + '%';
-                    pickedEl.style.color = pctPicked >= 100 ? '#10B981' : '#3B82F6';
-                    document.getElementById('wave-picked-text').innerHTML = `หยิบไปแล้ว <b style="color:var(--text-main);">${fmtN(fPicked)}</b> / ${fmtN(fTotal)} บิล`;
+    // 2. % PICKED
+    let pctPicked = fTotal > 0 ? ((fPicked / fTotal) * 100).toFixed(1) : 0;
+    let pickedEl = document.getElementById('wave-pct-picked');
+    pickedEl.innerText = pctPicked + '%';
+    pickedEl.style.color = pctPicked >= 100 ? '#10B981' : '#3B82F6';
+    document.getElementById('wave-picked-text').innerHTML = `หยิบไปแล้ว <b style="color:var(--text-main);">${fmtN(fPicked)}</b> / ${fmtN(fTotal)} บิล`;
 
-                    let pctShipped = fTotal > 0 ? ((fShipped / fTotal) * 100).toFixed(1) : 0;
-                    let shippedEl = document.getElementById('wave-pct-shipped');
-                    shippedEl.innerText = pctShipped + '%';
-                    shippedEl.style.color = pctShipped >= 100 ? '#10B981' : '#8B5CF6';
-                    document.getElementById('wave-shipped-text').innerHTML = `ส่งออกแล้ว <b style="color:var(--text-main);">${fmtN(fShipped)}</b> / ${fmtN(fTotal)} บิล`;
-                }
-
-                // 🟢 อัปเดต 3 กล่องเปอร์เซ็นต์ด้านล่าง (มียางอะไหล่กันบั๊ก 0%)
-                if (document.getElementById('wave-pct-ontime')) {
-                    let fTotal = isApiSuccess ? (parseInt(waveStats.total_orders) || 0) : aTotal;
-                    let fLate = lateLoad;
-                    let fPicked = isApiSuccess ? (parseInt(waveStats.picked_orders) || 0) : aComp;
-                    let fShipped = isApiSuccess ? (parseInt(waveStats.shipped_orders) || 0) : aComp;
-
-                    let pctOntime = fTotal > 0 ? (((fTotal - fLate) / fTotal) * 100).toFixed(1) : 100;
-                    let ontimeEl = document.getElementById('wave-pct-ontime');
-                    ontimeEl.innerText = pctOntime + '%';
-                    ontimeEl.style.color = pctOntime >= 99 ? '#10B981' : (pctOntime >= 90 ? '#F59E0B' : '#EF4444');
-                    document.getElementById('wave-ontime-text').innerHTML = `รวมออเดอร์ <b>${fmtN(fTotal)}</b> บิล | ช้า <b>${fmtN(fLate)}</b> บิล`;
-
-                    let pctPicked = fTotal > 0 ? ((fPicked / fTotal) * 100).toFixed(1) : 0;
-                    let pickedEl = document.getElementById('wave-pct-picked');
-                    pickedEl.innerText = pctPicked + '%';
-                    pickedEl.style.color = pctPicked >= 100 ? '#10B981' : '#3B82F6';
-                    document.getElementById('wave-picked-text').innerHTML = `หยิบไปแล้ว <b style="color:var(--text-main);">${fmtN(fPicked)}</b> / ${fmtN(fTotal)} บิล`;
-
-                    let pctShipped = fTotal > 0 ? ((fShipped / fTotal) * 100).toFixed(1) : 0;
-                    let shippedEl = document.getElementById('wave-pct-shipped');
-                    shippedEl.innerText = pctShipped + '%';
-                    shippedEl.style.color = pctShipped >= 100 ? '#10B981' : '#8B5CF6';
-                    document.getElementById('wave-shipped-text').innerHTML = `ส่งออกแล้ว <b style="color:var(--text-main);">${fmtN(fShipped)}</b> / ${fmtN(fTotal)} บิล`;
-                }
-
-                // 🟢 อัปเดต 3 กล่องเปอร์เซ็นต์ด้านล่าง (พร้อมยางอะไหล่กันบั๊ก 0%)
-                if (document.getElementById('wave-pct-ontime')) {
-                    // ถ้า API ตอบกลับ ให้ใช้ยอดจาก API แต่ถ้าล่มให้ใช้ยอดจาก aTotal ของตารางล่าง
-                    let fTotal = isApiSuccess ? (parseInt(waveStats.total_orders) || 0) : aTotal;
-                    let fLate = lateLoad;
-                    let fPicked = isApiSuccess ? (parseInt(waveStats.picked_orders) || 0) : aComp;
-                    let fShipped = isApiSuccess ? (parseInt(waveStats.shipped_orders) || 0) : aComp;
-
-                    let pctOntime = fTotal > 0 ? (((fTotal - fLate) / fTotal) * 100).toFixed(1) : 100;
-                    let ontimeEl = document.getElementById('wave-pct-ontime');
-                    ontimeEl.innerText = pctOntime + '%';
-                    ontimeEl.style.color = pctOntime >= 99 ? '#10B981' : (pctOntime >= 90 ? '#F59E0B' : '#EF4444');
-                    document.getElementById('wave-ontime-text').innerHTML = `รวมออเดอร์ <b>${fmtN(fTotal)}</b> บิล | ช้า <b>${fmtN(fLate)}</b> บิล`;
-
-                    let pctPicked = fTotal > 0 ? ((fPicked / fTotal) * 100).toFixed(1) : 0;
-                    let pickedEl = document.getElementById('wave-pct-picked');
-                    pickedEl.innerText = pctPicked + '%';
-                    pickedEl.style.color = pctPicked >= 100 ? '#10B981' : '#3B82F6';
-                    document.getElementById('wave-picked-text').innerHTML = `หยิบไปแล้ว <b style="color:var(--text-main);">${fmtN(fPicked)}</b> / ${fmtN(fTotal)} บิล`;
-
-                    let pctShipped = fTotal > 0 ? ((fShipped / fTotal) * 100).toFixed(1) : 0;
-                    let shippedEl = document.getElementById('wave-pct-shipped');
-                    shippedEl.innerText = pctShipped + '%';
-                    shippedEl.style.color = pctShipped >= 100 ? '#10B981' : '#8B5CF6';
-                    document.getElementById('wave-shipped-text').innerHTML = `ส่งออกแล้ว <b style="color:var(--text-main);">${fmtN(fShipped)}</b> / ${fmtN(fTotal)} บิล`;
-                }
-
-                // 🟢 อัปเดต 3 กล่องเปอร์เซ็นต์ด้านล่าง
-                if (document.getElementById('wave-pct-ontime')) {
-                    let aTotal = parseInt(waveStats.total_orders) || 0;
-                    let aLate = lateLoad; // วัด SLA On-time จาก Load เป็นหลัก
-                    let wReq = parseInt(waveStats.total_orders) || 0;
-                    let wPicked = parseInt(waveStats.picked_orders) || 0;
-                    let wShipped = parseInt(waveStats.shipped_orders) || 0;
-
-                    let pctOntime = aTotal > 0 ? (((aTotal - aLate) / aTotal) * 100).toFixed(1) : 100;
-                    let ontimeEl = document.getElementById('wave-pct-ontime');
-                    ontimeEl.innerText = pctOntime + '%';
-                    ontimeEl.style.color = pctOntime >= 99 ? '#10B981' : (pctOntime >= 90 ? '#F59E0B' : '#EF4444');
-                    document.getElementById('wave-ontime-text').innerHTML = `รวมออเดอร์ <b>${fmtN(aTotal)}</b> บิล | ช้า <b>${fmtN(aLate)}</b> บิล`;
-
-                    let pctPicked = wReq > 0 ? ((wPicked / wReq) * 100).toFixed(1) : 0;
-                    let pickedEl = document.getElementById('wave-pct-picked');
-                    pickedEl.innerText = pctPicked + '%';
-                    pickedEl.style.color = pctPicked >= 100 ? '#10B981' : '#3B82F6';
-                    document.getElementById('wave-picked-text').innerHTML = `หยิบไปแล้ว <b style="color:var(--text-main);">${fmtN(wPicked)}</b> / ${fmtN(wReq)} บิล`;
-
-                    let pctShipped = wReq > 0 ? ((wShipped / wReq) * 100).toFixed(1) : 0;
-                    let shippedEl = document.getElementById('wave-pct-shipped');
-                    shippedEl.innerText = pctShipped + '%';
-                    shippedEl.style.color = pctShipped >= 100 ? '#10B981' : '#8B5CF6';
-                    document.getElementById('wave-shipped-text').innerHTML = `ส่งออกแล้ว <b style="color:var(--text-main);">${fmtN(wShipped)}</b> / ${fmtN(wReq)} บิล`;
-                }
+    // 3. % SHIPPED
+    let pctShipped = fTotal > 0 ? ((fShipped / fTotal) * 100).toFixed(1) : 0;
+    let shippedEl = document.getElementById('wave-pct-shipped');
+    shippedEl.innerText = pctShipped + '%';
+    shippedEl.style.color = pctShipped >= 100 ? '#10B981' : '#8B5CF6';
+    document.getElementById('wave-shipped-text').innerHTML = `ส่งออกแล้ว <b style="color:var(--text-main);">${fmtN(fShipped)}</b> / ${fmtN(fTotal)} บิล`;
+}
                 
                 let targetWaveDate = activeWaveKey || todayKeyStr;
                 if (targetWaveDate) {
