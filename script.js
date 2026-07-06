@@ -926,9 +926,7 @@ async function initFulfillmentRealtime() {
                     }
                 }
                 
-                // (โค้ดเก่า) ยกเลิกไป และแทนที่ด้วย Logic ใหม่ด้านล่างนี้
-                
-                // 🟢 ดึงข้อมูลจาก API ใหม่ที่สร้างใน Backend (ส่งวันที่ให้ตรงกับกล่องด้านบน)
+                // 🟢 ดึงข้อมูลจาก API ใหม่ที่สร้างใน Backend
                 let waveStats = { total_orders: 0, late_pick_orders: 0, late_load_orders: 0, max_pick_delay_mins: 0, max_load_delay_mins: 0, min_pick_early_mins: null, min_load_early_mins: null, picked_orders: 0, shipped_orders: 0 };
                 try {
                     let queryDate = activeWaveKey ? new Date(activeWaveKey).toISOString().split('T')[0] : "";
@@ -947,7 +945,7 @@ async function initFulfillmentRealtime() {
                     console.warn("Wave API หลับ (สลับไปใช้ข้อมูลสำรองแทน):", err);
                 }
 
-                // 🟢 Fallback Logic (ยางอะไหล่): ถ้าระบบหลังบ้าน Render ล่ม หรือกำลังตื่น ให้ใช้ข้อมูลรวมจาก GAS ด้านบนแทนทันที!
+                // 🟢 Fallback Logic: ถ้าระบบหลังบ้าน Render ล่ม หรือกำลังตื่น ให้ใช้ข้อมูลรวมจาก GAS ด้านบนแทนทันที!
                 let isApiSuccess = (parseInt(waveStats.total_orders) > 0);
                 
                 let latePick = isApiSuccess ? (parseInt(waveStats.late_pick_orders) || 0) : 0;
@@ -1013,7 +1011,6 @@ async function initFulfillmentRealtime() {
 
                 // 🟢 อัปเดต 3 กล่องเปอร์เซ็นต์ด้านล่าง
                 if (document.getElementById('wave-pct-ontime')) {
-                    // 🔥 นี่คือจุดสำคัญ! ถ้า API พัง จะเอายอดรวมด้านบนมาโชว์แทน ไม่ให้เป็น 0
                     let fTotal = isApiSuccess ? (parseInt(waveStats.total_orders) || 0) : aTotal;
                     let fLate = lateLoad;
                     let fPicked = isApiSuccess ? (parseInt(waveStats.picked_orders) || 0) : aComp;
