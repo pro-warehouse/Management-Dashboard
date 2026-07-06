@@ -2832,12 +2832,12 @@ function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveD
             let dayData = globalData.workforce[latestWfKey];
             let absCount = 0; let trgCount = 0;
             
-            // ✅ โค้ดใหม่
-let allRoles = new Set([...Object.keys(dayData.targets || {}), ...Object.keys(dayData.roles || {})]);
+            let allRoles = new Set([...Object.keys(dayData.targets || {}), ...Object.keys(dayData.roles || {})]);
 allRoles.forEach(role => {
     let trg = dayData.targets?.[role] || 0;
     let act = dayData.roles?.[role] || 0;
     if (window.selectedBUs.includes('ALL')) {
+// ...
         trgCount += trg;
         if (trg > act) absCount += (trg - act);
     }
