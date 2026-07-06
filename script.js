@@ -1009,11 +1009,14 @@ async function initFulfillmentRealtime() {
                     delayEl.style.color = overallColor;
                 }
 
-                // 🟢 อัปเดต 3 กล่องเปอร์เซ็นต์ด้านล่าง (ใช้ Fallback เมื่อ API ล่ม)
+                // 🟢 อัปเดต 3 กล่องเปอร์เซ็นต์ด้านล่าง
 if (document.getElementById('wave-pct-ontime')) {
-    // ถ้าระบบ API ปกติให้ใช้ waveStats ถ้าล่มให้ใช้ข้อมูลตาราง (aTotal, aComp)
+    
+    // ถ้าระบบล่ม (isApiSuccess = false) ให้สร้างป้ายเตือน
+    let warningBadge = isApiSuccess ? "" : ` <span style="background:#fef3c7; color:#92400e; padding:2px 6px; border-radius:4px; font-size:9px; font-weight:bold; margin-left:5px;">⚠️ OFFLINE MODE</span>`;
+
     let fTotal = isApiSuccess ? (parseInt(waveStats.total_orders) || 0) : aTotal;
-    let fLate = lateLoad; // ใช้ lateLoad ที่คำนวณ fallback ไว้แล้วด้านบน
+    let fLate = lateLoad; 
     let fPicked = isApiSuccess ? (parseInt(waveStats.picked_orders) || 0) : aComp;
     let fShipped = isApiSuccess ? (parseInt(waveStats.shipped_orders) || 0) : aComp;
 
@@ -1037,6 +1040,9 @@ if (document.getElementById('wave-pct-ontime')) {
     shippedEl.innerText = pctShipped + '%';
     shippedEl.style.color = pctShipped >= 100 ? '#10B981' : '#8B5CF6';
     document.getElementById('wave-shipped-text').innerHTML = `ส่งออกแล้ว <b style="color:var(--text-main);">${fmtN(fShipped)}</b> / ${fmtN(fTotal)} บิล`;
+    document.getElementById('wave-ontime-text').innerHTML = `รวมออเดอร์ <b>${fmtN(fTotal)}</b> บิล | ช้า <b>${fmtN(fLate)}</b> บิล` + warningBadge;
+    document.getElementById('wave-picked-text').innerHTML = `หยิบไปแล้ว <b style="color:var(--text-main);">${fmtN(fPicked)}</b> / ${fmtN(fTotal)} บิล` + warningBadge;
+    document.getElementById('wave-shipped-text').innerHTML = `ส่งออกแล้ว <b style="color:var(--text-main);">${fmtN(fShipped)}</b> / ${fmtN(fTotal)} บิล` + warningBadge;
 }
                 
                 let targetWaveDate = activeWaveKey || todayKeyStr;
