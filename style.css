@@ -307,3 +307,69 @@ body {
     .btn-theme { width: 100%; margin-top: 10px; }
     .welcome-banner { padding: 20px; text-align: center; }
 }
+
+/* ==========================================
+   🚀 Stage Cards Design (PICK > QC > SHIP)
+   ========================================== */
+.stage-card {
+    padding: 0 !important; /* ยกเลิก padding เดิมเพื่อใช้เลย์เอาต์ใหม่ */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.stage-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 24px 10px;
+}
+.stage-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: 0.5px;
+}
+.stage-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 10px 24px 24px;
+}
+.stage-percent {
+    font-size: 3.2rem;
+    font-weight: 800;
+    margin: 0;
+    line-height: 0.9;
+    letter-spacing: -1px;
+}
+.stage-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-align: right;
+    min-width: 110px;
+}
+.stage-stats .stat-row { 
+    display: flex; 
+    justify-content: space-between; 
+    gap: 15px; 
+    align-items: center;
+}
+.stage-stats strong { 
+    color: var(--text-main); 
+    font-size: 1rem; 
+    font-weight: 800;
+}
+.stage-footer {
+    padding: 14px 24px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-align: center;
+    border-top: 1px dashed var(--border-color);
+}
+.bg-blue-light { background: rgba(59, 130, 246, 0.04); color: #3B82F6; }
+.bg-orange-light { background: rgba(245, 158, 11, 0.04); color: #F59E0B; }
+.bg-green-light { background: rgba(16, 185, 129, 0.04); color: #10B981; }
