@@ -1243,15 +1243,20 @@ async function fetchSection(sectionName) {
             if (result.status === "success") {
                 Object.assign(globalData, result.data);
                 cleanDataBeforeLoad();
-                if (['executive', 'claims', 'inventory', 'transport'].includes(sectionName)) {
+                
+                // 🔥 แก้ไขเพิ่มคำว่า 'all' เข้าไปในเงื่อนไขนี้ เพื่อให้ปุ่ม Dropdown ทำงาน
+                if (['executive', 'claims', 'inventory', 'transport', 'all'].includes(sectionName)) {
                     populateGlobalBUFilters();
                 }
                 refreshUIBySection(sectionName);
             }
         } catch (jsonErr) {
-            console.error(`❌ ข้อมูลที่ได้ไม่ใช่ JSON ในหมวด ${sectionName} ->`, textResponse.substring(0, 50));
+            // 🔥 หาก GAS ส่งกลับมาเป็น Error Page (ไม่ใช่ JSON) จะแสดงผลให้เห็นชัดๆ
+            console.error(`❌ ข้อมูลที่ได้ไม่ใช่ JSON (GAS อาจจะ Error หรือติดสิทธิ์การเข้าถึง):`, textResponse.substring(0, 150));
         }
-    } catch (e) { console.error(`Error loading ${sectionName}:`, e); }
+    } catch (e) { 
+        console.error(`Error loading ${sectionName}:`, e); 
+    }
 }
 
 function refreshUIBySection(section) {
