@@ -1258,12 +1258,13 @@ function refreshUIBySection(section) {
     const dp = document.getElementById('date-picker');
     const dateStr = dp ? dp.value : new Date().toISOString().split('T')[0];
     
-    if (section === 'executive') updateDashboardData(dateStr); 
-    if (section === 'workforce') updateDashboardData(dateStr); 
-    if (section === 'ontime_claims') { renderOnTimeSection(); renderClaimSection(); }
-    if (section === 'inventory') { renderInventorySection(); renderLocationAccuracy(); }
-    if (section === 'transport') renderTransportSection();
-    if (section === 'productivity') renderProductivitySection();
+    // 🔥 เพิ่มเงื่อนไข 'all' เข้าไปในทุกบรรทัด
+    if (section === 'all' || section === 'executive') updateDashboardData(dateStr); 
+    if (section === 'all' || section === 'workforce') updateDashboardData(dateStr); 
+    if (section === 'all' || section === 'ontime_claims') { renderOnTimeSection(); renderClaimSection(); }
+    if (section === 'all' || section === 'inventory') { renderInventorySection(); renderLocationAccuracy(); }
+    if (section === 'all' || section === 'transport') renderTransportSection();
+    if (section === 'all' || section === 'productivity') renderProductivitySection();
 }
 
 // ==========================================
@@ -1271,7 +1272,6 @@ function refreshUIBySection(section) {
 // ==========================================
 async function initDashboard() {
     toggleLoader(true);
-    const sections = ['executive', 'workforce', 'ontime_claims', 'inventory', 'transport', 'productivity'];
     resetTrendRoleFilter();
     const dp = document.getElementById('date-picker');
     if (dp && isFirstLoad) {
@@ -1292,14 +1292,14 @@ async function initDashboard() {
     }
     
     try {
-        await Promise.all(sections.map(s => fetchSection(s)));
-    } catch(e) { console.error(e); }
+        // 🔥 FIX: ยิง API แค่ครั้งเดียวพอ เพราะ Backend ส่ง JSON ก้อนใหญ่สุดมาให้อยู่แล้ว
+        await fetchSection('all');
+    } catch(e) { console.error("Error fetching data:", e); }
     
     await initFulfillmentRealtime();
     
     toggleLoader(false);
 }
-
 document.getElementById('trend-role-filter')?.addEventListener('change', () => {
     const dp = document.getElementById('date-picker');
     if (dp) updateTrendChart(dp.value);
