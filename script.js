@@ -2836,13 +2836,12 @@ function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveD
 let allRoles = new Set([...Object.keys(dayData.targets || {}), ...Object.keys(dayData.roles || {})]);
 allRoles.forEach(role => {
     let trg = dayData.targets?.[role] || 0;
-                let trg = dayData.targets?.[role] || 0;
-                let act = dayData.roles?.[role] || 0;
-                if (window.selectedBUs.includes('ALL')) {
-                    trgCount += trg;
-                    if (trg > act) absCount += (trg - act);
-                }
-            });
+    let act = dayData.roles?.[role] || 0;
+    if (window.selectedBUs.includes('ALL')) {
+        trgCount += trg;
+        if (trg > act) absCount += (trg - act);
+    }
+});
 
             if (absCount > 0 && window.selectedBUs.includes('ALL')) {
                 let absPct = ((absCount / trgCount) * 100).toFixed(1);
