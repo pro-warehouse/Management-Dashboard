@@ -942,16 +942,18 @@ async function initFulfillmentRealtime() {
                         }
                     }
                 } catch (err) {
-                    console.error("Wave API Error:", err);
+                    console.warn("Wave API หลับ (สลับไปใช้ข้อมูลสำรองแทน):", err);
                 }
 
-                // 🟢 แยกคำนวณและอัปเดตกล่อง 3 และ 4 (สถานะ Pick และ Load)
-                let latePick = parseInt(waveStats.late_pick_orders) || 0;
-                let lateLoad = parseInt(waveStats.late_load_orders) || 0;
-                let totalLate = latePick + lateLoad;
+                // 🟢 Fallback Logic: ถ้า API ล่ม หรือกำลังตื่น ให้ใช้ข้อมูลรวมจาก GAS/BQ แทนชั่วคราว
+                let isApiSuccess = (parseInt(waveStats.total_orders) > 0);
+                
+                let latePick = isApiSuccess ? (parseInt(waveStats.late_pick_orders) || 0) : 0;
+                let lateLoad = isApiSuccess ? (parseInt(waveStats.late_load_orders) || 0) : aLate; // ใช้ aLate แทนถ้า API พัง
+                let totalLate = isApiSuccess ? (latePick + lateLoad) : aLate;
 
                 let maxPickDelay = parseInt(waveStats.max_pick_delay_mins) || 0;
-                let maxLoadDelay = parseInt(waveStats.max_load_delay_mins) || 0;
+                let maxLoadDelay = parseInt(waveStats.max_load_delay_mins) || (aDelay > 0 ? aDelay : 0); // ใช้ aDelay แทน
                 let maxOverallDelay = Math.max(maxPickDelay, maxLoadDelay);
 
                 let pEarly = parseInt(waveStats.min_pick_early_mins);
@@ -971,7 +973,7 @@ async function initFulfillmentRealtime() {
                         : `<span class="badge up">On-time</span> ไม่มีบิลช้ากว่าแผน`;
                 }
 
-                // อัปเดตกล่องที่ 4: สถานะเวลาแบบละเอียด (Early, Delay)
+                // อัปเดตกล่องที่ 4: สถานะเวลาแบบละเอียด (เปลี่ยน P, L เป็นคำเต็ม)
                 if (document.getElementById('wave-delay')) {
                     let delayEl = document.getElementById('wave-delay');
                     let pStr = "", lStr = "", overallMainText = "0h 0m", overallColor = "#10B981";
@@ -989,7 +991,36 @@ async function initFulfillmentRealtime() {
                     document.getElementById('wave-title-4').innerText = "CURRENT STATUS (สถานะเวลา)";
                     delayEl.innerText = overallMainText;
                     delayEl.style.color = overallColor;
-                    document.getElementById('wave-active-info-4').innerHTML = `P: ${pStr} &bull; L: ${lStr}`;
+                    
+                    // 🔥 ระบุคำว่า Pick และ Load ให้ชัดเจน
+                    document.getElementById('wave-active-info-4').innerHTML = `Pick: ${pStr} &bull; Load: ${lStr}`;
+                }
+
+                // 🟢 อัปเดต 3 กล่องเปอร์เซ็นต์ด้านล่าง (พร้อมยางอะไหล่กันบั๊ก 0%)
+                if (document.getElementById('wave-pct-ontime')) {
+                    // ถ้า API ตอบกลับ ให้ใช้ยอดจาก API แต่ถ้าล่มให้ใช้ยอดจาก aTotal ของตารางล่าง
+                    let fTotal = isApiSuccess ? (parseInt(waveStats.total_orders) || 0) : aTotal;
+                    let fLate = lateLoad;
+                    let fPicked = isApiSuccess ? (parseInt(waveStats.picked_orders) || 0) : aComp;
+                    let fShipped = isApiSuccess ? (parseInt(waveStats.shipped_orders) || 0) : aComp;
+
+                    let pctOntime = fTotal > 0 ? (((fTotal - fLate) / fTotal) * 100).toFixed(1) : 100;
+                    let ontimeEl = document.getElementById('wave-pct-ontime');
+                    ontimeEl.innerText = pctOntime + '%';
+                    ontimeEl.style.color = pctOntime >= 99 ? '#10B981' : (pctOntime >= 90 ? '#F59E0B' : '#EF4444');
+                    document.getElementById('wave-ontime-text').innerHTML = `รวมออเดอร์ <b>${fmtN(fTotal)}</b> บิล | ช้า <b>${fmtN(fLate)}</b> บิล`;
+
+                    let pctPicked = fTotal > 0 ? ((fPicked / fTotal) * 100).toFixed(1) : 0;
+                    let pickedEl = document.getElementById('wave-pct-picked');
+                    pickedEl.innerText = pctPicked + '%';
+                    pickedEl.style.color = pctPicked >= 100 ? '#10B981' : '#3B82F6';
+                    document.getElementById('wave-picked-text').innerHTML = `หยิบไปแล้ว <b style="color:var(--text-main);">${fmtN(fPicked)}</b> / ${fmtN(fTotal)} บิล`;
+
+                    let pctShipped = fTotal > 0 ? ((fShipped / fTotal) * 100).toFixed(1) : 0;
+                    let shippedEl = document.getElementById('wave-pct-shipped');
+                    shippedEl.innerText = pctShipped + '%';
+                    shippedEl.style.color = pctShipped >= 100 ? '#10B981' : '#8B5CF6';
+                    document.getElementById('wave-shipped-text').innerHTML = `ส่งออกแล้ว <b style="color:var(--text-main);">${fmtN(fShipped)}</b> / ${fmtN(fTotal)} บิล`;
                 }
 
                 // 🟢 อัปเดต 3 กล่องเปอร์เซ็นต์ด้านล่าง
