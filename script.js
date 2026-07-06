@@ -927,11 +927,9 @@ async function initFulfillmentRealtime() {
                 }
                 
                 // 🟢 ดึงข้อมูลจาก API ใหม่ที่สร้างใน Backend (ส่งวันที่ให้ตรงกับกล่องด้านบน)
-                let waveStats = { total_orders: 0, late_orders: 0, total_req_qty: 0, picked_qty: 0, shipped_qty: 0 };
+                let waveStats = { total_orders: 0, late_pick_orders: 0, late_load_orders: 0, max_pick_delay_mins: 0, max_load_delay_mins: 0, min_pick_early_mins: null, min_load_early_mins: null, picked_orders: 0, shipped_orders: 0 };
                 try {
-                    // แปลงวันที่ activeWaveKey ให้เป็น YYYY-MM-DD เพื่อส่งไปถาม Backend
                     let queryDate = activeWaveKey ? new Date(activeWaveKey).toISOString().split('T')[0] : "";
-                    
                     const waveResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -940,36 +938,80 @@ async function initFulfillmentRealtime() {
                     if (waveResp.ok) {
                         const waveJson = await waveResp.json();
                         if (waveJson.success && waveJson.data && waveJson.data.length > 0) {
-                            waveStats = waveJson.data[0]; 
+                            waveStats = waveJson.data[0];
                         }
                     }
                 } catch (err) {
                     console.error("Wave API Error:", err);
                 }
 
-                // 🟢 อัปเดต 3 กล่องใหม่ (แปลงเป็นบิลทั้งหมด)
+                // 🟢 แยกคำนวณและอัปเดตกล่อง 3 และ 4 (สถานะ Pick และ Load)
+                let latePick = parseInt(waveStats.late_pick_orders) || 0;
+                let lateLoad = parseInt(waveStats.late_load_orders) || 0;
+                let totalLate = latePick + lateLoad;
+
+                let maxPickDelay = parseInt(waveStats.max_pick_delay_mins) || 0;
+                let maxLoadDelay = parseInt(waveStats.max_load_delay_mins) || 0;
+                let maxOverallDelay = Math.max(maxPickDelay, maxLoadDelay);
+
+                let pEarly = parseInt(waveStats.min_pick_early_mins);
+                let lEarly = parseInt(waveStats.min_load_early_mins);
+
+                const formatTime = (mins) => `${Math.floor(mins/60)}h ${mins%60}m`;
+
+                // อัปเดตกล่องที่ 3: จำนวนบิลที่หลุดแผน
+                if (document.getElementById('wave-late')) {
+                    let lateEl = document.getElementById('wave-late');
+                    lateEl.innerText = totalLate > 0 ? fmtN(totalLate) : "0";
+                    lateEl.style.color = totalLate > 0 ? "var(--danger)" : "var(--text-main)";
+
+                    document.getElementById('wave-title-3').innerText = "LATE ORDERS (บิลช้ากว่าแผน)";
+                    document.getElementById('wave-active-info-3').innerHTML = totalLate > 0
+                        ? `<span class="badge down">หลุด SLA</span> Pick: <b>${fmtN(latePick)}</b> | Load: <b>${fmtN(lateLoad)}</b> บิล`
+                        : `<span class="badge up">On-time</span> ไม่มีบิลช้ากว่าแผน`;
+                }
+
+                // อัปเดตกล่องที่ 4: สถานะเวลาแบบละเอียด (Early, Delay)
+                if (document.getElementById('wave-delay')) {
+                    let delayEl = document.getElementById('wave-delay');
+                    let pStr = "", lStr = "", overallMainText = "0h 0m", overallColor = "#10B981";
+
+                    // คำนวณ Pick Text
+                    if (maxPickDelay > 0) { pStr = `<span style="color:var(--danger); font-weight:700;">Delay ${formatTime(maxPickDelay)}</span>`; overallMainText = formatTime(maxOverallDelay); overallColor = "var(--danger)"; }
+                    else if (!isNaN(pEarly)) { pStr = `<span style="color:#10B981; font-weight:700;">Early ${formatTime(pEarly)}</span>`; }
+                    else { pStr = `<span style="color:var(--text-muted);">Done/ไม่ค้าง</span>`; }
+
+                    // คำนวณ Load Text
+                    if (maxLoadDelay > 0) { lStr = `<span style="color:var(--danger); font-weight:700;">Delay ${formatTime(maxLoadDelay)}</span>`; overallMainText = formatTime(maxOverallDelay); overallColor = "var(--danger)"; }
+                    else if (!isNaN(lEarly)) { lStr = `<span style="color:#10B981; font-weight:700;">Early ${formatTime(lEarly)}</span>`; }
+                    else { lStr = `<span style="color:var(--text-muted);">Done/ไม่ค้าง</span>`; }
+
+                    document.getElementById('wave-title-4').innerText = "CURRENT STATUS (สถานะเวลา)";
+                    delayEl.innerText = overallMainText;
+                    delayEl.style.color = overallColor;
+                    document.getElementById('wave-active-info-4').innerHTML = `P: ${pStr} &bull; L: ${lStr}`;
+                }
+
+                // 🟢 อัปเดต 3 กล่องเปอร์เซ็นต์ด้านล่าง
                 if (document.getElementById('wave-pct-ontime')) {
                     let aTotal = parseInt(waveStats.total_orders) || 0;
-                    let aLate = parseInt(waveStats.late_orders) || 0;
-                    let wReq = parseInt(waveStats.total_orders) || 0;      // ยอดบิลรวม
-                    let wPicked = parseInt(waveStats.picked_orders) || 0;  // ยอดบิลที่หยิบเสร็จ
-                    let wShipped = parseInt(waveStats.shipped_orders) || 0;// ยอดบิลที่ส่งออก
+                    let aLate = lateLoad; // วัด SLA On-time จาก Load เป็นหลัก
+                    let wReq = parseInt(waveStats.total_orders) || 0;
+                    let wPicked = parseInt(waveStats.picked_orders) || 0;
+                    let wShipped = parseInt(waveStats.shipped_orders) || 0;
 
-                    // กล่อง 1: On-Time
                     let pctOntime = aTotal > 0 ? (((aTotal - aLate) / aTotal) * 100).toFixed(1) : 100;
                     let ontimeEl = document.getElementById('wave-pct-ontime');
                     ontimeEl.innerText = pctOntime + '%';
                     ontimeEl.style.color = pctOntime >= 99 ? '#10B981' : (pctOntime >= 90 ? '#F59E0B' : '#EF4444');
                     document.getElementById('wave-ontime-text').innerHTML = `รวมออเดอร์ <b>${fmtN(aTotal)}</b> บิล | ช้า <b>${fmtN(aLate)}</b> บิล`;
 
-                    // กล่อง 2: Picked 
                     let pctPicked = wReq > 0 ? ((wPicked / wReq) * 100).toFixed(1) : 0;
                     let pickedEl = document.getElementById('wave-pct-picked');
                     pickedEl.innerText = pctPicked + '%';
                     pickedEl.style.color = pctPicked >= 100 ? '#10B981' : '#3B82F6';
                     document.getElementById('wave-picked-text').innerHTML = `หยิบไปแล้ว <b style="color:var(--text-main);">${fmtN(wPicked)}</b> / ${fmtN(wReq)} บิล`;
 
-                    // กล่อง 3: Shipped 
                     let pctShipped = wReq > 0 ? ((wShipped / wReq) * 100).toFixed(1) : 0;
                     let shippedEl = document.getElementById('wave-pct-shipped');
                     shippedEl.innerText = pctShipped + '%';
