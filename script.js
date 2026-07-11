@@ -41,13 +41,39 @@ function renderCapInputs() {
     }
 }
 
+// ฟังก์ชันสำหรับสั่งให้ Popup แสดงผล
+function showToast(message) {
+    const toast = document.getElementById('custom-toast');
+    const toastMsg = document.getElementById('toast-message');
+    if (!toast || !toastMsg) return;
+    
+    toastMsg.innerText = message;
+    
+    // ตรวจสอบว่าเป็นข้อความแจ้งเตือน Error หรือไม่ ถ้าใช่ให้เปลี่ยนเป็นสีแดง
+    if (message.includes('ไม่สำเร็จ') || message.includes('❌')) {
+        toast.style.backgroundColor = '#EF4444';
+        toast.style.boxShadow = '0px 15px 40px rgba(239, 68, 68, 0.3)';
+    } else {
+        toast.style.backgroundColor = '#10B981';
+        toast.style.boxShadow = '0px 15px 40px rgba(16, 185, 129, 0.3)';
+    }
+    
+    toast.classList.add('show');
+    
+    // ตั้งเวลาให้ Popup หายไปเองภายใน 3.5 วินาที
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3500);
+}
+
+// ฟังก์ชันบันทึกข้อมูลเวอร์ชันอัปเดตระบบแจ้งเตือน
 async function saveDailyCapacity() {
     try {
         const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
         const inputs = document.querySelectorAll('#cap-inputs-container input');
         
         if (inputs.length === 0) {
-            alert('ไม่พบข้อมูลที่จะบันทึก กรุณากดปุ่ม Set Cap เพื่อเปิดช่องกรอกข้อมูลก่อนครับ');
+            showToast('❌ ไม่พบข้อมูลที่จะบันทึก กรุณกด Set Cap ก่อนครับ');
             return;
         }
 
@@ -77,7 +103,9 @@ async function saveDailyCapacity() {
         }
         
         if (typeof toggleLoader === "function") toggleLoader(false);
-        alert('บันทึก Capacity ลงฐานข้อมูลสำเร็จ! 💾');
+        
+        // 🔥 เรียกใช้ Popup แจ้งเตือนแทนการใช้ alert() แบบเก่า
+        showToast('บันทึกข้อมูล Capacity ลงฐานข้อมูลสำเร็จแล้ว! 💾');
         
         if (typeof initFulfillmentRealtime === "function") {
             initFulfillmentRealtime(); 
@@ -85,7 +113,8 @@ async function saveDailyCapacity() {
     } catch (error) {
         if (typeof toggleLoader === "function") toggleLoader(false);
         console.error('Save Capacity Error:', error);
-        alert('บันทึกไม่สำเร็จ เนื่องจาก: ' + error.message);
+        // 🚨 กรณี Error ก็จะเด้งสีแดงเตือนให้รู้ทันที
+        showToast('❌ บันทึกไม่สำเร็จเนื่องจาก: ' + error.message);
     }
 }
 // === Setup Base & Theme ===
