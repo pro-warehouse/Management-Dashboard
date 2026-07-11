@@ -2,46 +2,91 @@ let globalCapacities = {};
 const DEFAULT_CAPACITY = 10000;
 
 function toggleCapSetup() {
-    const panel = document.getElementById('cap-setup-panel');
-    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-    if (panel.style.display === 'block') renderCapInputs();
+    try {
+        const panel = document.getElementById('cap-setup-panel');
+        if (!panel) {
+            alert("ไม่พบ ID 'cap-setup-panel' ในหน้า HTML");
+            return;
+        }
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        if (panel.style.display === 'block') renderCapInputs();
+    } catch (err) {
+        alert(" เกิดข้อผิดพลาดตอนเปิดหน้าต่าง: " + err.message);
+    }
 }
 
 function renderCapInputs() {
-    const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
-    document.getElementById('cap-date-display').innerText = dpVal;
-    const container = document.getElementById('cap-inputs-container');
-    container.innerHTML = '';
-    const allBUs = window.selectedBUs.includes('ALL') ? ['DM02', 'DP02', '1115', 'DCWN', 'DG02'] : window.selectedBUs; 
-    
-    allBUs.forEach(bu => {
-        let currentCap = globalCapacities[dpVal]?.[bu] || DEFAULT_CAPACITY;
-        container.innerHTML += `
-            <div style="display: flex; flex-direction: column;">
-                <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">${bu}</label>
-                <input type="number" id="cap-input-${bu}" value="${currentCap}" data-bu="${bu}" style="width: 70px; padding: 4px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 11px; background: var(--bg-card); color: var(--text-main);">
-            </div>
-        `;
-    });
+    try {
+        const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
+        const displayEl = document.getElementById('cap-date-display');
+        if (displayEl) displayEl.innerText = dpVal;
+        
+        const container = document.getElementById('cap-inputs-container');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        const allBUs = window.selectedBUs.includes('ALL') ? ['DM02', 'DP02', '1115', 'DCWN', 'DG02'] : window.selectedBUs; 
+        
+        allBUs.forEach(bu => {
+            let currentCap = globalCapacities[dpVal]?.[bu] || DEFAULT_CAPACITY;
+            container.innerHTML += `
+                <div style="display: flex; flex-direction: column;">
+                    <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">${bu}</label>
+                    <input type="number" id="cap-input-${bu}" value="${currentCap}" data-bu="${bu}" style="width: 70px; padding: 4px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 11px; background: var(--bg-card); color: var(--text-main);">
+                </div>
+            `;
+        });
+    } catch (err) {
+        alert(" เกิดข้อผิดพลาดตอนสร้างช่องกรอกข้อมูล: " + err.message);
+    }
 }
 
 async function saveDailyCapacity() {
-    const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
-    const inputs = document.querySelectorAll('#cap-inputs-container input');
-    toggleLoader(true);
-    for (let input of inputs) {
-        const bu = input.getAttribute('data-bu');
-        const cap = parseInt(input.value) || 0;
-        await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fn: 'apiSaveCapacity', args: [{ target_date: dpVal, owner: bu, capacity: cap }] })
-        });
-        if (!globalCapacities[dpVal]) globalCapacities[dpVal] = {};
-        globalCapacities[dpVal][bu] = cap;
+    try {
+        const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
+        const inputs = document.querySelectorAll('#cap-inputs-container input');
+        
+        if (inputs.length === 0) {
+            alert('ไม่พบข้อมูลที่จะบันทึก กรุณากดปุ่ม Set Cap เพื่อเปิดช่องกรอกข้อมูลก่อนครับ');
+            return;
+        }
+
+        if (typeof toggleLoader === "function") toggleLoader(true);
+        
+        for (let input of inputs) {
+            const bu = input.getAttribute('data-bu');
+            const cap = parseInt(input.value) || 0;
+            
+            const response = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fn: 'apiSaveCapacity', args: [{ target_date: dpVal, owner: bu, capacity: cap }] })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP Error Status: ${response.status}`);
+            }
+
+            const resData = await response.json();
+            if (resData.success === false) {
+                throw new Error(resData.message || 'Server ส่งกลับมาว่าบันทึกไม่สำเร็จ');
+            }
+            
+            if (!globalCapacities[dpVal]) globalCapacities[dpVal] = {};
+            globalCapacities[dpVal][bu] = cap;
+        }
+        
+        if (typeof toggleLoader === "function") toggleLoader(false);
+        alert('บันทึก Capacity ลงฐานข้อมูลสำเร็จ! 💾');
+        
+        if (typeof initFulfillmentRealtime === "function") {
+            initFulfillmentRealtime(); 
+        }
+    } catch (error) {
+        if (typeof toggleLoader === "function") toggleLoader(false);
+        console.error('Save Capacity Error:', error);
+        alert('บันทึกไม่สำเร็จ เนื่องจาก: ' + error.message);
     }
-    toggleLoader(false);
-    alert('บันทึก Capacity สำเร็จ');
-    initFulfillmentRealtime(); 
 }
 // === Setup Base & Theme ===
 const themeToggleBtn = document.getElementById('theme-toggle');
