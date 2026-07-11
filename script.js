@@ -57,7 +57,6 @@ async function fetchAndRenderCapInputs() {
 
 async function saveDailyCapacity() {
     try {
-        // 🌟 ใช้วันที่จากช่องเลือกวันที่ของ Cap โดยเฉพาะ
         const targetDate = document.getElementById('cap-target-date').value;
         const inputs = document.querySelectorAll('#cap-inputs-container input');
         
@@ -68,23 +67,32 @@ async function saveDailyCapacity() {
 
         if (typeof toggleLoader === "function") toggleLoader(true);
         
+        // 🌟 1. รวบรวมข้อมูลทุก BU ให้เป็นก้อนเดียว (Array)
+        let capacityData = [];
         for (let input of inputs) {
-            const bu = input.getAttribute('data-bu');
-            const cap = parseInt(input.value) || 0;
-            
-            const response = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fn: 'apiSaveCapacity', args: [{ target_date: targetDate, owner: bu, capacity: cap }] })
+            capacityData.push({
+                target_date: targetDate,
+                owner: input.getAttribute('data-bu'),
+                capacity: parseInt(input.value) || 0
             });
+        }
+        
+        // 🌟 2. ยิง API แค่ *ครั้งเดียว* จบ
+        const response = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fn: 'apiSaveCapacityBulk', args: [capacityData] })
+        });
 
-            if (!response.ok) throw new Error(`HTTP Error Status: ${response.status}`);
-            
-            const resData = await response.json();
-            if (resData.success === false) throw new Error(resData.message || 'บันทึกไม่สำเร็จ');
-            
-            if (!globalCapacities[targetDate]) globalCapacities[targetDate] = {};
-            globalCapacities[targetDate][bu] = cap;
+        if (!response.ok) throw new Error(`HTTP Error Status: ${response.status}`);
+        
+        const resData = await response.json();
+        if (resData.success === false) throw new Error(resData.message || 'บันทึกไม่สำเร็จ');
+        
+        // 🌟 3. อัปเดตค่าในหน้าจอ
+        if (!globalCapacities[targetDate]) globalCapacities[targetDate] = {};
+        for (let item of capacityData) {
+            globalCapacities[targetDate][item.owner] = item.capacity;
         }
         
         if (typeof toggleLoader === "function") toggleLoader(false);
