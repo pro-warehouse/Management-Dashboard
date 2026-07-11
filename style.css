@@ -386,3 +386,36 @@ body {
 .bg-blue-light { background: rgba(59, 130, 246, 0.1); color: #3B82F6; }
 .bg-orange-light { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
 .bg-green-light { background: rgba(16, 185, 129, 0.1); color: #10B981; }
+
+/* ==========================================
+   🔔 Custom Toast Notification Popup
+   ========================================== */
+.toast-notification {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #10B981 !important; /* สีเขียว Solid Theme */
+    color: white !important;
+    padding: 16px 24px;
+    border-radius: 16px;
+    box-shadow: 0px 15px 40px rgba(16, 185, 129, 0.3) !important;
+    z-index: 99999;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    
+    /* เอฟเฟกต์ตอนซ่อน */
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+}
+
+/* เอฟเฟกต์ตอนแสดงผล */
+.toast-notification.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
