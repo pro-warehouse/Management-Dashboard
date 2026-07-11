@@ -1,3 +1,48 @@
+let globalCapacities = {}; 
+const DEFAULT_CAPACITY = 10000;
+
+function toggleCapSetup() {
+    const panel = document.getElementById('cap-setup-panel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    if (panel.style.display === 'block') renderCapInputs();
+}
+
+function renderCapInputs() {
+    const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
+    document.getElementById('cap-date-display').innerText = dpVal;
+    const container = document.getElementById('cap-inputs-container');
+    container.innerHTML = '';
+    const allBUs = window.selectedBUs.includes('ALL') ? ['DM02', 'DP02', '1115', 'DCWN', 'DG02'] : window.selectedBUs; 
+    
+    allBUs.forEach(bu => {
+        let currentCap = globalCapacities[dpVal]?.[bu] || DEFAULT_CAPACITY;
+        container.innerHTML += `
+            <div style="display: flex; flex-direction: column;">
+                <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">${bu}</label>
+                <input type="number" id="cap-input-${bu}" value="${currentCap}" data-bu="${bu}" style="width: 70px; padding: 4px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 11px; background: var(--bg-card); color: var(--text-main);">
+            </div>
+        `;
+    });
+}
+
+async function saveDailyCapacity() {
+    const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
+    const inputs = document.querySelectorAll('#cap-inputs-container input');
+    toggleLoader(true);
+    for (let input of inputs) {
+        const bu = input.getAttribute('data-bu');
+        const cap = parseInt(input.value) || 0;
+        await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fn: 'apiSaveCapacity', args: [{ target_date: dpVal, owner: bu, capacity: cap }] })
+        });
+        if (!globalCapacities[dpVal]) globalCapacities[dpVal] = {};
+        globalCapacities[dpVal][bu] = cap;
+    }
+    toggleLoader(false);
+    alert('บันทึก Capacity สำเร็จ');
+    initFulfillmentRealtime(); 
+}
 // === Setup Base & Theme ===
 const themeToggleBtn = document.getElementById('theme-toggle');
 themeToggleBtn.addEventListener('click', () => {
@@ -276,6 +321,26 @@ async function initFulfillmentRealtime() {
                 console.warn("⚠️ Backend API ไม่ได้ส่ง JSON กลับมา:", textResponse.substring(0, 100));
             }
         }
+        
+        // --- เริ่ม: โค้ดดึงข้อมูล Capacity จาก API ---
+        const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
+        let dObj = new Date(dpVal); dObj.setDate(dObj.getDate() - 14);
+        const startDate = dObj.toISOString().split('T')[0];
+        const capResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fn: 'apiGetCapacity', args: [startDate, dpVal] })
+        });
+        if (capResp.ok) {
+            const capJson = await capResp.json();
+            if (capJson.success && capJson.data) {
+                capJson.data.forEach(row => {
+                    if (!globalCapacities[row.target_date]) globalCapacities[row.target_date] = {};
+                    globalCapacities[row.target_date][row.owner] = row.capacity;
+                });
+            }
+        }
+        // --- จบ: โค้ดดึงข้อมูล Capacity ---
+
     } catch (apiErr) {
         console.warn("⚠️ API Error: Fallback to GAS data only.", apiErr);
     }
@@ -502,6 +567,32 @@ async function initFulfillmentRealtime() {
                     };
                 });
 
+                // --- เริ่ม: เพิ่มเส้น Capacity Line ในกราฟ ---
+                let dailyCapData = validChartDates.map(dStr => {
+                    let dayTotalCap = 0;
+                    chartBUsArray.forEach(bu => {
+                        dayTotalCap += (globalCapacities[dStr]?.[bu] || DEFAULT_CAPACITY);
+                    });
+                    return dayTotalCap;
+                });
+
+                tpDatasets.push({
+                    type: 'line',
+                    label: 'Total Capacity',
+                    data: dailyCapData,
+                    borderColor: '#EF4444',
+                    backgroundColor: '#EF4444',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 4,
+                    order: 0
+                });
+                // --- จบ: เพิ่มเส้น Capacity Line ในกราฟ ---
+
+                ffmTrendChartInstance.config.type = 'bar';
+                ffmTrendChartInstance.data.labels = tpLabels;
+                ffmTrendChartInstance.data.datasets = tpDatasets;
                 ffmTrendChartInstance.config.type = 'bar';
                 ffmTrendChartInstance.data.labels = tpLabels;
                 ffmTrendChartInstance.data.datasets = tpDatasets;
@@ -596,17 +687,20 @@ async function initFulfillmentRealtime() {
             };
             const DEFAULT_CAPACITY = 10000;
 
+            // เริ่มแก้: ลบ mockCapacityMap ออก แล้วดึงจากตัวแปร globalCapacities
             let tbody = "<tbody>";
             let utilData = [];
 
             chartBUsArray.forEach(bu => {
                 let vol = chartDataMap[targetD]?.buReq?.[bu] || 0;
-                if (vol > 0 || mockCapacityMap[bu]) {
-                    let cap = mockCapacityMap[bu] || DEFAULT_CAPACITY;
+                let cap = globalCapacities[targetD]?.[bu] || DEFAULT_CAPACITY;
+                
+                if (vol > 0 || globalCapacities[targetD]?.[bu]) {
                     let utilPct = cap > 0 ? (vol / cap) * 100 : 0;
                     utilData.push({ bu: bu, vol: vol, cap: cap, utilPct: utilPct });
                 }
             });
+            // จบแก้
 
             utilData.sort((a, b) => b.utilPct - a.utilPct); 
 
