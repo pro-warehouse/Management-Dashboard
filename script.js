@@ -2,78 +2,67 @@ let globalCapacities = {};
 const DEFAULT_CAPACITY = 10000;
 
 function toggleCapSetup() {
-    try {
-        const panel = document.getElementById('cap-setup-panel');
-        if (!panel) {
-            alert("ไม่พบ ID 'cap-setup-panel' ในหน้า HTML");
-            return;
-        }
-        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-        if (panel.style.display === 'block') renderCapInputs();
-    } catch (err) {
-        alert(" เกิดข้อผิดพลาดตอนเปิดหน้าต่าง: " + err.message);
+    const panel = document.getElementById('cap-setup-panel');
+    if (!panel) return;
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    
+    if (panel.style.display === 'block') {
+        // ดึงวันที่จาก Dashboard หลักมาเป็นค่าเริ่มต้น
+        const mainDate = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
+        document.getElementById('cap-target-date').value = mainDate;
+        fetchAndRenderCapInputs(); // ดึงข้อมูลของวันนั้นมาโชว์
     }
 }
 
-function renderCapInputs() {
+// 🌟 ฟังก์ชันใหม่: เมื่อเปลี่ยนวันที่ จะไปดึง Cap จากฐานข้อมูลมาโชว์ให้แก้ทันที
+async function fetchAndRenderCapInputs() {
+    const targetDate = document.getElementById('cap-target-date').value;
+    const container = document.getElementById('cap-inputs-container');
+    container.innerHTML = '<span style="font-size:11px; color:var(--text-muted);">⏳ กำลังดึงข้อมูล...</span>';
+
     try {
-        const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
-        const displayEl = document.getElementById('cap-date-display');
-        if (displayEl) displayEl.innerText = dpVal;
-        
-        const container = document.getElementById('cap-inputs-container');
-        if (!container) return;
-        container.innerHTML = '';
-        
-        const allBUs = window.selectedBUs.includes('ALL') ? ['DM02', 'DP02', '1115', 'DCWN', 'DG02'] : window.selectedBUs; 
-        
-        allBUs.forEach(bu => {
-            let currentCap = globalCapacities[dpVal]?.[bu] || DEFAULT_CAPACITY;
-            container.innerHTML += `
-                <div style="display: flex; flex-direction: column;">
-                    <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">${bu}</label>
-                    <input type="number" id="cap-input-${bu}" value="${currentCap}" data-bu="${bu}" style="width: 70px; padding: 4px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 11px; background: var(--bg-card); color: var(--text-main);">
-                </div>
-            `;
+        // ไปดึงข้อมูลของวันนั้นๆ มาโดยเฉพาะ (เผื่อเป็นวันย้อนหลังไปไกลๆ)
+        const capResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fn: 'apiGetCapacity', args: [targetDate, targetDate] })
         });
-    } catch (err) {
-        alert(" เกิดข้อผิดพลาดตอนสร้างช่องกรอกข้อมูล: " + err.message);
+        if (capResp.ok) {
+            const capJson = await capResp.json();
+            if (capJson.success && capJson.data) {
+                if (!globalCapacities[targetDate]) globalCapacities[targetDate] = {};
+                capJson.data.forEach(row => {
+                    globalCapacities[row.target_date][row.owner] = row.capacity;
+                });
+            }
+        }
+    } catch (e) {
+        console.warn("ดึง Capacity ย้อนหลังไม่สำเร็จ ใช้ค่าเริ่มต้นแทน", e);
     }
+
+    // วาดกล่อง Input และใส่ค่าที่ดึงมา
+    container.innerHTML = '';
+    // ดึงรายชื่อ BU เพื่อสร้างช่องกรอก (ถ้าเลือก ALL ให้โชว์ทุก BU)
+    const allBUs = (window.selectedBUs && window.selectedBUs.includes('ALL')) ? ['DM02', 'DP02', '1115', 'DCWN', 'DG02'] : (window.selectedBUs || ['DM02', 'DP02', '1115', 'DCWN', 'DG02']); 
+    
+    allBUs.forEach(bu => {
+        let currentCap = globalCapacities[targetDate]?.[bu] || DEFAULT_CAPACITY;
+        container.innerHTML += `
+            <div style="display: flex; flex-direction: column;">
+                <label style="font-size: 9px; font-weight: 600; color:var(--text-muted);">${bu}</label>
+                <input type="number" id="cap-input-${bu}" value="${currentCap}" data-bu="${bu}" style="width: 70px; padding: 4px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 11px; background: var(--bg-card); color: var(--text-main);">
+            </div>
+        `;
+    });
 }
 
-// ฟังก์ชันสำหรับสั่งให้ Popup แสดงผล
-function showToast(message) {
-    const toast = document.getElementById('custom-toast');
-    const toastMsg = document.getElementById('toast-message');
-    if (!toast || !toastMsg) return;
-    
-    toastMsg.innerText = message;
-    
-    // ตรวจสอบว่าเป็นข้อความแจ้งเตือน Error หรือไม่ ถ้าใช่ให้เปลี่ยนเป็นสีแดง
-    if (message.includes('ไม่สำเร็จ') || message.includes('❌')) {
-        toast.style.backgroundColor = '#EF4444';
-        toast.style.boxShadow = '0px 15px 40px rgba(239, 68, 68, 0.3)';
-    } else {
-        toast.style.backgroundColor = '#10B981';
-        toast.style.boxShadow = '0px 15px 40px rgba(16, 185, 129, 0.3)';
-    }
-    
-    toast.classList.add('show');
-    
-    // ตั้งเวลาให้ Popup หายไปเองภายใน 3.5 วินาที
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3500);
-}
-
-// ฟังก์ชันบันทึกข้อมูลเวอร์ชันอัปเดตระบบแจ้งเตือน
 async function saveDailyCapacity() {
     try {
-        const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
+        // 🌟 ใช้วันที่จากช่องเลือกวันที่ของ Cap โดยเฉพาะ
+        const targetDate = document.getElementById('cap-target-date').value;
         const inputs = document.querySelectorAll('#cap-inputs-container input');
         
         if (inputs.length === 0) {
-            showToast('❌ ไม่พบข้อมูลที่จะบันทึก กรุณกด Set Cap ก่อนครับ');
+            showToast('❌ ไม่พบข้อมูลที่จะบันทึก');
             return;
         }
 
@@ -86,35 +75,26 @@ async function saveDailyCapacity() {
             const response = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fn: 'apiSaveCapacity', args: [{ target_date: dpVal, owner: bu, capacity: cap }] })
+                body: JSON.stringify({ fn: 'apiSaveCapacity', args: [{ target_date: targetDate, owner: bu, capacity: cap }] })
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP Error Status: ${response.status}`);
-            }
-
-            const resData = await response.json();
-            if (resData.success === false) {
-                throw new Error(resData.message || 'Server ส่งกลับมาว่าบันทึกไม่สำเร็จ');
-            }
+            if (!response.ok) throw new Error(`HTTP Error Status: ${response.status}`);
             
-            if (!globalCapacities[dpVal]) globalCapacities[dpVal] = {};
-            globalCapacities[dpVal][bu] = cap;
+            const resData = await response.json();
+            if (resData.success === false) throw new Error(resData.message || 'บันทึกไม่สำเร็จ');
+            
+            if (!globalCapacities[targetDate]) globalCapacities[targetDate] = {};
+            globalCapacities[targetDate][bu] = cap;
         }
         
         if (typeof toggleLoader === "function") toggleLoader(false);
+        showToast(`บันทึก Capacity ของวันที่ ${targetDate} สำเร็จแล้ว! 💾`);
         
-        // 🔥 เรียกใช้ Popup แจ้งเตือนแทนการใช้ alert() แบบเก่า
-        showToast('บันทึกข้อมูล Capacity ลงฐานข้อมูลสำเร็จแล้ว! 💾');
-        
-        if (typeof initFulfillmentRealtime === "function") {
-            initFulfillmentRealtime(); 
-        }
+        if (typeof initFulfillmentRealtime === "function") initFulfillmentRealtime(); 
     } catch (error) {
         if (typeof toggleLoader === "function") toggleLoader(false);
         console.error('Save Capacity Error:', error);
-        // 🚨 กรณี Error ก็จะเด้งสีแดงเตือนให้รู้ทันที
-        showToast('❌ บันทึกไม่สำเร็จเนื่องจาก: ' + error.message);
+        showToast('❌ บันทึกไม่สำเร็จ: ' + error.message);
     }
 }
 // === Setup Base & Theme ===
