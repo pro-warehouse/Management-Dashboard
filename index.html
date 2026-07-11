@@ -412,9 +412,12 @@
                     </div>
                     
                     <div id="cap-setup-panel" style="display: none; background: var(--bg-body); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed var(--border-color);">
-                        <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px; color: var(--text-muted);">กำหนด Capacity ของวันที่: <span id="cap-date-display" style="color:var(--text-main);"></span></div>
-                        <div id="cap-inputs-container" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
-                        <button onclick="saveDailyCapacity()" style="margin-top: 10px; background: #114EE8; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700;">💾 Save to Database</button>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <div style="font-size: 11px; font-weight: 600; color: var(--text-muted);">เลือกวันที่ต้องการแก้ไข Cap:</div>
+                            <input type="date" id="cap-target-date" onchange="fetchAndRenderCapInputs()" style="padding: 2px 6px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 11px; font-family: inherit; cursor: pointer; background: var(--bg-card); color: var(--text-main);">
+                        </div>
+                        <div id="cap-inputs-container" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;"></div>
+                        <button onclick="saveDailyCapacity()" style="background: #114EE8; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700;">💾 Save Capacity</button>
                     </div>
                     <div style="width: 100%; overflow-x: auto; flex: 1; max-height: 280px; overflow-y: auto;">
                         <table class="matrix-table" id="utilization-table" style="min-width: 100%; text-align: left; border-collapse: collapse; font-size: 0.8rem;">
