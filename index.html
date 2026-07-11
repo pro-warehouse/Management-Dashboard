@@ -406,7 +406,16 @@
                 </div>
 
                 <div class="card chart-card" style="display: flex; flex-direction: column; padding: 24px;">
-                    <h3 id="utilization-title" style="margin: 0 0 15px 0; font-size: 0.95rem; font-weight: 700;">📊 VOLUME UTILIZATION BY OWNER</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 id="utilization-title" style="margin: 0; font-size: 0.95rem; font-weight: 700;">📊 VOLUME UTILIZATION BY OWNER</h3>
+                        <button onclick="toggleCapSetup()" style="background: var(--bg-body); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; color: var(--text-main); font-weight: 600;">⚙️ Set Cap</button>
+                    </div>
+                    
+                    <div id="cap-setup-panel" style="display: none; background: var(--bg-body); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed var(--border-color);">
+                        <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px; color: var(--text-muted);">กำหนด Capacity ของวันที่: <span id="cap-date-display" style="color:var(--text-main);"></span></div>
+                        <div id="cap-inputs-container" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+                        <button onclick="saveDailyCapacity()" style="margin-top: 10px; background: #114EE8; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700;">💾 Save to Database</button>
+                    </div>
                     <div style="width: 100%; overflow-x: auto; flex: 1; max-height: 280px; overflow-y: auto;">
                         <table class="matrix-table" id="utilization-table" style="min-width: 100%; text-align: left; border-collapse: collapse; font-size: 0.8rem;">
                             <thead>
