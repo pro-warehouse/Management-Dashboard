@@ -13,7 +13,7 @@
 <body>
     <main class="main-content">
         
-        <!-- Header Controls -->
+        <!-- Header Controls (ปุ่มเลือกวันที่ และ BU) -->
         <div class="top-controls">
             <div id="global-loader" style="display: none; align-items: center; gap: 8px; color: #F59E0B; font-weight: 600; font-size: 0.85rem;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Loading...
@@ -41,7 +41,7 @@
             <button id="theme-toggle" class="btn-theme">🌙 Dark Mode</button>
         </div>
 
-        <!-- Main Banner (แก้ไขโลโก้ไม่ให้ขยายใหญ่) -->
+        <!-- Main Banner (แก้ไขขนาดโลโก้ให้คงที่ ไม่ซูมใหญ่) -->
         <div class="welcome-banner" style="display: flex; align-items: center; gap: 20px;">
             <div style="width: 75px; height: 75px; min-width: 75px; background: white; padding: 5px; border-radius: 16px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center;">
                 <img src="https://i.postimg.cc/L4qLLFNj/Black-White-Modern-Handwritten-Square-Studio-Logo-(15)-Photoroom-0.png" alt="Logo" style="max-width: 100%; max-height: 100%; object-fit: contain;">
@@ -52,9 +52,8 @@
             </div>
         </div>
 
-        <!-- 🌟 6 KPI CARDS (GRADIENT STYLE) 🌟 -->
+        <!-- 🌟 6 KPI CARDS (ดีไซน์ใหม่สไตล์ Gradient เหมือนในภาพ) 🌟 -->
         <div class="kpi-grid mb-30">
-            <!-- Card 1 -->
             <div class="kpi-card grad-purple">
                 <div class="kpi-title">Orders Shipped Today</div>
                 <div class="kpi-value" id="ffm-orders-shipped">...</div>
@@ -67,7 +66,6 @@
                 </div>
             </div>
 
-            <!-- Card 2 -->
             <div class="kpi-card grad-green">
                 <div class="kpi-title">Avg. Fulfillment Rate</div>
                 <div class="kpi-value" id="ffm-rate-val">...</div>
@@ -84,7 +82,6 @@
                 </div>
             </div>
 
-            <!-- Card 3 -->
             <div class="kpi-card grad-blue">
                 <div class="kpi-title">Active Workforce</div>
                 <div class="kpi-value" id="headcount-total">...</div>
@@ -97,7 +94,6 @@
                 </div>
             </div>
 
-            <!-- Card 4 -->
             <div class="kpi-card grad-yellow">
                 <div class="kpi-title">On-Time Delivery</div>
                 <div class="kpi-value" id="ontime-val">...</div>
@@ -110,7 +106,6 @@
                 </div>
             </div>
 
-            <!-- Card 5 -->
             <div class="kpi-card grad-red">
                 <div class="kpi-title">Claim Cost (฿)</div>
                 <div class="kpi-value" id="claim-val">...</div>
@@ -123,7 +118,6 @@
                 </div>
             </div>
 
-            <!-- Card 6 -->
             <div class="kpi-card grad-teal">
                 <div class="kpi-title">Inventory Accuracy</div>
                 <div class="kpi-value" id="inv-val">...</div>
