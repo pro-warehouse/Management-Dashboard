@@ -28,34 +28,34 @@
                 <span class="slicer-label">BU:</span>
                 <div id="bu-multi-select" class="slicer-input dropdown-trigger">
                     <span id="bu-multi-text">All BUs</span>
-                    <span class="dropdown-arrow">▼</span>
+                    <span class="dropdown-arrow" style="font-size:10px; margin-left:5px;">▼</span>
                 </div>
                 <div id="bu-dropdown-menu" class="dropdown-menu">
                     <label class="dropdown-item"><input type="checkbox" id="bu-select-all" checked> All BUs</label>
                     <div class="divider"></div>
                     <div id="bu-checkbox-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
-                    <button id="bu-apply-btn" class="btn-primary mt-10">Apply Filter</button>
+                    <button id="bu-apply-btn" class="btn-primary" style="margin-top:10px; width:100%;">Apply Filter</button>
                 </div>
             </div>
 
             <button id="theme-toggle" class="btn-theme">🌙 Dark Mode</button>
         </div>
 
-        <!-- Main Banner -->
-        <div class="welcome-banner">
-            <div class="banner-icon">
-                <img src="https://i.postimg.cc/L4qLLFNj/Black-White-Modern-Handwritten-Square-Studio-Logo-(15)-Photoroom-0.png" alt="Logo">
+        <!-- Main Banner (แก้ไขโลโก้ไม่ให้ระเบิด) -->
+        <div class="welcome-banner" style="display: flex; align-items: center; gap: 20px;">
+            <div style="width: 75px; height: 75px; background: white; padding: 5px; border-radius: 16px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                <img src="https://i.postimg.cc/L4qLLFNj/Black-White-Modern-Handwritten-Square-Studio-Logo-(15)-Photoroom-0.png" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">
             </div>
             <div>
-                <h2>Ops Management</h2>
-                <p>Executive Dashboard</p>
+                <h2 style="margin: 0 0 5px 0; font-size: 2.2rem; font-weight: 800;">Ops Management</h2>
+                <p style="margin: 0; font-size: 1rem; opacity: 0.9;">Executive Dashboard</p>
             </div>
         </div>
 
-        <!-- 🌟 6 KPI CARDS (GRADIENT STYLE LIKE IMAGE) 🌟 -->
+        <!-- 🌟 6 KPI CARDS (GRADIENT STYLE) 🌟 -->
         <div class="kpi-grid mb-30">
             <!-- Card 1 -->
-            <div class="kpi-card bg-purple">
+            <div class="kpi-card grad-purple">
                 <div class="kpi-title">Orders Shipped Today</div>
                 <div class="kpi-value" id="ffm-orders-shipped">...</div>
                 <div class="kpi-footer">
@@ -68,7 +68,7 @@
             </div>
 
             <!-- Card 2 -->
-            <div class="kpi-card bg-green">
+            <div class="kpi-card grad-green">
                 <div class="kpi-title">Avg. Fulfillment Rate</div>
                 <div class="kpi-value" id="ffm-rate-val">...</div>
                 <div class="kpi-mid-row">
@@ -85,7 +85,7 @@
             </div>
 
             <!-- Card 3 -->
-            <div class="kpi-card bg-blue">
+            <div class="kpi-card grad-blue">
                 <div class="kpi-title">Active Workforce</div>
                 <div class="kpi-value" id="headcount-total">...</div>
                 <div class="kpi-footer">
@@ -98,7 +98,7 @@
             </div>
 
             <!-- Card 4 -->
-            <div class="kpi-card bg-yellow">
+            <div class="kpi-card grad-yellow">
                 <div class="kpi-title">On-Time Delivery</div>
                 <div class="kpi-value" id="ontime-val">...</div>
                 <div class="kpi-footer">
@@ -111,7 +111,7 @@
             </div>
 
             <!-- Card 5 -->
-            <div class="kpi-card bg-red">
+            <div class="kpi-card grad-red">
                 <div class="kpi-title">Claim Cost (฿)</div>
                 <div class="kpi-value" id="claim-val">...</div>
                 <div class="kpi-footer">
@@ -124,7 +124,7 @@
             </div>
 
             <!-- Card 6 -->
-            <div class="kpi-card bg-teal">
+            <div class="kpi-card grad-teal">
                 <div class="kpi-title">Inventory Accuracy</div>
                 <div class="kpi-value" id="inv-val">...</div>
                 <div class="kpi-footer">
@@ -138,8 +138,8 @@
         </div>
 
         <!-- Incidents Alert -->
-        <div class="card mb-30" style="padding: 20px;">
-            <h3 class="section-title" style="margin-bottom: 15px; font-size: 1.1rem;">
+        <div class="card mb-30 p-24">
+            <h3 style="margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; color: var(--text-main);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                 Key Daily Incidents Alerts
             </h3>
@@ -148,45 +148,45 @@
             </div>
         </div>
 
-        <!-- 🌟 WAVE OPERATIONS (LIKE SECOND IMAGE) 🌟 -->
+        <!-- 🌟 WAVE OPERATIONS 🌟 -->
         <div class="section-divider"></div>
         <div class="section-header">
             <h2 class="section-title">Wave Operations & SLA Status <span class="source-badge">BigQuery</span></h2>
         </div>
         
         <div class="wave-kpi-grid mb-20">
-            <div class="kpi-card bg-purple">
+            <div class="kpi-card grad-purple">
                 <div class="kpi-title" id="wave-title-1">TOTAL ORDERS</div>
                 <div class="kpi-value" id="wave-total">...</div>
-                <div class="kpi-footer mt-auto">
-                    <div class="kpi-badge-group" id="wave-active-info-1">กำลังตรวจสอบ...</div>
+                <div class="kpi-footer mt-auto" style="flex-direction: column; align-items: flex-start; gap: 5px;">
+                    <div id="wave-active-info-1" style="font-size:0.8rem;">กำลังตรวจสอบ...</div>
                     <div class="kpi-subtext" id="wave-date-1">Updated: --</div>
                 </div>
             </div>
             
-            <div class="kpi-card bg-green">
+            <div class="kpi-card grad-green">
                 <div class="kpi-title" id="wave-title-2">COMPLETED ORDERS</div>
                 <div class="kpi-value" id="wave-completed">...</div>
-                <div class="kpi-footer mt-auto">
-                    <div class="kpi-badge-group" id="wave-active-info-2">กำลังตรวจสอบ...</div>
+                <div class="kpi-footer mt-auto" style="flex-direction: column; align-items: flex-start; gap: 5px;">
+                    <div id="wave-active-info-2" style="font-size:0.8rem;">กำลังตรวจสอบ...</div>
                     <div class="kpi-subtext" id="wave-date-2">Updated: --</div>
                 </div>
             </div>
 
-            <div class="kpi-card bg-red">
+            <div class="kpi-card grad-red">
                 <div class="kpi-title" id="wave-title-3">LATE ORDERS (บิลช้ากว่าแผน)</div>
                 <div class="kpi-value" id="wave-late">...</div>
-                <div class="kpi-footer mt-auto">
-                    <div class="kpi-badge-group" id="wave-active-info-3">กำลังตรวจสอบ...</div>
+                <div class="kpi-footer mt-auto" style="flex-direction: column; align-items: flex-start; gap: 5px;">
+                    <div id="wave-active-info-3" style="font-size:0.8rem;">กำลังตรวจสอบ...</div>
                     <div class="kpi-subtext" id="wave-date-3">Updated: --</div>
                 </div>
             </div>
 
-            <div class="kpi-card bg-yellow">
+            <div class="kpi-card grad-yellow">
                 <div class="kpi-title" id="wave-title-4">CURRENT STATUS (สถานะเวลา)</div>
                 <div class="kpi-value" id="wave-delay">...</div>
-                <div class="kpi-footer mt-auto">
-                    <div class="kpi-badge-group" id="wave-active-info-4">กำลังตรวจสอบ...</div>
+                <div class="kpi-footer mt-auto" style="flex-direction: column; align-items: flex-start; gap: 5px;">
+                    <div id="wave-active-info-4" style="font-size:0.8rem;">กำลังตรวจสอบ...</div>
                     <div class="kpi-subtext" id="wave-date-4">Updated: --</div>
                 </div>
             </div>
@@ -245,7 +245,7 @@
             </div>
         </div>
 
-        <div class="card p-24 mb-30">
+        <div class="card p-24 mb-30" id="fulfillment-v3-wrapper">
             <h3 class="card-title">WAVE PLAN SUMMARY BY BU</h3>
             <div class="table-responsive">
                 <table class="matrix-table" id="wave-summary-table">
@@ -327,7 +327,7 @@
                     <button onclick="toggleCapSetup()" class="btn-outline">⚙️ Set Cap</button>
                 </div>
                 
-                <div id="cap-setup-panel" class="setup-panel">
+                <div id="cap-setup-panel" class="setup-panel" style="display:none;">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                         <span style="font-size: 11px; font-weight: 600;">เลือกวันที่:</span>
                         <input type="date" id="cap-target-date" class="select-filter" onchange="fetchAndRenderCapInputs()">
@@ -373,10 +373,50 @@
                 <h3 class="card-title">WORKFORCE MATRIX (AFFILIATION & ROLE)</h3>
                 <div class="table-responsive max-h-300">
                     <table class="matrix-table" id="wf-matrix-table">
-                        <thead><tr><th class="text-center">Loading Matrix Data...</th></tr></thead>
+                        <thead><tr><th class="text-center text-muted">Loading Matrix Data...</th></tr></thead>
                     </table>
                 </div>
                 <div id="wf-foreign-detail"></div>
+            </div>
+        </div>
+
+        <div class="card p-24 mb-30">
+            <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">
+                <h3 class="card-title" style="margin:0;">DAILY ATTENDANCE RECORD</h3>
+                <div style="display: flex; gap: 15px;">
+                    <div style="text-align: center;"><div style="font-size: 0.7rem; color: var(--text-muted);">🇹🇭 พนักงานไทย</div><div style="font-size: 1.1rem; font-weight: 800; color: #10B981;" id="wf-thai">0</div></div>
+                    <div style="width: 1px; background: var(--border-color);"></div>
+                    <div style="text-align: center;"><div style="font-size: 0.7rem; color: var(--text-muted);">🌐 ต่างชาติ</div><div style="font-size: 1.1rem; font-weight: 800; color: #3B82F6;" id="wf-foreign">0</div></div>
+                </div>
+            </div>
+            <div class="table-responsive max-h-400">
+                <table class="excel-table sticky-header" style="width:100%; border-collapse:collapse; font-size: 0.85rem;">
+                    <thead id="daily-attendance-head">
+                        <tr><th class="text-center text-muted">Loading Data...</th></tr>
+                    </thead>
+                    <tbody id="daily-attendance-body">
+                        <tr><td class="text-center text-muted">Loading data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="charts-grid-2 mb-30">
+            <div class="card p-24">
+                <h3 class="card-title">ALL STAFF SUMMARY (BY HC TYPE)</h3>
+                <div class="table-responsive max-h-300">
+                    <table class="matrix-table" id="hc-summary-table">
+                        <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+            <div class="card p-24">
+                <h3 class="card-title text-red">RESIGNED STAFF (STATUS: L)</h3>
+                <div class="table-responsive max-h-300">
+                    <table class="matrix-table" id="resigned-table">
+                        <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
+                    </table>
+                </div>
             </div>
         </div>
 
