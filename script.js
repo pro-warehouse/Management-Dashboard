@@ -16,28 +16,22 @@ function showToast(message, type = 'success', duration = 3000) {
 }
 
 // ==========================================
-// 🎨 CHART.JS GRADIENTS HELPER
+// 🎨 CHART.JS COLORS (Solid Vibrant Colors based on Reference)
 // ==========================================
-function getGradient(ctx, chartArea, colorStart, colorEnd) {
-    if (!chartArea) return colorStart;
+// สีแท่ง Solid (ตามรูป image_570b11)
+const solidColors = ['#60A5FA', '#34D399', '#FBBF24', '#A78BFA', '#F87171', '#22D3EE', '#94A3B8'];
+
+function getFillGradient(ctx, chartArea, rgbColor) {
+    if (!chartArea) return 'transparent';
     let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-    gradient.addColorStop(0, colorStart);
-    gradient.addColorStop(1, colorEnd);
+    gradient.addColorStop(0, `rgba(${rgbColor}, 0.05)`);
+    gradient.addColorStop(1, `rgba(${rgbColor}, 0.4)`);
     return gradient;
 }
 
-const gradPalettes = [
-    { s: '#3B82F6', e: '#60A5FA' }, // Blue
-    { s: '#10B981', e: '#34D399' }, // Green
-    { s: '#F59E0B', e: '#FCD34D' }, // Orange
-    { s: '#8B5CF6', e: '#A78BFA' }, // Purple
-    { s: '#EF4444', e: '#F87171' }, // Red
-    { s: '#06B6D4', e: '#22D3EE' }  // Teal
-];
-
 Chart.defaults.font.family = "'Inter', sans-serif";
-Chart.defaults.color = '#A3AED0';
-Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(17, 28, 68, 0.9)';
+Chart.defaults.color = '#64748B';
+Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
 Chart.defaults.plugins.tooltip.titleFont = { size: 13, family: 'Inter', weight: 'bold' };
 Chart.defaults.plugins.tooltip.padding = 10;
 Chart.defaults.plugins.tooltip.cornerRadius = 8;
@@ -55,7 +49,7 @@ const dataLabelPlugin = {
             meta.data.forEach((bar, index) => {
                 const data = dataset.data[index];
                 if(data > 0){
-                    ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#FFF' : '#2B3674';
+                    ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
                     ctx.font = 'bold 11px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
                     let val = (chart.canvas.id.includes('claim')) ? fmtN(data) : (data%1!==0 ? data.toFixed(1)+'%' : fmtN(data));
                     ctx.fillText(val, bar.x, bar.y - 5);
@@ -73,7 +67,7 @@ const dataLabelPlugin = {
             const yScale = chart.scales.y; 
             chart.data.labels.forEach((_, index) => {
                 if (totals[index] > 0 && xCoords[index] && yScale) {
-                    ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#FFF' : '#2B3674';
+                    ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
                     ctx.font = 'bold 12px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
                     ctx.fillText(fmtN(Math.round(totals[index])), xCoords[index], yScale.getPixelForValue(totals[index]) - 5);
                 }
@@ -95,7 +89,7 @@ const lineDataLabelPlugin = {
             meta.data.forEach((point, index) => {
                 const data = dataset.data[index];
                 if(data !== null && data !== undefined && data !== 0 && data !== "0.00"){
-                    ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#FFF' : '#2B3674';
+                    ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
                     ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = i === 0 ? 'bottom' : 'top'; 
                     let yOffset = i === 0 ? -8 : 8;
                     ctx.fillText(Number(data).toFixed(2) + '%', point.x, point.y + yOffset);
@@ -107,32 +101,32 @@ const lineDataLabelPlugin = {
 
 let ffmTrendChartInstance = new Chart(document.getElementById('ffmTrendChart'), { 
     type: 'bar', data: { labels: [], datasets: [] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grace: '15%' } } }, plugins: [dataLabelPlugin] 
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grace: '15%' } } }, plugins: [dataLabelPlugin] 
 });
 
 let ffmVolumeChartInstance = new Chart(document.getElementById('ffmVolumeChart'), { 
     type: 'doughnut', data: { labels: [], datasets: [] }, 
-    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right' } } } 
+    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels:{usePointStyle:true, boxWidth:8} } } } 
 });
 
 let workforceChartInstance = new Chart(document.getElementById('workforceChart'), { 
     type: 'bar', data: { labels: [], datasets: [] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grace: '15%' } } }, plugins: [dataLabelPlugin] 
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grace: '15%' } } }, plugins: [dataLabelPlugin] 
 });
 
 let ontimeChartInstance = new Chart(document.getElementById('ontimeChart2'), { 
     type: 'line', data: { labels: [], datasets: [] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, max: 105 } } }, plugins: [lineDataLabelPlugin]
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, max: 105 } } }, plugins: [lineDataLabelPlugin]
 });
 
 let claimChart2Instance = new Chart(document.getElementById('claimChart2'), { 
-    type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], yAxisID: 'y' }, { label: 'จำนวนชิ้น', data: [], type: 'line', yAxisID: 'y1', pointRadius: 4, borderWidth: 2, borderColor: '#3B82F6', backgroundColor: '#3B82F6' } ] }, 
-    options: { responsive: true, maintainAspectRatio: false, scales: { x: {grid:{display:false}}, y: {position: 'left', grace: '15%'}, y1: {position: 'right', display:false} } }, plugins: [dataLabelPlugin] 
+    type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#F87171', borderRadius: 4, yAxisID: 'y' }, { label: 'จำนวนชิ้น', data: [], type: 'line', yAxisID: 'y1', pointRadius: 4, borderWidth: 2, borderColor: '#60A5FA', backgroundColor: '#60A5FA' } ] }, 
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: {grid:{display:false}}, y: {position: 'left', grace: '15%', border:{display:false}}, y1: {position: 'right', display:false} } }, plugins: [dataLabelPlugin] 
 });
 
 let inventoryChartInstance = new Chart(document.getElementById('inventoryChart'), { 
     type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], fill: true }] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { border: { display: false } } } }, plugins: [lineDataLabelPlugin]
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grace: '5%' } } }, plugins: [lineDataLabelPlugin]
 });
 
 let productivityChartInstance = new Chart(document.getElementById('productivityChart'), { 
@@ -171,7 +165,7 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
     document.getElementById('theme-toggle').innerText = isDark ? '🌙 Dark Mode' : '☀️ Light Mode';
-    Chart.defaults.color = isDark ? '#A3AED0' : '#6B7280';
+    Chart.defaults.color = isDark ? '#94A3B8' : '#64748B';
     Object.values(Chart.instances).forEach(chart => chart.update());
 });
 
@@ -185,14 +179,14 @@ function createMultiSelect(mountEl, opts) {
 
     mountEl.style.position = 'relative';
     mountEl.innerHTML = `
-        <div class="ms-btn select-filter dropdown-trigger" style="min-width:110px;">
-            <span class="ms-text">${label}: All</span><span style="font-size:10px;">▼</span>
+        <div class="ms-btn modern-input dropdown-trigger" style="min-width:110px;">
+            <span class="ms-text">${label}: All</span><span class="arrow" style="font-size:10px; margin-left:5px;">▼</span>
         </div>
         <div class="ms-menu dropdown-menu">
-            <label class="dropdown-item"><input type="checkbox" class="ms-all" checked> All</label>
+            <label class="dropdown-option"><input type="checkbox" class="ms-all" checked> All</label>
             <div class="divider"></div>
             <div class="ms-list" style="display:flex; flex-direction:column; gap:6px;"></div>
-            <button class="ms-apply btn-primary" style="margin-top:10px; width:100%;">Apply</button>
+            <button class="ms-apply btn-primary w-full mt-10">Apply</button>
         </div>
     `;
 
@@ -214,7 +208,7 @@ function createMultiSelect(mountEl, opts) {
         listEl.innerHTML = '';
         options.forEach(v => {
             const lbl = document.createElement('label');
-            lbl.className = 'dropdown-item';
+            lbl.className = 'dropdown-option';
             lbl.innerHTML = `<input type="checkbox" class="ms-item" value="${v}" ${selected.has(v) ? 'checked' : ''}> ${v}`;
             listEl.appendChild(lbl);
         });
@@ -224,7 +218,7 @@ function createMultiSelect(mountEl, opts) {
 
     btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        document.querySelectorAll('.ms-menu').forEach(m => { if (m !== menu) m.style.display = 'none'; });
+        document.querySelectorAll('.dropdown-menu').forEach(m => { if (m !== menu) m.style.display = 'none'; });
         menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
     });
     allCb.addEventListener('change', (e) => { listEl.querySelectorAll('.ms-item').forEach(cb => cb.checked = e.target.checked); });
@@ -323,7 +317,7 @@ function populateGlobalBUFilters() {
     if (cbList && cbList.innerHTML === '') {
         sortedBUs.forEach(bu => {
             const label = document.createElement('label');
-            label.className = 'dropdown-item';
+            label.className = 'dropdown-option';
             label.innerHTML = `<input type="checkbox" class="bu-item-cb" value="${bu}" checked> ${bu}`;
             cbList.appendChild(label);
         });
@@ -349,6 +343,7 @@ function populateGlobalBUFilters() {
         document.getElementById('bu-multi-select').addEventListener('click', (e) => {
             e.stopPropagation();
             let menu = document.getElementById('bu-dropdown-menu');
+            document.querySelectorAll('.dropdown-menu').forEach(m => { if (m !== menu) m.style.display = 'none'; });
             menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
         });
         document.addEventListener('click', (e) => {
@@ -412,7 +407,7 @@ function toggleCapSetup() {
 async function fetchAndRenderCapInputs() {
     const targetDate = document.getElementById('cap-target-date').value;
     const container = document.getElementById('cap-inputs-container');
-    container.innerHTML = '<span style="color:var(--text-muted);">⏳ กำลังดึงข้อมูล...</span>';
+    container.innerHTML = '<span class="text-sm text-muted">⏳ กำลังดึงข้อมูล...</span>';
     try {
         const capResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fn: 'apiGetCapacity', args: [targetDate, targetDate] }) });
         const capJson = await capResp.json();
@@ -425,7 +420,7 @@ async function fetchAndRenderCapInputs() {
     const allBUs = (window.selectedBUs && window.selectedBUs.includes('ALL')) ? ['DM02', 'DP02', '1115', 'DCWN', 'DG02'] : (window.selectedBUs || ['DM02', 'DP02', '1115', 'DCWN', 'DG02']); 
     allBUs.forEach(bu => {
         let currentCap = globalCapacities[targetDate]?.[bu] || DEFAULT_CAPACITY;
-        container.innerHTML += `<div style="display:flex; flex-direction:column;"><label style="font-size:10px; font-weight:700;">${bu}</label><input type="number" id="cap-input-${bu}" value="${currentCap}" data-bu="${bu}" class="select-filter" style="width:70px;"></div>`;
+        container.innerHTML += `<div style="display:flex; flex-direction:column;"><label class="text-xs text-muted font-bold">${bu}</label><input type="number" id="cap-input-${bu}" value="${currentCap}" data-bu="${bu}" class="modern-input" style="width:75px;"></div>`;
     });
 }
 async function saveDailyCapacity() {
@@ -479,7 +474,6 @@ async function initFulfillmentRealtime() {
     };
     
     const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
-    
     let bqDataList = [];
     try {
         const response = await fetch(API_URL, {
@@ -488,11 +482,8 @@ async function initFulfillmentRealtime() {
             body: JSON.stringify({ fn: 'apiGetDashboardSummary', args: ["", ""] })
         });
         if (response.ok) {
-            const textResponse = await response.text(); 
-            try {
-                const result = JSON.parse(textResponse);
-                if (result.success && result.data) bqDataList = result.data;
-            } catch (jsonErr) {}
+            const result = await response.json();
+            if (result.success && result.data) bqDataList = result.data;
         }
         
         const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
@@ -512,7 +503,7 @@ async function initFulfillmentRealtime() {
             }
         }
     } catch (apiErr) {
-        console.warn("⚠️ API Error: Fallback to GAS data only.", apiErr);
+        console.warn("⚠️ API Error: Fallback to GAS data only.");
     }
 
     try {
@@ -522,7 +513,6 @@ async function initFulfillmentRealtime() {
             Object.keys(globalData.fulfillment).forEach(k => {
                 let sd = getStandardDate(k); 
                 if (!unifiedDatesMap[sd]) unifiedDatesMap[sd] = { bq: {}, wave: {}, ffm: {} };
-                
                 let fData = globalData.fulfillment[k].bu_data || {};
                 Object.keys(fData).forEach(rawBu => {
                     let sBu = standardizeBU(rawBu);
@@ -539,7 +529,6 @@ async function initFulfillmentRealtime() {
             Object.keys(globalData.wave_ops).forEach(k => {
                 let sd = getStandardDate(k); 
                 if (!unifiedDatesMap[sd]) unifiedDatesMap[sd] = { bq: {}, wave: {}, ffm: {} };
-                
                 let wData = globalData.wave_ops[k].bu_data || {};
                 Object.keys(wData).forEach(rawBu => {
                     let sBu = standardizeBU(rawBu);
@@ -547,11 +536,7 @@ async function initFulfillmentRealtime() {
                     unifiedDatesMap[sd].wave[sBu].ordTotal += parseFloat(wData[rawBu].total_orders || 0);
                     unifiedDatesMap[sd].wave[sBu].ordFull += parseFloat(wData[rawBu].completed_orders || 0);
                     unifiedDatesMap[sd].wave[sBu].late_orders += parseFloat(wData[rawBu].late_orders || 0);
-                    
-                    let delay = parseFloat(wData[rawBu].total_delay_mins || 0);
-                    if (delay > unifiedDatesMap[sd].wave[sBu].total_delay_mins) {
-                        unifiedDatesMap[sd].wave[sBu].total_delay_mins = delay;
-                    }
+                    unifiedDatesMap[sd].wave[sBu].total_delay_mins = Math.max(unifiedDatesMap[sd].wave[sBu].total_delay_mins, parseFloat(wData[rawBu].total_delay_mins || 0));
                 });
             });
         }
@@ -559,20 +544,15 @@ async function initFulfillmentRealtime() {
         bqDataList.forEach(row => {
             let sd = getStandardDate(row.date);
             if (!unifiedDatesMap[sd]) unifiedDatesMap[sd] = { bq: {}, wave: {}, ffm: {} };
-            
             try { 
                 let rawBq = JSON.parse(row.ownerJson || '{}'); 
                 Object.keys(rawBq).forEach(rawBu => {
                     let sBu = standardizeBU(rawBu); 
                     if (sBu !== 'UNKNOWN' && sBu !== '') {
-                        if (!unifiedDatesMap[sd].bq[sBu]) {
-                            unifiedDatesMap[sd].bq[sBu] = { req:0, alloc:0, ship:0, actShort:0, pu:0, plt:0, ordTotal:0, ordFull:0 };
-                        }
+                        if (!unifiedDatesMap[sd].bq[sBu]) unifiedDatesMap[sd].bq[sBu] = { req:0, alloc:0, ship:0, actShort:0, pu:0, plt:0, ordTotal:0, ordFull:0 };
                         let bItem = rawBq[rawBu];
                         unifiedDatesMap[sd].bq[sBu].ordTotal += parseFloat(bItem.ordTotal || 0);
-                        let perfectOrders = parseFloat(bItem.ordFull || bItem.perfectOrders || 0);
-                        unifiedDatesMap[sd].bq[sBu].ordFull += perfectOrders;
-                        
+                        unifiedDatesMap[sd].bq[sBu].ordFull += parseFloat(bItem.ordFull || bItem.perfectOrders || 0);
                         unifiedDatesMap[sd].bq[sBu].req += parseFloat(bItem.req || 0);
                         unifiedDatesMap[sd].bq[sBu].alloc += parseFloat(bItem.alloc || 0);
                         unifiedDatesMap[sd].bq[sBu].ship += parseFloat(bItem.ship || 0);
@@ -596,12 +576,11 @@ async function initFulfillmentRealtime() {
         let matrixRowsEmitted = 0;
 
         if (sortedDates.length === 0) {
-            htmlTable += `<tr><td colspan="14" class="text-center" style="padding:30px; color:var(--text-muted);">ไม่มีข้อมูล</td></tr>`;
+            htmlTable += `<tr><td colspan="14" class="text-center text-muted">ไม่มีข้อมูล</td></tr>`;
         } else {
             sortedDates.forEach(dateStr => {
                 let parts = dateStr.split('-');
                 let displayDate = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr;
-
                 let _dts = new Date(dateStr).getTime();
                 let inMatrixWindow = _dts >= _mStart.getTime() && _dts <= _mEnd.getTime();
 
@@ -614,27 +593,18 @@ async function initFulfillmentRealtime() {
 
                 sortedOwners.forEach(bu => {
                     if (window.selectedBUs && !window.selectedBUs.includes('ALL') && !window.selectedBUs.includes(bu)) return;
-                    
                     buNamesSet.add(bu);
-                    const bItem = bqData[bu] || {};
-                    const wItem = wData[bu] || {};
-                    const fItem = fData[bu] || {};
-                    
+                    const bItem = bqData[bu] || {}; const wItem = wData[bu] || {}; const fItem = fData[bu] || {};
                     const bData = getBestOrderData(bItem, wItem, fItem);
-                    const ordTotal = bData.tot;
-                    const ordFull = bData.full;
+                    const ordTotal = bData.tot; const ordFull = bData.full;
                     
                     const req = Math.max(parseFloat(bItem.req || 0), parseFloat(fItem.req || 0));
-                    const alloc = parseFloat(bItem.alloc || 0);
-                    const ship = parseFloat(bItem.ship || 0);
+                    const alloc = parseFloat(bItem.alloc || 0); const ship = parseFloat(bItem.ship || 0);
                     const actShort = parseFloat(bItem.actShort || 0);
-                    const pu = parseFloat(bItem.pu || 0);
-                    const plt = parseFloat(bItem.plt || 0);
-
+                    const pu = parseFloat(bItem.pu || 0); const plt = parseFloat(bItem.plt || 0);
                     const estShort = Math.max(0, req - alloc);
 
-                    const bqOrdTotal = parseFloat(bItem.ordTotal || 0);
-                    const bqOrdFull  = parseFloat(bItem.ordFull  || 0);
+                    const bqOrdTotal = parseFloat(bItem.ordTotal || 0); const bqOrdFull  = parseFloat(bItem.ordFull  || 0);
                     const ordSLA = bqOrdTotal > 0 ? Math.max(0, Math.min(1, bqOrdFull / bqOrdTotal)) : null;
                     const dcSLA = alloc > 0 ? Math.min(1, (ship / alloc)) : null;
                     const ffm = req > 0 ? Math.min(1, (ship / req)) : null;
@@ -642,64 +612,53 @@ async function initFulfillmentRealtime() {
                     const pcsOrd = ordTotal > 0 ? (req / ordTotal) : null;
 
                     const colorPct = (v) => {
-                        if (v === null || v === undefined) return '<span style="color:var(--text-muted);">-</span>';
-                        if (v >= 0.99) return `<span style="color:#10B981; font-weight:600;">${(v*100).toFixed(1)}%</span>`;
-                        if (v >= 0.95) return `<span style="color:#F59E0B; font-weight:600;">${(v*100).toFixed(1)}%</span>`;
-                        return `<span style="color:#EF4444; font-weight:600;">${(v*100).toFixed(1)}%</span>`;
+                        if (v === null || v === undefined) return '<span class="text-muted">-</span>';
+                        if (v >= 0.99) return `<span class="text-green font-bold">${(v*100).toFixed(1)}%</span>`;
+                        if (v >= 0.95) return `<span class="text-orange font-bold">${(v*100).toFixed(1)}%</span>`;
+                        return `<span class="text-red font-bold">${(v*100).toFixed(1)}%</span>`;
                     };
 
-                    if (inMatrixWindow) matrixRowsEmitted++;
-                    if (inMatrixWindow) htmlTable += `<tr>
-                        <td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10;">${displayDate}</td>
-                        <td style="text-align:center; font-weight:600;">${bu}</td>
-                        <td style="text-align:right;">${ordTotal > 0 ? fmtN(ordTotal) : 0}</td>
-                        <td style="text-align:right;">${req > 0 ? fmtN(req) : 0}</td>
-                        <td style="text-align:right;">${alloc > 0 ? fmtN(alloc) : 0}</td>
-                        <td style="color:#10B981; font-weight:600; text-align:right;">${ship > 0 ? fmtN(ship) : 0}</td>
-                        <td style="text-align:right;">${estShort > 0 ? fmtN(estShort) : 0}</td>
-                        <td style="color:${actShort > 0 ? '#EF4444' : 'inherit'}; text-align:right;">${actShort > 0 ? fmtN(actShort) : 0}</td>
-                        <td style="text-align:center;">${colorPct(ordSLA)}</td>
-                        <td style="text-align:center;">${colorPct(dcSLA)}</td>
-                        <td style="text-align:center;">${colorPct(ffm)}</td>
-                        <td style="text-align:right;">${pcsPick !== null ? pcsPick.toFixed(1) : '-'}</td>
-                        <td style="text-align:right;">${pcsOrd !== null ? pcsOrd.toFixed(1) : '-'}</td>
-                        <td style="text-align:right;">${plt > 0 ? plt.toFixed(1) : '-'}</td>
-                    </tr>`;
+                    if (inMatrixWindow) {
+                        matrixRowsEmitted++;
+                        htmlTable += `<tr>
+                            <td class="font-bold text-center" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${displayDate}</td>
+                            <td class="font-bold text-center">${bu}</td>
+                            <td class="text-right">${ordTotal > 0 ? fmtN(ordTotal) : 0}</td>
+                            <td class="text-right">${req > 0 ? fmtN(req) : 0}</td>
+                            <td class="text-right">${alloc > 0 ? fmtN(alloc) : 0}</td>
+                            <td class="text-green font-bold text-right">${ship > 0 ? fmtN(ship) : 0}</td>
+                            <td class="text-right">${estShort > 0 ? fmtN(estShort) : 0}</td>
+                            <td class="text-right" style="color:${actShort > 0 ? 'var(--brand-red)' : 'inherit'};">${actShort > 0 ? fmtN(actShort) : 0}</td>
+                            <td class="text-center">${colorPct(ordSLA)}</td>
+                            <td class="text-center">${colorPct(dcSLA)}</td>
+                            <td class="text-center">${colorPct(ffm)}</td>
+                            <td class="text-right">${pcsPick !== null ? pcsPick.toFixed(1) : '-'}</td>
+                            <td class="text-right">${pcsOrd !== null ? pcsOrd.toFixed(1) : '-'}</td>
+                            <td class="text-right">${plt > 0 ? plt.toFixed(1) : '-'}</td>
+                        </tr>`;
+                    }
 
                     if (!chartDataMap[dateStr]) chartDataMap[dateStr] = { req:0, alloc:0, ship:0, ordTotal:0, buShip: {}, buReq: {}, buOrd: {} };
-                    chartDataMap[dateStr].req += req;
-                    chartDataMap[dateStr].alloc += alloc;
-                    chartDataMap[dateStr].ship += ship;
-                    chartDataMap[dateStr].ordTotal += ordTotal;
-                    
-                    chartDataMap[dateStr].buShip[bu] = ship; 
-                    chartDataMap[dateStr].buReq[bu] = req;
-                    chartDataMap[dateStr].buOrd[bu] = ordTotal;
+                    chartDataMap[dateStr].req += req; chartDataMap[dateStr].alloc += alloc;
+                    chartDataMap[dateStr].ship += ship; chartDataMap[dateStr].ordTotal += ordTotal;
+                    chartDataMap[dateStr].buShip[bu] = ship; chartDataMap[dateStr].buReq[bu] = req; chartDataMap[dateStr].buOrd[bu] = ordTotal;
                 });
             });
         }
         if (matrixRowsEmitted === 0 && sortedDates.length > 0) {
-            htmlTable += `<tr><td colspan="14" class="text-center" style="padding:30px; color:var(--text-muted);">ไม่มีข้อมูลใน 14 วันล่าสุด (นับจากวันที่เลือก)</td></tr>`;
+            htmlTable += `<tr><td colspan="14" class="text-center text-muted">ไม่มีข้อมูลใน 14 วันล่าสุด (นับจากวันที่เลือก)</td></tr>`;
         }
 
         let ffmTbl = document.getElementById('ffm-detail-table');
         if (ffmTbl) {
             ffmTbl.innerHTML = `<thead>
                 <tr>
-                    <th style="text-align:center; position:sticky; top:0; left:0; z-index:30;">Date</th>
-                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Owner</th>
-                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Orders</th>
-                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Req</th>
-                    <th style="text-align:center; position:sticky; top:0; z-index:20;">ETA</th>
-                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Ship</th>
-                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Est.Short</th>
-                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Act.Short</th>
-                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Ord.SLA</th>
-                    <th style="text-align:center; position:sticky; top:0; z-index:20;">DC SLA</th>
-                    <th style="text-align:center; position:sticky; top:0; z-index:20;">FFM%</th>
-                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Pcs/Pick</th>
-                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Pcs/Ord</th>
-                    <th style="text-align:center; position:sticky; top:0; z-index:20;">Pallets</th>
+                    <th class="text-center" style="position:sticky; left:0; z-index:30;">Date</th>
+                    <th class="text-center">Owner</th><th class="text-center">Orders</th><th class="text-center">Req</th>
+                    <th class="text-center">ETA</th><th class="text-center">Ship</th><th class="text-center">Est.Short</th>
+                    <th class="text-center">Act.Short</th><th class="text-center">Ord.SLA</th><th class="text-center">DC SLA</th>
+                    <th class="text-center">FFM%</th><th class="text-center">Pcs/Pick</th><th class="text-center">Pcs/Ord</th>
+                    <th class="text-center">Pallets</th>
                 </tr>
             </thead><tbody>${htmlTable}</tbody>`;
         }
@@ -719,7 +678,7 @@ async function initFulfillmentRealtime() {
         let chartBUsArray = ffmBuFilterVal === 'ALL' ? allBUsArray : [ffmBuFilterVal];
 
         try {
-            // 🌟 กราฟแท่ง FFM แบบมี Gradient
+            // 🌟 กราฟแท่ง FFM เป็นสีสด Solid
             if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance && validChartDates.length > 0) {
                 let tpLabels = validChartDates.map(dStr => {
                     let parts = dStr.split('-');
@@ -731,12 +690,7 @@ async function initFulfillmentRealtime() {
                     return {
                         label: bu,
                         data: validChartDates.map(dStr => parseFloat(chartDataMap[dStr]?.buReq?.[bu] || 0)), 
-                        backgroundColor: (context) => {
-                            const chart = context.chart;
-                            const {ctx, chartArea} = chart;
-                            if (!chartArea) return gradPalettes[colorIndex % 6].s;
-                            return getGradient(ctx, chartArea, gradPalettes[colorIndex % 6].s, gradPalettes[colorIndex % 6].e);
-                        },
+                        backgroundColor: solidColors[colorIndex % solidColors.length], // Solid Color
                         borderRadius: 4
                     };
                 });
@@ -757,19 +711,16 @@ async function initFulfillmentRealtime() {
                 ffmTrendChartInstance.update();
             }
 
-            // 🌟 กราฟโดนัท FFM แบบมี Gradient
+            // 🌟 กราฟโดนัท FFM สีสด
             if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
                 let targetD = validChartDates[validChartDates.length - 1]; 
-                
                 for (let i = validChartDates.length - 1; i >= 0; i--) {
                     let d = validChartDates[i];
                     let totalOrdForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d]?.buOrd?.[bu] || 0), 0);
                     if (totalOrdForDay > 0) { targetD = d; break; }
                 }
 
-                let mixLabels = [];
-                let mixData = [];
-                
+                let mixLabels = []; let mixData = [];
                 chartBUsArray.forEach((bu) => {
                     let ordCnt = chartDataMap[targetD]?.buOrd?.[bu] || 0; 
                     if (ordCnt > 0) { mixLabels.push(bu); mixData.push(ordCnt); }
@@ -778,19 +729,12 @@ async function initFulfillmentRealtime() {
                 ffmVolumeChartInstance.data.labels = mixLabels;
                 ffmVolumeChartInstance.data.datasets = [{
                     data: mixData,
-                    backgroundColor: (context) => {
-                        const chart = context.chart;
-                        const {ctx, chartArea} = chart;
-                        if (!chartArea) return mixLabels.map((_, i) => gradPalettes[i % 6].s);
-                        return mixLabels.map((_, i) => getGradient(ctx, chartArea, gradPalettes[i % 6].s, gradPalettes[i % 6].e));
-                    },
+                    backgroundColor: mixLabels.map((_, i) => solidColors[i % solidColors.length]),
                     borderWidth: 0
                 }];
                 ffmVolumeChartInstance.update();
             } 
-        } catch(chartErr) {
-            console.error("Chart Rendering Error:", chartErr);
-        }
+        } catch(chartErr) { }
 
         const utilTableEl = document.getElementById('utilization-table');
         if (utilTableEl && sortedDates.length > 0) {
@@ -808,7 +752,6 @@ async function initFulfillmentRealtime() {
             chartBUsArray.forEach(bu => {
                 let vol = chartDataMap[targetD]?.buReq?.[bu] || 0;
                 let cap = getEffectiveCap(targetD, bu);
-
                 if (vol > 0 || hasEffectiveCap(targetD, bu)) {
                     let utilPct = cap > 0 ? (vol / cap) * 100 : 0;
                     utilData.push({ bu: bu, vol: vol, cap: cap, utilPct: utilPct });
@@ -818,30 +761,26 @@ async function initFulfillmentRealtime() {
             utilData.sort((a, b) => b.utilPct - a.utilPct); 
 
             if (utilData.length === 0) {
-                tbody += `<tr><td colspan="4" class="text-center" style="padding: 30px; color: var(--text-muted);">ไม่มีข้อมูล Volume</td></tr>`;
+                tbody += `<tr><td colspan="4" class="text-center text-muted">ไม่มีข้อมูล Volume</td></tr>`;
             } else {
                 utilData.forEach(item => {
                     let utilDisp = Math.min(100, item.utilPct).toFixed(1);
                     let barWidth = Math.min(100, item.utilPct);
                     
                     let statusObj = { text: "Available", color: "#166534", bg: "#dcfce7", barColor: "#3B82F6" }; 
-                    if (item.utilPct >= 100) {
-                        statusObj = { text: "Overloaded", color: "#991b1b", bg: "#fee2e2", barColor: "#EF4444" }; 
-                    } else if (item.utilPct >= 90) {
-                        statusObj = { text: "Near cap.", color: "#92400e", bg: "#fef3c7", barColor: "#F59E0B" }; 
-                    } else if (item.utilPct >= 70) {
-                        statusObj = { text: "Optimal", color: "#166534", bg: "#dcfce7", barColor: "#10B981" }; 
-                    }
+                    if (item.utilPct >= 100) { statusObj = { text: "Overloaded", color: "#991b1b", bg: "#fee2e2", barColor: "#EF4444" }; } 
+                    else if (item.utilPct >= 90) { statusObj = { text: "Near cap.", color: "#92400e", bg: "#fef3c7", barColor: "#F59E0B" }; } 
+                    else if (item.utilPct >= 70) { statusObj = { text: "Optimal", color: "#166534", bg: "#dcfce7", barColor: "#10B981" }; }
 
                     tbody += `
                     <tr>
-                        <td style="font-weight:800;">${item.bu}</td>
-                        <td style="text-align:center; font-weight:700;">${fmtN(item.vol)}</td>
+                        <td class="font-bold">${item.bu}</td>
+                        <td class="text-right font-bold">${fmtN(item.vol)}</td>
                         <td>
                             <div style="display:flex; align-items:center; gap:12px;">
-                                <span style="font-weight:700; font-size:12px; width:40px; text-align:right;">${utilDisp}%</span>
-                                <div style="flex:1; background-color:var(--border-color); border-radius:10px; height:8px; overflow:hidden;">
-                                    <div style="width:${barWidth}%; background-color:${statusObj.barColor}; height:100%; border-radius:10px;"></div>
+                                <span class="font-bold text-xs" style="width:40px; text-align:right;">${utilDisp}%</span>
+                                <div style="flex:1; background:var(--border-color); border-radius:10px; height:8px; overflow:hidden;">
+                                    <div style="width:${barWidth}%; background:${statusObj.barColor}; height:100%; border-radius:10px;"></div>
                                 </div>
                             </div>
                         </td>
@@ -852,19 +791,12 @@ async function initFulfillmentRealtime() {
                 });
             }
             tbody += "</tbody>";
-            
             const theadEl = utilTableEl.querySelector('thead');
             utilTableEl.innerHTML = (theadEl ? theadEl.outerHTML : '') + tbody;
         }
         
         let validWaveKeys = sortedDates.filter(k => new Date(k).getTime() <= targetTimestamp + (3 * 24 * 60 * 60 * 1000)).slice(0, 7);
-        
-        let totalOrdersToday = 0;
-        let totalOrdersYesterday = 0;
-        let activeWaveKey = null; 
-        let pendingFutureOrders = 0;
-        let todayKeyStr = null; 
-        let yesterdayKeyStr = null;
+        let totalOrdersToday = 0, totalOrdersYesterday = 0, activeWaveKey = null, todayKeyStr = null, yesterdayKeyStr = null;
 
         if (validWaveKeys.length > 0) {
             let todayKey = validWaveKeys.find(k => new Date(k).getTime() <= targetTimestamp);
@@ -883,13 +815,11 @@ async function initFulfillmentRealtime() {
                 let dayTot = 0, dayComp = 0;
                 allBUsArray.forEach(bu => {
                     let bData = getBestOrderData(unifiedDatesMap[k].bq[bu], unifiedDatesMap[k].wave[bu], unifiedDatesMap[k].ffm[bu]);
-                    dayTot += bData.tot;
-                    dayComp += bData.full;
+                    dayTot += bData.tot; dayComp += bData.full;
                 });
                 if (dayTot > 0 && dayComp < dayTot) { 
                     if (dayComp === 0 && dayTot <= 5) continue;
-                    activeWaveKey = k; 
-                    break; 
+                    activeWaveKey = k; break; 
                 }
             }
             
@@ -901,28 +831,14 @@ async function initFulfillmentRealtime() {
                 });
                 activeWaveKey = dayWithOrders || validWaveKeys[0];
             }
-            
-            let activeTime = activeWaveKey ? new Date(activeWaveKey).getTime() : 0;
-            reversedKeys.forEach(k => {
-                if (new Date(k).getTime() > activeTime) {
-                    allBUsArray.forEach(bu => {
-                        let bData = getBestOrderData(unifiedDatesMap[k].bq[bu], unifiedDatesMap[k].wave[bu], unifiedDatesMap[k].ffm[bu]);
-                        let t = bData.tot;
-                        let c = bData.full;
-                        pendingFutureOrders += (t - c);
-                    });
-                }
-            });
         }
 
         const formatShortDate = (dStr) => {
-            if (!dStr) return "";
-            let dObj = new Date(dStr);
+            if (!dStr) return ""; let dObj = new Date(dStr);
             return isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
         };
         const getDisplayDate = (dStr) => {
-             if (!dStr) return "";
-             let dObj = new Date(dStr);
+             if (!dStr) return ""; let dObj = new Date(dStr);
              return isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]} ${dObj.getFullYear()}`;
         };
 
@@ -935,53 +851,49 @@ async function initFulfillmentRealtime() {
             if (trendEl) {
                 let prevDateText = yesterdayKeyStr ? formatShortDate(yesterdayKeyStr) : "วันก่อนหน้า";
                 if (totalOrdersYesterday === 0 && totalOrdersToday === 0) {
-                    trendEl.style.background = "rgba(255,255,255,0.2)"; trendEl.innerText = "-"; if(trendTextEl) trendTextEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
+                    trendEl.innerText = "-"; if(trendTextEl) trendTextEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
                 } else if (totalOrdersYesterday === 0) {
-                    trendEl.style.background = "rgba(255,255,255,0.3)"; trendEl.innerText = "↗ 100%"; if(trendTextEl) trendTextEl.innerText = `vs ${prevDateText}`;
+                    trendEl.innerText = "↗ 100%"; if(trendTextEl) trendTextEl.innerText = `vs ${prevDateText}`;
                 } else {
                     let pctDiff = ((totalOrdersToday - totalOrdersYesterday) / totalOrdersYesterday) * 100;
-                    if (pctDiff > 0) { trendEl.style.background = "rgba(255,255,255,0.3)"; trendEl.innerText = `↗ +${pctDiff.toFixed(1)}%`; } 
-                    else if (pctDiff < 0) { trendEl.style.background = "rgba(255,255,255,0.3)"; trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(1)}%`; } 
-                    else { trendEl.style.background = "rgba(255,255,255,0.2)"; trendEl.innerText = `0%`; }
+                    if (pctDiff > 0) { trendEl.innerText = `↗ +${pctDiff.toFixed(1)}%`; } 
+                    else if (pctDiff < 0) { trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(1)}%`; } 
+                    else { trendEl.innerText = `0%`; }
                     if(trendTextEl) { trendTextEl.innerText = `vs ${prevDateText}`; }
                 }
             }
-
-            let ordersCard = ordersEl.closest('.kpi-card');
-            if (ordersCard && todayKeyStr) {
-                let updateSpan = Array.from(ordersCard.querySelectorAll('.updated-time')).find(el => el.innerText.trim().startsWith('Updated:'));
-                if (updateSpan) updateSpan.innerText = `Updated: ${getDisplayDate(todayKeyStr)}`;
-            }
+            let updateSpan = document.getElementById('ffm-orders-update');
+            if (updateSpan && todayKeyStr) updateSpan.innerText = `Updated: ${getDisplayDate(todayKeyStr)}`;
         }
 
         const waveSummaryTable = document.getElementById('wave-summary-table');
         if (waveSummaryTable) {
             if (validWaveKeys.length === 0 || allBUsArray.length === 0) {
-                waveSummaryTable.innerHTML = `<thead><tr><th class='text-center'>ไม่มีข้อมูลออเดอร์</th></tr></thead>`;
+                waveSummaryTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูลออเดอร์</th></tr></thead>`;
             } else {
-                let thead = `<thead><tr><th style="text-align:center;">Planned Date</th>${allBUsArray.map(bu => `<th class="text-center">${bu}</th>`).join('')}<th class="text-center">Total (เสร็จ/ทั้งหมด)</th><th class="text-center">% Completed</th></tr></thead>`;
+                let thead = `<thead><tr><th class="text-center">Planned Date</th>${allBUsArray.map(bu => `<th class="text-center">${bu}</th>`).join('')}<th class="text-center">Total (เสร็จ/ทั้งหมด)</th><th class="text-center">% Completed</th></tr></thead>`;
                 let tbody = "<tbody>";
                 
                 validWaveKeys.forEach(dStr => {
                     let dObj = new Date(dStr);
                     let dispDate = isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
                     
-                    let tr = `<tr><td style="text-align:center; font-weight:700;">${dispDate}</td>`;
+                    let tr = `<tr><td class="text-center font-bold" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${dispDate}</td>`;
                     let dayTot = 0, dayComp = 0;
                     
                     allBUsArray.forEach(bu => {
                         let bData = getBestOrderData(unifiedDatesMap[dStr].bq[bu], unifiedDatesMap[dStr].wave[bu], unifiedDatesMap[dStr].ffm[bu]);
                         let ordTotal = bData.tot; let ordFull = bData.full;
                         dayTot += ordTotal; dayComp += ordFull;
-                        if (ordTotal === 0) { tr += `<td class="text-center">-</td>`; } 
+                        if (ordTotal === 0) { tr += `<td class="text-center text-muted">-</td>`; } 
                         else {
-                            let color = (ordFull === ordTotal) ? '#10B981' : (ordFull > 0 ? '#F59E0B' : '#EF4444');
-                            tr += `<td class="text-center"><span style="color:${color}; font-weight:800;">${fmtN(ordFull)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(ordTotal)}</span></td>`;
+                            let color = (ordFull === ordTotal) ? 'var(--brand-green)' : (ordFull > 0 ? 'var(--brand-yellow)' : 'var(--brand-red)');
+                            tr += `<td class="text-center"><span style="color:${color}; font-weight:800;">${fmtN(ordFull)}</span> <span class="text-xs text-muted">/ ${fmtN(ordTotal)}</span></td>`;
                         }
                     });
                     
-                    let grandColor = (dayComp === dayTot && dayTot > 0) ? '#10B981' : (dayComp > 0 ? '#F59E0B' : '#EF4444');
-                    tr += `<td class="text-center"><span style="color:${grandColor}; font-weight:800;">${fmtN(dayComp)}</span> <span style="color:var(--text-muted); font-size:0.75rem;">/ ${fmtN(dayTot)}</span></td>`;
+                    let grandColor = (dayComp === dayTot && dayTot > 0) ? 'var(--brand-green)' : (dayComp > 0 ? 'var(--brand-yellow)' : 'var(--brand-red)');
+                    tr += `<td class="text-center"><span style="color:${grandColor}; font-weight:800;">${fmtN(dayComp)}</span> <span class="text-xs text-muted">/ ${fmtN(dayTot)}</span></td>`;
                     
                     let pct = dayTot > 0 ? Math.min(100, (dayComp / dayTot) * 100).toFixed(1) : 0;
                     let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
@@ -992,71 +904,55 @@ async function initFulfillmentRealtime() {
                 waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
             }
 
-        let latestShipDateStr = null;
-        let prevShipDateStr = null;
-        
-        for (let d of sortedDates) {
-            let s = chartDataMap[d]?.ship || 0;
-            if (s > 0) {
-                if (!latestShipDateStr) latestShipDateStr = d;
-                else if (!prevShipDateStr) { prevShipDateStr = d; break; }
+            let latestShipDateStr = null, prevShipDateStr = null;
+            for (let d of sortedDates) {
+                let s = chartDataMap[d]?.ship || 0;
+                if (s > 0) { if (!latestShipDateStr) latestShipDateStr = d; else if (!prevShipDateStr) { prevShipDateStr = d; break; } }
             }
-        }
 
-        const rateValEl = document.getElementById('ffm-rate-val');
-        const rateEtaEl = document.getElementById('ffm-rate-eta');
-        if (rateValEl && latestShipDateStr) {
-            let lReq = chartDataMap[latestShipDateStr].req || 0;
-            let lAlloc = chartDataMap[latestShipDateStr].alloc || 0; 
-            let lShip = chartDataMap[latestShipDateStr].ship || 0;
-            
-            let pReq = prevShipDateStr ? (chartDataMap[prevShipDateStr].req || 0) : 0;
-            let pAlloc = prevShipDateStr ? (chartDataMap[prevShipDateStr].alloc || 0) : 0; 
-            let pShip = prevShipDateStr ? (chartDataMap[prevShipDateStr].ship || 0) : 0;
+            const rateValEl = document.getElementById('ffm-rate-val');
+            const rateEtaEl = document.getElementById('ffm-rate-eta');
+            if (rateValEl && latestShipDateStr) {
+                let lReq = chartDataMap[latestShipDateStr].req || 0, lAlloc = chartDataMap[latestShipDateStr].alloc || 0, lShip = chartDataMap[latestShipDateStr].ship || 0;
+                let pReq = prevShipDateStr ? (chartDataMap[prevShipDateStr].req || 0) : 0, pAlloc = prevShipDateStr ? (chartDataMap[prevShipDateStr].alloc || 0) : 0, pShip = prevShipDateStr ? (chartDataMap[prevShipDateStr].ship || 0) : 0;
 
-            let currentFfm = lReq > 0 ? (lShip / lReq) * 100 : 0;
-            let currentEtaFfm = lAlloc > 0 ? Math.min(100, (lShip / lAlloc) * 100) : 0;
+                let currentFfm = lReq > 0 ? (lShip / lReq) * 100 : 0;
+                let currentEtaFfm = lAlloc > 0 ? Math.min(100, (lShip / lAlloc) * 100) : 0;
+                let prevFfm = pReq > 0 ? (pShip / pReq) * 100 : 0;
+                let prevEtaFfm = pAlloc > 0 ? Math.min(100, (pShip / pAlloc) * 100) : 0;
 
-            let prevFfm = pReq > 0 ? (pShip / pReq) * 100 : 0;
-            let prevEtaFfm = pAlloc > 0 ? Math.min(100, (pShip / pAlloc) * 100) : 0;
+                rateValEl.innerText = `${currentFfm.toFixed(1)}%`;
+                if (rateEtaEl) rateEtaEl.innerText = `DC SLA: ${currentEtaFfm.toFixed(1)}%`;
 
-            rateValEl.innerText = `${currentFfm.toFixed(1)}%`;
-            if (rateEtaEl) rateEtaEl.innerText = `DC SLA: ${currentEtaFfm.toFixed(1)}%`;
-
-            const rateTrendEl = document.getElementById('ffm-rate-trend');
-            const etaTrendEl = document.getElementById('eta-rate-trend'); 
-            const rateNoteEl = document.getElementById('ffm-rate-note');
-            
-            if (rateNoteEl) {
-                if (!prevShipDateStr) {
-                    if (rateTrendEl) { rateTrendEl.style.background = "rgba(255,255,255,0.2)"; rateTrendEl.innerText = "-"; }
-                    if (etaTrendEl) { etaTrendEl.innerText = "-"; }
-                    rateNoteEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
-                } else {
-                    if (rateTrendEl) {
-                        let diffFfm = currentFfm - prevFfm;
-                        if (diffFfm > 0) { rateTrendEl.style.background = "rgba(255,255,255,0.3)"; rateTrendEl.innerText = `↗ +${diffFfm.toFixed(1)}%`; } 
-                        else if (diffFfm < 0) { rateTrendEl.style.background = "rgba(255,255,255,0.3)"; rateTrendEl.innerText = `↘ ${Math.abs(diffFfm).toFixed(1)}%`; } 
-                        else { rateTrendEl.style.background = "rgba(255,255,255,0.2)"; rateTrendEl.innerText = `0%`; }
+                const rateTrendEl = document.getElementById('ffm-rate-trend'), etaTrendEl = document.getElementById('eta-rate-trend'), rateNoteEl = document.getElementById('ffm-rate-note');
+                if (rateNoteEl) {
+                    if (!prevShipDateStr) {
+                        if (rateTrendEl) rateTrendEl.innerText = "-";
+                        if (etaTrendEl) etaTrendEl.innerText = "-";
+                        rateNoteEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
+                    } else {
+                        if (rateTrendEl) {
+                            let diffFfm = currentFfm - prevFfm;
+                            if (diffFfm > 0) rateTrendEl.innerText = `↗ +${diffFfm.toFixed(1)}%`;
+                            else if (diffFfm < 0) rateTrendEl.innerText = `↘ ${Math.abs(diffFfm).toFixed(1)}%`;
+                            else rateTrendEl.innerText = `0%`;
+                        }
+                        if (etaTrendEl) {
+                            let diffEta = currentEtaFfm - prevEtaFfm;
+                            if (diffEta > 0) etaTrendEl.innerText = `↗ +${diffEta.toFixed(1)}%`;
+                            else if (diffEta < 0) etaTrendEl.innerText = `↘ ${Math.abs(diffEta).toFixed(1)}%`;
+                            else etaTrendEl.innerText = `0%`;
+                        }
+                        rateNoteEl.innerText = `vs ${formatShortDate(prevShipDateStr)}`;
                     }
-                    if (etaTrendEl) {
-                        let diffEta = currentEtaFfm - prevEtaFfm;
-                        if (diffEta > 0) { etaTrendEl.innerText = `↗ +${diffEta.toFixed(1)}%`; } 
-                        else if (diffEta < 0) { etaTrendEl.innerText = `↘ ${Math.abs(diffEta).toFixed(1)}%`; } 
-                        else { etaTrendEl.innerText = `0%`; }
-                    }
-                    rateNoteEl.innerText = `vs ${formatShortDate(prevShipDateStr)}`;
                 }
-            }
-
-            const rateUpdateEl = document.getElementById('ffm-rate-update');
-            if (rateUpdateEl) {
-                rateUpdateEl.innerText = `Updated: ${getDisplayDate(latestShipDateStr)}`;
+                let updateSpan = document.getElementById('ffm-rate-update');
+                if (updateSpan && latestShipDateStr) updateSpan.innerText = `Updated: ${getDisplayDate(latestShipDateStr)}`;
             }
         }
-        }
 
-        let aTotal = 0, aComp = 0, aLate = 0, aDelay = 0, wReq = 0, wAlloc = 0, wShip = 0; let worstBU = ""; 
+        // WAVE OPERATIONS UI
+        let aTotal = 0, aComp = 0, aLate = 0, aDelay = 0; let worstBU = ""; 
         if (activeWaveKey) {
             allBUsArray.forEach(bu => {
                 let bData = getBestOrderData(unifiedDatesMap[activeWaveKey].bq[bu], unifiedDatesMap[activeWaveKey].wave[bu], unifiedDatesMap[activeWaveKey].ffm[bu]);
@@ -1068,8 +964,7 @@ async function initFulfillmentRealtime() {
                 if (delay > aDelay) { aDelay = delay; worstBU = bu; }
             });
             
-            let diffDays = 0;
-            let activeDateStr = "--";
+            let diffDays = 0; let activeDateStr = "--";
             if (activeWaveKey) { 
                 let dObj = new Date(activeWaveKey);
                 activeDateStr = isNaN(dObj.getTime()) ? activeWaveKey : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`; 
@@ -1084,8 +979,8 @@ async function initFulfillmentRealtime() {
                 document.getElementById('wave-late').innerText = aLate > 0 ? fmtN(aLate) : "0";
                 let delayEl = document.getElementById('wave-delay');
                 if (delayEl) {
-                    if (aDelay > 0) { delayEl.innerText = `${Math.floor(aDelay / 60)}h ${aDelay % 60}m`; } 
-                    else { delayEl.innerText = `0h 0m`; }
+                    if (aDelay > 0) delayEl.innerText = `${Math.floor(aDelay / 60)}h ${aDelay % 60}m`;
+                    else delayEl.innerText = `0h 0m`;
                 }
                 
                 let waveStats = { total_orders: 0, late_pick_orders: 0, late_load_orders: 0, max_pick_delay_mins: 0, max_load_delay_mins: 0, min_pick_early_mins: null, min_load_early_mins: null, picked_orders: 0, shipped_orders: 0 };
@@ -1105,8 +1000,7 @@ async function initFulfillmentRealtime() {
                 let isApiSuccess = (parseInt(waveStats.total_orders) > 0);
                 let latePick = isApiSuccess ? (parseInt(waveStats.late_pick_orders) || 0) : 0;
                 let lateLoad = isApiSuccess ? (parseInt(waveStats.late_load_orders) || 0) : aLate;
-                let apiTotalLate = latePick + lateLoad;
-                let totalLate = Math.max(apiTotalLate, (aLate || 0));
+                let totalLate = Math.max(latePick + lateLoad, (aLate || 0));
 
                 let maxPickDelay = isApiSuccess ? (parseInt(waveStats.max_pick_delay_mins) || 0) : 0;
                 let maxLoadDelay = isApiSuccess ? (parseInt(waveStats.max_load_delay_mins) || 0) : (aDelay > 0 ? aDelay : 0);
@@ -1116,19 +1010,16 @@ async function initFulfillmentRealtime() {
                 const formatTime = (mins) => `${Math.floor(mins/60)}h ${mins%60}m`;
 
                 if (document.getElementById('wave-late')) {
-                    let lateEl = document.getElementById('wave-late');
-                    lateEl.innerText = totalLate > 0 ? fmtN(totalLate) : "0";
-                    if (isApiSuccess && apiTotalLate > 0) {
-                        document.getElementById('wave-active-info-3').innerHTML = totalLate > 0 ? `<span class="kpi-badge">หลุด SLA</span> Pick: ${fmtN(latePick)} | Load: ${fmtN(lateLoad)}` : `<span class="kpi-badge">On-time</span>`;
+                    document.getElementById('wave-late').innerText = totalLate > 0 ? fmtN(totalLate) : "0";
+                    if (isApiSuccess && (latePick + lateLoad) > 0) {
+                        document.getElementById('wave-active-info-3').innerHTML = totalLate > 0 ? `<span class="badge-white">หลุด SLA</span> Pick: ${fmtN(latePick)} | Load: ${fmtN(lateLoad)}` : `<span class="badge-white">On-time</span>`;
                     } else {
-                        document.getElementById('wave-active-info-3').innerHTML = totalLate > 0 ? `<span class="kpi-badge">หลุด SLA</span> ${fmtN(totalLate)} บิล` : `<span class="kpi-badge">On-time</span>`;
+                        document.getElementById('wave-active-info-3').innerHTML = totalLate > 0 ? `<span class="badge-white">หลุด SLA</span> ${fmtN(totalLate)} บิล` : `<span class="badge-white">On-time</span>`;
                     }
                 }
 
                 if (document.getElementById('wave-delay')) {
-                    let delayEl = document.getElementById('wave-delay');
                     let pStr = "", lStr = "", overallMainText = "0h 0m";
-
                     if (isApiSuccess) {
                         if (maxPickDelay > 0) { pStr = `Delay ${formatTime(maxPickDelay)}`; overallMainText = formatTime(maxOverallDelay); }
                         else if (!isNaN(pEarly) && pEarly !== null) { pStr = `Early ${formatTime(pEarly)}`; }
@@ -1142,13 +1033,13 @@ async function initFulfillmentRealtime() {
                     } else {
                         if (aDelay > 0) {
                             overallMainText = formatTime(aDelay);
-                            document.getElementById('wave-active-info-4').innerHTML = `<span class="kpi-badge">ดีเลย์อยู่</span> ช้าสุด: ${worstBU}`;
+                            document.getElementById('wave-active-info-4').innerHTML = `<span class="badge-white">ดีเลย์อยู่</span> ช้าสุด: ${worstBU}`;
                         } else {
-                            document.getElementById('wave-active-info-4').innerHTML = `<span class="kpi-badge">ปกติ</span>`;
+                            document.getElementById('wave-active-info-4').innerHTML = `<span class="badge-white">ปกติ</span>`;
                         }
                     }
-                    if (maxOverallDelay > 0) { overallMainText = formatTime(maxOverallDelay); }
-                    delayEl.innerText = overallMainText;
+                    if (maxOverallDelay > 0) overallMainText = formatTime(maxOverallDelay);
+                    document.getElementById('wave-delay').innerText = overallMainText;
                 }
 
                 if (document.getElementById('stage-pick-pct')) {
@@ -1189,20 +1080,24 @@ async function initFulfillmentRealtime() {
                 let targetWaveDate = activeWaveKey || todayKeyStr;
                 if (targetWaveDate) {
                     let dispDate = getDisplayDate(targetWaveDate);
-                    if(document.getElementById('wave-date-1')) document.getElementById('wave-date-1').innerText = `Updated: ${dispDate}`;
-                    if(document.getElementById('wave-date-2')) document.getElementById('wave-date-2').innerText = `Updated: ${dispDate}`;
-                    if(document.getElementById('wave-date-3')) document.getElementById('wave-date-3').innerText = `Updated: ${dispDate}`;
-                    if(document.getElementById('wave-date-4')) document.getElementById('wave-date-4').innerText = `Updated: ${dispDate}`;
-                    if(document.getElementById('stage-pick-date')) document.getElementById('stage-pick-date').innerText = `Updated: ${dispDate}`;
-                    if(document.getElementById('stage-qc-date'))   document.getElementById('stage-qc-date').innerText   = `Updated: ${dispDate}`;
-                    if(document.getElementById('stage-ship-date')) document.getElementById('stage-ship-date').innerText = `Updated: ${dispDate}`;
+                    ['1','2','3','4'].forEach(n => {
+                        let el = document.getElementById(`wave-date-${n}`);
+                        if(el) el.innerText = `Updated: ${dispDate}`;
+                    });
+                    ['pick','qc','ship'].forEach(s => {
+                        let el = document.getElementById(`stage-${s}-date`);
+                        if(el) el.innerText = `Updated: ${dispDate}`;
+                    });
                 }
             }
+            if (typeof generateExecutiveAlerts === "function") generateExecutiveAlerts(targetTimestamp, activeWaveKey, aLate, aDelay, diffDays, worstBU);
         }
-
     } catch (err) {}
 }
 
+// ------------------------------------------------------------
+// 👥 WORKFORCE SECTION
+// ------------------------------------------------------------
 function updateWorkforceUI() {
     if (!globalData.workforce) return;
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
@@ -1213,42 +1108,56 @@ function updateWorkforceUI() {
     if (validKeys.length > 0) {
         let tKey = validKeys[0];
         let d = globalData.workforce[tKey];
-        let opsTotal = 0;
-        
+        let opsTotal = 0, opsPrev = 0, prevKey = validKeys.length > 1 ? validKeys[1] : null;
+
         let dynamicTeamsSet = new Set();
         Object.values(globalData.workforce).forEach(day => {
             Object.values(day.matrix || {}).forEach(aff => {
-                Object.values(aff).forEach(roleObj => {
-                    Object.keys(roleObj).forEach(t => dynamicTeamsSet.add(t));
-                });
+                Object.values(aff).forEach(roleObj => { Object.keys(roleObj).forEach(t => dynamicTeamsSet.add(t)); });
             });
         });
         let dynamicTeams = Array.from(dynamicTeamsSet).filter(t => t && t !== "N/A").sort();
         if (dynamicTeams.length === 0) dynamicTeams = ["A", "B", "C"]; 
 
-        Object.keys(d.matrix || {}).forEach(aff => {
-            if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(aff)) {
-                Object.keys(d.matrix[aff]).forEach(r => {
-                    Object.values(d.matrix[aff][r]).forEach(val => opsTotal += val);
-                });
-            }
-        });
+        const calcTotal = (dataObj) => {
+            let sum = 0;
+            Object.keys(dataObj.matrix || {}).forEach(aff => {
+                if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(aff)) {
+                    Object.keys(dataObj.matrix[aff]).forEach(r => Object.values(dataObj.matrix[aff][r]).forEach(val => sum += val));
+                }
+            });
+            return sum;
+        };
+
+        opsTotal = calcTotal(d);
+        if (prevKey) opsPrev = calcTotal(globalData.workforce[prevKey]);
+
         document.getElementById('headcount-total').innerText = fmtN(opsTotal);
         
+        let trendEl = document.getElementById('headcount-trend');
+        let noteEl = document.getElementById('headcount-note');
+        if (trendEl && noteEl) {
+            let diff = opsTotal - opsPrev;
+            if (opsTotal === 0 && opsPrev === 0) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูล"; }
+            else if (!prevKey) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
+            else if (diff > 0) { trendEl.innerText = `↗ +${diff}`; noteEl.innerText = `vs prev`; }
+            else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff)}`; noteEl.innerText = `vs prev`; }
+            else { trendEl.innerText = "0"; noteEl.innerText = `vs prev`; }
+        }
+        document.getElementById('headcount-update').innerText = `Updated: ${getDisplayDate(tKey)}`;
+
         if (d.nationality) {
             let nT = 0, nF = 0;
             Object.keys(d.nat_by_aff || {}).forEach(aff => {
                 if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(aff)) {
-                    nT += (d.nat_by_aff[aff].thai || 0);
-                    nF += (d.nat_by_aff[aff].foreign || 0);
+                    nT += (d.nat_by_aff[aff].thai || 0); nF += (d.nat_by_aff[aff].foreign || 0);
                 }
             });
-            let thaiEl = document.getElementById('wf-thai');
-            let foreignEl = document.getElementById('wf-foreign');
-            if (thaiEl) thaiEl.innerText = fmtN(nT);
-            if (foreignEl) foreignEl.innerText = fmtN(nF);
+            if (document.getElementById('wf-thai')) document.getElementById('wf-thai').innerText = fmtN(nT);
+            if (document.getElementById('wf-foreign')) document.getElementById('wf-foreign').innerText = fmtN(nF);
         }
 
+        // กราฟแท่ง Solid Colors
         let chartKeys = validKeys.slice(0,7).reverse();
         let affSet = new Set();
         chartKeys.forEach(k => Object.keys(globalData.workforce[k].matrix || {}).forEach(aff => {
@@ -1262,7 +1171,7 @@ function updateWorkforceUI() {
                 let m = globalData.workforce[k].matrix[aff]; if(!m) return 0;
                 let sum=0; Object.keys(m).forEach(r => Object.values(m[r]).forEach(v => sum+=v)); return sum;
             }),
-            backgroundColor: (ctx) => getGradient(ctx.chart.ctx, ctx.chart.chartArea, gradPalettes[i%6].s, gradPalettes[i%6].e),
+            backgroundColor: solidColors[i % solidColors.length],
             borderRadius: 4, stack: 'hc'
         }));
 
@@ -1286,13 +1195,13 @@ function updateWorkforceUI() {
             } else {
                 let headerHtml = `<thead><tr><th rowspan="2" style="position:sticky; left:0; z-index:16;">Role / หน้าที่</th>`;
                 affiliations.forEach(aff => { headerHtml += `<th colspan="${dynamicTeams.length + 1}" style="text-align:center;">${aff}</th>`; });
-                headerHtml += `<th rowspan="2">Grand Total</th><th rowspan="2">% Ratio</th></tr><tr>`;
+                headerHtml += `<th rowspan="2" class="text-center">Grand Total</th><th rowspan="2" class="text-center">% Ratio</th></tr><tr>`;
                 affiliations.forEach(() => { dynamicTeams.forEach(t => { headerHtml += `<th class="text-center">${t}</th>`; }); headerHtml += `<th class="text-center">Total</th>`; });
                 headerHtml += `</tr></thead>`;
 
                 let bodyHtml = "<tbody>";
                 roles.forEach(role => {
-                    let roleGrandTotal = 0; let roleRowHtml = `<td style="position:sticky; left:0; z-index:5; font-weight:700;">${role}</td>`;
+                    let roleGrandTotal = 0; let roleRowHtml = `<td style="position:sticky; left:0; z-index:5; font-weight:700; background:var(--bg-card);">${role}</td>`;
                     affiliations.forEach(aff => {
                         let affRoleTotal = 0; let teamCells = "";
                         dynamicTeams.forEach(team => {
@@ -1303,7 +1212,7 @@ function updateWorkforceUI() {
                         roleRowHtml += teamCells + `<td class="text-center font-bold">${affRoleTotal > 0 ? affRoleTotal : '-'}</td>`;
                     });
                     let grandPct = opsTotal > 0 ? ((roleGrandTotal / opsTotal) * 100).toFixed(1) + "%" : "0%";
-                    bodyHtml += `<tr>${roleRowHtml}<td class="text-center font-bold">${roleGrandTotal > 0 ? roleGrandTotal : '-'}</td><td class="text-center">${roleGrandTotal > 0 ? grandPct : '-'}</td></tr>`;
+                    bodyHtml += `<tr>${roleRowHtml}<td class="text-center font-bold">${roleGrandTotal > 0 ? roleGrandTotal : '-'}</td><td class="text-center text-muted">${roleGrandTotal > 0 ? grandPct : '-'}</td></tr>`;
                 });
                 matrixTable.innerHTML = headerHtml + bodyHtml + "</tbody>";
             }
@@ -1311,6 +1220,9 @@ function updateWorkforceUI() {
     }
 }
 
+// ------------------------------------------------------------
+// ⏱️ ON-TIME SECTION
+// ------------------------------------------------------------
 function updateOnTimeUI() {
     if (!globalData.ontime) return;
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
@@ -1322,24 +1234,33 @@ function updateOnTimeUI() {
 
     if (otArray.length > 0) {
         let curr = otArray[otArray.length-1];
+        let prev = otArray.length > 1 ? otArray[otArray.length-2] : null;
         let over = (curr.ptglg !== null && curr.hub !== null) ? (curr.ptglg+curr.hub)/2 : curr.ptglg;
         document.getElementById('ontime-val').innerText = over !== null ? `${over.toFixed(2)}%` : "0.00%";
         
+        let trendEl = document.getElementById('ontime-trend');
+        let noteEl = document.getElementById('ontime-note');
+        if (trendEl && noteEl) {
+            if (!prev) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
+            else {
+                let pOver = (prev.ptglg !== null && prev.hub !== null) ? (prev.ptglg+prev.hub)/2 : prev.ptglg;
+                let diff = over - pOver;
+                if (diff > 0) trendEl.innerText = `↗ +${diff.toFixed(2)} pp`;
+                else if (diff < 0) trendEl.innerText = `↘ ${Math.abs(diff).toFixed(2)} pp`;
+                else trendEl.innerText = "0 pp";
+            }
+        }
+        document.getElementById('ontime-update').innerText = `Updated: ${getDisplayDate(curr.dateObj)}`;
+        
+        // กราฟเส้นแบบไล่สีตรง Fill
         if(ontimeChartInstance) {
             let slice = otArray.slice(-14);
             ontimeChartInstance.data.labels = slice.map(i => `${String(i.dateObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i.dateObj.getMonth()]}`);
             ontimeChartInstance.data.datasets = [{
                 label: 'On-Time',
                 data: slice.map(i => (i.ptglg !== null && i.hub !== null) ? (i.ptglg+i.hub)/2 : i.ptglg),
-                borderColor: '#05CD99',
-                backgroundColor: (context) => {
-                    const {ctx, chartArea} = context.chart;
-                    if(!chartArea) return 'transparent';
-                    let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-                    gradient.addColorStop(0, 'rgba(5, 205, 153, 0.01)'); 
-                    gradient.addColorStop(1, 'rgba(5, 205, 153, 0.4)');  
-                    return gradient;
-                },
+                borderColor: '#10B981',
+                backgroundColor: (context) => getFillGradient(context.chart.ctx, context.chart.chartArea, '16, 185, 129'),
                 fill: true, tension: 0.4, pointRadius: 4
             }];
             ontimeChartInstance.update();
@@ -1347,22 +1268,25 @@ function updateOnTimeUI() {
 
         const otTable = document.getElementById('ontime-detail-table');
         if (otTable) {
-            let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Date</th><th style="text-align:center;">ภาพรวม</th><th style="text-align:center;">PTGLG</th><th style="text-align:center;">HUB</th></tr></thead>`;
+            let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Date</th><th class="text-center">ภาพรวม</th><th class="text-center">PTGLG</th><th class="text-center">HUB</th></tr></thead>`;
             let tbody = "<tbody>" + otArray.slice().reverse().slice(0,14).map(i => {
                 let _o = (i.ptglg !== null && i.hub !== null) ? (i.ptglg+i.hub)/2 : (i.ptglg !== null ? i.ptglg : (i.hub !== null ? i.hub : null));
                 const p = (v) => {
-                    if (v === null || v === undefined) return '<span style="color:var(--text-muted);">-</span>';
-                    let clr = v >= 99 ? '#166534' : (v >= 95 ? '#92400e' : '#991b1b');
+                    if (v === null || v === undefined) return '<span class="text-muted">-</span>';
+                    let clr = v >= 99 ? 'var(--brand-green)' : (v >= 95 ? 'var(--brand-yellow)' : 'var(--brand-red)');
                     return `<span style="color:${clr}; font-weight:700;">${v.toFixed(2)}%</span>`;
                 };
                 let dStr = `${String(i.dateObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i.dateObj.getMonth()]} ${i.dateObj.getFullYear()}`;
-                return `<tr><td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10;">${dStr}</td><td class="text-center">${p(_o)}</td><td class="text-center">${p(i.ptglg)}</td><td class="text-center">${p(i.hub)}</td></tr>`;
+                return `<tr><td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${dStr}</td><td class="text-center">${p(_o)}</td><td class="text-center">${p(i.ptglg)}</td><td class="text-center">${p(i.hub)}</td></tr>`;
             }).join('') + "</tbody>";
             otTable.innerHTML = thead + tbody;
         }
     }
 }
 
+// ------------------------------------------------------------
+// 💰 CLAIM SECTION
+// ------------------------------------------------------------
 function updateClaimUI() {
     if (!globalData.claims) return;
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
@@ -1388,14 +1312,29 @@ function updateClaimUI() {
 
     if (combinedData.length > 0) {
         let curr = combinedData[combinedData.length-1];
+        let prev = combinedData.length > 1 ? combinedData[combinedData.length-2] : null;
         document.getElementById('claim-val').innerText = fmtN(curr.cost);
         
+        let trendEl = document.getElementById('claim-trend');
+        let noteEl = document.getElementById('claim-note');
+        if (trendEl && noteEl) {
+            if (!prev) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
+            else {
+                let diff = curr.cost - prev.cost;
+                if (diff > 0) trendEl.innerText = `↗ +${fmtN(diff)}`;
+                else if (diff < 0) trendEl.innerText = `↘ ${fmtN(Math.abs(diff))}`;
+                else trendEl.innerText = "0";
+            }
+        }
+        document.getElementById('claim-update').innerText = `Updated: ${getDisplayDate(curr.dateObj)}`;
+
         if(claimChart2Instance) {
             let slice = combinedData.slice(-14);
             claimChart2Instance.data.labels = slice.map(i => `${String(i.dateObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i.dateObj.getMonth()]}`);
             claimChart2Instance.data.datasets[0].data = slice.map(i => i.cost);
             claimChart2Instance.data.datasets[1].data = slice.map(i => i.qty);
-            claimChart2Instance.data.datasets[0].backgroundColor = (ctx) => getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#EF4444', '#F87171');
+            // Solid Red Bar
+            claimChart2Instance.data.datasets[0].backgroundColor = '#F87171';
             claimChart2Instance.update();
         }
 
@@ -1404,13 +1343,16 @@ function updateClaimUI() {
             let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Date</th><th class="text-center">มูลค่ารวม (฿)</th><th class="text-center">จำนวนชิ้น</th></tr></thead>`;
             let tbody = "<tbody>" + combinedData.slice().reverse().slice(0,14).map(i => {
                 let dStr = `${String(i.dateObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i.dateObj.getMonth()]} ${i.dateObj.getFullYear()}`;
-                return `<tr><td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10;">${dStr}</td><td class="text-center" style="color:#EF4444; font-weight:700;">${fmtN(i.cost)}</td><td class="text-center font-bold">${fmtN(i.qty)}</td></tr>`;
+                return `<tr><td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${dStr}</td><td class="text-center text-red font-bold">${fmtN(i.cost)}</td><td class="text-center">${fmtN(i.qty)}</td></tr>`;
             }).join('') + "</tbody>";
             tableEl.innerHTML = thead + tbody;
         }
     }
 }
 
+// ------------------------------------------------------------
+// 📦 INVENTORY SECTION
+// ------------------------------------------------------------
 function updateInventoryUI() {
     if (!globalData.inventory) return;
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
@@ -1441,22 +1383,29 @@ function updateInventoryUI() {
 
     if (parsedData.length > 0) {
         let curr = parsedData[parsedData.length-1];
+        let prev = parsedData.length > 1 ? parsedData[parsedData.length-2] : null;
         document.getElementById('inv-val').innerText = curr.pct !== null ? `${curr.pct.toFixed(2)}%` : "-";
         
+        let trendEl = document.getElementById('inv-trend');
+        let noteEl = document.getElementById('inv-note');
+        if (trendEl && noteEl) {
+            if (!prev) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
+            else {
+                let diff = curr.pct - prev.pct;
+                if (diff > 0) trendEl.innerText = `↗ +${diff.toFixed(2)} pp`;
+                else if (diff < 0) trendEl.innerText = `↘ ${Math.abs(diff).toFixed(2)} pp`;
+                else trendEl.innerText = "0 pp";
+            }
+        }
+        document.getElementById('inv-update').innerText = `Updated: ข้อมูลเดือน ${curr.label}`;
+
         if(inventoryChartInstance) {
             inventoryChartInstance.data.labels = parsedData.map(i => i.label);
             inventoryChartInstance.data.datasets[0] = {
                 label: 'Accuracy %',
                 data: parsedData.map(i => i.pct),
                 borderColor: '#06B6D4',
-                backgroundColor: (context) => {
-                    const {ctx, chartArea} = context.chart;
-                    if(!chartArea) return 'transparent';
-                    let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-                    gradient.addColorStop(0, 'rgba(6, 182, 212, 0.01)'); 
-                    gradient.addColorStop(1, 'rgba(6, 182, 212, 0.4)');  
-                    return gradient;
-                },
+                backgroundColor: (context) => getFillGradient(context.chart.ctx, context.chart.chartArea, '6, 182, 212'),
                 fill: true, tension: 0.4, pointRadius: 4
             };
             inventoryChartInstance.update();
@@ -1466,11 +1415,121 @@ function updateInventoryUI() {
         if (tableEl) {
             let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Month</th><th class="text-center">% Overall</th></tr></thead>`;
             let tbody = "<tbody>" + parsedData.slice().reverse().slice(0,14).map(i => {
-                let clr = i.pct >= 99 ? '#10B981' : '#EF4444';
-                return `<tr><td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10;">${i.label}</td><td class="text-center" style="color:${clr}; font-weight:700;">${i.pct !== null ? i.pct.toFixed(2)+'%' : '-'}</td></tr>`;
+                let clr = i.pct >= 99 ? 'var(--brand-green)' : 'var(--brand-red)';
+                return `<tr><td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${i.label}</td><td class="text-center" style="color:${clr}; font-weight:700;">${i.pct !== null ? i.pct.toFixed(2)+'%' : '-'}</td></tr>`;
             }).join('') + "</tbody>";
             tableEl.innerHTML = thead + tbody;
         }
+    }
+}
+
+// ------------------------------------------------------------
+// 🚚 TRANSPORT PERFORMANCE
+// ------------------------------------------------------------
+function updateTransportUI() {
+    if (!globalData.transport || Object.keys(globalData.transport).length === 0) return;
+    const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
+    const targetTime = new Date(dpVal).setHours(23,59,59,999);
+    
+    let availableDates = Object.keys(globalData.transport).filter(k => {
+        let d = new Date(getStandardDate(k)).getTime();
+        return !isNaN(d) && d <= targetTime;
+    }).sort((a,b) => new Date(getStandardDate(b)) - new Date(getStandardDate(a)));
+
+    let tbody = document.querySelector('#new-transport-table tbody');
+
+    if (availableDates.length === 0) {
+        document.getElementById('tp-kpi-total').innerText = "0";
+        document.getElementById('tp-kpi-success').innerText = "0";
+        document.getElementById('tp-kpi-sla').innerText = "0";
+        document.getElementById('tp-kpi-cost').innerText = "0";
+        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่งในวันที่เลือก</td></tr>`;
+        return;
+    }
+
+    let todayKey = availableDates[0];
+    let data = globalData.transport[todayKey];
+    
+    let dObj = new Date(getStandardDate(todayKey));
+    let displayDate = `${String(dObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][dObj.getMonth()]} ${dObj.getFullYear()}`;
+    document.getElementById('carrier-update-time').innerText = `อัปเดต: ${displayDate}`;
+
+    document.getElementById('tp-kpi-total').innerText = fmtN(data.total_orders);
+    document.getElementById('tp-kpi-success').innerText = fmtN(data.success_orders);
+    document.getElementById('tp-kpi-sla').innerText = fmtN(data.sla_hit);
+    document.getElementById('tp-kpi-cost').innerText = fmtN(data.total_cost);
+
+    if(tbody) {
+        let html = "";
+        let carriers = Object.keys(data.carriers || {}).sort((a,b) => data.carriers[b].total_orders - data.carriers[a].total_orders);
+        
+        carriers.forEach(c => {
+            let cd = data.carriers[c];
+            let succPct = cd.total_orders > 0 ? (cd.success_orders / cd.total_orders) * 100 : 0;
+            let slaPct = cd.success_orders > 0 ? (cd.sla_hit / cd.success_orders) * 100 : 0;
+
+            let bar = (pct, colorClass) => `
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="flex:1; background:var(--border-color); border-radius:10px; height:6px; overflow:hidden;">
+                        <div class="${colorClass}" style="width:${pct}%; height:100%; border-radius:10px;"></div>
+                    </div>
+                    <span style="font-size:11px; font-weight:700; width:35px; text-align:right; color:var(--text-muted);">${pct.toFixed(1)}%</span>
+                </div>`;
+
+            html += `<tr>
+                <td style="font-weight:700; border-right: 1px solid var(--border-color);">${c}</td>
+                <td class="text-center font-bold" style="border-right: 1px solid var(--border-color);">${fmtN(cd.total_orders)}</td>
+                <td style="border-right: 1px solid var(--border-color);">${bar(succPct, 'bg-green')}</td>
+                <td style="border-right: 1px solid var(--border-color);">${bar(slaPct, 'bg-blue')}</td>
+                <td class="text-center text-red font-bold">${fmtN(cd.total_cost)}</td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+}
+
+// ==========================================
+// 🚀 ALERT NOTIFICATION SYSTEM
+// ==========================================
+function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveDelay, delayDays, worstBU) {
+    const alertBox = document.getElementById('smart-alerts-container');
+    if (!alertBox) return;
+    alertBox.innerHTML = ''; 
+    let alerts = [];
+
+    if (waveDelay > 0) {
+        let delayText = delayDays > 0 ? `ดีเลย์ข้ามวัน (${delayDays} วัน)` : `ดีเลย์ ${Math.floor(waveDelay/60)} ชม. ${waveDelay%60} นาที`;
+        alerts.push({ type: 'critical', text: `[Wave Ops] ค้าง ${fmtN(waveLate)} บิล (${delayText}) <b>ช้าสุดที่สาขา ${worstBU}</b>` });
+    } else if (waveLate > 0) {
+        alerts.push({ type: 'warning', text: `[Wave Ops] ช้ากว่าแผน ${fmtN(waveLate)} บิล <b>(ที่ ${worstBU})</b> แต่อยู่ใน SLA` });
+    }
+
+    if (globalData.workforce) {
+        let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
+        let latestWfKey = wfKeys.find(k => new Date(getStandardDate(k)).getTime() <= targetTimestamp);
+        if (latestWfKey) {
+            let dayData = globalData.workforce[latestWfKey];
+            let absCount = 0; let trgCount = 0;
+            let allRoles = new Set([...Object.keys(dayData.targets || {}), ...Object.keys(dayData.roles || {})]);
+            allRoles.forEach(role => {
+                let trg = dayData.targets?.[role] || 0; let act = dayData.roles?.[role] || 0;
+                if (window.selectedBUs.includes('ALL')) { trgCount += trg; if (trg > act) absCount += (trg - act); }
+            });
+            if (absCount > 0 && window.selectedBUs.includes('ALL')) {
+                let absPct = ((absCount / trgCount) * 100).toFixed(1);
+                alerts.push({ type: absPct >= 5 ? 'critical' : 'warning', text: `[Workforce] วันนี้ขาด ${absCount} คน (${absPct}%) อาจกระทบการส่ง` });
+            }
+        }
+    }
+
+    if (alerts.length === 0) {
+        alertBox.innerHTML = `<div class="alert-box alert-green" style="margin:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:5px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>สถานการณ์ปกติ ไม่พบความเสี่ยงหรือเหตุขัดข้อง</div>`;
+    } else {
+        alerts.forEach(al => {
+            let clss = al.type === 'critical' ? 'alert-red' : 'alert-yellow';
+            let icon = al.type === 'critical' ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:5px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>` : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:5px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+            alertBox.innerHTML += `<div class="alert-box ${clss}" style="margin-bottom:8px;">${icon} <span>${al.text}</span></div>`;
+        });
     }
 }
 
