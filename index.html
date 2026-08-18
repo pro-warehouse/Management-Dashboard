@@ -12,591 +12,581 @@
 </head>
 <body>
     
-    <div class="dashboard-wrapper">
-        
-        <!-- Header & Top Banner -->
-        <header class="dashboard-header">
-            <div class="brand-section">
-                <div class="brand-logo">
-                    <img src="https://i.postimg.cc/L4qLLFNj/Black-White-Modern-Handwritten-Square-Studio-Logo-(15)-Photoroom-0.png" alt="Logo">
-                </div>
-                <div class="brand-text">
-                    <h1>Ops Management</h1>
-                    <p>Executive Dashboard</p>
-                </div>
-            </div>
-            
-            <!-- แก้ไขปุ่ม Loading ให้หมุนและแสดงผลถูกต้อง -->
-            <div id="global-loader" class="loader-badge" style="display: none;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin-anim"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
-                <span>Loading Data...</span>
-            </div>
-        </header>
-
-        <!-- Modern Filter Bar -->
-        <div class="filter-bar">
-            <div class="filter-item">
-                <label>DATE RANGE</label>
-                <input type="date" class="modern-input" id="date-picker">
-            </div>
-            
-            <div class="filter-item" style="position: relative;">
-                <label>BU / OWNER</label>
-                <div id="bu-multi-select" class="modern-input dropdown-trigger">
-                    <span id="bu-multi-text">All BUs</span>
-                    <span class="arrow">▼</span>
-                </div>
-                <div id="bu-dropdown-menu" class="dropdown-menu">
-                    <label class="dropdown-option"><input type="checkbox" id="bu-select-all" checked> All BUs</label>
-                    <div class="divider"></div>
-                    <div id="bu-checkbox-list" class="checkbox-list"></div>
-                    <button id="bu-apply-btn" class="btn-primary w-full mt-10">Apply Filter</button>
-                </div>
-            </div>
-
-            <div class="filter-item align-right">
-                <label>THEME</label>
-                <button id="theme-toggle" class="btn-outline">🌙 Dark Mode</button>
+    <!-- Top App Bar -->
+    <header class="top-nav">
+        <div class="brand-container">
+            <img src="https://i.postimg.cc/L4qLLFNj/Black-White-Modern-Handwritten-Square-Studio-Logo-(15)-Photoroom-0.png" alt="Logo" class="app-logo">
+            <div>
+                <h1 class="app-title">Ops Management</h1>
+                <p class="app-subtitle">Executive Dashboard</p>
             </div>
         </div>
-
-        <main class="main-content">
-            <!-- 🌟 6 TOP KPI CARDS (GRADIENT) 🌟 -->
-            <div class="kpi-grid mb-30">
-                <div class="kpi-card grad-purple">
-                    <div class="kpi-title">Orders Shipped Today</div>
-                    <div class="kpi-value" id="ffm-orders-shipped">...</div>
-                    <div class="kpi-footer">
-                        <div class="kpi-trend">
-                            <span class="badge-white" id="ffm-orders-trend">-</span>
-                            <span class="kpi-note" id="ffm-orders-note">vs prev</span>
-                        </div>
-                        <span class="kpi-update" id="ffm-orders-update">Updated: --</span>
-                    </div>
-                </div>
-
-                <div class="kpi-card grad-green">
-                    <div class="kpi-title">Avg. Fulfillment Rate</div>
-                    <div class="kpi-value" id="ffm-rate-val">...</div>
-                    <div class="kpi-mid-row">
-                        <span class="kpi-title mb-0" id="ffm-rate-eta">DC SLA: ...</span>
-                        <span class="badge-glass" id="eta-rate-trend">-</span>
-                    </div>
-                    <div class="kpi-footer">
-                        <div class="kpi-trend">
-                            <span class="badge-white" id="ffm-rate-trend">-</span>
-                            <span class="kpi-note" id="ffm-rate-note">vs prev</span>
-                        </div>
-                        <span class="kpi-update" id="ffm-rate-update">Updated: --</span>
-                    </div>
-                </div>
-
-                <div class="kpi-card grad-blue">
-                    <div class="kpi-title">Active Workforce</div>
-                    <div class="kpi-value" id="headcount-total">...</div>
-                    <div class="kpi-footer">
-                        <div class="kpi-trend">
-                            <span class="badge-white" id="headcount-trend">-</span>
-                            <span class="kpi-note" id="headcount-note">vs prev</span>
-                        </div>
-                        <span class="kpi-update" id="headcount-update">Updated: --</span>
-                    </div>
-                </div>
-
-                <div class="kpi-card grad-yellow">
-                    <div class="kpi-title">On-Time Delivery</div>
-                    <div class="kpi-value" id="ontime-val">...</div>
-                    <div class="kpi-footer">
-                        <div class="kpi-trend">
-                            <span class="badge-white" id="ontime-trend">-</span>
-                            <span class="kpi-note" id="ontime-note">vs prev</span>
-                        </div>
-                        <span class="kpi-update" id="ontime-update">Updated: --</span>
-                    </div>
-                </div>
-
-                <div class="kpi-card grad-red">
-                    <div class="kpi-title">Claim Cost (฿)</div>
-                    <div class="kpi-value" id="claim-val">...</div>
-                    <div class="kpi-footer">
-                        <div class="kpi-trend">
-                            <span class="badge-white" id="claim-trend">-</span>
-                            <span class="kpi-note" id="claim-note">vs prev</span>
-                        </div>
-                        <span class="kpi-update" id="claim-update">Updated: --</span>
-                    </div>
-                </div>
-
-                <div class="kpi-card grad-teal">
-                    <div class="kpi-title">Inventory Accuracy</div>
-                    <div class="kpi-value" id="inv-val">...</div>
-                    <div class="kpi-footer">
-                        <div class="kpi-trend">
-                            <span class="badge-white" id="inv-trend">-</span>
-                            <span class="kpi-note" id="inv-note">vs prev</span>
-                        </div>
-                        <span class="kpi-update" id="inv-update">Updated: --</span>
-                    </div>
-                </div>
+        
+        <div class="nav-actions">
+            <div id="global-loader" class="loader-pill" style="display: none;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin-icon"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                <span>Loading Data...</span>
             </div>
+            <button id="theme-toggle" class="btn-theme-toggle">🌙 Dark Mode</button>
+        </div>
+    </header>
 
-            <!-- Incidents Alerts -->
-            <div class="card p-24 mb-30">
-                <h3 class="card-title text-dark" style="display:flex; align-items:center; gap:8px;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                    Key Daily Incidents Alerts
-                </h3>
-                <div id="smart-alerts-container" class="alert-container">
-                    <div class="text-muted text-sm">กำลังวิเคราะห์ข้อมูลเหตุการณ์...</div>
-                </div>
+    <!-- Filter Bar (สไตล์ CS Dashboard) -->
+    <div class="filter-strip">
+        <div class="filter-group">
+            <label class="filter-label">DATE RANGE</label>
+            <input type="date" class="filter-control" id="date-picker">
+        </div>
+        
+        <div class="filter-group" style="position: relative;">
+            <label class="filter-label">BU / OWNER</label>
+            <div id="bu-multi-select" class="filter-control select-dropdown">
+                <span id="bu-multi-text">All BUs</span>
+                <span class="dropdown-arrow">▼</span>
             </div>
-
-            <!-- 🌟 WAVE OPERATIONS & SLA 🌟 -->
-            <div class="section-header">
-                <h2 class="section-title">Wave Operations & SLA Status <span class="badge-api">BigQuery</span></h2>
+            <div id="bu-dropdown-menu" class="dropdown-card">
+                <label class="dropdown-item"><input type="checkbox" id="bu-select-all" checked> All BUs</label>
+                <div class="dropdown-divider"></div>
+                <div id="bu-checkbox-list" class="checkbox-container"></div>
+                <button id="bu-apply-btn" class="btn-apply">Apply Filter</button>
             </div>
-            
-            <div class="wave-kpi-grid mb-20">
-                <div class="kpi-card grad-purple">
-                    <div class="kpi-title" id="wave-title-1">TOTAL ORDERS</div>
-                    <div class="kpi-value" id="wave-total">...</div>
-                    <div class="kpi-footer-col">
-                        <div id="wave-active-info-1">กำลังตรวจสอบ...</div>
-                        <div class="kpi-update" id="wave-date-1">Updated: --</div>
-                    </div>
-                </div>
-                <div class="kpi-card grad-green">
-                    <div class="kpi-title" id="wave-title-2">COMPLETED ORDERS</div>
-                    <div class="kpi-value" id="wave-completed">...</div>
-                    <div class="kpi-footer-col">
-                        <div id="wave-active-info-2">กำลังตรวจสอบ...</div>
-                        <div class="kpi-update" id="wave-date-2">Updated: --</div>
-                    </div>
-                </div>
-                <div class="kpi-card grad-red">
-                    <div class="kpi-title" id="wave-title-3">LATE ORDERS (บิลช้ากว่าแผน)</div>
-                    <div class="kpi-value" id="wave-late">...</div>
-                    <div class="kpi-footer-col">
-                        <div id="wave-active-info-3">กำลังตรวจสอบ...</div>
-                        <div class="kpi-update" id="wave-date-3">Updated: --</div>
-                    </div>
-                </div>
-                <div class="kpi-card grad-yellow">
-                    <div class="kpi-title" id="wave-title-4">CURRENT STATUS (สถานะเวลา)</div>
-                    <div class="kpi-value" id="wave-delay">...</div>
-                    <div class="kpi-footer-col">
-                        <div id="wave-active-info-4">กำลังตรวจสอบ...</div>
-                        <div class="kpi-update" id="wave-date-4">Updated: --</div>
-                    </div>
-                </div>
-            </div> 
-
-            <div class="stage-grid mb-30">
-                <div class="card stage-card">
-                    <div class="stage-header">
-                        <div class="icon-circle text-blue bg-blue-light"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg></div>
-                        <h3 class="stage-title">1. PICK (หยิบ)</h3>
-                    </div>
-                    <div class="stage-body">
-                        <h2 class="stage-percent text-blue" id="stage-pick-pct">0%</h2>
-                        <div class="stage-stats">
-                            <div><span class="text-muted">สำเร็จ:</span> <strong class="text-dark" id="stage-pick-done">0</strong></div>
-                            <div><span class="text-muted">ทั้งหมด:</span> <strong class="text-dark" id="stage-pick-total">0</strong></div>
-                        </div>
-                    </div>
-                    <div class="progress-track"><div id="stage-pick-bar" class="progress-fill grad-blue" style="width: 0%;"></div></div>
-                    <div class="stage-alert bg-blue-light text-blue" id="stage-pick-text">กำลังโหลดข้อมูล...</div>
-                    <div class="stage-date text-muted" id="stage-pick-date">Updated: --</div>
-                </div>
-
-                <div class="card stage-card">
-                    <div class="stage-header">
-                        <div class="icon-circle text-orange bg-orange-light"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg></div>
-                        <h3 class="stage-title">2. QC (ตรวจสอบ)</h3>
-                    </div>
-                    <div class="stage-body">
-                        <h2 class="stage-percent text-orange" id="stage-qc-pct">0%</h2>
-                        <div class="stage-stats">
-                            <div><span class="text-muted">ผ่าน QC:</span> <strong class="text-dark" id="stage-qc-done">0</strong></div>
-                            <div><span class="text-muted">รอตรวจ:</span> <strong class="text-dark" id="stage-qc-pending">0</strong></div>
-                        </div>
-                    </div>
-                    <div class="progress-track"><div id="stage-qc-bar" class="progress-fill grad-orange" style="width: 0%;"></div></div>
-                    <div class="stage-alert bg-orange-light text-orange" id="stage-qc-text">กำลังประมวลผล...</div>
-                    <div class="stage-date text-muted" id="stage-qc-date">Updated: --</div>
-                </div>
-
-                <div class="card stage-card">
-                    <div class="stage-header">
-                        <div class="icon-circle text-green bg-green-light"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg></div>
-                        <h3 class="stage-title">3. SHIPPED (ส่งออก)</h3>
-                    </div>
-                    <div class="stage-body">
-                        <h2 class="stage-percent text-green" id="stage-ship-pct">0%</h2>
-                        <div class="stage-stats">
-                            <div><span class="text-muted">ส่งแล้ว:</span> <strong class="text-dark" id="stage-ship-done">0</strong></div>
-                            <div><span class="text-muted">ค้างส่ง:</span> <strong class="text-dark" id="stage-ship-pending">0</strong></div>
-                        </div>
-                    </div>
-                    <div class="progress-track"><div id="stage-ship-bar" class="progress-fill grad-green" style="width: 0%;"></div></div>
-                    <div class="stage-alert bg-green-light text-green" id="stage-ship-text">กำลังโหลดข้อมูล...</div>
-                    <div class="stage-date text-muted" id="stage-ship-date">Updated: --</div>
-                </div>
-            </div>
-
-            <div class="card mb-30" id="fulfillment-v3-wrapper">
-                <div class="card-header-flex p-24 pb-0 mb-0">
-                    <h3 class="card-title mb-0">WAVE PLAN SUMMARY BY BU</h3>
-                </div>
-                <div class="table-responsive">
-                    <table class="clean-table" id="wave-summary-table">
-                        <thead><tr><th class="text-center text-muted">Loading Wave Summary Data...</th></tr></thead>
-                    </table>
-                </div>
-            </div>
-
-            <!-- 🌟 TRANSPORT PERFORMANCE 🌟 -->
-            <div class="section-header mt-40">
-                <h2 class="section-title">🚚 Transport Performance <span class="badge-api gray">Sheet1</span></h2>
-                <p class="section-desc">สรุปผลงานจัดส่งและค่าขนส่งรายบริษัท</p>
-            </div>
-
-            <div class="wave-kpi-grid mb-20">
-                <div class="kpi-card grad-purple" style="min-height: 120px;">
-                    <div class="kpi-title">Total Orders</div>
-                    <div class="kpi-value" id="tp-kpi-total">0</div>
-                </div>
-                <div class="kpi-card grad-green" style="min-height: 120px;">
-                    <div class="kpi-title">Completed</div>
-                    <div class="kpi-value" id="tp-kpi-success">0</div>
-                </div>
-                <div class="kpi-card grad-blue" style="min-height: 120px;">
-                    <div class="kpi-title">On Time (SLA Hit)</div>
-                    <div class="kpi-value" id="tp-kpi-sla">0</div>
-                </div>
-                <div class="kpi-card grad-red" style="min-height: 120px;">
-                    <div class="kpi-title">Total Cost (฿)</div>
-                    <div class="kpi-value" id="tp-kpi-cost">0</div>
-                </div>
-            </div>
-
-            <div class="card mb-30">
-                <div class="card-header-flex p-24 pb-0 mb-0">
-                    <h3 class="card-title m-0">CARRIER PERFORMANCE (ตามวันออเดอร์)</h3>
-                    <span id="carrier-update-time" class="text-muted text-sm"></span>
-                </div>
-                <div class="table-responsive mt-10">
-                    <table class="clean-table" id="new-transport-table">
-                        <thead>
-                            <tr>
-                                <th>บริษัทขนส่ง</th>
-                                <th class="text-center">Total Orders</th>
-                                <th style="width:25%;">Success Rate</th>
-                                <th style="width:25%;">SLA Adherence</th>
-                                <th class="text-center">Cost (฿)</th>
-                            </tr>
-                        </thead>
-                        <tbody><tr><td colspan="5" class="text-center text-muted">Loading Transport Data...</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- 🌟 1. FULFILLMENT CHARTS 🌟 -->
-            <div class="section-header mt-40">
-                <h2 class="section-title">1. Orders Shipped & Avg. Fulfillment <span class="badge-api">LIVE API</span></h2>
-            </div>
-            
-            <div class="chart-grid mb-30">
-                <div class="card p-24">
-                    <div class="card-header-flex">
-                        <h3 class="card-title m-0">DAILY REQUESTED VOLUME (PCS)</h3>
-                        <select id="ffm-bu-filter" class="modern-input"><option value="ALL">All BUs</option></select>
-                    </div>
-                    <div class="chart-wrapper"><canvas id="ffmTrendChart"></canvas></div>
-                </div>
-                
-                <div class="card p-24">
-                    <h3 class="card-title">ORDER MIX BY BU</h3>
-                    <div class="chart-wrapper"><canvas id="ffmVolumeChart"></canvas></div>
-                </div>
-
-                <div class="card col-span-full">
-                    <div class="card-header-flex p-24 pb-0 mb-0">
-                        <h3 class="card-title m-0" id="utilization-title">VOLUME UTILIZATION BY OWNER</h3>
-                        <button onclick="toggleCapSetup()" class="btn-outline">⚙️ Set Cap</button>
-                    </div>
-                    
-                    <div id="cap-setup-panel" class="setup-panel mb-20 ml-24 mr-24 mt-10" style="display:none;">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                            <span class="font-bold text-sm">เลือกวันที่แก้ไข:</span>
-                            <input type="date" id="cap-target-date" class="modern-input" onchange="fetchAndRenderCapInputs()">
-                        </div>
-                        <div id="cap-inputs-container" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;"></div>
-                        <button onclick="saveDailyCapacity()" class="btn-primary">💾 Save Capacity</button>
-                    </div>
-                    
-                    <div class="table-responsive max-h-300 mt-10">
-                        <table class="clean-table" id="utilization-table">
-                            <thead><tr><th>OWNER</th><th class="text-right">VOLUME (PCS)</th><th style="width:35%;">UTILIZATION %</th><th class="text-center">STATUS</th></tr></thead>
-                            <tbody><tr><td colspan="4" class="text-center text-muted">Loading Data...</td></tr></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card mb-30">
-                <div class="card-header-flex p-24 pb-0 mb-0">
-                    <h3 class="card-title m-0">DAILY FULFILLMENT MATRIX RECORD</h3>
-                </div>
-                <div class="table-responsive max-h-400 mt-10">
-                    <table class="clean-table" id="ffm-detail-table">
-                        <thead><tr><th class="text-center text-muted">Loading Matrix...</th></tr></thead>
-                    </table>
-                </div>
-            </div>
-
-            <!-- 🌟 2. WORKFORCE 🌟 -->
-            <div class="section-header mt-40">
-                <h2 class="section-title">2. Active Workforce Details <span class="badge-api gray">SHEET</span></h2>
-            </div>
-            
-            <div class="chart-grid mb-30">
-                <div class="card p-24">
-                    <div class="card-header-flex">
-                        <h3 class="card-title m-0">WORKFORCE HEADCOUNT TREND</h3>
-                        <select id="trend-role-filter" class="modern-input"><option value="All">All Ops</option></select>
-                    </div>
-                    <div class="chart-wrapper"><canvas id="workforceChart"></canvas></div>
-                </div>
-                
-                <div class="card p-24" style="overflow: hidden;">
-                    <h3 class="card-title">WORKFORCE MATRIX (AFFILIATION & ROLE)</h3>
-                    <div class="table-responsive max-h-300 mt-10 mb-20">
-                        <table class="clean-table" id="wf-matrix-table">
-                            <thead><tr><th class="text-center text-muted">Loading Matrix Data...</th></tr></thead>
-                        </table>
-                    </div>
-                    <div id="wf-foreign-detail"></div>
-                </div>
-            </div>
-
-            <div class="card mb-30">
-                <div class="card-header-flex p-24 pb-0 mb-20">
-                    <h3 class="card-title m-0">DAILY ATTENDANCE RECORD</h3>
-                    <div style="display: flex; gap: 20px; align-items: center;">
-                        <div class="text-center"><div class="text-muted text-xs font-bold">🇹🇭 พนักงานไทย</div><div class="text-green font-bold text-lg" id="wf-thai">0</div></div>
-                        <div style="width: 1px; height: 30px; background: var(--border-color);"></div>
-                        <div class="text-center"><div class="text-muted text-xs font-bold">🌐 ต่างชาติ</div><div class="text-blue font-bold text-lg" id="wf-foreign">0</div></div>
-                    </div>
-                </div>
-                <div class="table-responsive max-h-400">
-                    <table class="clean-table excel-style" id="attendance-table">
-                        <thead id="daily-attendance-head"><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
-                        <tbody id="daily-attendance-body"><tr><td class="text-center text-muted">Loading data...</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="chart-grid mb-30">
-                <div class="card p-24" style="overflow: hidden;">
-                    <h3 class="card-title">ALL STAFF SUMMARY (BY HC TYPE)</h3>
-                    <div class="table-responsive max-h-300 mt-10">
-                        <table class="clean-table" id="hc-summary-table">
-                            <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
-                        </table>
-                    </div>
-                </div>
-                <div class="card p-24" style="overflow: hidden;">
-                    <h3 class="card-title text-red">RESIGNED STAFF (STATUS: L)</h3>
-                    <div class="table-responsive max-h-300 mt-10">
-                        <table class="clean-table" id="resigned-table">
-                            <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 🌟 3. ON-TIME 🌟 -->
-            <div class="section-header mt-40">
-                <h2 class="section-title">3. On-Time Delivery Details</h2>
-            </div>
-            <div class="chart-grid mb-30">
-                <div class="card p-24">
-                    <div class="card-header-flex">
-                        <h3 class="card-title m-0">ON-TIME TREND</h3>
-                        <div style="display:flex; gap:10px;">
-                            <select id="ontime-period-filter" class="modern-input"><option value="Daily">Daily</option><option value="Monthly">Monthly</option></select>
-                            <div id="ontime-aff-ms"></div>
-                        </div>
-                    </div>
-                    <div id="ontime-summary-box" class="alert-box alert-green">💡 กำลังวิเคราะห์ข้อมูล...</div>
-                    <div class="chart-wrapper"><canvas id="ontimeChart2"></canvas></div>
-                </div>
-                <div class="card p-24" style="overflow: hidden;">
-                    <h3 class="card-title">DAILY ON-TIME RECORD</h3>
-                    <div class="table-responsive max-h-300 mt-10">
-                        <table class="clean-table" id="ontime-detail-table">
-                            <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 🌟 4. CLAIMS 🌟 -->
-            <div class="section-header mt-40">
-                <h2 class="section-title">4. Claim Details</h2>
-            </div>
-            <div class="chart-grid mb-30">
-                <div class="card p-24">
-                    <div class="card-header-flex">
-                        <h3 class="card-title m-0">CLAIM TREND</h3>
-                        <div style="display:flex; gap:10px;">
-                            <div id="claim-bu-ms"></div>
-                            <select id="claim-period-filter" class="modern-input"><option value="Monthly">Monthly</option><option value="Daily">Daily</option></select>
-                        </div>
-                    </div>
-                    <div id="claim-summary-box" class="alert-box alert-red">💡 กำลังวิเคราะห์ข้อมูลเคลม...</div>
-                    <div class="chart-wrapper"><canvas id="claimChart2"></canvas></div>
-                </div>
-                <div class="card p-24" style="overflow: hidden;">
-                    <h3 class="card-title">CLAIM RECORD</h3>
-                    <div class="table-responsive max-h-300 mt-10">
-                        <table class="clean-table" id="claim-detail-table">
-                            <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 🌟 5. INVENTORY 🌟 -->
-            <div class="section-header mt-40">
-                <h2 class="section-title">5. Inventory Accuracy Details</h2>
-            </div>
-            <div class="chart-grid mb-20">
-                <div class="card p-24">
-                    <div class="card-header-flex">
-                        <h3 class="card-title m-0">INVENTORY ACCURACY TREND</h3>
-                        <div style="display:flex; gap:10px;">
-                            <select id="inv-bu-filter" class="modern-input"><option value="ALL">All BUs</option></select>
-                            <div id="inv-loctype-ms"></div>
-                        </div>
-                    </div>
-                    <div class="chart-wrapper"><canvas id="inventoryChart"></canvas></div>
-                </div>
-                <div class="card p-24" style="overflow: hidden;">
-                    <h3 class="card-title">MONTHLY ACCURACY RECORD BY BU</h3>
-                    <div class="table-responsive max-h-300 mt-10">
-                        <table class="clean-table" id="inv-detail-table">
-                            <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card p-24 mb-20">
-                <h3 class="card-title">STOCK ACCURACY SUMMARY</h3>
-                <div id="inv-summary-box" class="text-sm mt-10">💡 กำลังสรุปข้อมูล...</div>
-            </div>
-
-            <div class="card p-24 mb-30" style="overflow:visible;">
-                <div class="card-header-flex">
-                    <h3 class="card-title m-0">LOCATION ACCURACY & ANALYSIS</h3>
-                    <div style="display: flex; gap: 10px; flex-wrap:wrap;">
-                        <div id="loc-bu-select" class="modern-input dropdown-trigger" style="width:110px;"><span id="loc-bu-text">BU: All</span></div>
-                        <div id="loc-bu-menu" class="dropdown-menu"><label class="dropdown-option"><input type="checkbox" id="loc-bu-all" checked> All BUs</label><div class="divider"></div><div id="loc-bu-list" class="checkbox-list"></div><button id="loc-bu-apply" class="btn-primary mt-10 w-full">Apply</button></div>
-                        
-                        <div id="loc-type-select" class="modern-input dropdown-trigger" style="width:110px;"><span id="loc-type-text">Type: All</span></div>
-                        <div id="loc-type-menu" class="dropdown-menu"><label class="dropdown-option"><input type="checkbox" id="loc-type-all" checked> All Types</label><div class="divider"></div><div id="loc-type-list" class="checkbox-list"></div><button id="loc-type-apply" class="btn-primary mt-10 w-full">Apply</button></div>
-                        
-                        <div id="loc-zone-select" class="modern-input dropdown-trigger" style="width:110px;"><span id="loc-zone-text">Zone: All</span></div>
-                        <div id="loc-zone-menu" class="dropdown-menu"><label class="dropdown-option"><input type="checkbox" id="loc-zone-all" checked> All Zones</label><div class="divider"></div><div id="loc-zone-list" class="checkbox-list"></div><button id="loc-zone-apply" class="btn-primary mt-10 w-full">Apply</button></div>
-                    </div>
-                </div>
-                <div id="loc-analysis-box" class="alert-box alert-blue mb-20 mt-10">💡 กำลังวิเคราะห์ข้อมูล Location...</div>
-                <div class="table-responsive max-h-300">
-                    <table class="clean-table" id="loc-accuracy-table">
-                        <thead><tr><th class="text-center text-muted">Loading Location Data...</th></tr></thead>
-                    </table>
-                </div>
-            </div>
-
-            <!-- 🌟 6. PRODUCTIVITY 🌟 -->
-            <div class="section-header mt-40">
-                <h2 class="section-title">6. Productivity Details</h2>
-            </div>
-            
-            <div class="card p-24 mb-20 setup-panel">
-                <div class="prod-setup-grid">
-                    <div style="display:flex; align-items:center; gap:15px; flex-wrap:wrap;">
-                        <div class="text-purple font-bold text-sm">🎯 UPH TARGET:</div>
-                        <div style="display: flex; gap: 10px;">
-                            <div><label class="text-xs text-muted font-bold">Overall</label><br><input type="number" id="trg-all" class="modern-input" style="width:75px;"></div>
-                            <div><label class="text-xs text-muted font-bold">Full</label><br><input type="number" id="trg-full" class="modern-input" style="width:75px;"></div>
-                            <div><label class="text-xs text-muted font-bold">Half</label><br><input type="number" id="trg-half" class="modern-input" style="width:75px;"></div>
-                            <div><label class="text-xs text-muted font-bold">EA</label><br><input type="number" id="trg-ea" class="modern-input" style="width:75px;"></div>
-                        </div>
-                    </div>
-                    
-                    <div style="display:flex; align-items:center; gap:15px; flex-wrap:wrap; border-left:1px solid var(--border-color); padding-left:20px;" class="border-left-mobile">
-                        <div class="text-orange font-bold text-sm">💰 COST BASE:</div>
-                        <div style="display: flex; gap: 10px;">
-                            <div><label class="text-xs text-muted font-bold">Salary (฿)</label><br><input type="number" id="cost-salary" class="modern-input" style="width:90px;"></div>
-                            <div><label class="text-xs text-muted font-bold">Days</label><br><input type="number" id="cost-days" class="modern-input" style="width:70px;"></div>
-                        </div>
-                    </div>
-
-                    <div style="display:flex; align-items:flex-end; gap:15px; border-left:1px solid var(--border-color); padding-left:20px;" class="border-left-mobile">
-                        <div><label class="text-xs text-muted font-bold">📅 วันที่มีผล</label><br><input type="date" id="uph-target-date" class="modern-input" onchange="applyUphCostInputs(this.value)"></div>
-                        <button onclick="saveTargets()" class="btn-primary">💾 Save</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chart-grid mb-30">
-                <div class="card p-24">
-                    <div class="card-header-flex">
-                        <h3 class="card-title m-0">UPH HEAT TREND</h3>
-                        <div style="display:flex; gap:10px;">
-                            <select id="prod-area-filter" class="modern-input"><option value="ALL">All Areas</option></select>
-                            <select id="prod-period-filter" class="modern-input"><option value="Daily">Daily</option><option value="Monthly">Monthly</option></select>
-                        </div>
-                    </div>
-                    <div id="prod-summary-box" class="alert-box alert-green mb-20 mt-10">💡 กำลังวิเคราะห์...</div>
-                    <div class="chart-wrapper"><canvas id="productivityChart"></canvas></div>
-                </div>
-                <div class="card p-24" style="overflow: hidden;">
-                    <h3 class="card-title" id="prod-area-title">PERFORMANCE BY AREA</h3>
-                    <div class="table-responsive max-h-300 mt-10">
-                        <table class="clean-table" id="prod-area-table">
-                            <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chart-grid mb-50">
-                <div class="card p-24" style="overflow: hidden;">
-                    <h3 class="card-title" id="prod-user-title">PRODUCTIVITY BY USER</h3>
-                    <div class="table-responsive max-h-400 mt-10">
-                        <table class="clean-table" id="prod-user-table">
-                            <thead><tr><th class="text-center text-muted">Loading User Data...</th></tr></thead>
-                        </table>
-                    </div>
-                </div>
-                <div class="card p-24" style="overflow: hidden;">
-                    <h3 class="card-title">DAILY OVERALL SUMMARY</h3>
-                    <div class="table-responsive max-h-400 mt-10">
-                        <table class="clean-table" id="prod-overall-table">
-                            <thead><tr><th class="text-center text-muted">Loading Daily Summary...</th></tr></thead>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-        </main>
+        </div>
     </div>
 
-    <div id="custom-toast" class="toast-notification">
+    <!-- Main Container -->
+    <main class="dashboard-body">
+
+        <!-- 🌟 6 Top Executive Cards (Vibrant CS Style) 🌟 -->
+        <section class="kpi-grid mb-24">
+            <div class="kpi-box card-purple">
+                <div class="kpi-head">Orders Shipped Today</div>
+                <div class="kpi-main-val" id="ffm-orders-shipped">...</div>
+                <div class="kpi-foot">
+                    <div class="kpi-trend-box">
+                        <span class="trend-badge" id="ffm-orders-trend">-</span>
+                        <span class="trend-note" id="ffm-orders-note">vs prev</span>
+                    </div>
+                    <span class="kpi-timestamp" id="ffm-orders-update">Updated: --</span>
+                </div>
+            </div>
+
+            <div class="kpi-box card-green">
+                <div class="kpi-head">Avg. Fulfillment Rate</div>
+                <div class="kpi-main-val" id="ffm-rate-val">...</div>
+                <div class="kpi-sub-row">
+                    <span id="ffm-rate-eta" style="font-weight:700;">DC SLA: ...</span>
+                    <span class="badge-glass" id="eta-rate-trend">-</span>
+                </div>
+                <div class="kpi-foot">
+                    <div class="kpi-trend-box">
+                        <span class="trend-badge" id="ffm-rate-trend">-</span>
+                        <span class="trend-note" id="ffm-rate-note">vs prev</span>
+                    </div>
+                    <span class="kpi-timestamp" id="ffm-rate-update">Updated: --</span>
+                </div>
+            </div>
+
+            <div class="kpi-box card-blue">
+                <div class="kpi-head">Active Workforce</div>
+                <div class="kpi-main-val" id="headcount-total">...</div>
+                <div class="kpi-foot">
+                    <div class="kpi-trend-box">
+                        <span class="trend-badge" id="headcount-trend">-</span>
+                        <span class="trend-note" id="headcount-note">vs prev</span>
+                    </div>
+                    <span class="kpi-timestamp" id="headcount-update">Updated: --</span>
+                </div>
+            </div>
+
+            <div class="kpi-box card-yellow">
+                <div class="kpi-head">On-Time Delivery</div>
+                <div class="kpi-main-val" id="ontime-val">...</div>
+                <div class="kpi-foot">
+                    <div class="kpi-trend-box">
+                        <span class="trend-badge" id="ontime-trend">-</span>
+                        <span class="trend-note" id="ontime-note">vs prev</span>
+                    </div>
+                    <span class="kpi-timestamp" id="ontime-update">Updated: --</span>
+                </div>
+            </div>
+
+            <div class="kpi-box card-red">
+                <div class="kpi-head">Claim Cost (฿)</div>
+                <div class="kpi-main-val" id="claim-val">...</div>
+                <div class="kpi-foot">
+                    <div class="kpi-trend-box">
+                        <span class="trend-badge" id="claim-trend">-</span>
+                        <span class="trend-note" id="claim-note">vs prev</span>
+                    </div>
+                    <span class="kpi-timestamp" id="claim-update">Updated: --</span>
+                </div>
+            </div>
+
+            <div class="kpi-box card-teal">
+                <div class="kpi-head">Inventory Accuracy</div>
+                <div class="kpi-main-val" id="inv-val">...</div>
+                <div class="kpi-foot">
+                    <div class="kpi-trend-box">
+                        <span class="trend-badge" id="inv-trend">-</span>
+                        <span class="trend-note" id="inv-note">vs prev</span>
+                    </div>
+                    <span class="kpi-timestamp" id="inv-update">Updated: --</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Incidents Alerts -->
+        <section class="card mb-30">
+            <h3 class="panel-title" style="display:flex; align-items:center; gap:8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                Key Daily Incidents Alerts
+            </h3>
+            <div id="smart-alerts-container" class="alert-stack">
+                <div class="text-muted text-sm">กำลังวิเคราะห์ข้อมูลเหตุการณ์...</div>
+            </div>
+        </section>
+
+        <!-- 🌟 WAVE OPERATIONS & SLA STATUS 🌟 -->
+        <div class="section-title-wrap">
+            <h2 class="section-heading">Wave Operations & SLA Status <span class="tag-source">BigQuery</span></h2>
+        </div>
+        
+        <section class="wave-kpi-grid mb-20">
+            <div class="kpi-box card-purple min-h-130">
+                <div class="kpi-head" id="wave-title-1">TOTAL ORDERS</div>
+                <div class="kpi-main-val" id="wave-total">...</div>
+                <div class="kpi-foot-col">
+                    <div id="wave-active-info-1">กำลังตรวจสอบ...</div>
+                    <div class="kpi-timestamp" id="wave-date-1">Updated: --</div>
+                </div>
+            </div>
+            <div class="kpi-box card-green min-h-130">
+                <div class="kpi-head" id="wave-title-2">COMPLETED ORDERS</div>
+                <div class="kpi-main-val" id="wave-completed">...</div>
+                <div class="kpi-foot-col">
+                    <div id="wave-active-info-2">กำลังตรวจสอบ...</div>
+                    <div class="kpi-timestamp" id="wave-date-2">Updated: --</div>
+                </div>
+            </div>
+            <div class="kpi-box card-red min-h-130">
+                <div class="kpi-head" id="wave-title-3">LATE ORDERS (บิลช้ากว่าแผน)</div>
+                <div class="kpi-main-val" id="wave-late">...</div>
+                <div class="kpi-foot-col">
+                    <div id="wave-active-info-3">กำลังตรวจสอบ...</div>
+                    <div class="kpi-timestamp" id="wave-date-3">Updated: --</div>
+                </div>
+            </div>
+            <div class="kpi-box card-yellow min-h-130">
+                <div class="kpi-head" id="wave-title-4">CURRENT STATUS (สถานะเวลา)</div>
+                <div class="kpi-main-val" id="wave-delay">...</div>
+                <div class="kpi-foot-col">
+                    <div id="wave-active-info-4">กำลังตรวจสอบ...</div>
+                    <div class="kpi-timestamp" id="wave-date-4">Updated: --</div>
+                </div>
+            </div>
+        </section> 
+
+        <section class="stage-grid mb-30">
+            <div class="card stage-panel">
+                <div class="stage-top">
+                    <div class="stage-icon bg-light-blue text-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg></div>
+                    <h3 class="stage-label">1. PICK (หยิบ)</h3>
+                </div>
+                <div class="stage-middle">
+                    <h2 class="stage-big-pct text-blue" id="stage-pick-pct">0%</h2>
+                    <div class="stage-counts">
+                        <div><span>สำเร็จ:</span> <strong id="stage-pick-done">0</strong></div>
+                        <div><span>ทั้งหมด:</span> <strong id="stage-pick-total">0</strong></div>
+                    </div>
+                </div>
+                <div class="progress-bar-bg"><div id="stage-pick-bar" class="progress-bar-fill card-blue" style="width: 0%;"></div></div>
+                <div class="stage-status-msg bg-light-blue text-blue" id="stage-pick-text">กำลังโหลดข้อมูล...</div>
+                <div class="stage-updated" id="stage-pick-date">Updated: --</div>
+            </div>
+
+            <div class="card stage-panel">
+                <div class="stage-top">
+                    <div class="stage-icon bg-light-orange text-orange"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg></div>
+                    <h3 class="stage-label">2. QC (ตรวจสอบ)</h3>
+                </div>
+                <div class="stage-middle">
+                    <h2 class="stage-big-pct text-orange" id="stage-qc-pct">0%</h2>
+                    <div class="stage-counts">
+                        <div><span>ผ่าน QC:</span> <strong id="stage-qc-done">0</strong></div>
+                        <div><span>รอตรวจ:</span> <strong id="stage-qc-pending" class="text-orange">0</strong></div>
+                    </div>
+                </div>
+                <div class="progress-bar-bg"><div id="stage-qc-bar" class="progress-bar-fill card-yellow" style="width: 0%;"></div></div>
+                <div class="stage-status-msg bg-light-orange text-orange" id="stage-qc-text">กำลังประมวลผล...</div>
+                <div class="stage-updated" id="stage-qc-date">Updated: --</div>
+            </div>
+
+            <div class="card stage-panel">
+                <div class="stage-top">
+                    <div class="stage-icon bg-light-green text-green"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg></div>
+                    <h3 class="stage-label">3. SHIPPED (ส่งออก)</h3>
+                </div>
+                <div class="stage-middle">
+                    <h2 class="stage-big-pct text-green" id="stage-ship-pct">0%</h2>
+                    <div class="stage-counts">
+                        <div><span>ส่งแล้ว:</span> <strong id="stage-ship-done">0</strong></div>
+                        <div><span>ค้างส่ง:</span> <strong id="stage-ship-pending">0</strong></div>
+                    </div>
+                </div>
+                <div class="progress-bar-bg"><div id="stage-ship-bar" class="progress-bar-fill card-green" style="width: 0%;"></div></div>
+                <div class="stage-status-msg bg-light-green text-green" id="stage-ship-text">กำลังโหลดข้อมูล...</div>
+                <div class="stage-updated" id="stage-ship-date">Updated: --</div>
+            </div>
+        </section>
+
+        <section class="card mb-30" id="fulfillment-v3-wrapper">
+            <h3 class="panel-title">WAVE PLAN SUMMARY BY BU</h3>
+            <div class="table-scroll-wrap">
+                <table class="data-table" id="wave-summary-table">
+                    <thead><tr><th class="text-center text-muted">Loading Wave Summary Data...</th></tr></thead>
+                </table>
+            </div>
+        </section>
+
+        <!-- 🌟 TRANSPORT PERFORMANCE 🌟 -->
+        <div class="section-title-wrap mt-40">
+            <h2 class="section-heading">🚚 Transport Performance <span class="tag-source gray">Sheet1</span></h2>
+            <p class="section-subtext">สรุปผลงานจัดส่งและค่าขนส่งรายบริษัท</p>
+        </div>
+
+        <section class="wave-kpi-grid mb-20">
+            <div class="kpi-box card-purple min-h-110">
+                <div class="kpi-head">Total Orders</div>
+                <div class="kpi-main-val" id="tp-kpi-total">0</div>
+            </div>
+            <div class="kpi-box card-green min-h-110">
+                <div class="kpi-head">Completed</div>
+                <div class="kpi-main-val" id="tp-kpi-success">0</div>
+            </div>
+            <div class="kpi-box card-blue min-h-110">
+                <div class="kpi-head">On Time (SLA Hit)</div>
+                <div class="kpi-main-val" id="tp-kpi-sla">0</div>
+            </div>
+            <div class="kpi-box card-red min-h-110">
+                <div class="kpi-head">Total Cost (฿)</div>
+                <div class="kpi-main-val" id="tp-kpi-cost">0</div>
+            </div>
+        </section>
+
+        <section class="card mb-30">
+            <div class="card-head-bar">
+                <h3 class="panel-title m-0">CARRIER PERFORMANCE (ตามวันออเดอร์)</h3>
+                <span id="carrier-update-time" class="text-muted text-sm"></span>
+            </div>
+            <div class="table-scroll-wrap mt-10">
+                <table class="data-table" id="new-transport-table">
+                    <thead>
+                        <tr>
+                            <th>บริษัทขนส่ง</th>
+                            <th class="text-center">Total Orders</th>
+                            <th style="width:25%;">Success Rate</th>
+                            <th style="width:25%;">SLA Adherence</th>
+                            <th class="text-center">Cost (฿)</th>
+                        </tr>
+                    </thead>
+                    <tbody><tr><td colspan="5" class="text-center text-muted">Loading Transport Data...</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 🌟 1. ORDERS SHIPPED & AVG. FULFILLMENT 🌟 -->
+        <div class="section-title-wrap mt-40">
+            <h2 class="section-heading">1. Orders Shipped & Avg. Fulfillment <span class="tag-source">LIVE API</span></h2>
+        </div>
+        
+        <section class="grid-2-col mb-30">
+            <div class="card">
+                <div class="card-head-bar">
+                    <h3 class="panel-title m-0">DAILY REQUESTED VOLUME (PCS)</h3>
+                    <select id="ffm-bu-filter" class="filter-control"><option value="ALL">All BUs</option></select>
+                </div>
+                <div class="chart-canvas-box"><canvas id="ffmTrendChart"></canvas></div>
+            </div>
+            
+            <div class="card">
+                <h3 class="panel-title">ORDER MIX BY BU</h3>
+                <div class="chart-canvas-box"><canvas id="ffmVolumeChart"></canvas></div>
+            </div>
+
+            <div class="card col-full">
+                <div class="card-head-bar">
+                    <h3 class="panel-title m-0" id="utilization-title">VOLUME UTILIZATION BY OWNER</h3>
+                    <button onclick="toggleCapSetup()" class="btn-secondary">⚙️ Set Cap</button>
+                </div>
+                
+                <div id="cap-setup-panel" class="settings-box mb-20 mt-10" style="display:none;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                        <span class="font-bold text-sm">เลือกวันที่แก้ไข:</span>
+                        <input type="date" id="cap-target-date" class="filter-control" onchange="fetchAndRenderCapInputs()">
+                    </div>
+                    <div id="cap-inputs-container" style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;"></div>
+                    <button onclick="saveDailyCapacity()" class="btn-primary">💾 Save Capacity</button>
+                </div>
+                
+                <div class="table-scroll-wrap max-h-300 mt-10">
+                    <table class="data-table" id="utilization-table">
+                        <thead><tr><th>OWNER</th><th class="text-right">VOLUME (PCS)</th><th style="width:35%;">UTILIZATION %</th><th class="text-center">STATUS</th></tr></thead>
+                        <tbody><tr><td colspan="4" class="text-center text-muted">Loading Data...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <section class="card mb-30">
+            <h3 class="panel-title">DAILY FULFILLMENT MATRIX RECORD</h3>
+            <div class="table-scroll-wrap max-h-400 mt-10">
+                <table class="data-table" id="ffm-detail-table">
+                    <thead><tr><th class="text-center text-muted">Loading Matrix...</th></tr></thead>
+                </table>
+            </div>
+        </section>
+
+        <!-- 🌟 2. ACTIVE WORKFORCE 🌟 -->
+        <div class="section-title-wrap mt-40">
+            <h2 class="section-heading">2. Active Workforce Details <span class="tag-source gray">SHEET</span></h2>
+        </div>
+        
+        <section class="grid-2-col mb-30">
+            <div class="card">
+                <div class="card-head-bar">
+                    <h3 class="panel-title m-0">WORKFORCE HEADCOUNT TREND</h3>
+                    <select id="trend-role-filter" class="filter-control"><option value="All">All Ops</option></select>
+                </div>
+                <div class="chart-canvas-box"><canvas id="workforceChart"></canvas></div>
+            </div>
+            
+            <div class="card" style="overflow: hidden;">
+                <h3 class="panel-title">WORKFORCE MATRIX (AFFILIATION & ROLE)</h3>
+                <div class="table-scroll-wrap max-h-300 mt-10 mb-20">
+                    <table class="data-table" id="wf-matrix-table">
+                        <thead><tr><th class="text-center text-muted">Loading Matrix Data...</th></tr></thead>
+                    </table>
+                </div>
+                <div id="wf-foreign-detail"></div>
+            </div>
+        </section>
+
+        <section class="card mb-30">
+            <div class="card-head-bar mb-20">
+                <h3 class="panel-title m-0">DAILY ATTENDANCE RECORD</h3>
+                <div style="display: flex; gap: 20px; align-items: center;">
+                    <div class="text-center"><div class="text-muted text-xs font-bold">🇹🇭 พนักงานไทย</div><div class="text-green font-bold text-lg" id="wf-thai">0</div></div>
+                    <div style="width: 1px; height: 30px; background: var(--border-color);"></div>
+                    <div class="text-center"><div class="text-muted text-xs font-bold">🌐 ต่างชาติ</div><div class="text-blue font-bold text-lg" id="wf-foreign">0</div></div>
+                </div>
+            </div>
+            <div class="table-scroll-wrap max-h-400">
+                <table class="data-table excel-grid" id="attendance-table">
+                    <thead id="daily-attendance-head"><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
+                    <tbody id="daily-attendance-body"><tr><td class="text-center text-muted">Loading data...</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="grid-2-col mb-30">
+            <div class="card" style="overflow: hidden;">
+                <h3 class="panel-title">ALL STAFF SUMMARY (BY HC TYPE)</h3>
+                <div class="table-scroll-wrap max-h-300 mt-10">
+                    <table class="data-table" id="hc-summary-table">
+                        <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+            <div class="card" style="overflow: hidden;">
+                <h3 class="panel-title text-red">RESIGNED STAFF (STATUS: L)</h3>
+                <div class="table-scroll-wrap max-h-300 mt-10">
+                    <table class="data-table" id="resigned-table">
+                        <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 🌟 3. ON-TIME DELIVERY 🌟 -->
+        <div class="section-title-wrap mt-40">
+            <h2 class="section-heading">3. On-Time Delivery Details</h2>
+        </div>
+        <section class="grid-2-col mb-30">
+            <div class="card">
+                <div class="card-head-bar">
+                    <h3 class="panel-title m-0">ON-TIME TREND</h3>
+                    <div style="display:flex; gap:10px;">
+                        <select id="ontime-period-filter" class="filter-control"><option value="Daily">Daily</option><option value="Monthly">Monthly</option></select>
+                        <div id="ontime-aff-ms"></div>
+                    </div>
+                </div>
+                <div id="ontime-summary-box" class="info-alert alert-green">💡 กำลังวิเคราะห์ข้อมูล...</div>
+                <div class="chart-canvas-box"><canvas id="ontimeChart2"></canvas></div>
+            </div>
+            <div class="card" style="overflow: hidden;">
+                <h3 class="panel-title">DAILY ON-TIME RECORD</h3>
+                <div class="table-scroll-wrap max-h-300 mt-10">
+                    <table class="data-table" id="ontime-detail-table">
+                        <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 🌟 4. CLAIMS 🌟 -->
+        <div class="section-title-wrap mt-40">
+            <h2 class="section-heading">4. Claim Details</h2>
+        </div>
+        <section class="grid-2-col mb-30">
+            <div class="card">
+                <div class="card-head-bar">
+                    <h3 class="panel-title m-0">CLAIM TREND</h3>
+                    <div style="display:flex; gap:10px;">
+                        <div id="claim-bu-ms"></div>
+                        <select id="claim-period-filter" class="filter-control"><option value="Monthly">Monthly</option><option value="Daily">Daily</option></select>
+                    </div>
+                </div>
+                <div id="claim-summary-box" class="info-alert alert-red">💡 กำลังวิเคราะห์ข้อมูลเคลม...</div>
+                <div class="chart-canvas-box"><canvas id="claimChart2"></canvas></div>
+            </div>
+            <div class="card" style="overflow: hidden;">
+                <h3 class="panel-title">CLAIM RECORD</h3>
+                <div class="table-scroll-wrap max-h-300 mt-10">
+                    <table class="data-table" id="claim-detail-table">
+                        <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 🌟 5. INVENTORY ACCURACY 🌟 -->
+        <div class="section-title-wrap mt-40">
+            <h2 class="section-heading">5. Inventory Accuracy Details</h2>
+        </div>
+        <section class="grid-2-col mb-20">
+            <div class="card">
+                <div class="card-head-bar">
+                    <h3 class="panel-title m-0">INVENTORY ACCURACY TREND</h3>
+                    <div style="display:flex; gap:10px;">
+                        <select id="inv-bu-filter" class="filter-control"><option value="ALL">All BUs</option></select>
+                        <div id="inv-loctype-ms"></div>
+                    </div>
+                </div>
+                <div class="chart-canvas-box" style="height: 300px;"><canvas id="inventoryChart"></canvas></div>
+            </div>
+            <div class="card" style="overflow: hidden;">
+                <h3 class="panel-title">MONTHLY ACCURACY RECORD BY BU</h3>
+                <div class="table-scroll-wrap max-h-300 mt-10">
+                    <table class="data-table" id="inv-detail-table">
+                        <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="card mb-20">
+            <h3 class="panel-title">STOCK ACCURACY SUMMARY</h3>
+            <div id="inv-summary-box" class="text-sm mt-10">💡 กำลังสรุปข้อมูล...</div>
+        </section>
+
+        <section class="card mb-30" style="overflow:visible;">
+            <div class="card-head-bar">
+                <h3 class="panel-title m-0">LOCATION ACCURACY & ANALYSIS</h3>
+                <div style="display: flex; gap: 10px; flex-wrap:wrap;">
+                    <div id="loc-bu-select" class="filter-control select-dropdown" style="width:110px;"><span id="loc-bu-text">BU: All</span></div>
+                    <div id="loc-bu-menu" class="dropdown-card"><label class="dropdown-item"><input type="checkbox" id="loc-bu-all" checked> All BUs</label><div class="dropdown-divider"></div><div id="loc-bu-list" class="checkbox-container"></div><button id="loc-bu-apply" class="btn-apply mt-10">Apply</button></div>
+                    
+                    <div id="loc-type-select" class="filter-control select-dropdown" style="width:110px;"><span id="loc-type-text">Type: All</span></div>
+                    <div id="loc-type-menu" class="dropdown-card"><label class="dropdown-item"><input type="checkbox" id="loc-type-all" checked> All Types</label><div class="dropdown-divider"></div><div id="loc-type-list" class="checkbox-container"></div><button id="loc-type-apply" class="btn-apply mt-10">Apply</button></div>
+                    
+                    <div id="loc-zone-select" class="filter-control select-dropdown" style="width:110px;"><span id="loc-zone-text">Zone: All</span></div>
+                    <div id="loc-zone-menu" class="dropdown-card"><label class="dropdown-item"><input type="checkbox" id="loc-zone-all" checked> All Zones</label><div class="dropdown-divider"></div><div id="loc-zone-list" class="checkbox-container"></div><button id="loc-zone-apply" class="btn-apply mt-10">Apply</button></div>
+                </div>
+            </div>
+            <div id="loc-analysis-box" class="info-alert alert-blue mb-20 mt-10">💡 กำลังวิเคราะห์ข้อมูล Location...</div>
+            <div class="table-scroll-wrap max-h-300">
+                <table class="data-table" id="loc-accuracy-table">
+                    <thead><tr><th class="text-center text-muted">Loading Location Data...</th></tr></thead>
+                </table>
+            </div>
+        </section>
+
+        <!-- 🌟 6. PRODUCTIVITY 🌟 -->
+        <div class="section-title-wrap mt-40">
+            <h2 class="section-heading">6. Productivity Details</h2>
+        </div>
+        
+        <section class="card mb-20 settings-box">
+            <div class="uph-config-row">
+                <div style="display:flex; align-items:center; gap:15px; flex-wrap:wrap;">
+                    <div class="text-purple font-bold text-sm">🎯 UPH TARGET:</div>
+                    <div style="display: flex; gap: 10px;">
+                        <div><label class="text-xs text-muted font-bold">Overall</label><br><input type="number" id="trg-all" class="filter-control" style="width:75px;"></div>
+                        <div><label class="text-xs text-muted font-bold">Full</label><br><input type="number" id="trg-full" class="filter-control" style="width:75px;"></div>
+                        <div><label class="text-xs text-muted font-bold">Half</label><br><input type="number" id="trg-half" class="filter-control" style="width:75px;"></div>
+                        <div><label class="text-xs text-muted font-bold">EA</label><br><input type="number" id="trg-ea" class="filter-control" style="width:75px;"></div>
+                    </div>
+                </div>
+                
+                <div style="display:flex; align-items:center; gap:15px; flex-wrap:wrap; border-left:1px solid var(--border-color); padding-left:20px;" class="border-left-mobile">
+                    <div class="text-orange font-bold text-sm">💰 COST BASE:</div>
+                    <div style="display: flex; gap: 10px;">
+                        <div><label class="text-xs text-muted font-bold">Salary (฿)</label><br><input type="number" id="cost-salary" class="filter-control" style="width:90px;"></div>
+                        <div><label class="text-xs text-muted font-bold">Days</label><br><input type="number" id="cost-days" class="filter-control" style="width:70px;"></div>
+                    </div>
+                </div>
+
+                <div style="display:flex; align-items:flex-end; gap:15px; border-left:1px solid var(--border-color); padding-left:20px;" class="border-left-mobile">
+                    <div><label class="text-xs text-muted font-bold">📅 วันที่มีผล</label><br><input type="date" id="uph-target-date" class="filter-control" onchange="applyUphCostInputs(this.value)"></div>
+                    <button onclick="saveTargets()" class="btn-primary">💾 Save</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid-2-col mb-30">
+            <div class="card">
+                <div class="card-head-bar">
+                    <h3 class="panel-title m-0">UPH HEAT TREND</h3>
+                    <div style="display:flex; gap:10px;">
+                        <select id="prod-area-filter" class="filter-control"><option value="ALL">All Areas</option></select>
+                        <select id="prod-period-filter" class="filter-control"><option value="Daily">Daily</option><option value="Monthly">Monthly</option></select>
+                    </div>
+                </div>
+                <div id="prod-summary-box" class="info-alert alert-green mb-20 mt-10">💡 กำลังวิเคราะห์...</div>
+                <div class="chart-canvas-box"><canvas id="productivityChart"></canvas></div>
+            </div>
+            <div class="card" style="overflow: hidden;">
+                <h3 class="panel-title" id="prod-area-title">PERFORMANCE BY AREA</h3>
+                <div class="table-scroll-wrap max-h-300 mt-10">
+                    <table class="data-table" id="prod-area-table">
+                        <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid-2-col mb-50">
+            <div class="card" style="overflow: hidden;">
+                <h3 class="panel-title" id="prod-user-title">PRODUCTIVITY BY USER</h3>
+                <div class="table-scroll-wrap max-h-400 mt-10">
+                    <table class="data-table" id="prod-user-table">
+                        <thead><tr><th class="text-center text-muted">Loading User Data...</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+            <div class="card" style="overflow: hidden;">
+                <h3 class="panel-title">DAILY OVERALL SUMMARY</h3>
+                <div class="table-scroll-wrap max-h-400 mt-10">
+                    <table class="data-table" id="prod-overall-table">
+                        <thead><tr><th class="text-center text-muted">Loading Daily Summary...</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="custom-toast" class="toast-popup">
         <span id="toast-message">Ready!</span>
     </div>
 
