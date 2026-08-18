@@ -18,18 +18,33 @@
     --shadow-card: 0px 10px 30px rgba(0, 0, 0, 0.3);
 }
 
-body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color: var(--text-main); margin: 0; padding: 0;}
-.mb-20 { margin-bottom: 20px; } .mb-30 { margin-bottom: 30px; } .mt-10 { margin-top: 10px; } .mt-20 { margin-top: 20px; } .mt-40 { margin-top: 40px; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color: var(--text-main); margin: 0; padding: 0; overflow-x: hidden; }
+
+.mb-20 { margin-bottom: 20px; } 
+.mb-30 { margin-bottom: 30px; } 
+.mt-10 { margin-top: 10px; } 
+.mt-20 { margin-top: 20px; } 
+.mt-40 { margin-top: 40px; }
 .p-24 { padding: 24px; }
-.text-center { text-align: center; } .text-right { text-align: right; }
+.text-center { text-align: center; } 
+.text-right { text-align: right; }
+.font-bold { font-weight: 700; }
 .text-muted { color: var(--text-muted); }
+
+/* Layout */
+.main-content { padding: 30px 40px; width: 100%; max-width: 1600px; margin: 0 auto; box-sizing: border-box; }
+.top-controls { display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+.welcome-banner { background: var(--bg-card); padding: 20px 30px; border-radius: 16px; margin-bottom: 25px; box-shadow: var(--shadow-card); }
 
 /* Buttons & Inputs */
 .btn-primary { background: #114EE8; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
 .btn-primary:hover { background: #0b3bc1; }
 .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); padding: 6px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; }
-.btn-theme { background: var(--bg-card); color: var(--text-main); border: none; padding: 8px 16px; border-radius: 20px; box-shadow: var(--shadow-card); font-weight: 600; cursor: pointer; }
-.select-filter { border: 1px solid var(--border-color); background: var(--bg-body); color: var(--text-main); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; font-family: inherit; outline: none; }
+.btn-theme { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; box-shadow: var(--shadow-card); font-weight: 600; cursor: pointer; }
+.select-filter, .slicer-input { border: 1px solid var(--border-color); background: var(--bg-body); color: var(--text-main); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; font-family: inherit; outline: none; }
+.slicer-group { display: flex; align-items: center; background: var(--bg-card); padding: 8px 16px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow-card); }
+.slicer-label { font-size: 0.8rem; color: var(--text-muted); margin-right: 8px; font-weight: 600; }
 
 /* Dashboard Cards (Base) */
 .card { background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-card); transition: 0.2s; border: none; }
@@ -39,8 +54,9 @@ body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color
 
 /* Sections */
 .section-divider { height: 1px; background: var(--border-color); margin: 40px 0; }
-.section-title { font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 10px; }
-.section-desc { font-size: 0.9rem; color: var(--text-muted); margin: 5px 0 0 0; }
+.section-title { font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 0 0 5px 0; display: flex; align-items: center; gap: 10px; }
+.section-desc { font-size: 0.9rem; color: var(--text-muted); margin: 0; }
+.source-badge { display: inline-flex; align-items: center; font-size: 0.65rem; background: rgba(59, 130, 246, 0.1); color: #3B82F6; padding: 4px 10px; border-radius: 8px; font-weight: 700; margin-left: 12px; border: 1px solid rgba(59, 130, 246, 0.2); text-transform: uppercase; }
 
 /* =========================================
    🌟 CSS FOR GRADIENT CARDS
@@ -103,11 +119,16 @@ body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color
 .max-h-300 { max-height: 300px; overflow-y: auto; }
 .max-h-400 { max-height: 400px; overflow-y: auto; }
 .matrix-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.85rem; text-align: left; white-space: nowrap; }
-.matrix-table th { background: #F8FAFC; color: #64748B; font-weight: 700; text-transform: uppercase; padding: 14px 16px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 10; font-size: 0.75rem;}
+.matrix-table th { background: #F8FAFC; color: #64748B; font-weight: 700; text-transform: uppercase; padding: 14px 16px; border-bottom: 2px solid var(--border-color); position: sticky; top: 0; z-index: 10; font-size: 0.75rem;}
 [data-theme="dark"] .matrix-table th { background: #1E293B; color: #94A3B8; }
-.matrix-table td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
+.matrix-table td { padding: 12px 16px; border-bottom: 1px dashed var(--border-color); color: var(--text-main); }
 .matrix-table tbody tr:hover td { background: rgba(0,0,0,0.02); }
 [data-theme="dark"] .matrix-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
+
+.excel-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.85rem; text-align: right; }
+.excel-table th { background: #F8FAFC; color: #64748B; font-weight: 700; text-transform: uppercase; padding: 12px 10px; border-bottom: 2px solid var(--border-color); position: sticky; top: 0; z-index: 10; text-align: center; font-size: 0.75rem;}
+.excel-table td { padding: 12px 10px; border-bottom: 1px dashed var(--border-color); color: var(--text-main); }
+.excel-table .team-divider { border-left: 1px solid var(--border-color); }
 
 /* Setup Panels & Info Boxes */
 .setup-panel { background: var(--bg-body); padding: 15px; border-radius: 12px; border: 1px dashed var(--border-color); }
@@ -117,7 +138,7 @@ body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color
 /* Custom Dropdowns */
 .dropdown-trigger { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
 .dropdown-menu { display: none; position: absolute; top: 100%; right: 0; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-card); z-index: 999; padding: 15px; min-width: 180px; margin-top: 5px; max-height: 250px; overflow-y: auto; }
-.dropdown-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; padding: 4px 0; }
+.dropdown-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; padding: 4px 0; color: var(--text-main); }
 .divider { height: 1px; background: var(--border-color); margin: 8px 0; }
 
 .charts-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; }
@@ -127,7 +148,7 @@ body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color
 .toast-notification.show { opacity: 1; transform: translateY(0); }
 
 /* =========================================
-   📱 MOBILE RESPONSIVENESS (ทำมุมมองมือถือ)
+   📱 MOBILE RESPONSIVENESS
 ========================================= */
 @media (max-width: 1024px) {
     .charts-grid-2 { grid-template-columns: 1fr; }
@@ -135,8 +156,7 @@ body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color
 }
 
 @media (max-width: 768px) {
-    .main-content { padding: 15px; max-width: 100%; }
-    
+    .main-content { padding: 15px; }
     .top-controls { flex-direction: column; align-items: stretch; gap: 10px; }
     .slicer-group { width: 100%; justify-content: space-between; }
     .btn-theme { width: 100%; }
@@ -144,9 +164,7 @@ body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color
     .welcome-banner { flex-direction: column; text-align: center; gap: 10px; padding: 20px; }
     .welcome-banner h2 { font-size: 1.8rem; }
     
-    .kpi-grid, .wave-kpi-grid { grid-template-columns: 1fr; }
-    .stage-grid { grid-template-columns: 1fr; }
-    .charts-grid-2 { grid-template-columns: 1fr; }
+    .kpi-grid, .wave-kpi-grid, .stage-grid { grid-template-columns: 1fr; }
     
     .kpi-card { min-height: auto; }
     .card-header-flex { flex-direction: column; align-items: flex-start; }
