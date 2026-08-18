@@ -8,48 +8,36 @@ function showToast(message, type = 'success', duration = 3000) {
     const msgEl = document.getElementById('toast-message');
     if (!toast || !msgEl) return;
     msgEl.innerText = message;
-    const colors = { success: '#10B981', error: '#EF4444', info: '#F59E0B' };
+    const colors = { success: '#22C55E', error: '#EF4444', info: '#F59E0B' };
     toast.style.background = colors[type] || colors.success;
     toast.classList.add('show');
     if (_toastTimer) clearTimeout(_toastTimer);
     if (duration > 0) _toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
 }
 
-// Helper: สร้าง Gradient สำหรับกราฟ
-function getGradient(ctx, chartArea, colorStart, colorEnd) {
-    if (!chartArea) return colorStart;
-    let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-    gradient.addColorStop(0, colorStart);
-    gradient.addColorStop(1, colorEnd);
-    return gradient;
+// Helper: สำหรับการสร้างสี (ไม่ใช้ Gradient ตามสไตล์ Flat Design)
+function getSolidColor(index) {
+    const colors = ['#3B82F6', '#22C55E', '#F59E0B', '#A855F7', '#EF4444', '#06B6D4'];
+    return colors[index % colors.length];
 }
 
-const gradPalettes = [
-    { s: '#60A5FA', e: '#3B82F6' }, // Blue
-    { s: '#34D399', e: '#10B981' }, // Green
-    { s: '#FCD34D', e: '#F59E0B' }, // Yellow
-    { s: '#A78BFA', e: '#8B5CF6' }, // Purple
-    { s: '#F87171', e: '#EF4444' }, // Red
-    { s: '#22D3EE', e: '#06B6D4' }  // Teal
-];
-
+// Chart.js Clean Defaults (ลดเส้น Grid)
 Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.color = '#64748B';
 Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
 Chart.defaults.plugins.tooltip.titleFont = { size: 12, family: 'Inter', weight: 'bold' };
-Chart.defaults.plugins.tooltip.padding = 8;
+Chart.defaults.plugins.tooltip.padding = 10;
 Chart.defaults.plugins.tooltip.cornerRadius = 6;
+Chart.defaults.elements.bar.borderWidth = 0; // ไม่มีเส้นขอบ
+Chart.defaults.elements.line.tension = 0.4; // เส้นโค้งสมูทเหมือนเรฟ
+Chart.defaults.elements.point.radius = 4;
 
-const fmtN = (v) => (v || 0).toLocaleString();
-
-// 🟢 [FIX] Plugin วาดตัวเลขบนกราฟ: วาดเฉพาะยอดรวมบนสุดสำหรับแท่งซ้อน (Stacked) และซ่อนเลขในแท่งที่เตี้ยเกิน 20px
 const dataLabelPlugin = {
     id: 'dataLabelPlugin',
     afterDatasetsDraw(chart) {
         if(chart.config.type !== 'bar' || chart.canvas.id === 'productivityChart') return;
         const { ctx } = chart;
         
-        // วาดตัวเลขบนแท่งเดี่ยว
         chart.data.datasets.forEach((dataset, i) => {
             if (dataset.type === 'line' || !chart.isDatasetVisible(i) || dataset.stack) return;
             const meta = chart.getDatasetMeta(i);
@@ -59,12 +47,11 @@ const dataLabelPlugin = {
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
                     ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
                     let val = (chart.canvas.id.includes('claim')) ? fmtN(data) : (data%1!==0 ? data.toFixed(1)+'%' : fmtN(data));
-                    ctx.fillText(val, bar.x, bar.y - 4);
+                    ctx.fillText(val, bar.x, bar.y - 6);
                 }
             });
         });
         
-        // สำหรับ Stacked Bar (วาดเฉพาะผลรวมยอดบนสุด ไม่ซ้อนกัน)
         if (chart.canvas.id === 'ffmTrendChart' || chart.canvas.id === 'workforceChart') {
             let totals = []; let xCoords = []; let topY = [];
             chart.data.datasets.forEach((dataset, i) => {
@@ -82,7 +69,7 @@ const dataLabelPlugin = {
                 if (totals[index] > 0 && xCoords[index] && topY[index]) {
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
                     ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-                    ctx.fillText(fmtN(Math.round(totals[index])), xCoords[index], topY[index] - 4);
+                    ctx.fillText(fmtN(Math.round(totals[index])), xCoords[index], topY[index] - 6);
                 }
             });
         }
@@ -104,7 +91,7 @@ const lineDataLabelPlugin = {
                 if(data !== null && data !== undefined && data !== 0 && data !== "0.00"){
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
                     ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = i === 0 ? 'bottom' : 'top'; 
-                    let yOffset = i === 0 ? -6 : 6;
+                    let yOffset = i === 0 ? -8 : 8;
                     ctx.fillText(Number(data).toFixed(1) + '%', point.x, point.y + yOffset);
                 }
             });
@@ -112,37 +99,39 @@ const lineDataLabelPlugin = {
     }
 };
 
+const fmtN = (v) => (v || 0).toLocaleString();
+
 // ==========================================
 // 🌟 INITIALIZE CHART INSTANCES
 // ==========================================
 let ffmTrendChartInstance = new Chart(document.getElementById('ffmTrendChart'), { 
     type: 'bar', data: { labels: [], datasets: [] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grace: '15%' } } }, plugins: [dataLabelPlugin] 
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grid: { borderDash: [4, 4] }, grace: '15%' } } }, plugins: [dataLabelPlugin] 
 });
 
 let ffmVolumeChartInstance = new Chart(document.getElementById('ffmVolumeChart'), { 
     type: 'doughnut', data: { labels: [], datasets: [] }, 
-    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels:{usePointStyle:true, boxWidth:8} } } } 
+    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels:{usePointStyle:true, boxWidth:8} } } } 
 });
 
 let workforceChartInstance = new Chart(document.getElementById('workforceChart'), { 
     type: 'bar', data: { labels: [], datasets: [] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grace: '15%' } } }, plugins: [dataLabelPlugin] 
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grid: { borderDash: [4, 4] }, grace: '15%' } } }, plugins: [dataLabelPlugin] 
 });
 
 let ontimeChartInstance = new Chart(document.getElementById('ontimeChart2'), { 
     type: 'line', data: { labels: [], datasets: [] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, max: 105 } } }, plugins: [lineDataLabelPlugin]
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { borderDash: [4, 4] }, max: 105 } } }, plugins: [lineDataLabelPlugin]
 });
 
 let claimChart2Instance = new Chart(document.getElementById('claimChart2'), { 
-    type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#F87171', borderRadius: 4, yAxisID: 'y' }, { label: 'จำนวนชิ้น', data: [], type: 'line', yAxisID: 'y1', pointRadius: 4, borderWidth: 2, borderColor: '#60A5FA', backgroundColor: '#60A5FA' } ] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: {grid:{display:false}}, y: {position: 'left', grace: '15%', border:{display:false}}, y1: {position: 'right', display:false} } }, plugins: [dataLabelPlugin] 
+    type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#EF4444', borderRadius: 4, yAxisID: 'y' }, { label: 'จำนวนชิ้น', data: [], type: 'line', yAxisID: 'y1', pointRadius: 4, borderWidth: 2, borderColor: '#3B82F6', backgroundColor: '#3B82F6' } ] }, 
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: {grid:{display:false}}, y: {position: 'left', grace: '15%', border:{display:false}, grid: { borderDash: [4, 4] }}, y1: {position: 'right', display:false} } }, plugins: [dataLabelPlugin] 
 });
 
 let inventoryChartInstance = new Chart(document.getElementById('inventoryChart'), { 
     type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], fill: true }] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grace: '5%' } } }, plugins: [lineDataLabelPlugin]
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { borderDash: [4, 4] }, grace: '5%' } } }, plugins: [lineDataLabelPlugin]
 });
 
 let productivityChartInstance = new Chart(document.getElementById('productivityChart'), { 
@@ -150,9 +139,8 @@ let productivityChartInstance = new Chart(document.getElementById('productivityC
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, stacked: false }, y: { display: false, grace: '25%' } } } 
 });
 
-
 // ==========================================
-// DATA FETCHING & PROCESSING (Logic สมบูรณ์ 100%)
+// DATA FETCHING & PROCESSING 
 // ==========================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxB0bNU1P9qrG_6aHoeiKyHMXT0_k76VlL0aq1I9xxHVpPDQK9qcd3FJMip4Jk9o6RY/exec';
 let globalData = { workforce:{}, fulfillment:{}, wave_ops:{}, ontime:{}, ontime_hub:{}, ontime_by_aff:{}, claims:{}, inventory:{}, inventory_daily:{}, transport:{}, productivity:{}, prod_area:{}, prod_zone:{}, prod_users_map:{} };
@@ -176,6 +164,11 @@ const standardizeBU = (bu) => {
     if (b.includes('LUBE')) return '1115';
     return b;
 };
+
+// ปุ่ม Refresh UI
+document.getElementById('btn-refresh')?.addEventListener('click', () => {
+    initDashboard();
+});
 
 document.getElementById('theme-toggle').addEventListener('click', () => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -402,6 +395,7 @@ async function initDashboard() {
     await initFulfillmentRealtime();
     refreshAllSections();
     document.getElementById('global-loader').style.display = 'none';
+    showToast("ข้อมูลรีเฟรชสำเร็จ!");
 }
 
 function refreshAllSections() {
@@ -700,7 +694,6 @@ async function initFulfillmentRealtime() {
         let chartBUsArray = ffmBuFilterVal === 'ALL' ? allBUsArray : [ffmBuFilterVal];
 
         try {
-            // 🌟 กราฟแท่ง FFM แบบมี Gradient
             if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance && validChartDates.length > 0) {
                 let tpLabels = validChartDates.map(dStr => {
                     let parts = dStr.split('-');
@@ -712,12 +705,7 @@ async function initFulfillmentRealtime() {
                     return {
                         label: bu,
                         data: validChartDates.map(dStr => parseFloat(chartDataMap[dStr]?.buReq?.[bu] || 0)), 
-                        backgroundColor: (context) => {
-                            const chart = context.chart;
-                            const {ctx, chartArea} = chart;
-                            if (!chartArea) return gradPalettes[colorIndex % 6].s;
-                            return getGradient(ctx, chartArea, gradPalettes[colorIndex % 6].s, gradPalettes[colorIndex % 6].e);
-                        },
+                        backgroundColor: getSolidColor(colorIndex), // ใช้สี Solid
                         borderRadius: 4
                     };
                 });
@@ -738,7 +726,6 @@ async function initFulfillmentRealtime() {
                 ffmTrendChartInstance.update();
             }
 
-            // 🌟 กราฟโดนัท FFM สี Gradient
             if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
                 let targetD = validChartDates[validChartDates.length - 1]; 
                 
@@ -759,12 +746,7 @@ async function initFulfillmentRealtime() {
                 ffmVolumeChartInstance.data.labels = mixLabels;
                 ffmVolumeChartInstance.data.datasets = [{
                     data: mixData,
-                    backgroundColor: (context) => {
-                        const chart = context.chart;
-                        const {ctx, chartArea} = chart;
-                        if (!chartArea) return mixLabels.map((_, i) => gradPalettes[i % 6].s);
-                        return mixLabels.map((_, i) => getGradient(ctx, chartArea, gradPalettes[i % 6].s, gradPalettes[i % 6].e));
-                    },
+                    backgroundColor: mixLabels.map((_, i) => getSolidColor(i)), // สี Solid
                     borderWidth: 0
                 }];
                 ffmVolumeChartInstance.update();
@@ -815,13 +797,13 @@ async function initFulfillmentRealtime() {
                         <td>
                             <div style="display:flex; align-items:center; gap:12px;">
                                 <span class="font-bold text-xs" style="width:40px; text-align:right;">${utilDisp}%</span>
-                                <div style="flex:1; background:var(--border-color); border-radius:10px; height:8px; overflow:hidden;">
-                                    <div style="width:${barWidth}%; background:${statusObj.barColor}; height:100%; border-radius:10px;"></div>
+                                <div style="flex:1; background:var(--border-color); border-radius:4px; height:8px; overflow:hidden;">
+                                    <div style="width:${barWidth}%; background:${statusObj.barColor}; height:100%; border-radius:4px;"></div>
                                 </div>
                             </div>
                         </td>
                         <td class="text-center">
-                            <span style="padding:4px 10px; border-radius:12px; font-size:11px; font-weight:800; display:inline-block; width:85px; background:${statusObj.bg}; color:${statusObj.color};">${statusObj.text}</span>
+                            <span style="padding:4px 10px; border-radius:12px; font-size:11px; font-weight:700; display:inline-block; width:85px; background:${statusObj.bg}; color:${statusObj.color};">${statusObj.text}</span>
                         </td>
                     </tr>`;
                 });
@@ -887,15 +869,14 @@ async function initFulfillmentRealtime() {
             if (trendEl) {
                 let prevDateText = yesterdayKeyStr ? formatShortDate(yesterdayKeyStr) : "วันก่อนหน้า";
                 if (totalOrdersYesterday === 0 && totalOrdersToday === 0) {
-                    trendEl.innerText = "-"; if(trendTextEl) trendTextEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
+                    trendEl.innerText = "- ไม่มีข้อมูลเทียบ";
                 } else if (totalOrdersYesterday === 0) {
-                    trendEl.innerText = "↗ 100%"; if(trendTextEl) trendTextEl.innerText = `vs ${prevDateText}`;
+                    trendEl.innerText = `↗ 100% vs ${prevDateText}`;
                 } else {
                     let pctDiff = ((totalOrdersToday - totalOrdersYesterday) / totalOrdersYesterday) * 100;
-                    if (pctDiff > 0) { trendEl.innerText = `↗ +${pctDiff.toFixed(1)}%`; } 
-                    else if (pctDiff < 0) { trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(1)}%`; } 
-                    else { trendEl.innerText = `0%`; }
-                    if(trendTextEl) { trendTextEl.innerText = `vs ${prevDateText}`; }
+                    if (pctDiff > 0) { trendEl.innerText = `↗ +${pctDiff.toFixed(1)}% vs ${prevDateText}`; } 
+                    else if (pctDiff < 0) { trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(1)}% vs ${prevDateText}`; } 
+                    else { trendEl.innerText = `0% vs ${prevDateText}`; }
                 }
             }
             let updateSpan = document.getElementById('ffm-orders-update');
@@ -924,17 +905,17 @@ async function initFulfillmentRealtime() {
                         if (ordTotal === 0) { tr += `<td class="text-center text-muted">-</td>`; } 
                         else {
                             let color = (ordFull === ordTotal) ? 'var(--brand-green)' : (ordFull > 0 ? 'var(--brand-yellow)' : 'var(--brand-red)');
-                            tr += `<td class="text-center"><span style="color:${color}; font-weight:800;">${fmtN(ordFull)}</span> <span class="text-xs text-muted">/ ${fmtN(ordTotal)}</span></td>`;
+                            tr += `<td class="text-center"><span style="color:${color}; font-weight:700;">${fmtN(ordFull)}</span> <span class="text-xs text-muted">/ ${fmtN(ordTotal)}</span></td>`;
                         }
                     });
                     
                     let grandColor = (dayComp === dayTot && dayTot > 0) ? 'var(--brand-green)' : (dayComp > 0 ? 'var(--brand-yellow)' : 'var(--brand-red)');
-                    tr += `<td class="text-center"><span style="color:${grandColor}; font-weight:800;">${fmtN(dayComp)}</span> <span class="text-xs text-muted">/ ${fmtN(dayTot)}</span></td>`;
+                    tr += `<td class="text-center"><span style="color:${grandColor}; font-weight:700;">${fmtN(dayComp)}</span> <span class="text-xs text-muted">/ ${fmtN(dayTot)}</span></td>`;
                     
                     let pct = dayTot > 0 ? Math.min(100, (dayComp / dayTot) * 100).toFixed(1) : 0;
                     let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
                     let pctColor = pct >= 100 ? '#166534' : (pct > 0 ? '#92400e' : '#991b1b');
-                    tr += `<td class="text-center"><span style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:600;">${pct}%</span></td></tr>`;
+                    tr += `<td class="text-center"><span style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:600;">${pct}%</span></td></tr>`;
                     tbody += tr;
                 });
                 waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
@@ -960,26 +941,23 @@ async function initFulfillmentRealtime() {
                 rateValEl.innerText = `${currentFfm.toFixed(1)}%`;
                 if (rateEtaEl) rateEtaEl.innerText = `DC SLA: ${currentEtaFfm.toFixed(1)}%`;
 
-                const rateTrendEl = document.getElementById('ffm-rate-trend'), etaTrendEl = document.getElementById('eta-rate-trend'), rateNoteEl = document.getElementById('ffm-rate-note');
-                if (rateNoteEl) {
+                const rateTrendEl = document.getElementById('ffm-rate-trend'), etaTrendEl = document.getElementById('eta-rate-trend');
+                if (rateTrendEl) {
                     if (!prevShipDateStr) {
-                        if (rateTrendEl) rateTrendEl.innerText = "-";
+                        rateTrendEl.innerText = "- ไม่มีข้อมูลเทียบ";
                         if (etaTrendEl) etaTrendEl.innerText = "-";
-                        rateNoteEl.innerText = "ไม่มีข้อมูลเปรียบเทียบ";
                     } else {
-                        if (rateTrendEl) {
-                            let diffFfm = currentFfm - prevFfm;
-                            if (diffFfm > 0) rateTrendEl.innerText = `↗ +${diffFfm.toFixed(1)}%`;
-                            else if (diffFfm < 0) rateTrendEl.innerText = `↘ ${Math.abs(diffFfm).toFixed(1)}%`;
-                            else rateTrendEl.innerText = `0%`;
-                        }
+                        let diffFfm = currentFfm - prevFfm;
+                        if (diffFfm > 0) rateTrendEl.innerText = `↗ +${diffFfm.toFixed(1)}% vs ${formatShortDate(prevShipDateStr)}`;
+                        else if (diffFfm < 0) rateTrendEl.innerText = `↘ ${Math.abs(diffFfm).toFixed(1)}% vs ${formatShortDate(prevShipDateStr)}`;
+                        else rateTrendEl.innerText = `0% vs ${formatShortDate(prevShipDateStr)}`;
+                        
                         if (etaTrendEl) {
                             let diffEta = currentEtaFfm - prevEtaFfm;
                             if (diffEta > 0) etaTrendEl.innerText = `↗ +${diffEta.toFixed(1)}%`;
                             else if (diffEta < 0) etaTrendEl.innerText = `↘ ${Math.abs(diffEta).toFixed(1)}%`;
                             else etaTrendEl.innerText = `0%`;
                         }
-                        rateNoteEl.innerText = `vs ${formatShortDate(prevShipDateStr)}`;
                     }
                 }
                 let updateSpan = document.getElementById('ffm-rate-update');
@@ -1168,14 +1146,13 @@ function updateWorkforceUI() {
         document.getElementById('headcount-total').innerText = fmtN(opsTotal);
         
         let trendEl = document.getElementById('headcount-trend');
-        let noteEl = document.getElementById('headcount-note');
-        if (trendEl && noteEl) {
+        if (trendEl) {
             let diff = opsTotal - opsPrev;
-            if (opsTotal === 0 && opsPrev === 0) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูล"; }
-            else if (!prevKey) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
-            else if (diff > 0) { trendEl.innerText = `↗ +${diff}`; noteEl.innerText = `vs prev`; }
-            else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff)}`; noteEl.innerText = `vs prev`; }
-            else { trendEl.innerText = "0"; noteEl.innerText = `vs prev`; }
+            if (opsTotal === 0 && opsPrev === 0) { trendEl.innerText = "- ไม่มีข้อมูล"; }
+            else if (!prevKey) { trendEl.innerText = "- ไม่มีข้อมูลเทียบ"; }
+            else if (diff > 0) { trendEl.innerText = `↗ +${diff} vs prev`; }
+            else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff)} vs prev`; }
+            else { trendEl.innerText = "0 vs prev"; }
         }
         document.getElementById('headcount-update').innerText = `Updated: ${getDisplayDate(tKey)}`;
 
@@ -1203,7 +1180,7 @@ function updateWorkforceUI() {
                 let m = globalData.workforce[k].matrix[aff]; if(!m) return 0;
                 let sum=0; Object.keys(m).forEach(r => Object.values(m[r]).forEach(v => sum+=v)); return sum;
             }),
-            backgroundColor: (ctx) => getGradient(ctx.chart.ctx, ctx.chart.chartArea, gradPalettes[i%6].s, gradPalettes[i%6].e),
+            backgroundColor: getSolidColor(i),
             borderRadius: 4, stack: 'hc'
         }));
 
@@ -1318,7 +1295,7 @@ function updateWorkforceUI() {
                 });
                 let totAbs = totalTrg > totalAct ? totalTrg - totalAct : 0;
                 let totRate = totalTrg === 0 ? '-' : `<span class="${(totalAct/totalTrg*100)<95?'text-red':'text-green'} font-bold">${(totalAct/totalTrg*100).toFixed(1)}%</span>`;
-                hcHtml += `<tr style="background:var(--bg-body); font-weight:700;"><td colspan="2" class="text-right">GRAND TOTAL</td><td class="text-center">${totalTrg}</td><td class="text-center">${totalAct}</td><td class="text-center">${totAbs}</td><td class="text-center">${totRate}</td></tr>`;
+                hcHtml += `<tr style="background:#F9FAFB; font-weight:700;"><td colspan="2" class="text-right">GRAND TOTAL</td><td class="text-center">${totalTrg}</td><td class="text-center">${totalAct}</td><td class="text-center">${totAbs}</td><td class="text-center">${totRate}</td></tr>`;
             }
             document.getElementById('hc-summary-table').innerHTML = hcHtml + `</tbody>`;
         }
@@ -1334,7 +1311,7 @@ function updateWorkforceUI() {
                         <td><b class="text-dark">${emp.name}</b> <span class="text-xs text-muted">(${emp.nickname})</span></td>
                         <td class="text-muted">${emp.lv3}</td>
                         <td class="font-bold">${emp.lv4}</td>
-                        <td class="text-center"><span style="background:var(--border-color); padding:2px 8px; border-radius:12px; font-size:10px;">${emp.bu}</span></td>
+                        <td class="text-center"><span style="background:var(--border-color); padding:4px 8px; border-radius:4px; font-size:11px;">${emp.bu}</span></td>
                         <td class="text-center text-red font-bold">${emp.resignDateStr || '-'}</td>
                     </tr>`;
                 });
@@ -1363,9 +1340,8 @@ function updateOnTimeUI() {
         document.getElementById('ontime-val').innerText = over !== null ? `${over.toFixed(2)}%` : "0.00%";
         
         let trendEl = document.getElementById('ontime-trend');
-        let noteEl = document.getElementById('ontime-note');
-        if (trendEl && noteEl) {
-            if (!prev) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
+        if (trendEl) {
+            if (!prev) { trendEl.innerText = "- ไม่มีข้อมูลเทียบ"; }
             else {
                 let pOver = (prev.ptglg !== null && prev.hub !== null) ? (prev.ptglg+prev.hub)/2 : prev.ptglg;
                 let diff = over - pOver;
@@ -1382,9 +1358,10 @@ function updateOnTimeUI() {
             ontimeChartInstance.data.datasets = [{
                 label: 'On-Time',
                 data: slice.map(i => (i.ptglg !== null && i.hub !== null) ? (i.ptglg+i.hub)/2 : i.ptglg),
-                borderColor: '#10B981',
-                backgroundColor: (context) => getGradient(context.chart.ctx, context.chart.chartArea, 'rgba(16, 185, 129, 0.4)', 'rgba(16, 185, 129, 0.01)'),
-                fill: true, tension: 0.4, pointRadius: 4
+                borderColor: '#EF4444', // สีแดงแบบ Flat
+                backgroundColor: 'transparent',
+                borderWidth: 3,
+                fill: false, tension: 0.4, pointRadius: 4
             }];
             ontimeChartInstance.update();
         }
@@ -1439,9 +1416,8 @@ function updateClaimUI() {
         document.getElementById('claim-val').innerText = fmtN(curr.cost);
         
         let trendEl = document.getElementById('claim-trend');
-        let noteEl = document.getElementById('claim-note');
-        if (trendEl && noteEl) {
-            if (!prev) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
+        if (trendEl) {
+            if (!prev) { trendEl.innerText = "- ไม่มีข้อมูลเทียบ"; }
             else {
                 let diff = curr.cost - prev.cost;
                 if (diff > 0) trendEl.innerText = `↗ +${fmtN(diff)}`;
@@ -1456,7 +1432,6 @@ function updateClaimUI() {
             claimChart2Instance.data.labels = slice.map(i => `${String(i.dateObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i.dateObj.getMonth()]}`);
             claimChart2Instance.data.datasets[0].data = slice.map(i => i.cost);
             claimChart2Instance.data.datasets[1].data = slice.map(i => i.qty);
-            claimChart2Instance.data.datasets[0].backgroundColor = (ctx) => getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#EF4444', '#F87171');
             claimChart2Instance.update();
         }
 
@@ -1509,9 +1484,8 @@ function updateInventoryUI() {
         document.getElementById('inv-val').innerText = curr.pct !== null ? `${curr.pct.toFixed(2)}%` : "-";
         
         let trendEl = document.getElementById('inv-trend');
-        let noteEl = document.getElementById('inv-note');
-        if (trendEl && noteEl) {
-            if (!prev) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
+        if (trendEl) {
+            if (!prev) { trendEl.innerText = "- ไม่มีข้อมูลเทียบ"; }
             else {
                 let diff = curr.pct - prev.pct;
                 if (diff > 0) trendEl.innerText = `↗ +${diff.toFixed(2)} pp`;
@@ -1527,7 +1501,8 @@ function updateInventoryUI() {
                 label: 'Accuracy %',
                 data: parsedData.map(i => i.pct),
                 borderColor: '#06B6D4',
-                backgroundColor: (context) => getGradient(context.chart.ctx, context.chart.chartArea, 'rgba(6, 182, 212, 0.4)', 'rgba(6, 182, 212, 0.01)'),
+                backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                borderWidth: 3,
                 fill: true, tension: 0.4, pointRadius: 4
             };
             inventoryChartInstance.update();
@@ -1592,17 +1567,17 @@ function updateTransportUI() {
 
             let bar = (pct, colorClass) => `
                 <div style="display:flex; align-items:center; gap:12px;">
-                    <div style="flex:1; background:var(--border-color); border-radius:10px; height:6px; overflow:hidden;">
-                        <div class="${colorClass}" style="width:${pct}%; height:100%; border-radius:10px;"></div>
+                    <div style="flex:1; background:var(--border-color); border-radius:4px; height:8px; overflow:hidden;">
+                        <div class="${colorClass}" style="width:${pct}%; height:100%; border-radius:4px;"></div>
                     </div>
                     <span style="font-size:11px; font-weight:700; width:35px; text-align:right; color:var(--text-muted);">${pct.toFixed(1)}%</span>
                 </div>`;
 
             html += `<tr>
-                <td style="font-weight:700; border-right: 1px solid var(--border-color);">${c}</td>
-                <td class="text-center font-bold" style="border-right: 1px solid var(--border-color);">${fmtN(cd.total_orders)}</td>
-                <td style="border-right: 1px solid var(--border-color);">${bar(succPct, 'card-green')}</td>
-                <td style="border-right: 1px solid var(--border-color);">${bar(slaPct, 'card-blue')}</td>
+                <td style="font-weight:700;">${c}</td>
+                <td class="text-center font-bold">${fmtN(cd.total_orders)}</td>
+                <td>${bar(succPct, 'card-green')}</td>
+                <td>${bar(slaPct, 'card-blue')}</td>
                 <td class="text-center text-red font-bold">${fmtN(cd.total_cost)}</td>
             </tr>`;
         });
@@ -1688,7 +1663,7 @@ function renderLocationAccuracy() {
                     <td class="font-bold">${item.zone}</td>
                     <td class="text-center">${fmtN(item.checked)}</td>
                     <td class="text-center font-bold" style="color:${item.wrong>0?'var(--brand-red)':'inherit'};">${fmtN(item.wrong)}</td>
-                    <td class="text-center"><span style="background:${accBg}; color:${accClr}; padding:4px 10px; border-radius:12px; font-weight:700;">${item.acc.toFixed(2)}%</span></td>
+                    <td class="text-center"><span style="background:${accBg}; color:${accClr}; padding:4px 10px; border-radius:4px; font-weight:700;">${item.acc.toFixed(2)}%</span></td>
                 </tr>`;
             });
         }
@@ -1832,7 +1807,7 @@ function renderProductivitySection() {
 
                 dataActual.push(uph); dataBackground.push(barCeiling); dataTarget.push(gt); customPicks.push(picks);
 
-                if (uph >= gt) { bgColorsActual.push('#10B981'); bgColorsBg.push('rgba(16, 185, 129, 0.15)'); }
+                if (uph >= gt) { bgColorsActual.push('#22C55E'); bgColorsBg.push('rgba(34, 197, 94, 0.15)'); }
                 else { bgColorsActual.push('#EF4444'); bgColorsBg.push('rgba(239, 68, 68, 0.15)'); }
             });
 
@@ -1884,7 +1859,7 @@ function renderProductivitySection() {
                     html += `<tr>
                         <td class="font-bold text-dark">${z}</td>
                         <td class="text-center text-muted">${zd.area || '-'}</td>
-                        <td class="text-center"><span style="background:${prod>=trg?'#dcfce7':'#fee2e2'}; color:${prod>=trg?'#166534':'#991b1b'}; padding:4px 10px; border-radius:12px; font-weight:700;">${prod}</span></td>
+                        <td class="text-center"><span style="background:${prod>=trg?'#dcfce7':'#fee2e2'}; color:${prod>=trg?'#166534':'#991b1b'}; padding:4px 10px; border-radius:4px; font-weight:700;">${prod}</span></td>
                         <td class="text-center font-bold" style="color:${gap>=0?'var(--brand-green)':'var(--brand-red)'}">${gap > 0 ? '+'+gap : gap}</td>
                         <td class="text-center font-bold text-blue">${cost.toFixed(2)}</td>
                     </tr>`;
@@ -1961,6 +1936,13 @@ function getTarget(areaName, dateStr) {
     if (areaStr.includes('half')) return eff.trg_half;
     if (areaStr.includes('ea')) return eff.trg_ea;
     return eff.trg_all;
+}
+
+function getEffectiveUphCost(dateStr) {
+    // Placeholder default หากไม่มีข้อมูล UPH Cost (เพิ่มจากของเดิมเพื่อให้สมบูรณ์)
+    return {
+        trg_all: 0, trg_full: 0, trg_half: 0, trg_ea: 0, cost_salary: 0, cost_days: 0
+    };
 }
 
 async function saveTargets() {
