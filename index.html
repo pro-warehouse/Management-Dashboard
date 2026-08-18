@@ -12,7 +12,7 @@
 </head>
 <body>
     
-    <!-- Top App Bar (ตามภาพตัวอย่าง) -->
+    <!-- Top App Bar -->
     <header class="top-nav">
         <div class="brand-container">
             <img src="https://i.postimg.cc/L4qLLFNj/Black-White-Modern-Handwritten-Square-Studio-Logo-(15)-Photoroom-0.png" alt="Logo" class="app-logo">
@@ -39,7 +39,7 @@
     <!-- Main Container -->
     <main class="dashboard-body">
 
-        <!-- Filter Bar (รวมใน Card ตามสไตล์ภาพตัวอย่าง) -->
+        <!-- Filter Bar -->
         <div class="filter-card">
             <div class="filter-group">
                 <label class="filter-label">DATE RANGE</label>
@@ -61,7 +61,7 @@
             </div>
         </div>
 
-        <!-- 🌟 Top Executive Cards (Solid Color Style) 🌟 -->
+        <!-- 🌟 Top Executive Cards (Gradient Color Style) 🌟 -->
         <section class="kpi-grid mb-24 mt-20">
             <div class="kpi-box card-purple">
                 <div class="kpi-head">Orders Shipped Today</div>
@@ -175,7 +175,7 @@
                     <div class="kpi-timestamp" id="wave-date-3">Updated: --</div>
                 </div>
             </div>
-            <div class="kpi-box card-orange min-h-130">
+            <div class="kpi-box card-blue min-h-130">
                 <div class="kpi-head" id="wave-title-4">CURRENT STATUS (สถานะเวลา)</div>
                 <div class="kpi-main-val" id="wave-delay">...</div>
                 <div class="kpi-foot-col">
@@ -298,10 +298,11 @@
             <h2 class="section-heading">1. Orders Shipped & Avg. Fulfillment <span class="tag-source">LIVE API</span></h2>
         </div>
         
-        <section class="grid-2-col mb-30">
+        <!-- ปรับเป็น 3 คอลัมน์แถวเดียวกันทั้งหมด -->
+        <section class="grid-3-col mb-30">
             <div class="card">
                 <div class="card-head-bar">
-                    <h3 class="panel-title m-0">DAILY REQUESTED VOLUME (PCS)</h3>
+                    <h3 class="panel-title m-0">DAILY REQUESTED VOLUME</h3>
                     <select id="ffm-bu-filter" class="filter-control"><option value="ALL">All BUs</option></select>
                 </div>
                 <div class="chart-canvas-box"><canvas id="ffmTrendChart"></canvas></div>
@@ -312,9 +313,9 @@
                 <div class="chart-canvas-box"><canvas id="ffmVolumeChart"></canvas></div>
             </div>
 
-            <div class="card col-full">
+            <div class="card"> <!-- เอา col-full ออกเพื่อให้เรียงต่อกันเป็นคอลัมน์ที่ 3 -->
                 <div class="card-head-bar">
-                    <h3 class="panel-title m-0" id="utilization-title">VOLUME UTILIZATION BY OWNER</h3>
+                    <h3 class="panel-title m-0" id="utilization-title">VOLUME UTILIZATION</h3>
                     <button onclick="toggleCapSetup()" class="btn-outline">⚙️ Set Cap</button>
                 </div>
                 
@@ -329,7 +330,7 @@
                 
                 <div class="table-scroll-wrap max-h-300 mt-10">
                     <table class="data-table" id="utilization-table">
-                        <thead><tr><th>OWNER</th><th class="text-right">VOLUME (PCS)</th><th style="width:35%;">UTILIZATION %</th><th class="text-center">STATUS</th></tr></thead>
+                        <thead><tr><th>OWNER</th><th class="text-right">VOLUME</th><th style="width:35%;">UTIL %</th><th class="text-center">STATUS</th></tr></thead>
                         <tbody><tr><td colspan="4" class="text-center text-muted">Loading Data...</td></tr></tbody>
                     </table>
                 </div>
