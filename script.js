@@ -15,7 +15,7 @@ function showToast(message, type = 'success', duration = 3000) {
     if (duration > 0) _toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
 }
 
-// Helper: สร้าง Gradient สำหรับกราฟเพื่อให้มีมิติตามเรฟเฟอเรนซ์
+// Helper: สร้าง Gradient ให้กราฟมีมิติเข้ากับตัวการ์ด
 function getGradient(ctx, chartArea, colorStart, colorEnd) {
     if (!chartArea) return colorStart;
     let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
@@ -407,7 +407,7 @@ async function initDashboard() {
     await initFulfillmentRealtime();
     refreshAllSections();
     document.getElementById('global-loader').style.display = 'none';
-    showToast("ข้อมูลอัปเดตเรียบร้อยแล้ว!");
+    showToast("ข้อมูลรีเฟรชสำเร็จ!");
 }
 
 function refreshAllSections() {
@@ -818,14 +818,14 @@ async function initFulfillmentRealtime() {
                         <td class="text-right font-bold">${fmtN(item.vol)}</td>
                         <td>
                             <div style="display:flex; align-items:center; gap:12px;">
-                                <span class="font-bold text-xs" style="width:40px; text-align:right;">${utilDisp}%</span>
+                                <span class="font-bold text-xs" style="width:35px; text-align:right;">${utilDisp}%</span>
                                 <div style="flex:1; background:var(--border-color); border-radius:4px; height:6px; overflow:hidden;">
                                     <div style="width:${barWidth}%; background:${statusObj.barColor}; height:100%; border-radius:4px;"></div>
                                 </div>
                             </div>
                         </td>
                         <td class="text-center">
-                            <span style="padding:4px 10px; border-radius:4px; font-size:11px; font-weight:700; display:inline-block; width:85px; background:${statusObj.bg}; color:${statusObj.color};">${statusObj.text}</span>
+                            <span style="padding:4px 8px; border-radius:4px; font-size:10px; font-weight:700; display:inline-block; width:75px; background:${statusObj.bg}; color:${statusObj.color};">${statusObj.text}</span>
                         </td>
                     </tr>`;
                 });
@@ -886,18 +886,20 @@ async function initFulfillmentRealtime() {
         if (ordersEl) {
             ordersEl.innerText = totalOrdersToday > 0 ? fmtN(totalOrdersToday) : "0";
             const trendEl = document.getElementById('ffm-orders-trend');
+            const trendNoteEl = document.getElementById('ffm-orders-note');
             
-            if (trendEl) {
+            if (trendEl && trendNoteEl) {
                 let prevDateText = yesterdayKeyStr ? formatShortDate(yesterdayKeyStr) : "วันก่อนหน้า";
                 if (totalOrdersYesterday === 0 && totalOrdersToday === 0) {
-                    trendEl.innerText = "- ไม่มีข้อมูลเทียบ";
+                    trendEl.innerText = "-"; trendNoteEl.innerText = "ไม่มีข้อมูลเทียบ";
                 } else if (totalOrdersYesterday === 0) {
-                    trendEl.innerText = `↗ 100% vs ${prevDateText}`;
+                    trendEl.innerText = `↗ 100%`; trendNoteEl.innerText = `vs ${prevDateText}`;
                 } else {
                     let pctDiff = ((totalOrdersToday - totalOrdersYesterday) / totalOrdersYesterday) * 100;
-                    if (pctDiff > 0) { trendEl.innerText = `↗ +${pctDiff.toFixed(1)}% vs ${prevDateText}`; } 
-                    else if (pctDiff < 0) { trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(1)}% vs ${prevDateText}`; } 
-                    else { trendEl.innerText = `0% vs ${prevDateText}`; }
+                    if (pctDiff > 0) { trendEl.innerText = `↗ +${pctDiff.toFixed(1)}%`; } 
+                    else if (pctDiff < 0) { trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(1)}%`; } 
+                    else { trendEl.innerText = `0%`; }
+                    trendNoteEl.innerText = `vs ${prevDateText}`;
                 }
             }
             let updateSpan = document.getElementById('ffm-orders-update');
@@ -936,7 +938,7 @@ async function initFulfillmentRealtime() {
                     let pct = dayTot > 0 ? Math.min(100, (dayComp / dayTot) * 100).toFixed(1) : 0;
                     let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
                     let pctColor = pct >= 100 ? '#10B981' : (pct > 0 ? '#F59E0B' : '#EF4444');
-                    tr += `<td class="text-center"><span style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:600;">${pct}%</span></td></tr>`;
+                    tr += `<td class="text-center"><span style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600;">${pct}%</span></td></tr>`;
                     tbody += tr;
                 });
                 waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
@@ -962,16 +964,17 @@ async function initFulfillmentRealtime() {
                 rateValEl.innerText = `${currentFfm.toFixed(1)}%`;
                 if (rateEtaEl) rateEtaEl.innerText = `DC SLA: ${currentEtaFfm.toFixed(1)}%`;
 
-                const rateTrendEl = document.getElementById('ffm-rate-trend'), etaTrendEl = document.getElementById('eta-rate-trend');
-                if (rateTrendEl) {
+                const rateTrendEl = document.getElementById('ffm-rate-trend'), rateNoteEl = document.getElementById('ffm-rate-note'), etaTrendEl = document.getElementById('eta-rate-trend');
+                if (rateTrendEl && rateNoteEl) {
                     if (!prevShipDateStr) {
-                        rateTrendEl.innerText = "- ไม่มีข้อมูลเทียบ";
+                        rateTrendEl.innerText = "-"; rateNoteEl.innerText = "ไม่มีข้อมูลเทียบ";
                         if (etaTrendEl) etaTrendEl.innerText = "-";
                     } else {
                         let diffFfm = currentFfm - prevFfm;
-                        if (diffFfm > 0) rateTrendEl.innerText = `↗ +${diffFfm.toFixed(1)}% vs ${formatShortDate(prevShipDateStr)}`;
-                        else if (diffFfm < 0) rateTrendEl.innerText = `↘ ${Math.abs(diffFfm).toFixed(1)}% vs ${formatShortDate(prevShipDateStr)}`;
-                        else rateTrendEl.innerText = `0% vs ${formatShortDate(prevShipDateStr)}`;
+                        if (diffFfm > 0) rateTrendEl.innerText = `↗ +${diffFfm.toFixed(1)}%`;
+                        else if (diffFfm < 0) rateTrendEl.innerText = `↘ ${Math.abs(diffFfm).toFixed(1)}%`;
+                        else rateTrendEl.innerText = `0%`;
+                        rateNoteEl.innerText = `vs ${formatShortDate(prevShipDateStr)}`;
                         
                         if (etaTrendEl) {
                             let diffEta = currentEtaFfm - prevEtaFfm;
@@ -1166,14 +1169,14 @@ function updateWorkforceUI() {
 
         document.getElementById('headcount-total').innerText = fmtN(opsTotal);
         
-        let trendEl = document.getElementById('headcount-trend');
-        if (trendEl) {
+        let trendEl = document.getElementById('headcount-trend'), trendNoteEl = document.getElementById('headcount-note');
+        if (trendEl && trendNoteEl) {
             let diff = opsTotal - opsPrev;
-            if (opsTotal === 0 && opsPrev === 0) { trendEl.innerText = "- ไม่มีข้อมูล"; }
-            else if (!prevKey) { trendEl.innerText = "- ไม่มีข้อมูลเทียบ"; }
-            else if (diff > 0) { trendEl.innerText = `↗ +${diff} vs prev`; }
-            else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff)} vs prev`; }
-            else { trendEl.innerText = "0 vs prev"; }
+            if (opsTotal === 0 && opsPrev === 0) { trendEl.innerText = "-"; trendNoteEl.innerText = "ไม่มีข้อมูล"; }
+            else if (!prevKey) { trendEl.innerText = "-"; trendNoteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
+            else if (diff > 0) { trendEl.innerText = `↗ +${diff}`; trendNoteEl.innerText = `vs prev`; }
+            else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff)}`; trendNoteEl.innerText = `vs prev`; }
+            else { trendEl.innerText = "0"; trendNoteEl.innerText = `vs prev`; }
         }
         document.getElementById('headcount-update').innerText = `Updated: ${getDisplayDate(tKey)}`;
 
@@ -1360,15 +1363,16 @@ function updateOnTimeUI() {
         let over = (curr.ptglg !== null && curr.hub !== null) ? (curr.ptglg+curr.hub)/2 : curr.ptglg;
         document.getElementById('ontime-val').innerText = over !== null ? `${over.toFixed(2)}%` : "0.00%";
         
-        let trendEl = document.getElementById('ontime-trend');
-        if (trendEl) {
-            if (!prev) { trendEl.innerText = "- ไม่มีข้อมูลเทียบ"; }
+        let trendEl = document.getElementById('ontime-trend'), trendNoteEl = document.getElementById('ontime-note');
+        if (trendEl && trendNoteEl) {
+            if (!prev) { trendEl.innerText = "-"; trendNoteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
             else {
                 let pOver = (prev.ptglg !== null && prev.hub !== null) ? (prev.ptglg+prev.hub)/2 : prev.ptglg;
                 let diff = over - pOver;
-                if (diff > 0) trendEl.innerText = `↗ +${diff.toFixed(2)} pp`;
-                else if (diff < 0) trendEl.innerText = `↘ ${Math.abs(diff).toFixed(2)} pp`;
-                else trendEl.innerText = "0 pp";
+                if (diff > 0) { trendEl.innerText = `↗ +${diff.toFixed(2)} pp`; }
+                else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff).toFixed(2)} pp`; }
+                else { trendEl.innerText = "0 pp"; }
+                trendNoteEl.innerText = "vs prev";
             }
         }
         document.getElementById('ontime-update').innerText = `Updated: ${getDisplayDate(curr.dateObj)}`;
@@ -1436,14 +1440,15 @@ function updateClaimUI() {
         let prev = combinedData.length > 1 ? combinedData[combinedData.length-2] : null;
         document.getElementById('claim-val').innerText = fmtN(curr.cost);
         
-        let trendEl = document.getElementById('claim-trend');
-        if (trendEl) {
-            if (!prev) { trendEl.innerText = "- ไม่มีข้อมูลเทียบ"; }
+        let trendEl = document.getElementById('claim-trend'), trendNoteEl = document.getElementById('claim-note');
+        if (trendEl && trendNoteEl) {
+            if (!prev) { trendEl.innerText = "-"; trendNoteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
             else {
                 let diff = curr.cost - prev.cost;
-                if (diff > 0) trendEl.innerText = `↗ +${fmtN(diff)}`;
-                else if (diff < 0) trendEl.innerText = `↘ ${Math.abs(diff)}%`;
-                else trendEl.innerText = "0";
+                if (diff > 0) { trendEl.innerText = `↗ +${fmtN(diff)}`; }
+                else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff)}%`; }
+                else { trendEl.innerText = "0"; }
+                trendNoteEl.innerText = "vs prev";
             }
         }
         document.getElementById('claim-update').innerText = `Updated: ${getDisplayDate(curr.dateObj)}`;
@@ -1505,14 +1510,15 @@ function updateInventoryUI() {
         let prev = parsedData.length > 1 ? parsedData[parsedData.length-2] : null;
         document.getElementById('inv-val').innerText = curr.pct !== null ? `${curr.pct.toFixed(2)}%` : "-";
         
-        let trendEl = document.getElementById('inv-trend');
-        if (trendEl) {
-            if (!prev) { trendEl.innerText = "- ไม่มีข้อมูลเทียบ"; }
+        let trendEl = document.getElementById('inv-trend'), trendNoteEl = document.getElementById('inv-note');
+        if (trendEl && trendNoteEl) {
+            if (!prev) { trendEl.innerText = "-"; trendNoteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
             else {
                 let diff = curr.pct - prev.pct;
-                if (diff > 0) trendEl.innerText = `↗ +${diff.toFixed(2)} pp`;
-                else if (diff < 0) trendEl.innerText = `↘ ${Math.abs(diff)}%`;
-                else trendEl.innerText = "0 pp";
+                if (diff > 0) { trendEl.innerText = `↗ +${diff.toFixed(2)} pp`; }
+                else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff)}%`; }
+                else { trendEl.innerText = "0 pp"; }
+                trendNoteEl.innerText = "vs prev";
             }
         }
         document.getElementById('inv-update').innerText = `Updated: ข้อมูลเดือน ${curr.label}`;
@@ -1592,7 +1598,7 @@ function updateTransportUI() {
                     <div style="flex:1; background:var(--border-color); border-radius:4px; height:8px; overflow:hidden;">
                         <div class="${colorClass}" style="width:${pct}%; height:100%; border-radius:4px; background: currentColor;"></div>
                     </div>
-                    <span style="font-size:11px; font-weight:700; width:35px; text-align:right; color:var(--text-muted);">${pct.toFixed(1)}%</span>
+                    <span style="font-size:10px; font-weight:700; width:35px; text-align:right; color:var(--text-muted);">${pct.toFixed(1)}%</span>
                 </div>`;
 
             html += `<tr>
@@ -1720,7 +1726,7 @@ function renderProductivitySection() {
             return;
         }
 
-        const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
+        const dpVal = document.getElementById('date-picker')?.value || new DatetoISOString().split('T')[0];
         const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         
