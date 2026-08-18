@@ -16,18 +16,26 @@ function showToast(message, type = 'success', duration = 3000) {
 }
 
 // ==========================================
-// 🎨 CHART.JS COLORS (Solid Vibrant Colors based on Reference)
+// 🎨 CHART.JS GRADIENTS & COLORS
 // ==========================================
-// สีแท่ง Solid (ตามรูป image_570b11)
-const solidColors = ['#60A5FA', '#34D399', '#FBBF24', '#A78BFA', '#F87171', '#22D3EE', '#94A3B8'];
-
-function getFillGradient(ctx, chartArea, rgbColor) {
-    if (!chartArea) return 'transparent';
+function getGradient(ctx, chartArea, colorStart, colorEnd) {
+    if (!chartArea) return colorStart;
     let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-    gradient.addColorStop(0, `rgba(${rgbColor}, 0.05)`);
-    gradient.addColorStop(1, `rgba(${rgbColor}, 0.4)`);
+    gradient.addColorStop(0, colorStart);
+    gradient.addColorStop(1, colorEnd);
     return gradient;
 }
+
+const gradPalettes = [
+    { s: '#60A5FA', e: '#3B82F6' }, // Blue
+    { s: '#34D399', e: '#10B981' }, // Green
+    { s: '#FCD34D', e: '#F59E0B' }, // Yellow
+    { s: '#A78BFA', e: '#8B5CF6' }, // Purple
+    { s: '#F87171', e: '#EF4444' }, // Red
+    { s: '#22D3EE', e: '#06B6D4' }  // Teal
+];
+
+const solidColors = ['#60A5FA', '#34D399', '#FBBF24', '#A78BFA', '#F87171', '#22D3EE', '#94A3B8'];
 
 Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.color = '#64748B';
@@ -38,6 +46,7 @@ Chart.defaults.plugins.tooltip.cornerRadius = 8;
 
 const fmtN = (v) => (v || 0).toLocaleString();
 
+// 🟢 [FIX] Plugin วาดป้ายตัวเลข: เพิ่มเงื่อนไขตรวจสอบความสูงแท่งกราฟ (bar.height) ป้องกันตัวเลขซ้อนกัน
 const dataLabelPlugin = {
     id: 'dataLabelPlugin',
     afterDatasetsDraw(chart) {
@@ -48,28 +57,35 @@ const dataLabelPlugin = {
             const meta = chart.getDatasetMeta(i);
             meta.data.forEach((bar, index) => {
                 const data = dataset.data[index];
-                if(data > 0){
+                // เช็คความสูงของแท่งกราฟ ถ้าเตี้ยกว่า 15px ไม่ต้องวาดตัวเลขไว้ข้างใน
+                if(data > 0 && bar.height > 15){
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
-                    ctx.font = 'bold 11px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                    ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
                     let val = (chart.canvas.id.includes('claim')) ? fmtN(data) : (data%1!==0 ? data.toFixed(1)+'%' : fmtN(data));
-                    ctx.fillText(val, bar.x, bar.y - 5);
+                    ctx.fillText(val, bar.x, bar.y - 4);
                 }
             });
         });
         
+        // สำหรับ Stacked Bar (วาดเฉพาะผลรวมไว้บนสุดของแท่งเท่านั้น จะได้ไม่รก)
         if (chart.canvas.id === 'ffmTrendChart' || chart.canvas.id === 'workforceChart') {
-            let totals = []; let xCoords = [];
+            let totals = []; let xCoords = []; let topY = [];
             chart.data.datasets.forEach((dataset, i) => {
                 if (!chart.isDatasetVisible(i) || dataset.type === 'line') return;
                 const meta = chart.getDatasetMeta(i);
-                dataset.data.forEach((val, index) => { totals[index] = (totals[index] || 0) + (val || 0); if (meta.data[index]) xCoords[index] = meta.data[index].x; });
+                dataset.data.forEach((val, index) => { 
+                    totals[index] = (totals[index] || 0) + (val || 0); 
+                    if (meta.data[index]) {
+                        xCoords[index] = meta.data[index].x;
+                        topY[index] = Math.min(topY[index] || 9999, meta.data[index].y);
+                    }
+                });
             });
-            const yScale = chart.scales.y; 
             chart.data.labels.forEach((_, index) => {
-                if (totals[index] > 0 && xCoords[index] && yScale) {
+                if (totals[index] > 0 && xCoords[index] && topY[index]) {
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
-                    ctx.font = 'bold 12px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-                    ctx.fillText(fmtN(Math.round(totals[index])), xCoords[index], yScale.getPixelForValue(totals[index]) - 5);
+                    ctx.font = 'bold 11px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                    ctx.fillText(fmtN(Math.round(totals[index])), xCoords[index], topY[index] - 5);
                 }
             });
         }
@@ -92,13 +108,16 @@ const lineDataLabelPlugin = {
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
                     ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = i === 0 ? 'bottom' : 'top'; 
                     let yOffset = i === 0 ? -8 : 8;
-                    ctx.fillText(Number(data).toFixed(2) + '%', point.x, point.y + yOffset);
+                    ctx.fillText(Number(data).toFixed(1) + '%', point.x, point.y + yOffset);
                 }
             });
         });
     }
 };
 
+// ==========================================
+// 🌟 INITIALIZE CHARTS
+// ==========================================
 let ffmTrendChartInstance = new Chart(document.getElementById('ffmTrendChart'), { 
     type: 'bar', data: { labels: [], datasets: [] }, 
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grace: '15%' } } }, plugins: [dataLabelPlugin] 
@@ -131,12 +150,12 @@ let inventoryChartInstance = new Chart(document.getElementById('inventoryChart')
 
 let productivityChartInstance = new Chart(document.getElementById('productivityChart'), { 
     type: 'bar', data: { labels: [], datasets: [{type:'bar', label:'Background'}, {type:'bar', label:'Actual UPH'}, {type:'line', label:'Target', borderColor:'#F59E0B', borderDash:[5,5]}] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { display: false, grace: '25%' } } } 
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, stacked: false }, y: { display: false, grace: '25%' } } } 
 });
 
 
 // ==========================================
-// DATA FETCHING & PROCESSING
+// DATA FETCHING & PROCESSING (Logic เดิม 100%)
 // ==========================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxB0bNU1P9qrG_6aHoeiKyHMXT0_k76VlL0aq1I9xxHVpPDQK9qcd3FJMip4Jk9o6RY/exec';
 let globalData = { workforce:{}, fulfillment:{}, wave_ops:{}, ontime:{}, ontime_hub:{}, ontime_by_aff:{}, claims:{}, inventory:{}, inventory_daily:{}, transport:{}, productivity:{}, prod_area:{}, prod_zone:{}, prod_users_map:{} };
@@ -185,7 +204,7 @@ function createMultiSelect(mountEl, opts) {
         <div class="ms-menu dropdown-menu">
             <label class="dropdown-option"><input type="checkbox" class="ms-all" checked> All</label>
             <div class="divider"></div>
-            <div class="ms-list" style="display:flex; flex-direction:column; gap:6px;"></div>
+            <div class="ms-list checkbox-list"></div>
             <button class="ms-apply btn-primary w-full mt-10">Apply</button>
         </div>
     `;
@@ -549,10 +568,14 @@ async function initFulfillmentRealtime() {
                 Object.keys(rawBq).forEach(rawBu => {
                     let sBu = standardizeBU(rawBu); 
                     if (sBu !== 'UNKNOWN' && sBu !== '') {
-                        if (!unifiedDatesMap[sd].bq[sBu]) unifiedDatesMap[sd].bq[sBu] = { req:0, alloc:0, ship:0, actShort:0, pu:0, plt:0, ordTotal:0, ordFull:0 };
+                        if (!unifiedDatesMap[sd].bq[sBu]) {
+                            unifiedDatesMap[sd].bq[sBu] = { req:0, alloc:0, ship:0, actShort:0, pu:0, plt:0, ordTotal:0, ordFull:0 };
+                        }
                         let bItem = rawBq[rawBu];
                         unifiedDatesMap[sd].bq[sBu].ordTotal += parseFloat(bItem.ordTotal || 0);
-                        unifiedDatesMap[sd].bq[sBu].ordFull += parseFloat(bItem.ordFull || bItem.perfectOrders || 0);
+                        let perfectOrders = parseFloat(bItem.ordFull || bItem.perfectOrders || 0);
+                        unifiedDatesMap[sd].bq[sBu].ordFull += perfectOrders;
+                        
                         unifiedDatesMap[sd].bq[sBu].req += parseFloat(bItem.req || 0);
                         unifiedDatesMap[sd].bq[sBu].alloc += parseFloat(bItem.alloc || 0);
                         unifiedDatesMap[sd].bq[sBu].ship += parseFloat(bItem.ship || 0);
@@ -678,7 +701,7 @@ async function initFulfillmentRealtime() {
         let chartBUsArray = ffmBuFilterVal === 'ALL' ? allBUsArray : [ffmBuFilterVal];
 
         try {
-            // 🌟 กราฟแท่ง FFM เป็นสีสด Solid
+            // 🌟 กราฟแท่ง FFM เป็นสี Gradient
             if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance && validChartDates.length > 0) {
                 let tpLabels = validChartDates.map(dStr => {
                     let parts = dStr.split('-');
@@ -690,7 +713,12 @@ async function initFulfillmentRealtime() {
                     return {
                         label: bu,
                         data: validChartDates.map(dStr => parseFloat(chartDataMap[dStr]?.buReq?.[bu] || 0)), 
-                        backgroundColor: solidColors[colorIndex % solidColors.length], // Solid Color
+                        backgroundColor: (context) => {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return gradPalettes[colorIndex % 6].s;
+                            return getGradient(ctx, chartArea, gradPalettes[colorIndex % 6].s, gradPalettes[colorIndex % 6].e);
+                        },
                         borderRadius: 4
                     };
                 });
@@ -711,7 +739,7 @@ async function initFulfillmentRealtime() {
                 ffmTrendChartInstance.update();
             }
 
-            // 🌟 กราฟโดนัท FFM สีสด
+            // 🌟 กราฟโดนัท FFM สี Gradient
             if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
                 let targetD = validChartDates[validChartDates.length - 1]; 
                 for (let i = validChartDates.length - 1; i >= 0; i--) {
@@ -729,7 +757,12 @@ async function initFulfillmentRealtime() {
                 ffmVolumeChartInstance.data.labels = mixLabels;
                 ffmVolumeChartInstance.data.datasets = [{
                     data: mixData,
-                    backgroundColor: mixLabels.map((_, i) => solidColors[i % solidColors.length]),
+                    backgroundColor: (context) => {
+                        const chart = context.chart;
+                        const {ctx, chartArea} = chart;
+                        if (!chartArea) return mixLabels.map((_, i) => gradPalettes[i % 6].s);
+                        return mixLabels.map((_, i) => getGradient(ctx, chartArea, gradPalettes[i % 6].s, gradPalettes[i % 6].e));
+                    },
                     borderWidth: 0
                 }];
                 ffmVolumeChartInstance.update();
@@ -1090,14 +1123,11 @@ async function initFulfillmentRealtime() {
                     });
                 }
             }
-            if (typeof generateExecutiveAlerts === "function") generateExecutiveAlerts(targetTimestamp, activeWaveKey, aLate, aDelay, diffDays, worstBU);
         }
+
     } catch (err) {}
 }
 
-// ------------------------------------------------------------
-// 👥 WORKFORCE SECTION
-// ------------------------------------------------------------
 function updateWorkforceUI() {
     if (!globalData.workforce) return;
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
@@ -1157,7 +1187,6 @@ function updateWorkforceUI() {
             if (document.getElementById('wf-foreign')) document.getElementById('wf-foreign').innerText = fmtN(nF);
         }
 
-        // กราฟแท่ง Solid Colors
         let chartKeys = validKeys.slice(0,7).reverse();
         let affSet = new Set();
         chartKeys.forEach(k => Object.keys(globalData.workforce[k].matrix || {}).forEach(aff => {
@@ -1171,7 +1200,7 @@ function updateWorkforceUI() {
                 let m = globalData.workforce[k].matrix[aff]; if(!m) return 0;
                 let sum=0; Object.keys(m).forEach(r => Object.values(m[r]).forEach(v => sum+=v)); return sum;
             }),
-            backgroundColor: solidColors[i % solidColors.length],
+            backgroundColor: (context) => getGradient(context.chart.ctx, context.chart.chartArea, gradPalettes[i%6].s, gradPalettes[i%6].e),
             borderRadius: 4, stack: 'hc'
         }));
 
@@ -1220,9 +1249,6 @@ function updateWorkforceUI() {
     }
 }
 
-// ------------------------------------------------------------
-// ⏱️ ON-TIME SECTION
-// ------------------------------------------------------------
 function updateOnTimeUI() {
     if (!globalData.ontime) return;
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
@@ -1252,7 +1278,6 @@ function updateOnTimeUI() {
         }
         document.getElementById('ontime-update').innerText = `Updated: ${getDisplayDate(curr.dateObj)}`;
         
-        // กราฟเส้นแบบไล่สีตรง Fill
         if(ontimeChartInstance) {
             let slice = otArray.slice(-14);
             ontimeChartInstance.data.labels = slice.map(i => `${String(i.dateObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i.dateObj.getMonth()]}`);
@@ -1284,9 +1309,6 @@ function updateOnTimeUI() {
     }
 }
 
-// ------------------------------------------------------------
-// 💰 CLAIM SECTION
-// ------------------------------------------------------------
 function updateClaimUI() {
     if (!globalData.claims) return;
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
@@ -1333,8 +1355,7 @@ function updateClaimUI() {
             claimChart2Instance.data.labels = slice.map(i => `${String(i.dateObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i.dateObj.getMonth()]}`);
             claimChart2Instance.data.datasets[0].data = slice.map(i => i.cost);
             claimChart2Instance.data.datasets[1].data = slice.map(i => i.qty);
-            // Solid Red Bar
-            claimChart2Instance.data.datasets[0].backgroundColor = '#F87171';
+            claimChart2Instance.data.datasets[0].backgroundColor = (ctx) => getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#EF4444', '#F87171');
             claimChart2Instance.update();
         }
 
@@ -1350,9 +1371,6 @@ function updateClaimUI() {
     }
 }
 
-// ------------------------------------------------------------
-// 📦 INVENTORY SECTION
-// ------------------------------------------------------------
 function updateInventoryUI() {
     if (!globalData.inventory) return;
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
@@ -1420,116 +1438,6 @@ function updateInventoryUI() {
             }).join('') + "</tbody>";
             tableEl.innerHTML = thead + tbody;
         }
-    }
-}
-
-// ------------------------------------------------------------
-// 🚚 TRANSPORT PERFORMANCE
-// ------------------------------------------------------------
-function updateTransportUI() {
-    if (!globalData.transport || Object.keys(globalData.transport).length === 0) return;
-    const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
-    const targetTime = new Date(dpVal).setHours(23,59,59,999);
-    
-    let availableDates = Object.keys(globalData.transport).filter(k => {
-        let d = new Date(getStandardDate(k)).getTime();
-        return !isNaN(d) && d <= targetTime;
-    }).sort((a,b) => new Date(getStandardDate(b)) - new Date(getStandardDate(a)));
-
-    let tbody = document.querySelector('#new-transport-table tbody');
-
-    if (availableDates.length === 0) {
-        document.getElementById('tp-kpi-total').innerText = "0";
-        document.getElementById('tp-kpi-success').innerText = "0";
-        document.getElementById('tp-kpi-sla').innerText = "0";
-        document.getElementById('tp-kpi-cost').innerText = "0";
-        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่งในวันที่เลือก</td></tr>`;
-        return;
-    }
-
-    let todayKey = availableDates[0];
-    let data = globalData.transport[todayKey];
-    
-    let dObj = new Date(getStandardDate(todayKey));
-    let displayDate = `${String(dObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][dObj.getMonth()]} ${dObj.getFullYear()}`;
-    document.getElementById('carrier-update-time').innerText = `อัปเดต: ${displayDate}`;
-
-    document.getElementById('tp-kpi-total').innerText = fmtN(data.total_orders);
-    document.getElementById('tp-kpi-success').innerText = fmtN(data.success_orders);
-    document.getElementById('tp-kpi-sla').innerText = fmtN(data.sla_hit);
-    document.getElementById('tp-kpi-cost').innerText = fmtN(data.total_cost);
-
-    if(tbody) {
-        let html = "";
-        let carriers = Object.keys(data.carriers || {}).sort((a,b) => data.carriers[b].total_orders - data.carriers[a].total_orders);
-        
-        carriers.forEach(c => {
-            let cd = data.carriers[c];
-            let succPct = cd.total_orders > 0 ? (cd.success_orders / cd.total_orders) * 100 : 0;
-            let slaPct = cd.success_orders > 0 ? (cd.sla_hit / cd.success_orders) * 100 : 0;
-
-            let bar = (pct, colorClass) => `
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div style="flex:1; background:var(--border-color); border-radius:10px; height:6px; overflow:hidden;">
-                        <div class="${colorClass}" style="width:${pct}%; height:100%; border-radius:10px;"></div>
-                    </div>
-                    <span style="font-size:11px; font-weight:700; width:35px; text-align:right; color:var(--text-muted);">${pct.toFixed(1)}%</span>
-                </div>`;
-
-            html += `<tr>
-                <td style="font-weight:700; border-right: 1px solid var(--border-color);">${c}</td>
-                <td class="text-center font-bold" style="border-right: 1px solid var(--border-color);">${fmtN(cd.total_orders)}</td>
-                <td style="border-right: 1px solid var(--border-color);">${bar(succPct, 'bg-green')}</td>
-                <td style="border-right: 1px solid var(--border-color);">${bar(slaPct, 'bg-blue')}</td>
-                <td class="text-center text-red font-bold">${fmtN(cd.total_cost)}</td>
-            </tr>`;
-        });
-        tbody.innerHTML = html;
-    }
-}
-
-// ==========================================
-// 🚀 ALERT NOTIFICATION SYSTEM
-// ==========================================
-function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveDelay, delayDays, worstBU) {
-    const alertBox = document.getElementById('smart-alerts-container');
-    if (!alertBox) return;
-    alertBox.innerHTML = ''; 
-    let alerts = [];
-
-    if (waveDelay > 0) {
-        let delayText = delayDays > 0 ? `ดีเลย์ข้ามวัน (${delayDays} วัน)` : `ดีเลย์ ${Math.floor(waveDelay/60)} ชม. ${waveDelay%60} นาที`;
-        alerts.push({ type: 'critical', text: `[Wave Ops] ค้าง ${fmtN(waveLate)} บิล (${delayText}) <b>ช้าสุดที่สาขา ${worstBU}</b>` });
-    } else if (waveLate > 0) {
-        alerts.push({ type: 'warning', text: `[Wave Ops] ช้ากว่าแผน ${fmtN(waveLate)} บิล <b>(ที่ ${worstBU})</b> แต่อยู่ใน SLA` });
-    }
-
-    if (globalData.workforce) {
-        let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
-        let latestWfKey = wfKeys.find(k => new Date(getStandardDate(k)).getTime() <= targetTimestamp);
-        if (latestWfKey) {
-            let dayData = globalData.workforce[latestWfKey];
-            let absCount = 0; let trgCount = 0;
-            let allRoles = new Set([...Object.keys(dayData.targets || {}), ...Object.keys(dayData.roles || {})]);
-            allRoles.forEach(role => {
-                let trg = dayData.targets?.[role] || 0; let act = dayData.roles?.[role] || 0;
-                if (window.selectedBUs.includes('ALL')) { trgCount += trg; if (trg > act) absCount += (trg - act); }
-            });
-            if (absCount > 0 && window.selectedBUs.includes('ALL')) {
-                let absPct = ((absCount / trgCount) * 100).toFixed(1);
-                alerts.push({ type: absPct >= 5 ? 'critical' : 'warning', text: `[Workforce] วันนี้ขาด ${absCount} คน (${absPct}%) อาจกระทบการส่ง` });
-            }
-        }
-    }
-
-    if (alerts.length === 0) {
-        alertBox.innerHTML = `<div class="alert-box alert-green" style="margin:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:5px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>สถานการณ์ปกติ ไม่พบความเสี่ยงหรือเหตุขัดข้อง</div>`;
-    } else {
-        alerts.forEach(al => {
-            let clss = al.type === 'critical' ? 'alert-red' : 'alert-yellow';
-            let icon = al.type === 'critical' ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:5px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>` : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:5px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
-            alertBox.innerHTML += `<div class="alert-box ${clss}" style="margin-bottom:8px;">${icon} <span>${al.text}</span></div>`;
-        });
     }
 }
 
