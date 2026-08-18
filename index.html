@@ -27,7 +27,6 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin-icon"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
                 <span>Loading Data...</span>
             </div>
-            <!-- ปุ่ม Refresh ตามภาพตัวอย่าง -->
             <button id="btn-refresh" class="btn-outline">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg> 
                 Refresh
@@ -36,7 +35,6 @@
         </div>
     </header>
 
-    <!-- Main Container -->
     <main class="dashboard-body">
 
         <!-- Filter Bar -->
@@ -61,7 +59,7 @@
             </div>
         </div>
 
-        <!-- 🌟 Top Executive Cards (Gradient Color Style) 🌟 -->
+        <!-- 🌟 Top Executive Cards (Vibrant Gradient Colors) 🌟 -->
         <section class="kpi-grid mb-24 mt-20">
             <div class="kpi-box card-purple">
                 <div class="kpi-head">Orders Shipped Today</div>
@@ -69,6 +67,7 @@
                 <div class="kpi-foot">
                     <div class="kpi-trend-box">
                         <span class="trend-badge" id="ffm-orders-trend">-</span>
+                        <span class="trend-note" id="ffm-orders-note">vs prev</span>
                     </div>
                     <span class="kpi-timestamp" id="ffm-orders-update">Updated: --</span>
                 </div>
@@ -84,6 +83,7 @@
                 <div class="kpi-foot">
                     <div class="kpi-trend-box">
                         <span class="trend-badge" id="ffm-rate-trend">-</span>
+                        <span class="trend-note" id="ffm-rate-note">vs prev</span>
                     </div>
                     <span class="kpi-timestamp" id="ffm-rate-update">Updated: --</span>
                 </div>
@@ -95,6 +95,7 @@
                 <div class="kpi-foot">
                     <div class="kpi-trend-box">
                         <span class="trend-badge" id="headcount-trend">-</span>
+                        <span class="trend-note" id="headcount-note">vs prev</span>
                     </div>
                     <span class="kpi-timestamp" id="headcount-update">Updated: --</span>
                 </div>
@@ -106,6 +107,7 @@
                 <div class="kpi-foot">
                     <div class="kpi-trend-box">
                         <span class="trend-badge" id="ontime-trend">-</span>
+                        <span class="trend-note" id="ontime-note">vs prev</span>
                     </div>
                     <span class="kpi-timestamp" id="ontime-update">Updated: --</span>
                 </div>
@@ -117,6 +119,7 @@
                 <div class="kpi-foot">
                     <div class="kpi-trend-box">
                         <span class="trend-badge" id="claim-trend">-</span>
+                        <span class="trend-note" id="claim-note">vs prev</span>
                     </div>
                     <span class="kpi-timestamp" id="claim-update">Updated: --</span>
                 </div>
@@ -128,6 +131,7 @@
                 <div class="kpi-foot">
                     <div class="kpi-trend-box">
                         <span class="trend-badge" id="inv-trend">-</span>
+                        <span class="trend-note" id="inv-note">vs prev</span>
                     </div>
                     <span class="kpi-timestamp" id="inv-update">Updated: --</span>
                 </div>
@@ -151,7 +155,7 @@
         </div>
         
         <section class="wave-kpi-grid mb-20">
-            <div class="kpi-box card-purple min-h-130">
+            <div class="kpi-box card-purple min-h-110">
                 <div class="kpi-head" id="wave-title-1">TOTAL ORDERS</div>
                 <div class="kpi-main-val" id="wave-total">...</div>
                 <div class="kpi-foot-col">
@@ -159,7 +163,7 @@
                     <div class="kpi-timestamp" id="wave-date-1">Updated: --</div>
                 </div>
             </div>
-            <div class="kpi-box card-green min-h-130">
+            <div class="kpi-box card-green min-h-110">
                 <div class="kpi-head" id="wave-title-2">COMPLETED ORDERS</div>
                 <div class="kpi-main-val" id="wave-completed">...</div>
                 <div class="kpi-foot-col">
@@ -167,7 +171,7 @@
                     <div class="kpi-timestamp" id="wave-date-2">Updated: --</div>
                 </div>
             </div>
-            <div class="kpi-box card-red min-h-130">
+            <div class="kpi-box card-red min-h-110">
                 <div class="kpi-head" id="wave-title-3">LATE ORDERS (บิลช้ากว่าแผน)</div>
                 <div class="kpi-main-val" id="wave-late">...</div>
                 <div class="kpi-foot-col">
@@ -175,7 +179,7 @@
                     <div class="kpi-timestamp" id="wave-date-3">Updated: --</div>
                 </div>
             </div>
-            <div class="kpi-box card-blue min-h-130">
+            <div class="kpi-box card-orange min-h-110">
                 <div class="kpi-head" id="wave-title-4">CURRENT STATUS (สถานะเวลา)</div>
                 <div class="kpi-main-val" id="wave-delay">...</div>
                 <div class="kpi-foot-col">
@@ -247,6 +251,59 @@
             </div>
         </section>
 
+        <!-- 🌟 1. ORDERS SHIPPED & AVG. FULFILLMENT 🌟 -->
+        <div class="section-title-wrap mt-40">
+            <h2 class="section-heading">1. Orders Shipped & Avg. Fulfillment <span class="tag-source">LIVE API</span></h2>
+        </div>
+        
+        <!-- แถวเดียวกัน 3 คอลัมน์ -->
+        <section class="grid-3-col mb-30">
+            <div class="card">
+                <div class="card-head-bar">
+                    <h3 class="panel-title m-0">DAILY REQUESTED VOLUME</h3>
+                    <select id="ffm-bu-filter" class="filter-control"><option value="ALL">All BUs</option></select>
+                </div>
+                <div class="chart-canvas-box"><canvas id="ffmTrendChart"></canvas></div>
+            </div>
+            
+            <div class="card">
+                <h3 class="panel-title">ORDER MIX BY BU</h3>
+                <div class="chart-canvas-box"><canvas id="ffmVolumeChart"></canvas></div>
+            </div>
+
+            <div class="card">
+                <div class="card-head-bar">
+                    <h3 class="panel-title m-0" id="utilization-title">VOLUME UTILIZATION</h3>
+                    <button onclick="toggleCapSetup()" class="btn-outline" style="padding: 4px 8px; font-size: 0.75rem; height: auto;">⚙️ Set</button>
+                </div>
+                
+                <div id="cap-setup-panel" class="settings-box mb-10 mt-10" style="display:none;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <span class="font-bold text-xs">เลือกวันที่แก้ไข:</span>
+                        <input type="date" id="cap-target-date" class="filter-control" style="height: 30px; font-size: 0.75rem;" onchange="fetchAndRenderCapInputs()">
+                    </div>
+                    <div id="cap-inputs-container" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;"></div>
+                    <button onclick="saveDailyCapacity()" class="btn-primary" style="height: 30px; font-size: 0.75rem; padding: 4px 12px;">💾 Save</button>
+                </div>
+                
+                <div class="table-scroll-wrap max-h-300 mt-10">
+                    <table class="data-table" id="utilization-table">
+                        <thead><tr><th>OWNER</th><th class="text-right">VOLUME</th><th style="width:35%;">UTIL %</th><th class="text-center">STATUS</th></tr></thead>
+                        <tbody><tr><td colspan="4" class="text-center text-muted">Loading Data...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <section class="card mb-30">
+            <h3 class="panel-title">DAILY FULFILLMENT MATRIX RECORD</h3>
+            <div class="table-scroll-wrap max-h-400 mt-10">
+                <table class="data-table" id="ffm-detail-table">
+                    <thead><tr><th class="text-center text-muted">Loading Matrix...</th></tr></thead>
+                </table>
+            </div>
+        </section>
+
         <!-- 🌟 TRANSPORT PERFORMANCE 🌟 -->
         <div class="section-title-wrap mt-40">
             <h2 class="section-heading">🚚 Transport Performance <span class="tag-source gray">Sheet1</span></h2>
@@ -289,59 +346,6 @@
                         </tr>
                     </thead>
                     <tbody><tr><td colspan="5" class="text-center text-muted">Loading Transport Data...</td></tr></tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- 🌟 1. ORDERS SHIPPED & AVG. FULFILLMENT 🌟 -->
-        <div class="section-title-wrap mt-40">
-            <h2 class="section-heading">1. Orders Shipped & Avg. Fulfillment <span class="tag-source">LIVE API</span></h2>
-        </div>
-        
-        <!-- ปรับเป็น 3 คอลัมน์แถวเดียวกันทั้งหมด -->
-        <section class="grid-3-col mb-30">
-            <div class="card">
-                <div class="card-head-bar">
-                    <h3 class="panel-title m-0">DAILY REQUESTED VOLUME</h3>
-                    <select id="ffm-bu-filter" class="filter-control"><option value="ALL">All BUs</option></select>
-                </div>
-                <div class="chart-canvas-box"><canvas id="ffmTrendChart"></canvas></div>
-            </div>
-            
-            <div class="card">
-                <h3 class="panel-title">ORDER MIX BY BU</h3>
-                <div class="chart-canvas-box"><canvas id="ffmVolumeChart"></canvas></div>
-            </div>
-
-            <div class="card"> <!-- เอา col-full ออกเพื่อให้เรียงต่อกันเป็นคอลัมน์ที่ 3 -->
-                <div class="card-head-bar">
-                    <h3 class="panel-title m-0" id="utilization-title">VOLUME UTILIZATION</h3>
-                    <button onclick="toggleCapSetup()" class="btn-outline">⚙️ Set Cap</button>
-                </div>
-                
-                <div id="cap-setup-panel" class="settings-box mb-20 mt-10" style="display:none;">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                        <span class="font-bold text-sm">เลือกวันที่แก้ไข:</span>
-                        <input type="date" id="cap-target-date" class="filter-control" onchange="fetchAndRenderCapInputs()">
-                    </div>
-                    <div id="cap-inputs-container" style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;"></div>
-                    <button onclick="saveDailyCapacity()" class="btn-primary">💾 Save Capacity</button>
-                </div>
-                
-                <div class="table-scroll-wrap max-h-300 mt-10">
-                    <table class="data-table" id="utilization-table">
-                        <thead><tr><th>OWNER</th><th class="text-right">VOLUME</th><th style="width:35%;">UTIL %</th><th class="text-center">STATUS</th></tr></thead>
-                        <tbody><tr><td colspan="4" class="text-center text-muted">Loading Data...</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-        
-        <section class="card mb-30">
-            <h3 class="panel-title">DAILY FULFILLMENT MATRIX RECORD</h3>
-            <div class="table-scroll-wrap max-h-400 mt-10">
-                <table class="data-table" id="ffm-detail-table">
-                    <thead><tr><th class="text-center text-muted">Loading Matrix...</th></tr></thead>
                 </table>
             </div>
         </section>
