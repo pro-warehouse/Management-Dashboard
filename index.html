@@ -311,66 +311,65 @@
             </div> 
             <div class="executive-grid mt-20" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
 
-    <div class="card stage-card" style="border-top: 4px solid #3B82F6;">
-        <div class="stage-header">
-            <div class="icon-wrapper" style="background: rgba(59, 130, 246, 0.1); color: #3B82F6; width:44px; height:44px;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-            </div>
-            <h3 class="stage-title">1. PICK (หยิบ)</h3>
-        </div>
-        <div class="stage-body">
-            <h2 class="stage-percent" id="stage-pick-pct" style="color: #3B82F6;">0%</h2>
-            <div class="stage-stats">
-                <div class="stat-row"><span>สำเร็จ:</span> <strong id="stage-pick-done">0</strong></div>
-                <div class="stat-row"><span>ทั้งหมด:</span> <strong id="stage-pick-total">0</strong></div>
-            </div>
-        </div>
-        <div class="stage-progress-bg"><div id="stage-pick-bar" class="stage-progress-fill" style="background: #3B82F6; width: 0%;"></div></div>
-        <div class="stage-footer bg-blue-light" id="stage-pick-text">กำลังโหลดข้อมูล...</div>
-        <div id="stage-pick-date" style="margin-top: 10px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 8px;">Updated: --</div>
-    </div>
+                <div class="card stage-card" style="border-top: 4px solid #3B82F6;">
+                    <div class="stage-header">
+                        <div class="icon-wrapper" style="background: rgba(59, 130, 246, 0.1); color: #3B82F6; width:44px; height:44px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                        </div>
+                        <h3 class="stage-title">1. PICK (หยิบ)</h3>
+                    </div>
+                    <div class="stage-body">
+                        <h2 class="stage-percent" id="stage-pick-pct" style="color: #3B82F6;">0%</h2>
+                        <div class="stage-stats">
+                            <div class="stat-row"><span>สำเร็จ:</span> <strong id="stage-pick-done">0</strong></div>
+                            <div class="stat-row"><span>ทั้งหมด:</span> <strong id="stage-pick-total">0</strong></div>
+                        </div>
+                    </div>
+                    <div class="stage-progress-bg"><div id="stage-pick-bar" class="stage-progress-fill" style="background: #3B82F6; width: 0%;"></div></div>
+                    <div class="stage-footer bg-blue-light" id="stage-pick-text">กำลังโหลดข้อมูล...</div>
+                    <div id="stage-pick-date" style="margin-top: 10px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 8px;">Updated: --</div>
+                </div>
 
-    <div class="card stage-card" style="border-top: 4px solid #F59E0B;">
-        <div class="stage-header">
-            <div class="icon-wrapper" style="background: rgba(245, 158, 11, 0.1); color: #F59E0B; width:44px; height:44px;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-            </div>
-            <h3 class="stage-title">2. QC (ตรวจสอบ)</h3>
-        </div>
-        <div class="stage-body">
-            <h2 class="stage-percent" id="stage-qc-pct" style="color: #F59E0B;">0%</h2>
-            <div class="stage-stats">
-                <div class="stat-row"><span>ผ่าน QC:</span> <strong id="stage-qc-done">0</strong></div>
-                <div class="stat-row"><span>รอตรวจ:</span> <strong id="stage-qc-pending" style="color:#F59E0B;">0</strong></div>
-            </div>
-        </div>
-        <div class="stage-progress-bg"><div id="stage-qc-bar" class="stage-progress-fill" style="background: #F59E0B; width: 0%;"></div></div>
-        <div class="stage-footer bg-orange-light" id="stage-qc-text">กำลังประมวลผล...</div>
-        <div id="stage-qc-date" style="margin-top: 10px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 8px;">Updated: --</div>
-    </div>
+                <div class="card stage-card" style="border-top: 4px solid #F59E0B;">
+                    <div class="stage-header">
+                        <div class="icon-wrapper" style="background: rgba(245, 158, 11, 0.1); color: #F59E0B; width:44px; height:44px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                        </div>
+                        <h3 class="stage-title">2. QC (ตรวจสอบ)</h3>
+                    </div>
+                    <div class="stage-body">
+                        <h2 class="stage-percent" id="stage-qc-pct" style="color: #F59E0B;">0%</h2>
+                        <div class="stage-stats">
+                            <div class="stat-row"><span>ผ่าน QC:</span> <strong id="stage-qc-done">0</strong></div>
+                            <div class="stat-row"><span>รอตรวจ:</span> <strong id="stage-qc-pending" style="color:#F59E0B;">0</strong></div>
+                        </div>
+                    </div>
+                    <div class="stage-progress-bg"><div id="stage-qc-bar" class="stage-progress-fill" style="background: #F59E0B; width: 0%;"></div></div>
+                    <div class="stage-footer bg-orange-light" id="stage-qc-text">กำลังประมวลผล...</div>
+                    <div id="stage-qc-date" style="margin-top: 10px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 8px;">Updated: --</div>
+                </div>
 
-    <div class="card stage-card" style="border-top: 4px solid #10B981;">
-        <div class="stage-header">
-            <div class="icon-wrapper" style="background: rgba(16, 185, 129, 0.1); color: #10B981; width:44px; height:44px;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
-            </div>
-            <h3 class="stage-title">3. SHIPPED (ส่งออก)</h3>
-        </div>
-        <div class="stage-body">
-            <h2 class="stage-percent" id="stage-ship-pct" style="color: #10B981;">0%</h2>
-            <div class="stage-stats">
-                <div class="stat-row"><span>ส่งแล้ว:</span> <strong id="stage-ship-done">0</strong></div>
-                <div class="stat-row"><span>ค้างส่ง:</span> <strong id="stage-ship-pending">0</strong></div>
-            </div>
-        </div>
-        <div class="stage-progress-bg"><div id="stage-ship-bar" class="stage-progress-fill" style="background: #10B981; width: 0%;"></div></div>
-        <div class="stage-footer bg-green-light" id="stage-ship-text">กำลังโหลดข้อมูล...</div>
-        <div id="stage-ship-date" style="margin-top: 10px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 8px;">Updated: --</div>
-    </div>
-
-</div>
+                <div class="card stage-card" style="border-top: 4px solid #10B981;">
+                    <div class="stage-header">
+                        <div class="icon-wrapper" style="background: rgba(16, 185, 129, 0.1); color: #10B981; width:44px; height:44px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                        </div>
+                        <h3 class="stage-title">3. SHIPPED (ส่งออก)</h3>
+                    </div>
+                    <div class="stage-body">
+                        <h2 class="stage-percent" id="stage-ship-pct" style="color: #10B981;">0%</h2>
+                        <div class="stage-stats">
+                            <div class="stat-row"><span>ส่งแล้ว:</span> <strong id="stage-ship-done">0</strong></div>
+                            <div class="stat-row"><span>ค้างส่ง:</span> <strong id="stage-ship-pending">0</strong></div>
+                        </div>
+                    </div>
+                    <div class="stage-progress-bg"><div id="stage-ship-bar" class="stage-progress-fill" style="background: #10B981; width: 0%;"></div></div>
+                    <div class="stage-footer bg-green-light" id="stage-ship-text">กำลังโหลดข้อมูล...</div>
+                    <div id="stage-ship-date" style="margin-top: 10px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 8px;">Updated: --</div>
+                </div>
 
             </div>
+
             <div class="card data-card mt-20" style="padding: 24px;">
                 <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 15px; color: var(--text-main);">WAVE PLAN SUMMARY BY BU</h3>
                 <div style="width: 100%; overflow-x: auto;">
@@ -545,7 +544,6 @@
                                 <option value="Daily">รายวัน (Day)</option>
                                 <option value="Monthly">รายเดือน (Month)</option>
                             </select>
-                            <!-- [FIX #5] เปลี่ยนจาก dropdown เลือกได้ทีละอัน เป็น multi-select แยกทุกสังกัด -->
                             <div id="ontime-aff-ms"></div>
                         </div>
                     </div>
@@ -564,26 +562,56 @@
                 </div>
             </div>
 
-            <div class="card data-card mt-20" style="padding: 24px;">
-                <h3 style="margin: 0 0 15px 0; font-size: 0.95rem; font-weight: 700;">🚚 TRANSPORT DELIVERY STATUS (สถานะขนส่ง)</h3>
-                <div style="width: 100%; overflow-x: auto; max-height: 350px; overflow-y: auto;">
-                    <table class="matrix-table" id="transport-status-table" style="width:100%; border-collapse:collapse;">
-                        <thead><tr><th class="text-center" style="padding:30px;">Loading Transport Data...</th></tr></thead>
-                    </table>
+            <!-- เริ่มส่วน: ข้อมูลขนส่งแบบใหม่ (Transport Performance) -->
+            <div class="mt-40">
+                <div style="margin-bottom: 20px;">
+                    <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-main); margin:0;">
+                        🚚 Transport Performance (สรุปผลงานขนส่งรายบริษัท)
+                        <span class="source-badge">Sheet1</span>
+                    </h2>
+                </div>
+
+                <!-- บล็อก KPI 4 สี สไตล์ CS Dashboard -->
+                <div class="executive-grid mt-20" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+                    <div class="card" style="padding: 20px; background: #B624C4 !important; color: white; border-radius: 12px;">
+                        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 5px;">Total Orders</div>
+                        <div id="tp-kpi-total" style="font-size: 2rem; font-weight: 800;">0</div>
+                    </div>
+                    <div class="card" style="padding: 20px; background: #05CD99 !important; color: white; border-radius: 12px;">
+                        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 5px;">Completed</div>
+                        <div id="tp-kpi-success" style="font-size: 2rem; font-weight: 800;">0</div>
+                    </div>
+                    <div class="card" style="padding: 20px; background: #3B82F6 !important; color: white; border-radius: 12px;">
+                        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 5px;">On Time (SLA Hit)</div>
+                        <div id="tp-kpi-sla" style="font-size: 2rem; font-weight: 800;">0</div>
+                    </div>
+                    <div class="card" style="padding: 20px; background: #EE5D50 !important; color: white; border-radius: 12px;">
+                        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 5px;">Total Transport Cost (฿)</div>
+                        <div id="tp-kpi-cost" style="font-size: 2rem; font-weight: 800;">0</div>
+                    </div>
+                </div>
+
+                <!-- ตารางแยกบริษัทพร้อม Progress bar -->
+                <div class="card data-card mt-20" style="padding: 24px;">
+                    <h3 style="margin: 0 0 15px 0; font-size: 0.95rem; font-weight: 700;">Carrier Performance (ตามวันออเดอร์)</h3>
+                    <div style="width: 100%; overflow-x: auto;">
+                        <table class="matrix-table" id="new-transport-table" style="width:100%; border-collapse:collapse;">
+                            <thead>
+                                <tr>
+                                    <th>บริษัทขนส่ง</th>
+                                    <th class="text-center">Total Orders</th>
+                                    <th class="text-center">Success Rate</th>
+                                    <th class="text-center">SLA Adherence</th>
+                                    <th class="text-center">Cost (฿)</th>
+                                </tr>
+                            </thead>
+                            <tbody><tr><td colspan="5" class="text-center" style="padding: 30px; color: var(--text-muted);">Loading Transport Data...</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-            
-            <div class="card data-card mt-20" style="padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700;">🚛 CARRIER STATUS SUMMARY (สรุปบริษัทขนส่ง)</h3>
-                    <span id="carrier-update-time" style="font-size: 0.75rem; color: var(--text-muted);"></span>
-                </div>
-                <div style="width: 100%; overflow-x: auto; max-height: 350px; overflow-y: auto;">
-                    <table class="matrix-table" id="transport-carrier-table" style="width:100%; border-collapse:collapse;">
-                        <thead><tr><th class="text-center" style="padding:30px;">Loading Carrier Data...</th></tr></thead>
-                    </table>
-                </div>
-            </div>
+            <!-- END: NEW TRANSPORT SECTION -->
+
         </section>
 
         <section class="mt-40">
