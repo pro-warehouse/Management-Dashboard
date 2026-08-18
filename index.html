@@ -12,7 +12,7 @@
 </head>
 <body>
     
-    <!-- Top App Bar -->
+    <!-- Top App Bar (ตามภาพตัวอย่าง) -->
     <header class="top-nav">
         <div class="brand-container">
             <img src="https://i.postimg.cc/L4qLLFNj/Black-White-Modern-Handwritten-Square-Studio-Logo-(15)-Photoroom-0.png" alt="Logo" class="app-logo">
@@ -27,44 +27,48 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin-icon"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
                 <span>Loading Data...</span>
             </div>
+            <!-- ปุ่ม Refresh ตามภาพตัวอย่าง -->
+            <button id="btn-refresh" class="btn-outline">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg> 
+                Refresh
+            </button>
             <button id="theme-toggle" class="btn-theme-toggle">🌙 Dark Mode</button>
         </div>
     </header>
 
-    <!-- Filter Bar (สไตล์ CS Dashboard) -->
-    <div class="filter-strip">
-        <div class="filter-group">
-            <label class="filter-label">DATE RANGE</label>
-            <input type="date" class="filter-control" id="date-picker">
-        </div>
-        
-        <div class="filter-group" style="position: relative;">
-            <label class="filter-label">BU / OWNER</label>
-            <div id="bu-multi-select" class="filter-control select-dropdown">
-                <span id="bu-multi-text">All BUs</span>
-                <span class="dropdown-arrow">▼</span>
-            </div>
-            <div id="bu-dropdown-menu" class="dropdown-card">
-                <label class="dropdown-item"><input type="checkbox" id="bu-select-all" checked> All BUs</label>
-                <div class="dropdown-divider"></div>
-                <div id="bu-checkbox-list" class="checkbox-container"></div>
-                <button id="bu-apply-btn" class="btn-apply">Apply Filter</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Main Container -->
     <main class="dashboard-body">
 
-        <!-- 🌟 6 Top Executive Cards (Vibrant CS Style) 🌟 -->
-        <section class="kpi-grid mb-24">
+        <!-- Filter Bar (รวมใน Card ตามสไตล์ภาพตัวอย่าง) -->
+        <div class="filter-card">
+            <div class="filter-group">
+                <label class="filter-label">DATE RANGE</label>
+                <input type="date" class="filter-control" id="date-picker">
+            </div>
+            
+            <div class="filter-group" style="position: relative;">
+                <label class="filter-label">BU / OWNER</label>
+                <div id="bu-multi-select" class="filter-control select-dropdown">
+                    <span id="bu-multi-text">All BUs</span>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+                <div id="bu-dropdown-menu" class="dropdown-card">
+                    <label class="dropdown-item"><input type="checkbox" id="bu-select-all" checked> All BUs</label>
+                    <div class="dropdown-divider"></div>
+                    <div id="bu-checkbox-list" class="checkbox-container"></div>
+                    <button id="bu-apply-btn" class="btn-apply mt-10">Apply Filter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🌟 Top Executive Cards (Solid Color Style) 🌟 -->
+        <section class="kpi-grid mb-24 mt-20">
             <div class="kpi-box card-purple">
                 <div class="kpi-head">Orders Shipped Today</div>
                 <div class="kpi-main-val" id="ffm-orders-shipped">...</div>
                 <div class="kpi-foot">
                     <div class="kpi-trend-box">
                         <span class="trend-badge" id="ffm-orders-trend">-</span>
-                        <span class="trend-note" id="ffm-orders-note">vs prev</span>
                     </div>
                     <span class="kpi-timestamp" id="ffm-orders-update">Updated: --</span>
                 </div>
@@ -80,7 +84,6 @@
                 <div class="kpi-foot">
                     <div class="kpi-trend-box">
                         <span class="trend-badge" id="ffm-rate-trend">-</span>
-                        <span class="trend-note" id="ffm-rate-note">vs prev</span>
                     </div>
                     <span class="kpi-timestamp" id="ffm-rate-update">Updated: --</span>
                 </div>
@@ -92,31 +95,28 @@
                 <div class="kpi-foot">
                     <div class="kpi-trend-box">
                         <span class="trend-badge" id="headcount-trend">-</span>
-                        <span class="trend-note" id="headcount-note">vs prev</span>
                     </div>
                     <span class="kpi-timestamp" id="headcount-update">Updated: --</span>
                 </div>
             </div>
 
-            <div class="kpi-box card-yellow">
+            <div class="kpi-box card-red">
                 <div class="kpi-head">On-Time Delivery</div>
                 <div class="kpi-main-val" id="ontime-val">...</div>
                 <div class="kpi-foot">
                     <div class="kpi-trend-box">
                         <span class="trend-badge" id="ontime-trend">-</span>
-                        <span class="trend-note" id="ontime-note">vs prev</span>
                     </div>
                     <span class="kpi-timestamp" id="ontime-update">Updated: --</span>
                 </div>
             </div>
-
-            <div class="kpi-box card-red">
+            
+            <div class="kpi-box card-orange">
                 <div class="kpi-head">Claim Cost (฿)</div>
                 <div class="kpi-main-val" id="claim-val">...</div>
                 <div class="kpi-foot">
                     <div class="kpi-trend-box">
                         <span class="trend-badge" id="claim-trend">-</span>
-                        <span class="trend-note" id="claim-note">vs prev</span>
                     </div>
                     <span class="kpi-timestamp" id="claim-update">Updated: --</span>
                 </div>
@@ -128,7 +128,6 @@
                 <div class="kpi-foot">
                     <div class="kpi-trend-box">
                         <span class="trend-badge" id="inv-trend">-</span>
-                        <span class="trend-note" id="inv-note">vs prev</span>
                     </div>
                     <span class="kpi-timestamp" id="inv-update">Updated: --</span>
                 </div>
@@ -176,7 +175,7 @@
                     <div class="kpi-timestamp" id="wave-date-3">Updated: --</div>
                 </div>
             </div>
-            <div class="kpi-box card-yellow min-h-130">
+            <div class="kpi-box card-orange min-h-130">
                 <div class="kpi-head" id="wave-title-4">CURRENT STATUS (สถานะเวลา)</div>
                 <div class="kpi-main-val" id="wave-delay">...</div>
                 <div class="kpi-foot-col">
@@ -216,7 +215,7 @@
                         <div><span>รอตรวจ:</span> <strong id="stage-qc-pending" class="text-orange">0</strong></div>
                     </div>
                 </div>
-                <div class="progress-bar-bg"><div id="stage-qc-bar" class="progress-bar-fill card-yellow" style="width: 0%;"></div></div>
+                <div class="progress-bar-bg"><div id="stage-qc-bar" class="progress-bar-fill card-orange" style="width: 0%;"></div></div>
                 <div class="stage-status-msg bg-light-orange text-orange" id="stage-qc-text">กำลังประมวลผล...</div>
                 <div class="stage-updated" id="stage-qc-date">Updated: --</div>
             </div>
@@ -316,7 +315,7 @@
             <div class="card col-full">
                 <div class="card-head-bar">
                     <h3 class="panel-title m-0" id="utilization-title">VOLUME UTILIZATION BY OWNER</h3>
-                    <button onclick="toggleCapSetup()" class="btn-secondary">⚙️ Set Cap</button>
+                    <button onclick="toggleCapSetup()" class="btn-outline">⚙️ Set Cap</button>
                 </div>
                 
                 <div id="cap-setup-panel" class="settings-box mb-20 mt-10" style="display:none;">
