@@ -46,7 +46,7 @@ Chart.defaults.plugins.tooltip.cornerRadius = 8;
 
 const fmtN = (v) => (v || 0).toLocaleString();
 
-// 🟢 [FIX] Plugin วาดป้ายตัวเลข: เพิ่มเงื่อนไขตรวจสอบความสูงแท่งกราฟ (bar.height) ป้องกันตัวเลขซ้อนกัน
+// 🟢 [FIX] ตรวจสอบความสูงของแท่งกราฟ (bar.height) ป้องกันตัวเลขซ้อนกัน ถ้าน้อยกว่า 20px ให้ไม่โชว์
 const dataLabelPlugin = {
     id: 'dataLabelPlugin',
     afterDatasetsDraw(chart) {
@@ -57,17 +57,16 @@ const dataLabelPlugin = {
             const meta = chart.getDatasetMeta(i);
             meta.data.forEach((bar, index) => {
                 const data = dataset.data[index];
-                // เช็คความสูงของแท่งกราฟ ถ้าเตี้ยกว่า 15px ไม่ต้องวาดตัวเลขไว้ข้างใน
-                if(data > 0 && bar.height > 15){
+                if(data > 0 && bar.height > 20){
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
-                    ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                    ctx.font = 'bold 11px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
                     let val = (chart.canvas.id.includes('claim')) ? fmtN(data) : (data%1!==0 ? data.toFixed(1)+'%' : fmtN(data));
                     ctx.fillText(val, bar.x, bar.y - 4);
                 }
             });
         });
         
-        // สำหรับ Stacked Bar (วาดเฉพาะผลรวมไว้บนสุดของแท่งเท่านั้น จะได้ไม่รก)
+        // สำหรับ Stacked Bar (โชว์เลขผลรวมเฉพาะบนยอดสุด)
         if (chart.canvas.id === 'ffmTrendChart' || chart.canvas.id === 'workforceChart') {
             let totals = []; let xCoords = []; let topY = [];
             chart.data.datasets.forEach((dataset, i) => {
@@ -77,7 +76,7 @@ const dataLabelPlugin = {
                     totals[index] = (totals[index] || 0) + (val || 0); 
                     if (meta.data[index]) {
                         xCoords[index] = meta.data[index].x;
-                        topY[index] = Math.min(topY[index] || 9999, meta.data[index].y);
+                        topY[index] = Math.min(topY[index] || 99999, meta.data[index].y);
                     }
                 });
             });
@@ -155,7 +154,7 @@ let productivityChartInstance = new Chart(document.getElementById('productivityC
 
 
 // ==========================================
-// DATA FETCHING & PROCESSING (Logic เดิม 100%)
+// DATA FETCHING & PROCESSING (Logic คงเดิม)
 // ==========================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxB0bNU1P9qrG_6aHoeiKyHMXT0_k76VlL0aq1I9xxHVpPDQK9qcd3FJMip4Jk9o6RY/exec';
 let globalData = { workforce:{}, fulfillment:{}, wave_ops:{}, ontime:{}, ontime_hub:{}, ontime_by_aff:{}, claims:{}, inventory:{}, inventory_daily:{}, transport:{}, productivity:{}, prod_area:{}, prod_zone:{}, prod_users_map:{} };
@@ -701,7 +700,7 @@ async function initFulfillmentRealtime() {
         let chartBUsArray = ffmBuFilterVal === 'ALL' ? allBUsArray : [ffmBuFilterVal];
 
         try {
-            // 🌟 กราฟแท่ง FFM เป็นสี Gradient
+            // 🌟 กราฟแท่ง FFM แบบมี Gradient
             if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance && validChartDates.length > 0) {
                 let tpLabels = validChartDates.map(dStr => {
                     let parts = dStr.split('-');
@@ -742,13 +741,16 @@ async function initFulfillmentRealtime() {
             // 🌟 กราฟโดนัท FFM สี Gradient
             if (typeof ffmVolumeChartInstance !== 'undefined' && ffmVolumeChartInstance && validChartDates.length > 0) {
                 let targetD = validChartDates[validChartDates.length - 1]; 
+                
                 for (let i = validChartDates.length - 1; i >= 0; i--) {
                     let d = validChartDates[i];
                     let totalOrdForDay = chartBUsArray.reduce((sum, bu) => sum + (chartDataMap[d]?.buOrd?.[bu] || 0), 0);
                     if (totalOrdForDay > 0) { targetD = d; break; }
                 }
 
-                let mixLabels = []; let mixData = [];
+                let mixLabels = [];
+                let mixData = [];
+                
                 chartBUsArray.forEach((bu) => {
                     let ordCnt = chartDataMap[targetD]?.buOrd?.[bu] || 0; 
                     if (ordCnt > 0) { mixLabels.push(bu); mixData.push(ordCnt); }
@@ -785,6 +787,7 @@ async function initFulfillmentRealtime() {
             chartBUsArray.forEach(bu => {
                 let vol = chartDataMap[targetD]?.buReq?.[bu] || 0;
                 let cap = getEffectiveCap(targetD, bu);
+
                 if (vol > 0 || hasEffectiveCap(targetD, bu)) {
                     let utilPct = cap > 0 ? (vol / cap) * 100 : 0;
                     utilData.push({ bu: bu, vol: vol, cap: cap, utilPct: utilPct });
@@ -1200,7 +1203,7 @@ function updateWorkforceUI() {
                 let m = globalData.workforce[k].matrix[aff]; if(!m) return 0;
                 let sum=0; Object.keys(m).forEach(r => Object.values(m[r]).forEach(v => sum+=v)); return sum;
             }),
-            backgroundColor: (context) => getGradient(context.chart.ctx, context.chart.chartArea, gradPalettes[i%6].s, gradPalettes[i%6].e),
+            backgroundColor: (ctx) => getGradient(ctx.chart.ctx, ctx.chart.chartArea, gradPalettes[i%6].s, gradPalettes[i%6].e),
             borderRadius: 4, stack: 'hc'
         }));
 
@@ -1246,9 +1249,104 @@ function updateWorkforceUI() {
                 matrixTable.innerHTML = headerHtml + bodyHtml + "</tbody>";
             }
         }
+
+        // Attendance Table
+        const attBody = document.getElementById('daily-attendance-body');
+        const attHead = document.getElementById('daily-attendance-head');
+        if (attHead) {
+            let h = `<tr><th rowspan="2" style="position:sticky; left:0; z-index:15; min-width:120px;">DATE / DEPT.</th><th rowspan="2">TARGET</th><th rowspan="2">ACTUAL</th><th rowspan="2">ABSENT</th><th rowspan="2">RATE</th>`;
+            dynamicTeams.forEach(t => { h += `<th colspan="4" class="team-divider">Team ${t}</th>`; });
+            h += `</tr><tr>`;
+            dynamicTeams.forEach(() => { h += `<th class="team-divider">TRG</th><th>ACT</th><th>ABS</th><th>%</th>`; });
+            h += `</tr>`;
+            attHead.innerHTML = h;
+        }
+        
+        let excelHtml = "";
+        const tableRows = [ { key: 'Pick', label: 'Pick' }, { key: 'RT', label: 'RT' }, { key: 'QCQA', label: 'QC / QA' }, { key: 'Grouping', label: 'Grouping' }, { key: 'Putaway', label: 'Put-away' }, { key: 'Receive', label: 'Receive' } ];
+        
+        validKeys.forEach(dateKey => {
+            const data = globalData.workforce[dateKey];
+            excelHtml += `<tr><td colspan="${5 + (dynamicTeams.length * 4)}" style="background:var(--bg-body); font-weight:700;">Date: ${getDisplayDate(dateKey)}</td></tr>`;
+            
+            tableRows.forEach(r => {
+                let act = 0, trgTot = 0;
+                if (r.key === 'QCQA') {
+                    act = (data.roles?.QC || 0) + (data.roles?.QA || 0); trgTot = (data.targets?.QC || 0) + (data.targets?.QA || 0);
+                } else { act = data.roles?.[r.key] || 0; trgTot = data.targets?.[r.key] || 0; }
+
+                const calcAbs = (a, t) => (t===0&&a===0) ? '-' : (a-t<0 ? `<span class="text-red font-bold">${a-t}</span>` : a-t);
+                const calcRate = (a, t) => t===0 ? '-' : `<span class="${(a/t*100)<95?'text-red':'text-green'} font-bold">${(a/t*100).toFixed(1)}%</span>`;
+
+                let rowHtml = `<tr>
+                    <td style="position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${r.label}</td>
+                    <td>${trgTot>0?trgTot:'-'}</td><td>${act>0?act:'-'}</td><td>${calcAbs(act, trgTot)}</td><td>${calcRate(act, trgTot)}</td>`;
+                
+                dynamicTeams.forEach(t => {
+                    let tTrg = 0, tAct = 0;
+                    if (r.key === 'QCQA') {
+                        tAct = (data.roleByTeam?.QC?.[t] || 0) + (data.roleByTeam?.QA?.[t] || 0); tTrg = (data.targetByTeam?.QC?.[t] || 0) + (data.targetByTeam?.QA?.[t] || 0);
+                    } else {
+                        tAct = data.roleByTeam?.[r.key]?.[t] || 0; tTrg = data.targetByTeam?.[r.key]?.[t] || 0;
+                    }
+                    rowHtml += `<td class="team-divider">${tTrg>0?tTrg:'-'}</td><td>${tAct>0?tAct:'-'}</td><td>${calcAbs(tAct, tTrg)}</td><td>${calcRate(tAct, tTrg)}</td>`;
+                });
+                excelHtml += rowHtml + `</tr>`;
+            });
+        });
+        if(attBody) attBody.innerHTML = excelHtml !== "" ? excelHtml : `<tr><td colspan="100%" class="text-center text-muted">ไม่มีข้อมูลของวันที่เลือก</td></tr>`;
+
+        // HC Summary / Resigned
+        if(document.getElementById('hc-summary-table')) {
+            let hcHtml = `<thead><tr><th style="position:sticky; top:0; z-index:15;">HC Type</th><th style="position:sticky; top:0; z-index:15;">Detail</th><th class="text-center">Target</th><th class="text-center">Actual</th><th class="text-center">Absent</th><th class="text-center">% Rate</th></tr></thead><tbody>`;
+            let groupedHC = {};
+            (d.hc_summary_list || []).forEach(item => {
+                let key = `${item.lv3}|${item.lv4}`;
+                if (!groupedHC[key]) groupedHC[key] = { target: 0, actual: 0, lv3: item.lv3, lv4: item.lv4 };
+                if (item.status !== "" && item.status !== "H") groupedHC[key].target++;
+                if (["R","C","V"].includes(item.status)) groupedHC[key].actual++;
+            });
+            let totalTrg = 0, totalAct = 0;
+            if (Object.keys(groupedHC).length === 0) hcHtml += `<tr><td colspan="6" class="text-center text-muted">ไม่มีข้อมูลพนักงานที่เริ่มงานแล้ว</td></tr>`;
+            else {
+                Object.keys(groupedHC).sort().forEach(k => {
+                    let g = groupedHC[k];
+                    let abs = g.target > g.actual ? g.target - g.actual : 0;
+                    let rate = g.target === 0 ? '-' : `<span class="${(g.actual/g.target*100)<95?'text-red':'text-green'} font-bold">${(g.actual/g.target*100).toFixed(1)}%</span>`;
+                    totalTrg += g.target; totalAct += g.actual;
+                    hcHtml += `<tr><td>${g.lv3}</td><td>${g.lv4}</td><td class="text-center">${g.target>0?g.target:'-'}</td><td class="text-center">${g.actual>0?g.actual:'-'}</td><td class="text-center">${abs>0?abs:'-'}</td><td class="text-center">${rate}</td></tr>`;
+                });
+                let totAbs = totalTrg > totalAct ? totalTrg - totalAct : 0;
+                let totRate = totalTrg === 0 ? '-' : `<span class="${(totalAct/totalTrg*100)<95?'text-red':'text-green'} font-bold">${(totalAct/totalTrg*100).toFixed(1)}%</span>`;
+                hcHtml += `<tr style="background:var(--bg-body); font-weight:700;"><td colspan="2" class="text-right">GRAND TOTAL</td><td class="text-center">${totalTrg}</td><td class="text-center">${totalAct}</td><td class="text-center">${totAbs}</td><td class="text-center">${totRate}</td></tr>`;
+            }
+            document.getElementById('hc-summary-table').innerHTML = hcHtml + `</tbody>`;
+        }
+
+        if(document.getElementById('resigned-table')) {
+            let resHtml = `<thead><tr><th style="position:sticky; top:0; z-index:15;">ชื่อ-นามสกุล</th><th>ตำแหน่ง</th><th>รายละเอียด</th><th class="text-center">สังกัด</th><th class="text-center">วันที่สิ้นสุด</th></tr></thead><tbody>`;
+            let rList = d.resigned || [];
+            if (rList.length === 0) resHtml += `<tr><td colspan="5" class="text-center text-muted">ไม่พบประวัติพนักงานลาออกในวันนี้</td></tr>`;
+            else {
+                rList.sort((a, b) => (b.resignTs || 0) - (a.resignTs || 0));
+                rList.forEach(emp => {
+                    resHtml += `<tr>
+                        <td><b class="text-dark">${emp.name}</b> <span class="text-xs text-muted">(${emp.nickname})</span></td>
+                        <td class="text-muted">${emp.lv3}</td>
+                        <td class="font-bold">${emp.lv4}</td>
+                        <td class="text-center"><span style="background:var(--border-color); padding:2px 8px; border-radius:12px; font-size:10px;">${emp.bu}</span></td>
+                        <td class="text-center text-red font-bold">${emp.resignDateStr || '-'}</td>
+                    </tr>`;
+                });
+            }
+            document.getElementById('resigned-table').innerHTML = resHtml + `</tbody>`;
+        }
     }
 }
 
+// ------------------------------------------------------------
+// ⏱️ ON-TIME SECTION
+// ------------------------------------------------------------
 function updateOnTimeUI() {
     if (!globalData.ontime) return;
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
@@ -1285,7 +1383,7 @@ function updateOnTimeUI() {
                 label: 'On-Time',
                 data: slice.map(i => (i.ptglg !== null && i.hub !== null) ? (i.ptglg+i.hub)/2 : i.ptglg),
                 borderColor: '#10B981',
-                backgroundColor: (context) => getFillGradient(context.chart.ctx, context.chart.chartArea, '16, 185, 129'),
+                backgroundColor: (context) => getGradient(context.chart.ctx, context.chart.chartArea, 'rgba(16, 185, 129, 0.4)', 'rgba(16, 185, 129, 0.01)'),
                 fill: true, tension: 0.4, pointRadius: 4
             }];
             ontimeChartInstance.update();
@@ -1309,6 +1407,9 @@ function updateOnTimeUI() {
     }
 }
 
+// ------------------------------------------------------------
+// 💰 CLAIM SECTION
+// ------------------------------------------------------------
 function updateClaimUI() {
     if (!globalData.claims) return;
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
@@ -1371,6 +1472,9 @@ function updateClaimUI() {
     }
 }
 
+// ------------------------------------------------------------
+// 📦 INVENTORY SECTION
+// ------------------------------------------------------------
 function updateInventoryUI() {
     if (!globalData.inventory) return;
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
@@ -1423,7 +1527,7 @@ function updateInventoryUI() {
                 label: 'Accuracy %',
                 data: parsedData.map(i => i.pct),
                 borderColor: '#06B6D4',
-                backgroundColor: (context) => getFillGradient(context.chart.ctx, context.chart.chartArea, '6, 182, 212'),
+                backgroundColor: (context) => getGradient(context.chart.ctx, context.chart.chartArea, 'rgba(6, 182, 212, 0.4)', 'rgba(6, 182, 212, 0.01)'),
                 fill: true, tension: 0.4, pointRadius: 4
             };
             inventoryChartInstance.update();
@@ -1434,11 +1538,356 @@ function updateInventoryUI() {
             let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Month</th><th class="text-center">% Overall</th></tr></thead>`;
             let tbody = "<tbody>" + parsedData.slice().reverse().slice(0,14).map(i => {
                 let clr = i.pct >= 99 ? 'var(--brand-green)' : 'var(--brand-red)';
-                return `<tr><td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${i.label}</td><td class="text-center" style="color:${clr}; font-weight:700;">${i.pct !== null ? i.pct.toFixed(2)+'%' : '-'}</td></tr>`;
+                return `<tr><td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${i.label}</td><td class="text-center font-bold" style="color:${clr};">${i.pct !== null ? i.pct.toFixed(2)+'%' : '-'}</td></tr>`;
             }).join('') + "</tbody>";
             tableEl.innerHTML = thead + tbody;
         }
     }
+}
+
+// ------------------------------------------------------------
+// 🚀 LOCATION ACCURACY
+// ------------------------------------------------------------
+function renderLocationAccuracy() {
+    const locTableEl = document.getElementById('loc-accuracy-table');
+    const locBoxEl = document.getElementById('loc-analysis-box');
+    if(!locTableEl || !locBoxEl || !globalData.inventory || Object.keys(globalData.inventory).length === 0) return;
+
+    const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
+    const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
+    
+    let parsedData = [];
+    Object.keys(globalData.inventory).forEach(mLabel => {
+        let parts = mLabel.split('-');
+        if (parts.length === 2) {
+            let dObj = new Date(`${parts[0]} 1, 20${parts[1]}`);
+            parsedData.push({ label: mLabel, dateObj: dObj });
+        }
+    });
+    parsedData.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+    let validData = parsedData.filter(i => i.dateObj.getTime() <= targetTimestamp);
+
+    if(validData.length === 0) return;
+
+    let currM = validData[validData.length - 1]; 
+    let mLabel = currM.label;
+    let locStats = globalData.inventory[mLabel]?.loc_stats;
+
+    if (!locStats || locStats.total === 0) {
+        locTableEl.innerHTML = `<tr><td class="text-center text-muted" style="padding:20px;">ไม่มีข้อมูลตรวจ Location ในเดือน ${mLabel}</td></tr>`;
+        locBoxEl.innerHTML = `💡 ไม่มีข้อมูลสินค้าวางผิด Location ในเดือน ${mLabel}`;
+    } else {
+        let rawDetailsArr = [];
+        Object.keys(locStats.details).forEach(bu => {
+            Object.keys(locStats.details[bu]).forEach(tz => {
+                let d = locStats.details[bu][tz];
+                let parts = tz.split(" | ");
+                let lType = parts[0]; let zone = parts[1];
+                let acc = d.total > 0 ? ((d.total - d.wrong) / d.total) * 100 : 0;
+                rawDetailsArr.push({ bu: bu, type: lType, zone: zone, checked: d.total, wrong: d.wrong, acc: acc });
+            });
+        });
+
+        populateLocFilterOptions(rawDetailsArr);
+
+        let filteredArr = rawDetailsArr.filter(item => {
+            let passBU = window.locFilters.bu.includes('ALL') || window.locFilters.bu.includes(item.bu);
+            let passType = window.locFilters.type.includes('ALL') || window.locFilters.type.includes(item.type);
+            let passZone = window.locFilters.zone.includes('ALL') || window.locFilters.zone.includes(item.zone);
+            return passBU && passType && passZone;
+        });
+
+        filteredArr.sort((a, b) => b.wrong - a.wrong);
+
+        let thead = `<thead><tr>
+            <th>BU</th>
+            <th>Location Type</th>
+            <th>Zone</th>
+            <th class="text-center">Locations Checked</th>
+            <th class="text-center">Wrong Location</th>
+            <th class="text-center">Accuracy %</th>
+        </tr></thead>`;
+
+        let tbody = "<tbody>";
+        let worstZone = null;
+
+        if (filteredArr.length === 0) {
+             tbody += `<tr><td colspan="6" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลตามเงื่อนไขที่กรอง</td></tr>`;
+        } else {
+            filteredArr.forEach((item, idx) => {
+                if (idx === 0 && item.wrong > 0) worstZone = item;
+                let accClr = item.acc >= 99 ? 'var(--brand-green)' : 'var(--brand-red)';
+                let accBg = item.acc >= 99 ? '#dcfce7' : '#fee2e2';
+                
+                tbody += `<tr>
+                    <td class="font-bold">${item.bu}</td>
+                    <td class="text-muted">${item.type}</td>
+                    <td class="font-bold">${item.zone}</td>
+                    <td class="text-center">${fmtN(item.checked)}</td>
+                    <td class="text-center font-bold" style="color:${item.wrong>0?'var(--brand-red)':'inherit'};">${fmtN(item.wrong)}</td>
+                    <td class="text-center"><span style="background:${accBg}; color:${accClr}; padding:4px 10px; border-radius:12px; font-weight:700;">${item.acc.toFixed(2)}%</span></td>
+                </tr>`;
+            });
+        }
+        locTableEl.innerHTML = thead + tbody + "</tbody>";
+
+        let filteredChecked = filteredArr.reduce((s, i) => s + i.checked, 0);
+        let filteredWrong = filteredArr.reduce((s, i) => s + i.wrong, 0);
+        let filteredAcc = filteredChecked > 0 ? ((filteredChecked - filteredWrong) / filteredChecked) * 100 : 0;
+        
+        let analysisHtml = `<b>📊 วิเคราะห์ความแม่นยำ Location (เดือน ${mLabel}):</b> ภาพรวมความแม่นยำอยู่ที่ <b style="color:${filteredAcc>=99?'var(--brand-green)':'var(--brand-red)'};">${filteredAcc.toFixed(2)}%</b> (ตรวจ ${fmtN(filteredChecked)} จุด พบผิด ${fmtN(filteredWrong)} จุด)`;
+        if (worstZone) analysisHtml += `<br>🚨 <b>จุดเฝ้าระวัง:</b> BU: <b>${worstZone.bu}</b> โซน <b>${worstZone.zone}</b> พบผิด Location สูงสุด <b>${fmtN(worstZone.wrong)} จุด</b> แนะนำให้ตรวจสอบด่วน`;
+        
+        locBoxEl.innerHTML = analysisHtml;
+    }
+}
+
+// ------------------------------------------------------------
+// 🚀 PRODUCTIVITY SECTION
+// ------------------------------------------------------------
+function renderProductivitySection() {
+    try {
+        let pUsers = globalData.productivity || {};
+        let pAreas = globalData.prod_area || {};
+        let pZones = globalData.prod_zone || {};
+        let uMap = globalData.prod_users_map || {};
+
+        if (Object.keys(pUsers).length === 0) {
+            let msg = `<tr><td colspan="100%" class="text-center text-muted" style="padding:30px;">ไม่มีข้อมูล Productivity ในระบบ</td></tr>`;
+            if(document.getElementById('prod-area-table')) document.getElementById('prod-area-table').innerHTML = msg;
+            if(document.getElementById('prod-user-table')) document.getElementById('prod-user-table').innerHTML = msg;
+            if(document.getElementById('prod-overall-table')) document.getElementById('prod-overall-table').innerHTML = msg;
+            return;
+        }
+
+        const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
+        const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        
+        let areaFilterEl = document.getElementById('prod-area-filter');
+        let selectedArea = areaFilterEl ? areaFilterEl.value : 'ALL';
+        let period = document.getElementById('prod-period-filter')?.value || 'Daily';
+
+        let grouped = {};
+        let allAreasList = new Set();
+        let activeDates = new Set([...Object.keys(pUsers), ...Object.keys(pAreas), ...Object.keys(pZones)]);
+
+        let validDates = Array.from(activeDates)
+            .map(dKey => {
+                let d = new Date(getStandardDate(dKey));
+                return { key: dKey, time: d.getTime(), dObj: d };
+            })
+            .filter(item => !isNaN(item.time) && item.time <= targetTimestamp)
+            .sort((a,b) => a.time - b.time);
+
+        validDates.forEach(item => {
+            let dKey = item.key; let dObj = item.dObj;
+            let mStr = months[dObj.getMonth()]; let dStr = String(dObj.getDate()).padStart(2, '0'); let yStr = dObj.getFullYear();
+            let groupKey = period === 'Daily' ? `${dStr} ${mStr}` : `${mStr} ${yStr}`;
+            
+            if (!grouped[groupKey]) grouped[groupKey] = { label: groupKey, time: item.time, user_picks: 0, user_hours: 0, areas: {}, zones: {}, users: {}, activePickers: new Set() };
+
+            if (pZones[dKey]) {
+                Object.keys(pZones[dKey].zones).forEach(zName => {
+                    let z = pZones[dKey].zones[zName];
+                    if (!grouped[groupKey].zones[zName]) grouped[groupKey].zones[zName] = { sumProd: 0, cnt: 0, area: z.area || 'N/A' };
+                    grouped[groupKey].zones[zName].sumProd += (z.sumProd || 0);
+                    grouped[groupKey].zones[zName].cnt += (z.cnt || 0);
+                    if (z.area && z.area !== 'N/A') grouped[groupKey].zones[zName].area = z.area;
+                });
+            }
+
+            if (pAreas[dKey]) {
+                Object.keys(pAreas[dKey].areas).forEach(aName => {
+                    if(aName && aName !== "N/A" && aName !== "") allAreasList.add(aName);
+                    if (!grouped[groupKey].areas[aName]) grouped[groupKey].areas[aName] = { picks: 0, hours: 0 };
+                    let aData = pAreas[dKey].areas[aName];
+                    let aSec = aData.time_sec || aData.time || 0; 
+                    grouped[groupKey].areas[aName].picks += (aData.picks || 0);
+                    grouped[groupKey].areas[aName].hours += (aSec / 3600);
+                });
+            }
+
+            if (pUsers[dKey]) {
+                grouped[groupKey].user_picks += (pUsers[dKey].total_qty || 0);
+                grouped[groupKey].user_hours += ((pUsers[dKey].total_time || 0) / 3600);
+                
+                Object.keys(pUsers[dKey].users).forEach(uID => {
+                    let uData = pUsers[dKey].users[uID];
+                    let userArea = uData.area || "N/A";
+                    if (userArea !== "N/A" && userArea !== "") allAreasList.add(userArea);
+                    grouped[groupKey].activePickers.add(uID);
+                    
+                    if (!grouped[groupKey].users[uID]) grouped[groupKey].users[uID] = { picks: 0, hours: 0, team: uData.team, zone: uData.zone, area: userArea };
+                    grouped[groupKey].users[uID].picks += uData.qty;
+                    grouped[groupKey].users[uID].hours += (uData.time / 3600);
+                });
+            }
+        });
+
+        if (areaFilterEl && areaFilterEl.options.length <= 1) {
+            Array.from(allAreasList).sort().forEach(a => areaFilterEl.appendChild(new Option(a, a)));
+        }
+
+        let sortedGroups = Object.values(grouped).sort((a,b) => a.time - b.time);
+        if(sortedGroups.length === 0) return;
+
+        let chartSlice = period === 'Daily' ? sortedGroups.slice(-14) : sortedGroups;
+        let latest = sortedGroups[sortedGroups.length - 1];
+        
+        const groupDateStr = (g) => { let d = new Date(g.time); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+        let latestDateStr = groupDateStr(latest);
+        let currentTarget = getTarget(selectedArea, latestDateStr);
+
+        const isBulkUser = (u) => { let h = u.hours || 0; return h < 0.08 || (h > 0 && ((u.picks || 0) / h) > 600); };
+        const nonBulkTotals = (g) => {
+            let p = 0, h = 0;
+            Object.values(g.users || {}).forEach(u => { if (!isBulkUser(u)) { p += (u.picks || 0); h += (u.hours || 0); } });
+            return { picks: p, hours: h };
+        };
+
+        if (productivityChartInstance) {
+            let labels = [], dataActual = [], dataBackground = [], dataTarget = [], bgColorsActual = [], bgColorsBg = [], customPicks = [];
+            let maxUPH = 0; let maxTargetSlice = currentTarget;
+
+            chartSlice.forEach(g => {
+                let uph = 0;
+                if (selectedArea === 'ALL') { let nb = nonBulkTotals(g); uph = nb.hours > 0 ? Math.round(nb.picks / nb.hours) : 0; } 
+                else if (g.areas[selectedArea]) { uph = g.areas[selectedArea].hours > 0 ? Math.round(g.areas[selectedArea].picks / g.areas[selectedArea].hours) : 0; }
+                if (uph > maxUPH) maxUPH = uph;
+                let _gt = getTarget(selectedArea, groupDateStr(g)); if (_gt > maxTargetSlice) maxTargetSlice = _gt;
+            });
+            let barCeiling = Math.max(maxUPH, maxTargetSlice) + 30;
+            
+            chartSlice.forEach(g => {
+                labels.push(g.label);
+                let uph = 0, picks = 0;
+                let gt = getTarget(selectedArea, groupDateStr(g)); 
+
+                if (selectedArea === 'ALL') { let nb = nonBulkTotals(g); uph = nb.hours > 0 ? Math.round(nb.picks / nb.hours) : 0; picks = Math.round(nb.picks); } 
+                else if (g.areas[selectedArea]) { uph = g.areas[selectedArea].hours > 0 ? Math.round(g.areas[selectedArea].picks / g.areas[selectedArea].hours) : 0; picks = Math.round(g.areas[selectedArea].picks); }
+
+                dataActual.push(uph); dataBackground.push(barCeiling); dataTarget.push(gt); customPicks.push(picks);
+
+                if (uph >= gt) { bgColorsActual.push('#10B981'); bgColorsBg.push('rgba(16, 185, 129, 0.15)'); }
+                else { bgColorsActual.push('#EF4444'); bgColorsBg.push('rgba(239, 68, 68, 0.15)'); }
+            });
+
+            productivityChartInstance.data.labels = labels;
+            if(productivityChartInstance.data.datasets[0]) { productivityChartInstance.data.datasets[0].data = dataBackground; productivityChartInstance.data.datasets[0].backgroundColor = bgColorsBg; }
+            if(productivityChartInstance.data.datasets[1]) { productivityChartInstance.data.datasets[1].data = dataActual; productivityChartInstance.data.datasets[1].backgroundColor = bgColorsActual; productivityChartInstance.data.datasets[1].customPicks = customPicks; }
+            if(productivityChartInstance.data.datasets[2]) { productivityChartInstance.data.datasets[2].data = dataTarget; }
+            productivityChartInstance.update();
+        }
+
+        const hourlyRateFor = (dateStr) => { let e = getEffectiveUphCost(dateStr); return e.cost_days > 0 ? (e.cost_salary / e.cost_days / 8) : 0; };
+        let hourlyRate = hourlyRateFor(latestDateStr);
+
+        const summaryEl = document.getElementById('prod-summary-box');
+        if (summaryEl) {
+            let uph = 0, pks = 0, hrs = 0;
+            if (selectedArea === 'ALL') { let nb = nonBulkTotals(latest); uph = nb.hours > 0 ? Math.round(nb.picks / nb.hours) : 0; pks = nb.picks; hrs = nb.hours; } 
+            else if (latest.areas[selectedArea]) { uph = latest.areas[selectedArea].hours > 0 ? Math.round(latest.areas[selectedArea].picks / latest.areas[selectedArea].hours) : 0; pks = latest.areas[selectedArea].picks; hrs = latest.areas[selectedArea].hours; }
+            
+            let gap = uph - currentTarget;
+            let statusHtml = gap >= 0 ? `<span class="text-green font-bold">(สูงกว่าเป้า +${gap})</span>` : `<span class="text-red font-bold">(ต่ำกว่าเป้า ${Math.abs(gap)})</span>`;
+            let costPerPick = uph > 0 ? (hourlyRate / uph) : 0;
+            
+            summaryEl.innerHTML = `💡 <b>ภาพรวมล่าสุด (${latest.label}):</b> พื้นที่ ${selectedArea} ความเร็วเฉลี่ย <b class="text-dark" style="font-size:1.1em;">${uph} UPH</b> ${statusHtml} <br><span class="text-muted text-xs">(หยิบ ${fmtN(Math.round(pks))} รายการ / ${hrs.toFixed(1)} ชม.)</span> <span style="margin-left:15px; padding-left:15px; border-left:1px solid var(--border-color); color:var(--text-dark);">💰 <b>Cost per Pick: <span class="text-blue text-lg">${costPerPick.toFixed(2)} ฿</span></b></span>`;
+            summaryEl.className = uph >= currentTarget ? 'alert-box alert-green mb-20 mt-10' : 'alert-box alert-red mb-20 mt-10';
+        }
+
+        const areaTableEl = document.getElementById('prod-area-table');
+        if (areaTableEl) {
+            let zoneObj = latest.zones || {};
+            let zoneNames = Object.keys(zoneObj).sort((a, b) => {
+                let pa = zoneObj[a].cnt > 0 ? zoneObj[a].sumProd / zoneObj[a].cnt : 0;
+                let pb = zoneObj[b].cnt > 0 ? zoneObj[b].sumProd / zoneObj[b].cnt : 0;
+                return pb - pa;
+            });
+
+            let html = `<thead><tr>
+                <th>Picking Zone</th><th class="text-center">Area</th><th class="text-center">Productivity (UPH)</th><th class="text-center">Gap</th><th class="text-center text-blue">Cost/Pick (฿)</th>
+            </tr></thead><tbody>`;
+
+            if(zoneNames.length === 0) { html += `<tr><td colspan="5" class="text-center text-muted">ไม่มีข้อมูล Zone ในช่วงที่เลือก</td></tr>`; } 
+            else {
+                zoneNames.forEach(z => {
+                    let zd = zoneObj[z];
+                    let prod = zd.cnt > 0 ? Math.round(zd.sumProd / zd.cnt) : 0;
+                    let trg = getTarget(zd.area, latestDateStr);
+                    let gap = prod - trg; let cost = prod > 0 ? (hourlyRate / prod) : 0;
+
+                    html += `<tr>
+                        <td class="font-bold text-dark">${z}</td>
+                        <td class="text-center text-muted">${zd.area || '-'}</td>
+                        <td class="text-center"><span style="background:${prod>=trg?'#dcfce7':'#fee2e2'}; color:${prod>=trg?'#166534':'#991b1b'}; padding:4px 10px; border-radius:12px; font-weight:700;">${prod}</span></td>
+                        <td class="text-center font-bold" style="color:${gap>=0?'var(--brand-green)':'var(--brand-red)'}">${gap > 0 ? '+'+gap : gap}</td>
+                        <td class="text-center font-bold text-blue">${cost.toFixed(2)}</td>
+                    </tr>`;
+                });
+            }
+            areaTableEl.innerHTML = html + "</tbody>";
+        }
+
+        const userTableEl = document.getElementById('prod-user-table');
+        if (userTableEl) {
+            let users = Object.keys(latest.users).sort((a, b) => {
+                let uphA = latest.users[a].hours > 0 ? latest.users[a].picks / latest.users[a].hours : 0;
+                let uphB = latest.users[b].hours > 0 ? latest.users[b].picks / latest.users[b].hours : 0;
+                return uphB - uphA;
+            });
+
+            let html = `<thead><tr>
+                <th>Name (ID)</th><th class="text-center">Picks</th><th class="text-center">Hours</th><th class="text-center">UPH</th><th class="text-center text-blue">Cost/Pick (฿)</th>
+            </tr></thead><tbody>`;
+            
+            if(users.length === 0) { html += `<tr><td colspan="5" class="text-center text-muted">ไม่มีข้อมูลพนักงาน</td></tr>`; } 
+            else {
+                users.forEach(u => {
+                    let d = latest.users[u];
+                    let uph = d.hours > 0 ? Math.round(d.picks / d.hours) : 0;
+                    let isBulk = d.hours < 0.08 || uph > 600;
+                    let userTrg = getTarget(d.area, latestDateStr);
+                    let fullName = uMap[u] || u;
+                    let cost = uph > 0 ? (hourlyRate / uph) : 0;
+
+                    html += `<tr style="${isBulk ? 'opacity:0.5' : ''}">
+                        <td><b class="text-dark">${fullName}</b><br><span class="text-xs text-muted">ID: ${u}</span></td>
+                        <td class="text-center font-bold">${fmtN(Math.round(d.picks))}</td>
+                        <td class="text-center text-muted">${d.hours.toFixed(2)}</td>
+                        <td class="text-center font-bold" style="color:${uph >= userTrg ? 'var(--brand-green)' : 'var(--brand-red)'}">${isBulk ? '<span class="text-xs text-muted">Bulk/Error</span>' : uph}</td>
+                        <td class="text-center font-bold text-blue">${isBulk ? '-' : cost.toFixed(2)}</td>
+                    </tr>`;
+                });
+            }
+            userTableEl.innerHTML = html + "</tbody>";
+        }
+
+        const overallTableEl = document.getElementById('prod-overall-table');
+        if (overallTableEl) {
+            let html = `<thead><tr>
+                <th>Date</th><th class="text-center">Active Pickers</th><th class="text-center">Total Picks</th><th class="text-center">Overall UPH</th><th class="text-center text-blue">Avg Cost/Pick (฿)</th>
+            </tr></thead><tbody>`;
+            
+            sortedGroups.slice().reverse().forEach(item => {
+                let nb = nonBulkTotals(item); 
+                let uph = nb.hours > 0 ? Math.round(nb.picks / nb.hours) : 0;
+                let _ds = groupDateStr(item); let trg = getTarget(selectedArea, _ds);
+                let cost = uph > 0 ? (hourlyRateFor(_ds) / uph) : 0;
+
+                html += `<tr>
+                    <td class="font-bold">${item.label}</td>
+                    <td class="text-center"><span class="badge-glass" style="background:#F1F5F9; color:#475569;">${item.activePickers.size} คน</span></td>
+                    <td class="text-center font-bold">${fmtN(Math.round(nb.picks))}</td>
+                    <td class="text-center font-bold" style="color:${uph >= trg ? 'var(--brand-green)' : 'var(--brand-red)'}">${uph}</td>
+                    <td class="text-center font-bold text-blue">${cost.toFixed(2)}</td>
+                </tr>`;
+            });
+            overallTableEl.innerHTML = html + "</tbody>";
+        }
+
+    } catch (e) { console.error("Productivity Render Error:", e); }
 }
 
 initDashboard();
