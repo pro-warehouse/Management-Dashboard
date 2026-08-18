@@ -15,7 +15,32 @@ function showToast(message, type = 'success', duration = 3000) {
     if (duration > 0) _toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
 }
 
-// Helper: สร้าง Gradient ให้กราฟมีมิติ
+// ------------------------------------------------------------
+// GLOBAL HELPERS
+// ------------------------------------------------------------
+const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const getStandardDate = (rawDate) => {
+    if (!rawDate) return "";
+    let str = String(rawDate).trim();
+    if (str.includes('T')) str = str.split('T')[0];
+    let dObj = new Date(str);
+    if (!isNaN(dObj.getTime())) return `${dObj.getFullYear()}-${String(dObj.getMonth()+1).padStart(2,'0')}-${String(dObj.getDate()).padStart(2,'0')}`;
+    return str;
+};
+
+const formatShortDate = (dStr) => {
+    if (!dStr) return ""; let dObj = new Date(dStr);
+    return isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
+};
+
+const getDisplayDate = (dStr) => {
+     if (!dStr) return ""; let dObj = new Date(dStr);
+     return isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]} ${dObj.getFullYear()}`;
+};
+
+const fmtN = (v) => (v || 0).toLocaleString();
+
 function getGradient(ctx, chartArea, colorStart, colorEnd) {
     if (!chartArea) return colorStart;
     let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
@@ -33,7 +58,9 @@ const gradPalettes = [
     { s: '#22D3EE', e: '#06B6D4' }  // Teal
 ];
 
-// Chart.js Clean Defaults
+// ------------------------------------------------------------
+// CHART.JS CONFIG
+// ------------------------------------------------------------
 Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.color = '#64748B';
 Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
@@ -111,8 +138,6 @@ const lineDataLabelPlugin = {
     }
 };
 
-const fmtN = (v) => (v || 0).toLocaleString();
-
 // ==========================================
 // 🌟 INITIALIZE CHART INSTANCES
 // ==========================================
@@ -159,15 +184,6 @@ let globalData = { workforce:{}, fulfillment:{}, wave_ops:{}, ontime:{}, ontime_
 window.selectedBUs = ['ALL'];
 window.locFilters = { bu: ['ALL'], type: ['ALL'], zone: ['ALL'] };
 
-const getStandardDate = (rawDate) => {
-    if (!rawDate) return "";
-    let str = String(rawDate).trim();
-    if (str.includes('T')) str = str.split('T')[0];
-    let dObj = new Date(str);
-    if (!isNaN(dObj.getTime())) return `${dObj.getFullYear()}-${String(dObj.getMonth()+1).padStart(2,'0')}-${String(dObj.getDate()).padStart(2,'0')}`;
-    return str;
-};
-
 const standardizeBU = (bu) => {
     let b = (bu || '').toString().trim().toUpperCase();
     if (b.includes('MART')) return 'DM02';
@@ -177,7 +193,6 @@ const standardizeBU = (bu) => {
     return b;
 };
 
-// ปุ่ม Refresh UI
 document.getElementById('btn-refresh')?.addEventListener('click', () => {
     initDashboard();
 });
@@ -411,13 +426,13 @@ async function initDashboard() {
 }
 
 function refreshAllSections() {
-    updateTransportUI(); 
-    updateWorkforceUI();
-    updateOnTimeUI();
-    updateClaimUI();
-    updateInventoryUI();
-    renderLocationAccuracy();
-    renderProductivitySection();
+    try { updateTransportUI(); } catch(e) { console.error(e); }
+    try { updateWorkforceUI(); } catch(e) { console.error(e); }
+    try { updateOnTimeUI(); } catch(e) { console.error(e); }
+    try { updateClaimUI(); } catch(e) { console.error(e); }
+    try { updateInventoryUI(); } catch(e) { console.error(e); }
+    try { renderLocationAccuracy(); } catch(e) { console.error(e); }
+    try { renderProductivitySection(); } catch(e) { console.error(e); }
 }
 
 // ==========================================
@@ -696,7 +711,6 @@ async function initFulfillmentRealtime() {
         
         let validChartDates = sortedDates.filter(d => new Date(d).getTime() <= targetTimestamp).slice(0, 7).reverse(); 
         let allBUsArray = Array.from(buNamesSet).sort();
-        const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
         const ffmBuFilter = document.getElementById('ffm-bu-filter');
         if (ffmBuFilter && ffmBuFilter.options.length <= 1) {
@@ -872,15 +886,6 @@ async function initFulfillmentRealtime() {
                 activeWaveKey = dayWithOrders || validWaveKeys[0];
             }
         }
-
-        const formatShortDate = (dStr) => {
-            if (!dStr) return ""; let dObj = new Date(dStr);
-            return isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
-        };
-        const getDisplayDate = (dStr) => {
-             if (!dStr) return ""; let dObj = new Date(dStr);
-             return isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]} ${dObj.getFullYear()}`;
-        };
 
         const ordersEl = document.getElementById('ffm-orders-shipped');
         if (ordersEl) {
@@ -1190,7 +1195,7 @@ function updateWorkforceUI() {
         opsTotal = calcTotal(d);
         if (prevKey) opsPrev = calcTotal(globalData.workforce[prevKey]);
 
-        totalEl.innerText = fmtN(opsTotal);
+        if (totalEl) totalEl.innerText = fmtN(opsTotal);
         
         if (trendEl && noteEl) {
             let diff = opsTotal - opsPrev;
@@ -1200,7 +1205,7 @@ function updateWorkforceUI() {
             else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff)}`; noteEl.innerText = `vs prev`; }
             else { trendEl.innerText = "0"; noteEl.innerText = `vs prev`; }
         }
-        updEl.innerText = `Updated: ${getDisplayDate(tKey)}`;
+        if (updEl) updEl.innerText = `Updated: ${getDisplayDate(tKey)}`;
 
         if (d.nationality) {
             let nT = 0, nF = 0;
@@ -1231,7 +1236,7 @@ function updateWorkforceUI() {
         }));
 
         if(workforceChartInstance) {
-            workforceChartInstance.data.labels = chartKeys.map(k => { let dp = new Date(getStandardDate(k)); return `${String(dp.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][dp.getMonth()]}`; });
+            workforceChartInstance.data.labels = chartKeys.map(k => { let dp = new Date(getStandardDate(k)); return `${String(dp.getDate()).padStart(2,'0')} ${shortMonths[dp.getMonth()]}`; });
             workforceChartInstance.data.datasets = datasets;
             workforceChartInstance.update();
         }
@@ -1417,7 +1422,7 @@ function updateOnTimeUI() {
         
         if(ontimeChartInstance) {
             let slice = otArray.slice(-14);
-            ontimeChartInstance.data.labels = slice.map(i => `${String(i.dateObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i.dateObj.getMonth()]}`);
+            ontimeChartInstance.data.labels = slice.map(i => `${String(i.dateObj.getDate()).padStart(2,'0')} ${shortMonths[i.dateObj.getMonth()]}`);
             ontimeChartInstance.data.datasets = [{
                 label: 'On-Time',
                 data: slice.map(i => (i.ptglg !== null && i.hub !== null) ? (i.ptglg+i.hub)/2 : i.ptglg),
@@ -1439,7 +1444,7 @@ function updateOnTimeUI() {
                     let clr = v >= 99 ? 'var(--brand-green)' : (v >= 95 ? 'var(--brand-yellow)' : 'var(--brand-red)');
                     return `<span style="color:${clr}; font-weight:700;">${v.toFixed(2)}%</span>`;
                 };
-                let dStr = `${String(i.dateObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i.dateObj.getMonth()]} ${i.dateObj.getFullYear()}`;
+                let dStr = `${String(i.dateObj.getDate()).padStart(2,'0')} ${shortMonths[i.dateObj.getMonth()]} ${i.dateObj.getFullYear()}`;
                 return `<tr><td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${dStr}</td><td class="text-center">${p(_o)}</td><td class="text-center">${p(i.ptglg)}</td><td class="text-center">${p(i.hub)}</td></tr>`;
             }).join('') + "</tbody>";
             otTable.innerHTML = thead + tbody;
@@ -1511,7 +1516,7 @@ function updateClaimUI() {
 
         if(claimChart2Instance) {
             let slice = combinedData.slice(-14);
-            claimChart2Instance.data.labels = slice.map(i => `${String(i.dateObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i.dateObj.getMonth()]}`);
+            claimChart2Instance.data.labels = slice.map(i => `${String(i.dateObj.getDate()).padStart(2,'0')} ${shortMonths[i.dateObj.getMonth()]}`);
             claimChart2Instance.data.datasets[0].data = slice.map(i => i.cost);
             claimChart2Instance.data.datasets[1].data = slice.map(i => i.qty);
             claimChart2Instance.data.datasets[0].backgroundColor = (ctx) => getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#EF4444', '#F87171');
@@ -1522,7 +1527,7 @@ function updateClaimUI() {
         if (tableEl) {
             let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Date</th><th class="text-center">มูลค่ารวม (฿)</th><th class="text-center">จำนวนชิ้น</th></tr></thead>`;
             let tbody = "<tbody>" + combinedData.slice().reverse().slice(0,14).map(i => {
-                let dStr = `${String(i.dateObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i.dateObj.getMonth()]} ${i.dateObj.getFullYear()}`;
+                let dStr = `${String(i.dateObj.getDate()).padStart(2,'0')} ${shortMonths[i.dateObj.getMonth()]} ${i.dateObj.getFullYear()}`;
                 return `<tr><td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${dStr}</td><td class="text-center text-red font-bold">${fmtN(i.cost)}</td><td class="text-center">${fmtN(i.qty)}</td></tr>`;
             }).join('') + "</tbody>";
             tableEl.innerHTML = thead + tbody;
@@ -1657,8 +1662,7 @@ function updateTransportUI() {
     let data = globalData.transport[todayKey];
     
     let dObj = new Date(getStandardDate(todayKey));
-    let displayDate = `${String(dObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][dObj.getMonth()]} ${dObj.getFullYear()}`;
-    document.getElementById('carrier-update-time').innerText = `อัปเดต: ${displayDate}`;
+    document.getElementById('carrier-update-time').innerText = `อัปเดต: ${getDisplayDate(dObj)}`;
 
     document.getElementById('tp-kpi-total').innerText = fmtN(data.total_orders);
     document.getElementById('tp-kpi-success').innerText = fmtN(data.success_orders);
@@ -1809,7 +1813,6 @@ function renderProductivitySection() {
 
         const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
         const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
-        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         
         let areaFilterEl = document.getElementById('prod-area-filter');
         let selectedArea = areaFilterEl ? areaFilterEl.value : 'ALL';
@@ -1829,7 +1832,7 @@ function renderProductivitySection() {
 
         validDates.forEach(item => {
             let dKey = item.key; let dObj = item.dObj;
-            let mStr = months[dObj.getMonth()]; let dStr = String(dObj.getDate()).padStart(2, '0'); let yStr = dObj.getFullYear();
+            let mStr = shortMonths[dObj.getMonth()]; let dStr = String(dObj.getDate()).padStart(2, '0'); let yStr = dObj.getFullYear();
             let groupKey = period === 'Daily' ? `${dStr} ${mStr}` : `${mStr} ${yStr}`;
             
             if (!grouped[groupKey]) grouped[groupKey] = { label: groupKey, time: item.time, user_picks: 0, user_hours: 0, areas: {}, zones: {}, users: {}, activePickers: new Set() };
