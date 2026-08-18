@@ -15,7 +15,7 @@ function showToast(message, type = 'success', duration = 3000) {
     if (duration > 0) _toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
 }
 
-// Helper: สร้าง Gradient ให้กราฟมีมิติเข้ากับตัวการ์ด
+// Helper: สร้าง Gradient ให้กราฟมีมิติ
 function getGradient(ctx, chartArea, colorStart, colorEnd) {
     if (!chartArea) return colorStart;
     let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
@@ -817,7 +817,7 @@ async function initFulfillmentRealtime() {
                         <td class="font-bold">${item.bu}</td>
                         <td class="text-right font-bold">${fmtN(item.vol)}</td>
                         <td>
-                            <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
                                 <span class="font-bold text-xs" style="width:35px; text-align:right;">${utilDisp}%</span>
                                 <div style="flex:1; background:var(--border-color); border-radius:4px; height:6px; overflow:hidden;">
                                     <div style="width:${barWidth}%; background:${statusObj.barColor}; height:100%; border-radius:4px;"></div>
@@ -952,40 +952,51 @@ async function initFulfillmentRealtime() {
 
             const rateValEl = document.getElementById('ffm-rate-val');
             const rateEtaEl = document.getElementById('ffm-rate-eta');
-            if (rateValEl && latestShipDateStr) {
-                let lReq = chartDataMap[latestShipDateStr].req || 0, lAlloc = chartDataMap[latestShipDateStr].alloc || 0, lShip = chartDataMap[latestShipDateStr].ship || 0;
-                let pReq = prevShipDateStr ? (chartDataMap[prevShipDateStr].req || 0) : 0, pAlloc = prevShipDateStr ? (chartDataMap[prevShipDateStr].alloc || 0) : 0, pShip = prevShipDateStr ? (chartDataMap[prevShipDateStr].ship || 0) : 0;
+            if (rateValEl) {
+                if (!latestShipDateStr) {
+                    rateValEl.innerText = `0.0%`;
+                    if (rateEtaEl) rateEtaEl.innerText = `DC SLA: 0.0%`;
+                    const rateTrendEl = document.getElementById('ffm-rate-trend'), rateNoteEl = document.getElementById('ffm-rate-note'), etaTrendEl = document.getElementById('eta-rate-trend');
+                    if(rateTrendEl) rateTrendEl.innerText = "-";
+                    if(rateNoteEl) rateNoteEl.innerText = "ไม่มีข้อมูล";
+                    if(etaTrendEl) etaTrendEl.innerText = "-";
+                    let updateSpan = document.getElementById('ffm-rate-update');
+                    if (updateSpan) updateSpan.innerText = `Updated: --`;
+                } else {
+                    let lReq = chartDataMap[latestShipDateStr].req || 0, lAlloc = chartDataMap[latestShipDateStr].alloc || 0, lShip = chartDataMap[latestShipDateStr].ship || 0;
+                    let pReq = prevShipDateStr ? (chartDataMap[prevShipDateStr].req || 0) : 0, pAlloc = prevShipDateStr ? (chartDataMap[prevShipDateStr].alloc || 0) : 0, pShip = prevShipDateStr ? (chartDataMap[prevShipDateStr].ship || 0) : 0;
 
-                let currentFfm = lReq > 0 ? (lShip / lReq) * 100 : 0;
-                let currentEtaFfm = lAlloc > 0 ? Math.min(100, (lShip / lAlloc) * 100) : 0;
-                let prevFfm = pReq > 0 ? (pShip / pReq) * 100 : 0;
-                let prevEtaFfm = pAlloc > 0 ? Math.min(100, (pShip / pAlloc) * 100) : 0;
+                    let currentFfm = lReq > 0 ? (lShip / lReq) * 100 : 0;
+                    let currentEtaFfm = lAlloc > 0 ? Math.min(100, (lShip / lAlloc) * 100) : 0;
+                    let prevFfm = pReq > 0 ? (pShip / pReq) * 100 : 0;
+                    let prevEtaFfm = pAlloc > 0 ? Math.min(100, (pShip / pAlloc) * 100) : 0;
 
-                rateValEl.innerText = `${currentFfm.toFixed(1)}%`;
-                if (rateEtaEl) rateEtaEl.innerText = `DC SLA: ${currentEtaFfm.toFixed(1)}%`;
+                    rateValEl.innerText = `${currentFfm.toFixed(1)}%`;
+                    if (rateEtaEl) rateEtaEl.innerText = `DC SLA: ${currentEtaFfm.toFixed(1)}%`;
 
-                const rateTrendEl = document.getElementById('ffm-rate-trend'), rateNoteEl = document.getElementById('ffm-rate-note'), etaTrendEl = document.getElementById('eta-rate-trend');
-                if (rateTrendEl && rateNoteEl) {
-                    if (!prevShipDateStr) {
-                        rateTrendEl.innerText = "-"; rateNoteEl.innerText = "ไม่มีข้อมูลเทียบ";
-                        if (etaTrendEl) etaTrendEl.innerText = "-";
-                    } else {
-                        let diffFfm = currentFfm - prevFfm;
-                        if (diffFfm > 0) rateTrendEl.innerText = `↗ +${diffFfm.toFixed(1)}%`;
-                        else if (diffFfm < 0) rateTrendEl.innerText = `↘ ${Math.abs(diffFfm).toFixed(1)}%`;
-                        else rateTrendEl.innerText = `0%`;
-                        rateNoteEl.innerText = `vs ${formatShortDate(prevShipDateStr)}`;
-                        
-                        if (etaTrendEl) {
-                            let diffEta = currentEtaFfm - prevEtaFfm;
-                            if (diffEta > 0) etaTrendEl.innerText = `↗ +${diffEta.toFixed(1)}%`;
-                            else if (diffEta < 0) etaTrendEl.innerText = `↘ ${Math.abs(diffEta).toFixed(1)}%`;
-                            else etaTrendEl.innerText = `0%`;
+                    const rateTrendEl = document.getElementById('ffm-rate-trend'), rateNoteEl = document.getElementById('ffm-rate-note'), etaTrendEl = document.getElementById('eta-rate-trend');
+                    if (rateTrendEl && rateNoteEl) {
+                        if (!prevShipDateStr) {
+                            rateTrendEl.innerText = "-"; rateNoteEl.innerText = "ไม่มีข้อมูลเทียบ";
+                            if (etaTrendEl) etaTrendEl.innerText = "-";
+                        } else {
+                            let diffFfm = currentFfm - prevFfm;
+                            if (diffFfm > 0) rateTrendEl.innerText = `↗ +${diffFfm.toFixed(1)}%`;
+                            else if (diffFfm < 0) rateTrendEl.innerText = `↘ ${Math.abs(diffFfm).toFixed(1)}%`;
+                            else rateTrendEl.innerText = `0%`;
+                            rateNoteEl.innerText = `vs ${formatShortDate(prevShipDateStr)}`;
+                            
+                            if (etaTrendEl) {
+                                let diffEta = currentEtaFfm - prevEtaFfm;
+                                if (diffEta > 0) etaTrendEl.innerText = `↗ +${diffEta.toFixed(1)}%`;
+                                else if (diffEta < 0) etaTrendEl.innerText = `↘ ${Math.abs(diffEta).toFixed(1)}%`;
+                                else etaTrendEl.innerText = `0%`;
+                            }
                         }
                     }
+                    let updateSpan = document.getElementById('ffm-rate-update');
+                    if (updateSpan) updateSpan.innerText = `Updated: ${getDisplayDate(latestShipDateStr)}`;
                 }
-                let updateSpan = document.getElementById('ffm-rate-update');
-                if (updateSpan && latestShipDateStr) updateSpan.innerText = `Updated: ${getDisplayDate(latestShipDateStr)}`;
             }
         }
 
@@ -1134,7 +1145,19 @@ async function initFulfillmentRealtime() {
 }
 
 function updateWorkforceUI() {
-    if (!globalData.workforce) return;
+    const totalEl = document.getElementById('headcount-total');
+    const trendEl = document.getElementById('headcount-trend');
+    const noteEl = document.getElementById('headcount-note');
+    const updEl = document.getElementById('headcount-update');
+
+    if (!globalData.workforce || Object.keys(globalData.workforce).length === 0) {
+        if(totalEl) totalEl.innerText = "0";
+        if(trendEl) trendEl.innerText = "-";
+        if(noteEl) noteEl.innerText = "ไม่มีข้อมูล";
+        if(updEl) updEl.innerText = "Updated: --";
+        return;
+    }
+    
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
     const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
     let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
@@ -1167,18 +1190,17 @@ function updateWorkforceUI() {
         opsTotal = calcTotal(d);
         if (prevKey) opsPrev = calcTotal(globalData.workforce[prevKey]);
 
-        document.getElementById('headcount-total').innerText = fmtN(opsTotal);
+        totalEl.innerText = fmtN(opsTotal);
         
-        let trendEl = document.getElementById('headcount-trend'), trendNoteEl = document.getElementById('headcount-note');
-        if (trendEl && trendNoteEl) {
+        if (trendEl && noteEl) {
             let diff = opsTotal - opsPrev;
-            if (opsTotal === 0 && opsPrev === 0) { trendEl.innerText = "-"; trendNoteEl.innerText = "ไม่มีข้อมูล"; }
-            else if (!prevKey) { trendEl.innerText = "-"; trendNoteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
-            else if (diff > 0) { trendEl.innerText = `↗ +${diff}`; trendNoteEl.innerText = `vs prev`; }
-            else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff)}`; trendNoteEl.innerText = `vs prev`; }
-            else { trendEl.innerText = "0"; trendNoteEl.innerText = `vs prev`; }
+            if (opsTotal === 0 && opsPrev === 0) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูล"; }
+            else if (!prevKey) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
+            else if (diff > 0) { trendEl.innerText = `↗ +${diff}`; noteEl.innerText = `vs prev`; }
+            else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff)}`; noteEl.innerText = `vs prev`; }
+            else { trendEl.innerText = "0"; noteEl.innerText = `vs prev`; }
         }
-        document.getElementById('headcount-update').innerText = `Updated: ${getDisplayDate(tKey)}`;
+        updEl.innerText = `Updated: ${getDisplayDate(tKey)}`;
 
         if (d.nationality) {
             let nT = 0, nF = 0;
@@ -1342,6 +1364,11 @@ function updateWorkforceUI() {
             }
             document.getElementById('resigned-table').innerHTML = resHtml + `</tbody>`;
         }
+    } else {
+        if(totalEl) totalEl.innerText = "0";
+        if(trendEl) trendEl.innerText = "-";
+        if(noteEl) noteEl.innerText = "ไม่มีข้อมูลในวันที่เลือก";
+        if(updEl) updEl.innerText = "Updated: --";
     }
 }
 
@@ -1349,7 +1376,19 @@ function updateWorkforceUI() {
 // ⏱️ ON-TIME SECTION
 // ------------------------------------------------------------
 function updateOnTimeUI() {
-    if (!globalData.ontime) return;
+    const valEl = document.getElementById('ontime-val');
+    const trendEl = document.getElementById('ontime-trend');
+    const noteEl = document.getElementById('ontime-note');
+    const updEl = document.getElementById('ontime-update');
+
+    if (!globalData.ontime || Object.keys(globalData.ontime).length === 0) {
+        if(valEl) valEl.innerText = "-";
+        if(trendEl) trendEl.innerText = "-";
+        if(noteEl) noteEl.innerText = "ไม่มีข้อมูล";
+        if(updEl) updEl.innerText = "Updated: --";
+        return;
+    }
+    
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
     const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
     
@@ -1361,21 +1400,20 @@ function updateOnTimeUI() {
         let curr = otArray[otArray.length-1];
         let prev = otArray.length > 1 ? otArray[otArray.length-2] : null;
         let over = (curr.ptglg !== null && curr.hub !== null) ? (curr.ptglg+curr.hub)/2 : curr.ptglg;
-        document.getElementById('ontime-val').innerText = over !== null ? `${over.toFixed(2)}%` : "0.00%";
+        if(valEl) valEl.innerText = over !== null ? `${over.toFixed(2)}%` : "0.00%";
         
-        let trendEl = document.getElementById('ontime-trend'), trendNoteEl = document.getElementById('ontime-note');
-        if (trendEl && trendNoteEl) {
-            if (!prev) { trendEl.innerText = "-"; trendNoteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
+        if (trendEl && noteEl) {
+            if (!prev) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
             else {
                 let pOver = (prev.ptglg !== null && prev.hub !== null) ? (prev.ptglg+prev.hub)/2 : prev.ptglg;
                 let diff = over - pOver;
                 if (diff > 0) { trendEl.innerText = `↗ +${diff.toFixed(2)} pp`; }
                 else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff).toFixed(2)} pp`; }
                 else { trendEl.innerText = "0 pp"; }
-                trendNoteEl.innerText = "vs prev";
+                noteEl.innerText = "vs prev";
             }
         }
-        document.getElementById('ontime-update').innerText = `Updated: ${getDisplayDate(curr.dateObj)}`;
+        if(updEl) updEl.innerText = `Updated: ${getDisplayDate(curr.dateObj)}`;
         
         if(ontimeChartInstance) {
             let slice = otArray.slice(-14);
@@ -1406,6 +1444,13 @@ function updateOnTimeUI() {
             }).join('') + "</tbody>";
             otTable.innerHTML = thead + tbody;
         }
+    } else {
+        if(valEl) valEl.innerText = "-";
+        if(trendEl) trendEl.innerText = "-";
+        if(noteEl) noteEl.innerText = "ไม่มีข้อมูลในวันที่เลือก";
+        if(updEl) updEl.innerText = "Updated: --";
+        const otTable = document.getElementById('ontime-detail-table');
+        if (otTable) otTable.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูล</th></tr></thead>`;
     }
 }
 
@@ -1413,7 +1458,19 @@ function updateOnTimeUI() {
 // 💰 CLAIM SECTION
 // ------------------------------------------------------------
 function updateClaimUI() {
-    if (!globalData.claims) return;
+    const valEl = document.getElementById('claim-val');
+    const trendEl = document.getElementById('claim-trend');
+    const noteEl = document.getElementById('claim-note');
+    const updEl = document.getElementById('claim-update');
+
+    if (!globalData.claims || Object.keys(globalData.claims).length === 0) {
+        if(valEl) valEl.innerText = "0";
+        if(trendEl) trendEl.innerText = "-";
+        if(noteEl) noteEl.innerText = "ไม่มีข้อมูล";
+        if(updEl) updEl.innerText = "Updated: --";
+        return;
+    }
+
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
     const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
     
@@ -1438,20 +1495,19 @@ function updateClaimUI() {
     if (combinedData.length > 0) {
         let curr = combinedData[combinedData.length-1];
         let prev = combinedData.length > 1 ? combinedData[combinedData.length-2] : null;
-        document.getElementById('claim-val').innerText = fmtN(curr.cost);
+        if(valEl) valEl.innerText = fmtN(curr.cost);
         
-        let trendEl = document.getElementById('claim-trend'), trendNoteEl = document.getElementById('claim-note');
-        if (trendEl && trendNoteEl) {
-            if (!prev) { trendEl.innerText = "-"; trendNoteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
+        if (trendEl && noteEl) {
+            if (!prev) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
             else {
                 let diff = curr.cost - prev.cost;
                 if (diff > 0) { trendEl.innerText = `↗ +${fmtN(diff)}`; }
                 else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff)}%`; }
                 else { trendEl.innerText = "0"; }
-                trendNoteEl.innerText = "vs prev";
+                noteEl.innerText = "vs prev";
             }
         }
-        document.getElementById('claim-update').innerText = `Updated: ${getDisplayDate(curr.dateObj)}`;
+        if(updEl) updEl.innerText = `Updated: ${getDisplayDate(curr.dateObj)}`;
 
         if(claimChart2Instance) {
             let slice = combinedData.slice(-14);
@@ -1471,6 +1527,13 @@ function updateClaimUI() {
             }).join('') + "</tbody>";
             tableEl.innerHTML = thead + tbody;
         }
+    } else {
+        if(valEl) valEl.innerText = "0";
+        if(trendEl) trendEl.innerText = "-";
+        if(noteEl) noteEl.innerText = "ไม่มีข้อมูลในวันที่เลือก";
+        if(updEl) updEl.innerText = "Updated: --";
+        const tableEl = document.getElementById('claim-detail-table');
+        if (tableEl) tableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูล</th></tr></thead>`;
     }
 }
 
@@ -1478,7 +1541,19 @@ function updateClaimUI() {
 // 📦 INVENTORY SECTION
 // ------------------------------------------------------------
 function updateInventoryUI() {
-    if (!globalData.inventory) return;
+    const valEl = document.getElementById('inv-val');
+    const trendEl = document.getElementById('inv-trend');
+    const noteEl = document.getElementById('inv-note');
+    const updEl = document.getElementById('inv-update');
+
+    if (!globalData.inventory || Object.keys(globalData.inventory).length === 0) {
+        if(valEl) valEl.innerText = "-";
+        if(trendEl) trendEl.innerText = "-";
+        if(noteEl) noteEl.innerText = "ไม่มีข้อมูล";
+        if(updEl) updEl.innerText = "Updated: --";
+        return;
+    }
+
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
     const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
     
@@ -1508,20 +1583,19 @@ function updateInventoryUI() {
     if (parsedData.length > 0) {
         let curr = parsedData[parsedData.length-1];
         let prev = parsedData.length > 1 ? parsedData[parsedData.length-2] : null;
-        document.getElementById('inv-val').innerText = curr.pct !== null ? `${curr.pct.toFixed(2)}%` : "-";
+        if(valEl) valEl.innerText = curr.pct !== null ? `${curr.pct.toFixed(2)}%` : "-";
         
-        let trendEl = document.getElementById('inv-trend'), trendNoteEl = document.getElementById('inv-note');
-        if (trendEl && trendNoteEl) {
-            if (!prev) { trendEl.innerText = "-"; trendNoteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
+        if (trendEl && noteEl) {
+            if (!prev) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
             else {
                 let diff = curr.pct - prev.pct;
                 if (diff > 0) { trendEl.innerText = `↗ +${diff.toFixed(2)} pp`; }
                 else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff)}%`; }
                 else { trendEl.innerText = "0 pp"; }
-                trendNoteEl.innerText = "vs prev";
+                noteEl.innerText = "vs prev";
             }
         }
-        document.getElementById('inv-update').innerText = `Updated: ข้อมูลเดือน ${curr.label}`;
+        if(updEl) updEl.innerText = `Updated: ข้อมูลเดือน ${curr.label}`;
 
         if(inventoryChartInstance) {
             inventoryChartInstance.data.labels = parsedData.map(i => i.label);
@@ -1545,6 +1619,13 @@ function updateInventoryUI() {
             }).join('') + "</tbody>";
             tableEl.innerHTML = thead + tbody;
         }
+    } else {
+        if(valEl) valEl.innerText = "-";
+        if(trendEl) trendEl.innerText = "-";
+        if(noteEl) noteEl.innerText = "ไม่มีข้อมูลในวันที่เลือก";
+        if(updEl) updEl.innerText = "Updated: --";
+        const tableEl = document.getElementById('inv-detail-table');
+        if (tableEl) tableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูล</th></tr></thead>`;
     }
 }
 
@@ -1726,7 +1807,7 @@ function renderProductivitySection() {
             return;
         }
 
-        const dpVal = document.getElementById('date-picker')?.value || new DatetoISOString().split('T')[0];
+        const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
         const targetTimestamp = new Date(dpVal).setHours(23, 59, 59, 999);
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         
