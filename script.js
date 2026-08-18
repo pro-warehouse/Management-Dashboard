@@ -8,28 +8,40 @@ function showToast(message, type = 'success', duration = 3000) {
     const msgEl = document.getElementById('toast-message');
     if (!toast || !msgEl) return;
     msgEl.innerText = message;
-    const colors = { success: '#22C55E', error: '#EF4444', info: '#F59E0B' };
+    const colors = { success: '#10B981', error: '#EF4444', info: '#F59E0B' };
     toast.style.background = colors[type] || colors.success;
     toast.classList.add('show');
     if (_toastTimer) clearTimeout(_toastTimer);
     if (duration > 0) _toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
 }
 
-// Helper: สำหรับการสร้างสี (ไม่ใช้ Gradient ตามสไตล์ Flat Design)
-function getSolidColor(index) {
-    const colors = ['#3B82F6', '#22C55E', '#F59E0B', '#A855F7', '#EF4444', '#06B6D4'];
-    return colors[index % colors.length];
+// Helper: สร้าง Gradient สำหรับกราฟเพื่อให้มีมิติตามเรฟเฟอเรนซ์
+function getGradient(ctx, chartArea, colorStart, colorEnd) {
+    if (!chartArea) return colorStart;
+    let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+    gradient.addColorStop(0, colorStart);
+    gradient.addColorStop(1, colorEnd);
+    return gradient;
 }
 
-// Chart.js Clean Defaults (ลดเส้น Grid)
+const gradPalettes = [
+    { s: '#60A5FA', e: '#3B82F6' }, // Blue
+    { s: '#34D399', e: '#10B981' }, // Green
+    { s: '#FCD34D', e: '#F59E0B' }, // Yellow
+    { s: '#A78BFA', e: '#8B5CF6' }, // Purple
+    { s: '#F87171', e: '#EF4444' }, // Red
+    { s: '#22D3EE', e: '#06B6D4' }  // Teal
+];
+
+// Chart.js Clean Defaults
 Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.color = '#64748B';
 Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
 Chart.defaults.plugins.tooltip.titleFont = { size: 12, family: 'Inter', weight: 'bold' };
 Chart.defaults.plugins.tooltip.padding = 10;
 Chart.defaults.plugins.tooltip.cornerRadius = 6;
-Chart.defaults.elements.bar.borderWidth = 0; // ไม่มีเส้นขอบ
-Chart.defaults.elements.line.tension = 0.4; // เส้นโค้งสมูทเหมือนเรฟ
+Chart.defaults.elements.bar.borderWidth = 0; 
+Chart.defaults.elements.line.tension = 0.4; 
 Chart.defaults.elements.point.radius = 4;
 
 const dataLabelPlugin = {
@@ -395,7 +407,7 @@ async function initDashboard() {
     await initFulfillmentRealtime();
     refreshAllSections();
     document.getElementById('global-loader').style.display = 'none';
-    showToast("ข้อมูลรีเฟรชสำเร็จ!");
+    showToast("ข้อมูลอัปเดตเรียบร้อยแล้ว!");
 }
 
 function refreshAllSections() {
@@ -705,7 +717,12 @@ async function initFulfillmentRealtime() {
                     return {
                         label: bu,
                         data: validChartDates.map(dStr => parseFloat(chartDataMap[dStr]?.buReq?.[bu] || 0)), 
-                        backgroundColor: getSolidColor(colorIndex), // ใช้สี Solid
+                        backgroundColor: (context) => {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return gradPalettes[colorIndex % 6].s;
+                            return getGradient(ctx, chartArea, gradPalettes[colorIndex % 6].s, gradPalettes[colorIndex % 6].e);
+                        },
                         borderRadius: 4
                     };
                 });
@@ -746,7 +763,12 @@ async function initFulfillmentRealtime() {
                 ffmVolumeChartInstance.data.labels = mixLabels;
                 ffmVolumeChartInstance.data.datasets = [{
                     data: mixData,
-                    backgroundColor: mixLabels.map((_, i) => getSolidColor(i)), // สี Solid
+                    backgroundColor: (context) => {
+                        const chart = context.chart;
+                        const {ctx, chartArea} = chart;
+                        if (!chartArea) return mixLabels.map((_, i) => gradPalettes[i % 6].s);
+                        return mixLabels.map((_, i) => getGradient(ctx, chartArea, gradPalettes[i % 6].s, gradPalettes[i % 6].e));
+                    },
                     borderWidth: 0
                 }];
                 ffmVolumeChartInstance.update();
@@ -785,10 +807,10 @@ async function initFulfillmentRealtime() {
                     let utilDisp = Math.min(100, item.utilPct).toFixed(1);
                     let barWidth = Math.min(100, item.utilPct);
                     
-                    let statusObj = { text: "Available", color: "#166534", bg: "#dcfce7", barColor: "#3B82F6" }; 
-                    if (item.utilPct >= 100) { statusObj = { text: "Overloaded", color: "#991b1b", bg: "#fee2e2", barColor: "#EF4444" }; } 
-                    else if (item.utilPct >= 90) { statusObj = { text: "Near cap.", color: "#92400e", bg: "#fef3c7", barColor: "#F59E0B" }; } 
-                    else if (item.utilPct >= 70) { statusObj = { text: "Optimal", color: "#166534", bg: "#dcfce7", barColor: "#10B981" }; }
+                    let statusObj = { text: "Available", color: "#10B981", bg: "#dcfce7", barColor: "#3B82F6" }; 
+                    if (item.utilPct >= 100) { statusObj = { text: "Overloaded", color: "#EF4444", bg: "#fee2e2", barColor: "#EF4444" }; } 
+                    else if (item.utilPct >= 90) { statusObj = { text: "Near cap.", color: "#F59E0B", bg: "#fef3c7", barColor: "#F59E0B" }; } 
+                    else if (item.utilPct >= 70) { statusObj = { text: "Optimal", color: "#10B981", bg: "#dcfce7", barColor: "#10B981" }; }
 
                     tbody += `
                     <tr>
@@ -797,13 +819,13 @@ async function initFulfillmentRealtime() {
                         <td>
                             <div style="display:flex; align-items:center; gap:12px;">
                                 <span class="font-bold text-xs" style="width:40px; text-align:right;">${utilDisp}%</span>
-                                <div style="flex:1; background:var(--border-color); border-radius:4px; height:8px; overflow:hidden;">
+                                <div style="flex:1; background:var(--border-color); border-radius:4px; height:6px; overflow:hidden;">
                                     <div style="width:${barWidth}%; background:${statusObj.barColor}; height:100%; border-radius:4px;"></div>
                                 </div>
                             </div>
                         </td>
                         <td class="text-center">
-                            <span style="padding:4px 10px; border-radius:12px; font-size:11px; font-weight:700; display:inline-block; width:85px; background:${statusObj.bg}; color:${statusObj.color};">${statusObj.text}</span>
+                            <span style="padding:4px 10px; border-radius:4px; font-size:11px; font-weight:700; display:inline-block; width:85px; background:${statusObj.bg}; color:${statusObj.color};">${statusObj.text}</span>
                         </td>
                     </tr>`;
                 });
@@ -864,7 +886,6 @@ async function initFulfillmentRealtime() {
         if (ordersEl) {
             ordersEl.innerText = totalOrdersToday > 0 ? fmtN(totalOrdersToday) : "0";
             const trendEl = document.getElementById('ffm-orders-trend');
-            const trendTextEl = document.getElementById('ffm-orders-note');
             
             if (trendEl) {
                 let prevDateText = yesterdayKeyStr ? formatShortDate(yesterdayKeyStr) : "วันก่อนหน้า";
@@ -914,7 +935,7 @@ async function initFulfillmentRealtime() {
                     
                     let pct = dayTot > 0 ? Math.min(100, (dayComp / dayTot) * 100).toFixed(1) : 0;
                     let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
-                    let pctColor = pct >= 100 ? '#166534' : (pct > 0 ? '#92400e' : '#991b1b');
+                    let pctColor = pct >= 100 ? '#10B981' : (pct > 0 ? '#F59E0B' : '#EF4444');
                     tr += `<td class="text-center"><span style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:600;">${pct}%</span></td></tr>`;
                     tbody += tr;
                 });
@@ -1180,7 +1201,7 @@ function updateWorkforceUI() {
                 let m = globalData.workforce[k].matrix[aff]; if(!m) return 0;
                 let sum=0; Object.keys(m).forEach(r => Object.values(m[r]).forEach(v => sum+=v)); return sum;
             }),
-            backgroundColor: getSolidColor(i),
+            backgroundColor: (ctx) => getGradient(ctx.chart.ctx, ctx.chart.chartArea, gradPalettes[i%6].s, gradPalettes[i%6].e),
             borderRadius: 4, stack: 'hc'
         }));
 
@@ -1358,10 +1379,10 @@ function updateOnTimeUI() {
             ontimeChartInstance.data.datasets = [{
                 label: 'On-Time',
                 data: slice.map(i => (i.ptglg !== null && i.hub !== null) ? (i.ptglg+i.hub)/2 : i.ptglg),
-                borderColor: '#EF4444', // สีแดงแบบ Flat
-                backgroundColor: 'transparent',
+                borderColor: '#10B981', 
+                backgroundColor: (context) => getGradient(context.chart.ctx, context.chart.chartArea, 'rgba(16, 185, 129, 0.4)', 'rgba(16, 185, 129, 0.01)'),
                 borderWidth: 3,
-                fill: false, tension: 0.4, pointRadius: 4
+                fill: true, tension: 0.4, pointRadius: 4
             }];
             ontimeChartInstance.update();
         }
@@ -1432,6 +1453,7 @@ function updateClaimUI() {
             claimChart2Instance.data.labels = slice.map(i => `${String(i.dateObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i.dateObj.getMonth()]}`);
             claimChart2Instance.data.datasets[0].data = slice.map(i => i.cost);
             claimChart2Instance.data.datasets[1].data = slice.map(i => i.qty);
+            claimChart2Instance.data.datasets[0].backgroundColor = (ctx) => getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#EF4444', '#F87171');
             claimChart2Instance.update();
         }
 
@@ -1501,7 +1523,7 @@ function updateInventoryUI() {
                 label: 'Accuracy %',
                 data: parsedData.map(i => i.pct),
                 borderColor: '#06B6D4',
-                backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                backgroundColor: (context) => getGradient(context.chart.ctx, context.chart.chartArea, 'rgba(6, 182, 212, 0.4)', 'rgba(6, 182, 212, 0.01)'),
                 borderWidth: 3,
                 fill: true, tension: 0.4, pointRadius: 4
             };
@@ -1568,7 +1590,7 @@ function updateTransportUI() {
             let bar = (pct, colorClass) => `
                 <div style="display:flex; align-items:center; gap:12px;">
                     <div style="flex:1; background:var(--border-color); border-radius:4px; height:8px; overflow:hidden;">
-                        <div class="${colorClass}" style="width:${pct}%; height:100%; border-radius:4px;"></div>
+                        <div class="${colorClass}" style="width:${pct}%; height:100%; border-radius:4px; background: currentColor;"></div>
                     </div>
                     <span style="font-size:11px; font-weight:700; width:35px; text-align:right; color:var(--text-muted);">${pct.toFixed(1)}%</span>
                 </div>`;
@@ -1576,8 +1598,8 @@ function updateTransportUI() {
             html += `<tr>
                 <td style="font-weight:700;">${c}</td>
                 <td class="text-center font-bold">${fmtN(cd.total_orders)}</td>
-                <td>${bar(succPct, 'card-green')}</td>
-                <td>${bar(slaPct, 'card-blue')}</td>
+                <td class="text-green">${bar(succPct, 'text-green')}</td>
+                <td class="text-blue">${bar(slaPct, 'text-blue')}</td>
                 <td class="text-center text-red font-bold">${fmtN(cd.total_cost)}</td>
             </tr>`;
         });
@@ -1807,7 +1829,7 @@ function renderProductivitySection() {
 
                 dataActual.push(uph); dataBackground.push(barCeiling); dataTarget.push(gt); customPicks.push(picks);
 
-                if (uph >= gt) { bgColorsActual.push('#22C55E'); bgColorsBg.push('rgba(34, 197, 94, 0.15)'); }
+                if (uph >= gt) { bgColorsActual.push('#10B981'); bgColorsBg.push('rgba(16, 185, 129, 0.15)'); }
                 else { bgColorsActual.push('#EF4444'); bgColorsBg.push('rgba(239, 68, 68, 0.15)'); }
             });
 
@@ -1939,7 +1961,6 @@ function getTarget(areaName, dateStr) {
 }
 
 function getEffectiveUphCost(dateStr) {
-    // Placeholder default หากไม่มีข้อมูล UPH Cost (เพิ่มจากของเดิมเพื่อให้สมบูรณ์)
     return {
         trg_all: 0, trg_full: 0, trg_half: 0, trg_ea: 0, cost_salary: 0, cost_days: 0
     };
