@@ -15,9 +15,7 @@ function showToast(message, type = 'success', duration = 3000) {
     if (duration > 0) _toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
 }
 
-// ==========================================
-// 🎨 CHART.JS GRADIENTS & COLORS
-// ==========================================
+// Helper: สร้าง Gradient สำหรับกราฟ
 function getGradient(ctx, chartArea, colorStart, colorEnd) {
     if (!chartArea) return colorStart;
     let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
@@ -35,23 +33,23 @@ const gradPalettes = [
     { s: '#22D3EE', e: '#06B6D4' }  // Teal
 ];
 
-const solidColors = ['#60A5FA', '#34D399', '#FBBF24', '#A78BFA', '#F87171', '#22D3EE', '#94A3B8'];
-
 Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.color = '#64748B';
 Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
-Chart.defaults.plugins.tooltip.titleFont = { size: 13, family: 'Inter', weight: 'bold' };
-Chart.defaults.plugins.tooltip.padding = 10;
-Chart.defaults.plugins.tooltip.cornerRadius = 8;
+Chart.defaults.plugins.tooltip.titleFont = { size: 12, family: 'Inter', weight: 'bold' };
+Chart.defaults.plugins.tooltip.padding = 8;
+Chart.defaults.plugins.tooltip.cornerRadius = 6;
 
 const fmtN = (v) => (v || 0).toLocaleString();
 
-// 🟢 [FIX] ตรวจสอบความสูงของแท่งกราฟ (bar.height) ป้องกันตัวเลขซ้อนกัน ถ้าน้อยกว่า 20px ให้ไม่โชว์
+// 🟢 [FIX] Plugin วาดตัวเลขบนกราฟ: วาดเฉพาะยอดรวมบนสุดสำหรับแท่งซ้อน (Stacked) และซ่อนเลขในแท่งที่เตี้ยเกิน 20px
 const dataLabelPlugin = {
     id: 'dataLabelPlugin',
     afterDatasetsDraw(chart) {
         if(chart.config.type !== 'bar' || chart.canvas.id === 'productivityChart') return;
         const { ctx } = chart;
+        
+        // วาดตัวเลขบนแท่งเดี่ยว
         chart.data.datasets.forEach((dataset, i) => {
             if (dataset.type === 'line' || !chart.isDatasetVisible(i) || dataset.stack) return;
             const meta = chart.getDatasetMeta(i);
@@ -59,14 +57,14 @@ const dataLabelPlugin = {
                 const data = dataset.data[index];
                 if(data > 0 && bar.height > 20){
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
-                    ctx.font = 'bold 11px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                    ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
                     let val = (chart.canvas.id.includes('claim')) ? fmtN(data) : (data%1!==0 ? data.toFixed(1)+'%' : fmtN(data));
                     ctx.fillText(val, bar.x, bar.y - 4);
                 }
             });
         });
         
-        // สำหรับ Stacked Bar (โชว์เลขผลรวมเฉพาะบนยอดสุด)
+        // สำหรับ Stacked Bar (วาดเฉพาะผลรวมยอดบนสุด ไม่ซ้อนกัน)
         if (chart.canvas.id === 'ffmTrendChart' || chart.canvas.id === 'workforceChart') {
             let totals = []; let xCoords = []; let topY = [];
             chart.data.datasets.forEach((dataset, i) => {
@@ -83,8 +81,8 @@ const dataLabelPlugin = {
             chart.data.labels.forEach((_, index) => {
                 if (totals[index] > 0 && xCoords[index] && topY[index]) {
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
-                    ctx.font = 'bold 11px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-                    ctx.fillText(fmtN(Math.round(totals[index])), xCoords[index], topY[index] - 5);
+                    ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                    ctx.fillText(fmtN(Math.round(totals[index])), xCoords[index], topY[index] - 4);
                 }
             });
         }
@@ -106,7 +104,7 @@ const lineDataLabelPlugin = {
                 if(data !== null && data !== undefined && data !== 0 && data !== "0.00"){
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
                     ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = i === 0 ? 'bottom' : 'top'; 
-                    let yOffset = i === 0 ? -8 : 8;
+                    let yOffset = i === 0 ? -6 : 6;
                     ctx.fillText(Number(data).toFixed(1) + '%', point.x, point.y + yOffset);
                 }
             });
@@ -115,7 +113,7 @@ const lineDataLabelPlugin = {
 };
 
 // ==========================================
-// 🌟 INITIALIZE CHARTS
+// 🌟 INITIALIZE CHART INSTANCES
 // ==========================================
 let ffmTrendChartInstance = new Chart(document.getElementById('ffmTrendChart'), { 
     type: 'bar', data: { labels: [], datasets: [] }, 
@@ -154,7 +152,7 @@ let productivityChartInstance = new Chart(document.getElementById('productivityC
 
 
 // ==========================================
-// DATA FETCHING & PROCESSING (Logic คงเดิม)
+// DATA FETCHING & PROCESSING (Logic สมบูรณ์ 100%)
 // ==========================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxB0bNU1P9qrG_6aHoeiKyHMXT0_k76VlL0aq1I9xxHVpPDQK9qcd3FJMip4Jk9o6RY/exec';
 let globalData = { workforce:{}, fulfillment:{}, wave_ops:{}, ontime:{}, ontime_hub:{}, ontime_by_aff:{}, claims:{}, inventory:{}, inventory_daily:{}, transport:{}, productivity:{}, prod_area:{}, prod_zone:{}, prod_users_map:{} };
@@ -197,14 +195,14 @@ function createMultiSelect(mountEl, opts) {
 
     mountEl.style.position = 'relative';
     mountEl.innerHTML = `
-        <div class="ms-btn modern-input dropdown-trigger" style="min-width:110px;">
-            <span class="ms-text">${label}: All</span><span class="arrow" style="font-size:10px; margin-left:5px;">▼</span>
+        <div class="ms-btn filter-control select-dropdown" style="min-width:110px;">
+            <span class="ms-text">${label}: All</span><span class="dropdown-arrow">▼</span>
         </div>
-        <div class="ms-menu dropdown-menu">
-            <label class="dropdown-option"><input type="checkbox" class="ms-all" checked> All</label>
-            <div class="divider"></div>
-            <div class="ms-list checkbox-list"></div>
-            <button class="ms-apply btn-primary w-full mt-10">Apply</button>
+        <div class="ms-menu dropdown-card">
+            <label class="dropdown-item"><input type="checkbox" class="ms-all" checked> All</label>
+            <div class="dropdown-divider"></div>
+            <div class="ms-list checkbox-container"></div>
+            <button class="ms-apply btn-apply mt-10">Apply</button>
         </div>
     `;
 
@@ -226,7 +224,7 @@ function createMultiSelect(mountEl, opts) {
         listEl.innerHTML = '';
         options.forEach(v => {
             const lbl = document.createElement('label');
-            lbl.className = 'dropdown-option';
+            lbl.className = 'dropdown-item';
             lbl.innerHTML = `<input type="checkbox" class="ms-item" value="${v}" ${selected.has(v) ? 'checked' : ''}> ${v}`;
             listEl.appendChild(lbl);
         });
@@ -236,7 +234,7 @@ function createMultiSelect(mountEl, opts) {
 
     btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        document.querySelectorAll('.dropdown-menu').forEach(m => { if (m !== menu) m.style.display = 'none'; });
+        document.querySelectorAll('.dropdown-card').forEach(m => { if (m !== menu) m.style.display = 'none'; });
         menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
     });
     allCb.addEventListener('change', (e) => { listEl.querySelectorAll('.ms-item').forEach(cb => cb.checked = e.target.checked); });
@@ -335,7 +333,7 @@ function populateGlobalBUFilters() {
     if (cbList && cbList.innerHTML === '') {
         sortedBUs.forEach(bu => {
             const label = document.createElement('label');
-            label.className = 'dropdown-option';
+            label.className = 'dropdown-item';
             label.innerHTML = `<input type="checkbox" class="bu-item-cb" value="${bu}" checked> ${bu}`;
             cbList.appendChild(label);
         });
@@ -361,7 +359,7 @@ function populateGlobalBUFilters() {
         document.getElementById('bu-multi-select').addEventListener('click', (e) => {
             e.stopPropagation();
             let menu = document.getElementById('bu-dropdown-menu');
-            document.querySelectorAll('.dropdown-menu').forEach(m => { if (m !== menu) m.style.display = 'none'; });
+            document.querySelectorAll('.dropdown-card').forEach(m => { if (m !== menu) m.style.display = 'none'; });
             menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
         });
         document.addEventListener('click', (e) => {
@@ -412,6 +410,8 @@ function refreshAllSections() {
     updateOnTimeUI();
     updateClaimUI();
     updateInventoryUI();
+    renderLocationAccuracy();
+    renderProductivitySection();
 }
 
 // ==========================================
@@ -438,7 +438,7 @@ async function fetchAndRenderCapInputs() {
     const allBUs = (window.selectedBUs && window.selectedBUs.includes('ALL')) ? ['DM02', 'DP02', '1115', 'DCWN', 'DG02'] : (window.selectedBUs || ['DM02', 'DP02', '1115', 'DCWN', 'DG02']); 
     allBUs.forEach(bu => {
         let currentCap = globalCapacities[targetDate]?.[bu] || DEFAULT_CAPACITY;
-        container.innerHTML += `<div style="display:flex; flex-direction:column;"><label class="text-xs text-muted font-bold">${bu}</label><input type="number" id="cap-input-${bu}" value="${currentCap}" data-bu="${bu}" class="modern-input" style="width:75px;"></div>`;
+        container.innerHTML += `<div style="display:flex; flex-direction:column;"><label class="text-xs text-muted font-bold">${bu}</label><input type="number" id="cap-input-${bu}" value="${currentCap}" data-bu="${bu}" class="filter-control" style="width:75px;"></div>`;
     });
 }
 async function saveDailyCapacity() {
@@ -1048,9 +1048,9 @@ async function initFulfillmentRealtime() {
                 if (document.getElementById('wave-late')) {
                     document.getElementById('wave-late').innerText = totalLate > 0 ? fmtN(totalLate) : "0";
                     if (isApiSuccess && (latePick + lateLoad) > 0) {
-                        document.getElementById('wave-active-info-3').innerHTML = totalLate > 0 ? `<span class="badge-white">หลุด SLA</span> Pick: ${fmtN(latePick)} | Load: ${fmtN(lateLoad)}` : `<span class="badge-white">On-time</span>`;
+                        document.getElementById('wave-active-info-3').innerHTML = totalLate > 0 ? `<span class="trend-badge">หลุด SLA</span> Pick: ${fmtN(latePick)} | Load: ${fmtN(lateLoad)}` : `<span class="trend-badge">On-time</span>`;
                     } else {
-                        document.getElementById('wave-active-info-3').innerHTML = totalLate > 0 ? `<span class="badge-white">หลุด SLA</span> ${fmtN(totalLate)} บิล` : `<span class="badge-white">On-time</span>`;
+                        document.getElementById('wave-active-info-3').innerHTML = totalLate > 0 ? `<span class="trend-badge">หลุด SLA</span> ${fmtN(totalLate)} บิล` : `<span class="trend-badge">On-time</span>`;
                     }
                 }
 
@@ -1069,9 +1069,9 @@ async function initFulfillmentRealtime() {
                     } else {
                         if (aDelay > 0) {
                             overallMainText = formatTime(aDelay);
-                            document.getElementById('wave-active-info-4').innerHTML = `<span class="badge-white">ดีเลย์อยู่</span> ช้าสุด: ${worstBU}`;
+                            document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge">ดีเลย์อยู่</span> ช้าสุด: ${worstBU}`;
                         } else {
-                            document.getElementById('wave-active-info-4').innerHTML = `<span class="badge-white">ปกติ</span>`;
+                            document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge">ปกติ</span>`;
                         }
                     }
                     if (maxOverallDelay > 0) overallMainText = formatTime(maxOverallDelay);
@@ -1445,7 +1445,7 @@ function updateClaimUI() {
             else {
                 let diff = curr.cost - prev.cost;
                 if (diff > 0) trendEl.innerText = `↗ +${fmtN(diff)}`;
-                else if (diff < 0) trendEl.innerText = `↘ ${fmtN(Math.abs(diff))}`;
+                else if (diff < 0) trendEl.innerText = `↘ ${Math.abs(diff)}%`;
                 else trendEl.innerText = "0";
             }
         }
@@ -1515,7 +1515,7 @@ function updateInventoryUI() {
             else {
                 let diff = curr.pct - prev.pct;
                 if (diff > 0) trendEl.innerText = `↗ +${diff.toFixed(2)} pp`;
-                else if (diff < 0) trendEl.innerText = `↘ ${Math.abs(diff).toFixed(2)} pp`;
+                else if (diff < 0) trendEl.innerText = `↘ ${Math.abs(diff)}%`;
                 else trendEl.innerText = "0 pp";
             }
         }
@@ -1542,6 +1542,71 @@ function updateInventoryUI() {
             }).join('') + "</tbody>";
             tableEl.innerHTML = thead + tbody;
         }
+    }
+}
+
+// ------------------------------------------------------------
+// 🚚 TRANSPORT PERFORMANCE
+// ------------------------------------------------------------
+function updateTransportUI() {
+    if (!globalData.transport || Object.keys(globalData.transport).length === 0) return;
+    const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
+    const targetTime = new Date(dpVal).setHours(23,59,59,999);
+    
+    let availableDates = Object.keys(globalData.transport).filter(k => {
+        let d = new Date(getStandardDate(k)).getTime();
+        return !isNaN(d) && d <= targetTime;
+    }).sort((a,b) => new Date(getStandardDate(b)) - new Date(getStandardDate(a)));
+
+    let tbody = document.querySelector('#new-transport-table tbody');
+
+    if (availableDates.length === 0) {
+        document.getElementById('tp-kpi-total').innerText = "0";
+        document.getElementById('tp-kpi-success').innerText = "0";
+        document.getElementById('tp-kpi-sla').innerText = "0";
+        document.getElementById('tp-kpi-cost').innerText = "0";
+        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่งในวันที่เลือก</td></tr>`;
+        return;
+    }
+
+    let todayKey = availableDates[0];
+    let data = globalData.transport[todayKey];
+    
+    let dObj = new Date(getStandardDate(todayKey));
+    let displayDate = `${String(dObj.getDate()).padStart(2,'0')} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][dObj.getMonth()]} ${dObj.getFullYear()}`;
+    document.getElementById('carrier-update-time').innerText = `อัปเดต: ${displayDate}`;
+
+    document.getElementById('tp-kpi-total').innerText = fmtN(data.total_orders);
+    document.getElementById('tp-kpi-success').innerText = fmtN(data.success_orders);
+    document.getElementById('tp-kpi-sla').innerText = fmtN(data.sla_hit);
+    document.getElementById('tp-kpi-cost').innerText = fmtN(data.total_cost);
+
+    if(tbody) {
+        let html = "";
+        let carriers = Object.keys(data.carriers || {}).sort((a,b) => data.carriers[b].total_orders - data.carriers[a].total_orders);
+        
+        carriers.forEach(c => {
+            let cd = data.carriers[c];
+            let succPct = cd.total_orders > 0 ? (cd.success_orders / cd.total_orders) * 100 : 0;
+            let slaPct = cd.success_orders > 0 ? (cd.sla_hit / cd.success_orders) * 100 : 0;
+
+            let bar = (pct, colorClass) => `
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="flex:1; background:var(--border-color); border-radius:10px; height:6px; overflow:hidden;">
+                        <div class="${colorClass}" style="width:${pct}%; height:100%; border-radius:10px;"></div>
+                    </div>
+                    <span style="font-size:11px; font-weight:700; width:35px; text-align:right; color:var(--text-muted);">${pct.toFixed(1)}%</span>
+                </div>`;
+
+            html += `<tr>
+                <td style="font-weight:700; border-right: 1px solid var(--border-color);">${c}</td>
+                <td class="text-center font-bold" style="border-right: 1px solid var(--border-color);">${fmtN(cd.total_orders)}</td>
+                <td style="border-right: 1px solid var(--border-color);">${bar(succPct, 'card-green')}</td>
+                <td style="border-right: 1px solid var(--border-color);">${bar(slaPct, 'card-blue')}</td>
+                <td class="text-center text-red font-bold">${fmtN(cd.total_cost)}</td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
     }
 }
 
@@ -1587,8 +1652,6 @@ function renderLocationAccuracy() {
                 rawDetailsArr.push({ bu: bu, type: lType, zone: zone, checked: d.total, wrong: d.wrong, acc: acc });
             });
         });
-
-        populateLocFilterOptions(rawDetailsArr);
 
         let filteredArr = rawDetailsArr.filter(item => {
             let passBU = window.locFilters.bu.includes('ALL') || window.locFilters.bu.includes(item.bu);
@@ -1794,7 +1857,7 @@ function renderProductivitySection() {
             let costPerPick = uph > 0 ? (hourlyRate / uph) : 0;
             
             summaryEl.innerHTML = `💡 <b>ภาพรวมล่าสุด (${latest.label}):</b> พื้นที่ ${selectedArea} ความเร็วเฉลี่ย <b class="text-dark" style="font-size:1.1em;">${uph} UPH</b> ${statusHtml} <br><span class="text-muted text-xs">(หยิบ ${fmtN(Math.round(pks))} รายการ / ${hrs.toFixed(1)} ชม.)</span> <span style="margin-left:15px; padding-left:15px; border-left:1px solid var(--border-color); color:var(--text-dark);">💰 <b>Cost per Pick: <span class="text-blue text-lg">${costPerPick.toFixed(2)} ฿</span></b></span>`;
-            summaryEl.className = uph >= currentTarget ? 'alert-box alert-green mb-20 mt-10' : 'alert-box alert-red mb-20 mt-10';
+            summaryEl.className = uph >= currentTarget ? 'info-alert alert-green mb-20 mt-10' : 'info-alert alert-red mb-20 mt-10';
         }
 
         const areaTableEl = document.getElementById('prod-area-table');
@@ -1888,6 +1951,95 @@ function renderProductivitySection() {
         }
 
     } catch (e) { console.error("Productivity Render Error:", e); }
+}
+
+function getTarget(areaName, dateStr) {
+    let eff = getEffectiveUphCost(dateStr);
+    let areaStr = (areaName || "").toString().toLowerCase();
+    if (areaStr === 'all') return eff.trg_all;
+    if (areaStr.includes('full')) return eff.trg_full;
+    if (areaStr.includes('half')) return eff.trg_half;
+    if (areaStr.includes('ea')) return eff.trg_ea;
+    return eff.trg_all;
+}
+
+async function saveTargets() {
+    const targetDate = document.getElementById('uph-target-date')?.value
+        || document.getElementById('date-picker')?.value
+        || new Date().toISOString().split('T')[0];
+    const rec = {
+        target_date: targetDate,
+        trg_all:  parseFloat(document.getElementById('trg-all')?.value)  || 0,
+        trg_full: parseFloat(document.getElementById('trg-full')?.value) || 0,
+        trg_half: parseFloat(document.getElementById('trg-half')?.value) || 0,
+        trg_ea:   parseFloat(document.getElementById('trg-ea')?.value)   || 0,
+        cost_salary: parseFloat(document.getElementById('cost-salary')?.value) || 0,
+        cost_days:   parseFloat(document.getElementById('cost-days')?.value)   || 0
+    };
+    const btn = document.querySelector('button[onclick="saveTargets()"]');
+    let orig = ''; if (btn) { orig = btn.innerHTML; btn.disabled = true; btn.innerHTML = '⏳ กำลังบันทึก...'; }
+    showToast('⏳ กำลังบันทึก UPH Target / Cost...', 'info', 0);
+    try {
+        const resp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fn: 'apiSaveUphCostBulk', args: [[rec]] })
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const j = await resp.json();
+        if (j.success === false) throw new Error(j.message || 'บันทึกไม่สำเร็จ');
+        globalUphCost[targetDate] = { ...rec };
+        showToast(`✅ บันทึก UPH Target / Cost ของวันที่ ${targetDate} สำเร็จ!`, 'success');
+    } catch (err) {
+        showToast('❌ บันทึกไม่สำเร็จ: ' + err.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = orig || '💾 Save'; }
+        renderProductivitySection();
+    }
+}
+
+// ------------------------------------------------------------
+// 🚀 ALERT NOTIFICATION SYSTEM
+// ------------------------------------------------------------
+function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveDelay, delayDays, worstBU) {
+    const alertBox = document.getElementById('smart-alerts-container');
+    if (!alertBox) return;
+    alertBox.innerHTML = ''; 
+    let alerts = [];
+
+    if (waveDelay > 0) {
+        let delayText = delayDays > 0 ? `ดีเลย์ข้ามวัน (${delayDays} วัน)` : `ดีเลย์ ${Math.floor(waveDelay/60)} ชม. ${waveDelay%60} นาที`;
+        alerts.push({ type: 'critical', text: `[Wave Ops] ค้าง ${fmtN(waveLate)} บิล (${delayText}) <b>ช้าสุดที่สาขา ${worstBU}</b>` });
+    } else if (waveLate > 0) {
+        alerts.push({ type: 'warning', text: `[Wave Ops] ช้ากว่าแผน ${fmtN(waveLate)} บิล <b>(ที่ ${worstBU})</b> แต่อยู่ใน SLA` });
+    }
+
+    if (globalData.workforce) {
+        let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
+        let latestWfKey = wfKeys.find(k => new Date(getStandardDate(k)).getTime() <= targetTimestamp);
+        if (latestWfKey) {
+            let dayData = globalData.workforce[latestWfKey];
+            let absCount = 0; let trgCount = 0;
+            let allRoles = new Set([...Object.keys(dayData.targets || {}), ...Object.keys(dayData.roles || {})]);
+            allRoles.forEach(role => {
+                let trg = dayData.targets?.[role] || 0; let act = dayData.roles?.[role] || 0;
+                if (window.selectedBUs.includes('ALL')) { trgCount += trg; if (trg > act) absCount += (trg - act); }
+            });
+            if (absCount > 0 && window.selectedBUs.includes('ALL')) {
+                let absPct = ((absCount / trgCount) * 100).toFixed(1);
+                alerts.push({ type: absPct >= 5 ? 'critical' : 'warning', text: `[Workforce] วันนี้ขาด ${absCount} คน (${absPct}%) อาจกระทบการส่ง` });
+            }
+        }
+    }
+
+    if (alerts.length === 0) {
+        alertBox.innerHTML = `<div class="info-alert alert-green" style="margin:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:5px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>สถานการณ์ปกติ ไม่พบความเสี่ยงหรือเหตุขัดข้อง</div>`;
+    } else {
+        alerts.forEach(al => {
+            let clss = al.type === 'critical' ? 'alert-red' : 'alert-yellow';
+            let icon = al.type === 'critical' ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:5px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>` : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:5px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+            alertBox.innerHTML += `<div class="info-alert ${clss}" style="margin-bottom:8px;">${icon} <span>${al.text}</span></div>`;
+        });
+    }
 }
 
 initDashboard();
