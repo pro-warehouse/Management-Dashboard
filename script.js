@@ -1202,7 +1202,9 @@ function updateWorkforceUI() {
             if (opsTotal === 0 && opsPrev === 0) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูล"; }
             else if (!prevKey) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
             else if (diff > 0) { trendEl.innerText = `↗ +${diff}`; noteEl.innerText = `vs prev`; }
-            else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff)}`; noteEl.innerText = `vs prev`; }
+            // ของเดิม: else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff)}%`; }
+// 🟢 เปลี่ยนเป็นโค้ดด้านล่างนี้ (ใช้ fmtN เพื่อใส่คอมม่าและไม่มี %)
+else if (diff < 0) { trendEl.innerText = `↘ ${fmtN(Math.abs(diff))}`; }
             else { trendEl.innerText = "0"; noteEl.innerText = `vs prev`; }
         }
         if (updEl) updEl.innerText = `Updated: ${getDisplayDate(tKey)}`;
@@ -1413,7 +1415,9 @@ function updateOnTimeUI() {
                 let pOver = (prev.ptglg !== null && prev.hub !== null) ? (prev.ptglg+prev.hub)/2 : prev.ptglg;
                 let diff = over - pOver;
                 if (diff > 0) { trendEl.innerText = `↗ +${diff.toFixed(2)} pp`; }
-                else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff).toFixed(2)} pp`; }
+                // ของเดิม: else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff)}%`; }
+// 🟢 เปลี่ยนเป็นโค้ดด้านล่างนี้ (เพิ่ม .toFixed(2) เพื่อปัดเศษเหลือ 2 ตำแหน่ง และเติม pp ต่อท้ายเหมือนขาขึ้น)
+else if (diff < 0) { trendEl.innerText = `↘ ${Math.abs(diff).toFixed(2)} pp`; }
                 else { trendEl.innerText = "0 pp"; }
                 noteEl.innerText = "vs prev";
             }
