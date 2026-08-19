@@ -15,9 +15,6 @@ function showToast(message, type = 'success', duration = 3000) {
     if (duration > 0) _toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
 }
 
-// ------------------------------------------------------------
-// GLOBAL HELPERS
-// ------------------------------------------------------------
 const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const getStandardDate = (rawDate) => {
@@ -58,9 +55,6 @@ const gradPalettes = [
     { s: '#22D3EE', e: '#06B6D4' }  // Teal
 ];
 
-// ------------------------------------------------------------
-// CHART.JS CONFIG
-// ------------------------------------------------------------
 Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.color = '#64748B';
 Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
@@ -138,9 +132,6 @@ const lineDataLabelPlugin = {
     }
 };
 
-// ==========================================
-// 🌟 INITIALIZE CHART INSTANCES
-// ==========================================
 let ffmTrendChartInstance = new Chart(document.getElementById('ffmTrendChart'), { 
     type: 'bar', data: { labels: [], datasets: [] }, 
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grid: { borderDash: [4, 4] }, grace: '15%' } } }, plugins: [dataLabelPlugin] 
@@ -176,9 +167,6 @@ let productivityChartInstance = new Chart(document.getElementById('productivityC
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, stacked: false }, y: { display: false, grace: '25%' } } } 
 });
 
-// ==========================================
-// DATA FETCHING & PROCESSING 
-// ==========================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxB0bNU1P9qrG_6aHoeiKyHMXT0_k76VlL0aq1I9xxHVpPDQK9qcd3FJMip4Jk9o6RY/exec';
 let globalData = { workforce:{}, fulfillment:{}, wave_ops:{}, ontime:{}, ontime_hub:{}, ontime_by_aff:{}, claims:{}, inventory:{}, inventory_daily:{}, transport:{}, productivity:{}, prod_area:{}, prod_zone:{}, prod_users_map:{} };
 window.selectedBUs = ['ALL'];
@@ -422,7 +410,7 @@ async function initDashboard() {
     await initFulfillmentRealtime();
     refreshAllSections();
     document.getElementById('global-loader').style.display = 'none';
-    showToast("ข้อมูลรีเฟรชสำเร็จ!");
+    showToast("ข้อมูลอัปเดตสำเร็จ!");
 }
 
 function refreshAllSections() {
@@ -435,9 +423,6 @@ function refreshAllSections() {
     try { renderProductivitySection(); } catch(e) { console.error("Prod Error:", e); }
 }
 
-// ==========================================
-// 1. BIGQUERY FULFILLMENT & WAVE 
-// ==========================================
 function toggleCapSetup() {
     const p = document.getElementById('cap-setup-panel');
     p.style.display = p.style.display === 'none' ? 'block' : 'none';
@@ -821,25 +806,25 @@ async function initFulfillmentRealtime() {
                     let utilDisp = Math.min(100, item.utilPct).toFixed(1);
                     let barWidth = Math.min(100, item.utilPct);
                     
-                    let statusObj = { text: "Available", color: "#10B981", bg: "#dcfce7", barColor: "#3B82F6" }; 
-                    if (item.utilPct >= 100) { statusObj = { text: "Overloaded", color: "#EF4444", bg: "#fee2e2", barColor: "#EF4444" }; } 
-                    else if (item.utilPct >= 90) { statusObj = { text: "Near cap.", color: "#F59E0B", bg: "#fef3c7", barColor: "#F59E0B" }; } 
-                    else if (item.utilPct >= 70) { statusObj = { text: "Optimal", color: "#10B981", bg: "#dcfce7", barColor: "#10B981" }; }
+                    let statusObj = { text: "Available", color: "#047857", bg: "#dcfce7", barClass: "grad-fill-blue" }; 
+                    if (item.utilPct >= 100) { statusObj = { text: "Overloaded", color: "#991b1b", bg: "#fee2e2", barClass: "grad-fill-red" }; } 
+                    else if (item.utilPct >= 90) { statusObj = { text: "Near cap.", color: "#92400e", bg: "#fef3c7", barClass: "grad-fill-orange" }; } 
+                    else if (item.utilPct >= 70) { statusObj = { text: "Optimal", color: "#047857", bg: "#dcfce7", barClass: "grad-fill-green" }; }
 
                     tbody += `
                     <tr>
                         <td class="font-bold">${item.bu}</td>
                         <td class="text-right font-bold">${fmtN(item.vol)}</td>
                         <td>
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span class="font-bold text-xs" style="width:35px; text-align:right;">${utilDisp}%</span>
-                                <div style="flex:1; background:var(--border-color); border-radius:4px; height:6px; overflow:hidden;">
-                                    <div style="width:${barWidth}%; background:${statusObj.barColor}; height:100%; border-radius:4px;"></div>
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div class="modern-bar-bg">
+                                    <div class="${statusObj.barClass}" style="width:${barWidth}%;"></div>
                                 </div>
+                                <span style="font-size:11px; font-weight:700; width:45px; text-align:right; color:var(--text-dark);">${utilDisp}%</span>
                             </div>
                         </td>
                         <td class="text-center">
-                            <span style="padding:4px 8px; border-radius:4px; font-size:10px; font-weight:700; display:inline-block; width:75px; background:${statusObj.bg}; color:${statusObj.color};">${statusObj.text}</span>
+                            <span style="padding:4px 10px; border-radius:6px; font-size:10px; font-weight:700; display:inline-block; width:80px; background:${statusObj.bg}; color:${statusObj.color};">${statusObj.text}</span>
                         </td>
                     </tr>`;
                 });
@@ -901,8 +886,8 @@ async function initFulfillmentRealtime() {
                     trendEl.innerText = `↗ 100%`; trendNoteEl.innerText = `vs ${prevDateText}`;
                 } else {
                     let pctDiff = ((totalOrdersToday - totalOrdersYesterday) / totalOrdersYesterday) * 100;
-                    if (pctDiff > 0) { trendEl.innerText = `↗ +${pctDiff.toFixed(2)}%`; } 
-                    else if (pctDiff < 0) { trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(2)}%`; } 
+                    if (pctDiff > 0) { trendEl.innerText = `↗ +${pctDiff.toFixed(1)}%`; } 
+                    else if (pctDiff < 0) { trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(1)}%`; } 
                     else { trendEl.innerText = `0%`; }
                     trendNoteEl.innerText = `vs ${prevDateText}`;
                 }
@@ -1149,9 +1134,6 @@ async function initFulfillmentRealtime() {
     } catch (err) {}
 }
 
-// ==========================================
-// 2. WORKFORCE DETAILS
-// ==========================================
 function updateWorkforceUI() {
     const totalEl = document.getElementById('headcount-total');
     const trendEl = document.getElementById('headcount-trend');
@@ -1656,7 +1638,9 @@ function updateInventoryUI() {
     }
 }
 
-// --- แทนที่ฟังก์ชัน updateTransportUI() ทั้งบล็อก ---
+// ------------------------------------------------------------
+// 🚚 TRANSPORT PERFORMANCE
+// ------------------------------------------------------------
 function updateTransportUI() {
     let tbody = document.querySelector('#new-transport-table tbody');
     if (!globalData.transport || Object.keys(globalData.transport).length === 0) {
@@ -1667,11 +1651,11 @@ function updateTransportUI() {
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
     const targetTime = new Date(dpVal).setHours(23,59,59,999);
     
-    // แก้บั๊กตรงนี้: วันที่จาก Object keys สามารถแปลงเป็น Date ได้ตรงๆ 
+    // แก้บั๊ก: วันที่จาก Object keys แปลงเป็น Date ได้เลย
     let availableDates = Object.keys(globalData.transport).filter(k => {
-        let d = new Date(k).getTime();
+        let d = new Date(getStandardDate(k)).getTime();
         return !isNaN(d) && d <= targetTime;
-    }).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
+    }).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
 
     if (availableDates.length === 0) {
         document.getElementById('tp-kpi-total').innerText = "0";
@@ -1685,7 +1669,7 @@ function updateTransportUI() {
     let todayKey = availableDates[0];
     let data = globalData.transport[todayKey];
     
-    let dObj = new Date(todayKey);
+    let dObj = new Date(getStandardDate(todayKey));
     document.getElementById('carrier-update-time').innerText = `อัปเดต: ${getDisplayDate(dObj)}`;
 
     document.getElementById('tp-kpi-total').innerText = fmtN(data.total_orders);
@@ -1702,7 +1686,6 @@ function updateTransportUI() {
             let succPct = cd.total_orders > 0 ? (cd.success_orders / cd.total_orders) * 100 : 0;
             let slaPct = cd.success_orders > 0 ? (cd.sla_hit / cd.success_orders) * 100 : 0;
 
-            // ปรับ UI กราฟให้ไล่สีตามคลาสที่เพิ่มใน CSS
             let bar = (pct, colorClass) => `
                 <div style="display:flex; align-items:center; gap:12px;">
                     <div class="modern-bar-bg">
