@@ -1656,9 +1656,7 @@ function updateInventoryUI() {
     }
 }
 
-// ------------------------------------------------------------
-// 🚚 TRANSPORT PERFORMANCE
-// ------------------------------------------------------------
+// --- แทนที่ฟังก์ชัน updateTransportUI() ทั้งบล็อก ---
 function updateTransportUI() {
     let tbody = document.querySelector('#new-transport-table tbody');
     if (!globalData.transport || Object.keys(globalData.transport).length === 0) {
@@ -1669,10 +1667,11 @@ function updateTransportUI() {
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
     const targetTime = new Date(dpVal).setHours(23,59,59,999);
     
+    // แก้บั๊กตรงนี้: วันที่จาก Object keys สามารถแปลงเป็น Date ได้ตรงๆ 
     let availableDates = Object.keys(globalData.transport).filter(k => {
-        let d = new Date(getStandardDate(k)).getTime();
+        let d = new Date(k).getTime();
         return !isNaN(d) && d <= targetTime;
-    }).sort((a,b) => new Date(getStandardDate(b)) - new Date(getStandardDate(a)));
+    }).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
 
     if (availableDates.length === 0) {
         document.getElementById('tp-kpi-total').innerText = "0";
@@ -1686,7 +1685,7 @@ function updateTransportUI() {
     let todayKey = availableDates[0];
     let data = globalData.transport[todayKey];
     
-    let dObj = new Date(getStandardDate(todayKey));
+    let dObj = new Date(todayKey);
     document.getElementById('carrier-update-time').innerText = `อัปเดต: ${getDisplayDate(dObj)}`;
 
     document.getElementById('tp-kpi-total').innerText = fmtN(data.total_orders);
@@ -1703,19 +1702,20 @@ function updateTransportUI() {
             let succPct = cd.total_orders > 0 ? (cd.success_orders / cd.total_orders) * 100 : 0;
             let slaPct = cd.success_orders > 0 ? (cd.sla_hit / cd.success_orders) * 100 : 0;
 
+            // ปรับ UI กราฟให้ไล่สีตามคลาสที่เพิ่มใน CSS
             let bar = (pct, colorClass) => `
                 <div style="display:flex; align-items:center; gap:12px;">
-                    <div style="flex:1; background:var(--border-color); border-radius:4px; height:8px; overflow:hidden;">
-                        <div class="${colorClass}" style="width:${pct}%; height:100%; border-radius:4px; background: currentColor;"></div>
+                    <div class="modern-bar-bg">
+                        <div class="${colorClass}" style="width:${pct}%;"></div>
                     </div>
-                    <span style="font-size:10px; font-weight:700; width:35px; text-align:right; color:var(--text-muted);">${pct.toFixed(1)}%</span>
+                    <span style="font-size:11px; font-weight:700; width:45px; text-align:right; color:var(--text-dark);">${pct.toFixed(1)}%</span>
                 </div>`;
 
             html += `<tr>
                 <td style="font-weight:700;">${c}</td>
                 <td class="text-center font-bold">${fmtN(cd.total_orders)}</td>
-                <td class="text-green">${bar(succPct, 'text-green')}</td>
-                <td class="text-blue">${bar(slaPct, 'text-blue')}</td>
+                <td>${bar(succPct, 'grad-fill-green')}</td>
+                <td>${bar(slaPct, 'grad-fill-blue')}</td>
                 <td class="text-center text-red font-bold">${fmtN(cd.total_cost)}</td>
             </tr>`;
         });
