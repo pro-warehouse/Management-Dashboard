@@ -1654,9 +1654,6 @@ function updateInventoryUI() {
     }
 }
 
-// ------------------------------------------------------------
-// 🚚 TRANSPORT PERFORMANCE
-// ------------------------------------------------------------
 function updateTransportUI() {
     let tbody = document.querySelector('#new-transport-table tbody');
     if (!globalData.transport || Object.keys(globalData.transport).length === 0) {
@@ -1667,11 +1664,11 @@ function updateTransportUI() {
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
     const targetTime = new Date(dpVal).setHours(23,59,59,999);
     
-    // แก้บั๊ก: วันที่จาก Object keys แปลงเป็น Date ได้เลย
+    // [FIX] แปลงวันที่ตรงๆ เพื่อไม่ให้เกิด Error
     let availableDates = Object.keys(globalData.transport).filter(k => {
-        let d = new Date(getStandardDate(k)).getTime();
+        let d = new Date(k).getTime();
         return !isNaN(d) && d <= targetTime;
-    }).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
+    }).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
 
     if (availableDates.length === 0) {
         document.getElementById('tp-kpi-total').innerText = "0";
@@ -1685,7 +1682,7 @@ function updateTransportUI() {
     let todayKey = availableDates[0];
     let data = globalData.transport[todayKey];
     
-    let dObj = new Date(getStandardDate(todayKey));
+    let dObj = new Date(todayKey);
     document.getElementById('carrier-update-time').innerText = `อัปเดต: ${getDisplayDate(dObj)}`;
 
     document.getElementById('tp-kpi-total').innerText = fmtN(data.total_orders);
