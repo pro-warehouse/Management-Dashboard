@@ -425,7 +425,6 @@ async function initDashboard() {
     showToast("ข้อมูลรีเฟรชสำเร็จ!");
 }
 
-// 🟢 ใส่ try...catch ให้ปลอดภัยที่สุด เพื่อป้องกัน Error ขัดขวางการทำงานของ Section ถัดไป
 function refreshAllSections() {
     try { updateTransportUI(); } catch(e) { console.error("Transport Error:", e); }
     try { updateWorkforceUI(); } catch(e) { console.error("Workforce Error:", e); }
@@ -902,8 +901,8 @@ async function initFulfillmentRealtime() {
                     trendEl.innerText = `↗ 100%`; trendNoteEl.innerText = `vs ${prevDateText}`;
                 } else {
                     let pctDiff = ((totalOrdersToday - totalOrdersYesterday) / totalOrdersYesterday) * 100;
-                    if (pctDiff > 0) { trendEl.innerText = `↗ +${pctDiff.toFixed(1)}%`; } 
-                    else if (pctDiff < 0) { trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(1)}%`; } 
+                    if (pctDiff > 0) { trendEl.innerText = `↗ +${pctDiff.toFixed(2)}%`; } 
+                    else if (pctDiff < 0) { trendEl.innerText = `↘ ${Math.abs(pctDiff).toFixed(2)}%`; } 
                     else { trendEl.innerText = `0%`; }
                     trendNoteEl.innerText = `vs ${prevDateText}`;
                 }
@@ -941,7 +940,7 @@ async function initFulfillmentRealtime() {
                     let grandColor = (dayComp === dayTot && dayTot > 0) ? 'var(--brand-green)' : (dayComp > 0 ? 'var(--brand-yellow)' : 'var(--brand-red)');
                     tr += `<td class="text-center"><span style="color:${grandColor}; font-weight:700;">${fmtN(dayComp)}</span> <span class="text-xs text-muted">/ ${fmtN(dayTot)}</span></td>`;
                     
-                    let pct = dayTot > 0 ? Math.min(100, (dayComp / dayTot) * 100).toFixed(1) : 0;
+                    let pct = dayTot > 0 ? Math.min(100, (dayComp / dayTot) * 100).toFixed(2) : 0;
                     let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
                     let pctColor = pct >= 100 ? '#10B981' : (pct > 0 ? '#F59E0B' : '#EF4444');
                     tr += `<td class="text-center"><span style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600;">${pct}%</span></td></tr>`;
@@ -960,11 +959,11 @@ async function initFulfillmentRealtime() {
             const rateEtaEl = document.getElementById('ffm-rate-eta');
             if (rateValEl) {
                 if (!latestShipDateStr) {
-                    rateValEl.innerText = `0.0%`;
-                    if (rateEtaEl) rateEtaEl.innerText = `DC SLA: 0.0%`;
+                    rateValEl.innerText = `0.00%`;
+                    if (rateEtaEl) rateEtaEl.innerText = `DC SLA: 0.00%`;
                     const rateTrendEl = document.getElementById('ffm-rate-trend'), rateNoteEl = document.getElementById('ffm-rate-note'), etaTrendEl = document.getElementById('eta-rate-trend');
                     if(rateTrendEl) rateTrendEl.innerText = "-";
-                    if(rateNoteEl) rateNoteEl.innerText = "ไม่มีข้อมูล";
+                    if(rateNoteEl) rateNoteEl.innerText = "ไม่มีข้อมูลเทียบ";
                     if(etaTrendEl) etaTrendEl.innerText = "-";
                     let updateSpan = document.getElementById('ffm-rate-update');
                     if (updateSpan) updateSpan.innerText = `Updated: --`;
@@ -977,8 +976,8 @@ async function initFulfillmentRealtime() {
                     let prevFfm = pReq > 0 ? (pShip / pReq) * 100 : 0;
                     let prevEtaFfm = pAlloc > 0 ? Math.min(100, (pShip / pAlloc) * 100) : 0;
 
-                    rateValEl.innerText = `${currentFfm.toFixed(1)}%`;
-                    if (rateEtaEl) rateEtaEl.innerText = `DC SLA: ${currentEtaFfm.toFixed(1)}%`;
+                    rateValEl.innerText = `${currentFfm.toFixed(2)}%`;
+                    if (rateEtaEl) rateEtaEl.innerText = `DC SLA: ${currentEtaFfm.toFixed(2)}%`;
 
                     const rateTrendEl = document.getElementById('ffm-rate-trend'), rateNoteEl = document.getElementById('ffm-rate-note'), etaTrendEl = document.getElementById('eta-rate-trend');
                     if (rateTrendEl && rateNoteEl) {
@@ -987,15 +986,15 @@ async function initFulfillmentRealtime() {
                             if (etaTrendEl) etaTrendEl.innerText = "-";
                         } else {
                             let diffFfm = currentFfm - prevFfm;
-                            if (diffFfm > 0) rateTrendEl.innerText = `↗ +${diffFfm.toFixed(1)}%`;
-                            else if (diffFfm < 0) rateTrendEl.innerText = `↘ ${Math.abs(diffFfm).toFixed(1)}%`;
+                            if (diffFfm > 0) rateTrendEl.innerText = `↗ +${diffFfm.toFixed(2)}%`;
+                            else if (diffFfm < 0) rateTrendEl.innerText = `↘ ${Math.abs(diffFfm).toFixed(2)}%`;
                             else rateTrendEl.innerText = `0%`;
                             rateNoteEl.innerText = `vs ${formatShortDate(prevShipDateStr)}`;
                             
                             if (etaTrendEl) {
                                 let diffEta = currentEtaFfm - prevEtaFfm;
-                                if (diffEta > 0) etaTrendEl.innerText = `↗ +${diffEta.toFixed(1)}%`;
-                                else if (diffEta < 0) etaTrendEl.innerText = `↘ ${Math.abs(diffEta).toFixed(1)}%`;
+                                if (diffEta > 0) etaTrendEl.innerText = `↗ +${diffEta.toFixed(2)}%`;
+                                else if (diffEta < 0) etaTrendEl.innerText = `↘ ${Math.abs(diffEta).toFixed(2)}%`;
                                 else etaTrendEl.innerText = `0%`;
                             }
                         }
@@ -1150,6 +1149,9 @@ async function initFulfillmentRealtime() {
     } catch (err) {}
 }
 
+// ==========================================
+// 2. WORKFORCE DETAILS
+// ==========================================
 function updateWorkforceUI() {
     const totalEl = document.getElementById('headcount-total');
     const trendEl = document.getElementById('headcount-trend');
@@ -1200,7 +1202,7 @@ function updateWorkforceUI() {
         
         if (trendEl && noteEl) {
             let diff = opsTotal - opsPrev;
-            if (opsTotal === 0 && opsPrev === 0) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูล"; }
+            if (opsTotal === 0 && opsPrev === 0) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
             else if (!prevKey) { trendEl.innerText = "-"; noteEl.innerText = "ไม่มีข้อมูลเทียบ"; }
             else if (diff > 0) { trendEl.innerText = `↗ +${diff}`; noteEl.innerText = `vs prev`; }
             else if (diff < 0) { trendEl.innerText = `↘ ${fmtN(Math.abs(diff))}`; noteEl.innerText = `vs prev`; }
@@ -1308,7 +1310,7 @@ function updateWorkforceUI() {
                 } else { act = data.roles?.[r.key] || 0; trgTot = data.targets?.[r.key] || 0; }
 
                 const calcAbs = (a, t) => (t===0&&a===0) ? '-' : (a-t<0 ? `<span class="text-red font-bold">${a-t}</span>` : a-t);
-                const calcRate = (a, t) => t===0 ? '-' : `<span class="${(a/t*100)<95?'text-red':'text-green'} font-bold">${(a/t*100).toFixed(1)}%</span>`;
+                const calcRate = (a, t) => t===0 ? '-' : `<span class="${(a/t*100)<95?'text-red':'text-green'} font-bold">${(a/t*100).toFixed(2)}%</span>`;
 
                 let rowHtml = `<tr>
                     <td style="position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${r.label}</td>
@@ -1344,12 +1346,12 @@ function updateWorkforceUI() {
                 Object.keys(groupedHC).sort().forEach(k => {
                     let g = groupedHC[k];
                     let abs = g.target > g.actual ? g.target - g.actual : 0;
-                    let rate = g.target === 0 ? '-' : `<span class="${(g.actual/g.target*100)<95?'text-red':'text-green'} font-bold">${(g.actual/g.target*100).toFixed(1)}%</span>`;
+                    let rate = g.target === 0 ? '-' : `<span class="${(g.actual/g.target*100)<95?'text-red':'text-green'} font-bold">${(g.actual/g.target*100).toFixed(2)}%</span>`;
                     totalTrg += g.target; totalAct += g.actual;
                     hcHtml += `<tr><td>${g.lv3}</td><td>${g.lv4}</td><td class="text-center">${g.target>0?g.target:'-'}</td><td class="text-center">${g.actual>0?g.actual:'-'}</td><td class="text-center">${abs>0?abs:'-'}</td><td class="text-center">${rate}</td></tr>`;
                 });
                 let totAbs = totalTrg > totalAct ? totalTrg - totalAct : 0;
-                let totRate = totalTrg === 0 ? '-' : `<span class="${(totalAct/totalTrg*100)<95?'text-red':'text-green'} font-bold">${(totalAct/totalTrg*100).toFixed(1)}%</span>`;
+                let totRate = totalTrg === 0 ? '-' : `<span class="${(totalAct/totalTrg*100)<95?'text-red':'text-green'} font-bold">${(totalAct/totalTrg*100).toFixed(2)}%</span>`;
                 hcHtml += `<tr style="background:#F9FAFB; font-weight:700;"><td colspan="2" class="text-right">GRAND TOTAL</td><td class="text-center">${totalTrg}</td><td class="text-center">${totalAct}</td><td class="text-center">${totAbs}</td><td class="text-center">${totRate}</td></tr>`;
             }
             document.getElementById('hc-summary-table').innerHTML = hcHtml + `</tbody>`;
@@ -2126,4 +2128,36 @@ function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveD
         let delayText = delayDays > 0 ? `ดีเลย์ข้ามวัน (${delayDays} วัน)` : `ดีเลย์ ${Math.floor(waveDelay/60)} ชม. ${waveDelay%60} นาที`;
         alerts.push({ type: 'critical', text: `[Wave Ops] ค้าง ${fmtN(waveLate)} บิล (${delayText}) <b>ช้าสุดที่สาขา ${worstBU}</b>` });
     } else if (waveLate > 0) {
-        alerts.push({ type: 'ฉันเป็นแค่โมเดลภาษา และไม่สามารถให้ความช่วยเหลือในเรื่องนี้ได้
+        alerts.push({ type: 'warning', text: `[Wave Ops] ช้ากว่าแผน ${fmtN(waveLate)} บิล <b>(ที่ ${worstBU})</b> แต่อยู่ใน SLA` });
+    }
+
+    if (globalData.workforce) {
+        let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
+        let latestWfKey = wfKeys.find(k => new Date(getStandardDate(k)).getTime() <= targetTimestamp);
+        if (latestWfKey) {
+            let dayData = globalData.workforce[latestWfKey];
+            let absCount = 0; let trgCount = 0;
+            let allRoles = new Set([...Object.keys(dayData.targets || {}), ...Object.keys(dayData.roles || {})]);
+            allRoles.forEach(role => {
+                let trg = dayData.targets?.[role] || 0; let act = dayData.roles?.[role] || 0;
+                if (window.selectedBUs.includes('ALL')) { trgCount += trg; if (trg > act) absCount += (trg - act); }
+            });
+            if (absCount > 0 && window.selectedBUs.includes('ALL')) {
+                let absPct = ((absCount / trgCount) * 100).toFixed(1);
+                alerts.push({ type: absPct >= 5 ? 'critical' : 'warning', text: `[Workforce] วันนี้ขาด ${absCount} คน (${absPct}%) อาจกระทบการส่ง` });
+            }
+        }
+    }
+
+    if (alerts.length === 0) {
+        alertBox.innerHTML = `<div class="info-alert alert-green" style="margin:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:5px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>สถานการณ์ปกติ ไม่พบความเสี่ยงหรือเหตุขัดข้อง</div>`;
+    } else {
+        alerts.forEach(al => {
+            let clss = al.type === 'critical' ? 'alert-red' : 'alert-yellow';
+            let icon = al.type === 'critical' ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:5px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>` : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:5px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+            alertBox.innerHTML += `<div class="info-alert ${clss}" style="margin-bottom:8px;">${icon} <span>${al.text}</span></div>`;
+        });
+    }
+}
+
+initDashboard();
