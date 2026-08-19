@@ -15,6 +15,9 @@ function showToast(message, type = 'success', duration = 3000) {
     if (duration > 0) _toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
 }
 
+// ------------------------------------------------------------
+// GLOBAL HELPERS
+// ------------------------------------------------------------
 const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const getStandardDate = (rawDate) => {
@@ -55,6 +58,9 @@ const gradPalettes = [
     { s: '#22D3EE', e: '#06B6D4' }  // Teal
 ];
 
+// ------------------------------------------------------------
+// CHART.JS CONFIG
+// ------------------------------------------------------------
 Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.color = '#64748B';
 Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
@@ -132,6 +138,9 @@ const lineDataLabelPlugin = {
     }
 };
 
+// ==========================================
+// 🌟 INITIALIZE CHART INSTANCES
+// ==========================================
 let ffmTrendChartInstance = new Chart(document.getElementById('ffmTrendChart'), { 
     type: 'bar', data: { labels: [], datasets: [] }, 
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grid: { borderDash: [4, 4] }, grace: '15%' } } }, plugins: [dataLabelPlugin] 
@@ -167,6 +176,9 @@ let productivityChartInstance = new Chart(document.getElementById('productivityC
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, stacked: false }, y: { display: false, grace: '25%' } } } 
 });
 
+// ==========================================
+// DATA FETCHING & PROCESSING 
+// ==========================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxB0bNU1P9qrG_6aHoeiKyHMXT0_k76VlL0aq1I9xxHVpPDQK9qcd3FJMip4Jk9o6RY/exec';
 let globalData = { workforce:{}, fulfillment:{}, wave_ops:{}, ontime:{}, ontime_hub:{}, ontime_by_aff:{}, claims:{}, inventory:{}, inventory_daily:{}, transport:{}, productivity:{}, prod_area:{}, prod_zone:{}, prod_users_map:{} };
 window.selectedBUs = ['ALL'];
@@ -410,7 +422,7 @@ async function initDashboard() {
     await initFulfillmentRealtime();
     refreshAllSections();
     document.getElementById('global-loader').style.display = 'none';
-    showToast("ข้อมูลอัปเดตสำเร็จ!");
+    showToast("ข้อมูลรีเฟรชสำเร็จ!");
 }
 
 function refreshAllSections() {
@@ -1013,137 +1025,127 @@ async function initFulfillmentRealtime() {
             }
 
             if (document.getElementById('wave-total')) {
-            document.getElementById('wave-total').innerText = aTotal > 0 ? fmtN(aTotal) : "0";
-            document.getElementById('wave-completed').innerText = aComp > 0 ? fmtN(aComp) : "0";
-            document.getElementById('wave-late').innerText = aLate > 0 ? fmtN(aLate) : "0";
-            let delayEl = document.getElementById('wave-delay');
-            if (delayEl) {
-                if (aDelay > 0) delayEl.innerText = `${Math.floor(aDelay / 60)}h ${aDelay % 60}m`;
-                else delayEl.innerText = `0h 0m`;
-            }
-
-            // [FIX] เพิ่มข้อความในกล่อง 1 และ 2
-            let info1 = document.getElementById('wave-active-info-1');
-            if(info1) info1.innerHTML = `<span class="text-muted">เป้าหมายบิลวันนี้</span>`;
-            let info2 = document.getElementById('wave-active-info-2');
-            if(info2) info2.innerHTML = `<span class="text-muted">หยิบและโหลดเสร็จสิ้น</span>`;
-            
-            let waveStats = { total_orders: 0, late_pick_orders: 0, late_load_orders: 0, max_pick_delay_mins: 0, max_load_delay_mins: 0, min_pick_early_mins: null, min_load_early_mins: null, picked_orders: 0, shipped_orders: 0 };
-            try {
-                let queryDate = activeWaveKey ? new Date(activeWaveKey).toISOString().split('T')[0] : "";
-                const waveResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fn: 'apiGetWaveMonitoring', args: [queryDate, queryDate] })
-                });
-                if (waveResp.ok) {
-                    const waveJson = await waveResp.json();
-                    if (waveJson.success && waveJson.data && waveJson.data.length > 0) {
-                        waveStats = waveJson.data[0];
-                    }
-                }
-            } catch (err) {}
-
-            let isApiSuccess = (parseInt(waveStats.total_orders) > 0);
-            let latePick = isApiSuccess ? (parseInt(waveStats.late_pick_orders) || 0) : 0;
-            let lateLoad = isApiSuccess ? (parseInt(waveStats.late_load_orders) || 0) : 0;
-            let totalLate = Math.max(latePick + lateLoad, (aLate || 0));
-
-            let maxPickDelay = isApiSuccess ? (parseInt(waveStats.max_pick_delay_mins) || 0) : 0;
-            let maxLoadDelay = isApiSuccess ? (parseInt(waveStats.max_load_delay_mins) || 0) : (aDelay > 0 ? aDelay : 0);
-            let maxOverallDelay = Math.max(maxPickDelay, maxLoadDelay, (aDelay || 0));
-            let pEarly = isApiSuccess ? parseInt(waveStats.min_pick_early_mins) : null;
-            let lEarly = isApiSuccess ? parseInt(waveStats.min_load_early_mins) : null;
-            const formatTime = (mins) => `${Math.floor(mins/60)}h ${mins%60}m`;
-
-            // [FIX] อัปเดตข้อมูลกล่อง 3 (LATE ORDERS)
-            if (document.getElementById('wave-late')) {
-                document.getElementById('wave-late').innerText = totalLate > 0 ? fmtN(totalLate) : "0";
-                let info3 = document.getElementById('wave-active-info-3');
-                if (info3) {
-                    if (totalLate > 0) {
-                        if (isApiSuccess && (latePick + lateLoad) > 0) {
-                            info3.innerHTML = `<span class="trend-badge" style="background:rgba(255,255,255,0.25);">หลุด SLA</span> Pick: ${fmtN(latePick)} | Load: ${fmtN(lateLoad)}`;
-                        } else {
-                            info3.innerHTML = `<span class="trend-badge" style="background:rgba(255,255,255,0.25);">หลุด SLA</span> ${fmtN(totalLate)} บิล`;
+                document.getElementById('wave-total').innerText = aTotal > 0 ? fmtN(aTotal) : "0";
+                document.getElementById('wave-completed').innerText = aComp > 0 ? fmtN(aComp) : "0";
+                
+                let waveStats = { total_orders: 0, late_pick_orders: 0, late_load_orders: 0, max_pick_delay_mins: 0, max_load_delay_mins: 0, min_pick_early_mins: null, min_load_early_mins: null, picked_orders: 0, shipped_orders: 0 };
+                try {
+                    let queryDate = activeWaveKey ? new Date(activeWaveKey).toISOString().split('T')[0] : "";
+                    const waveResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fn: 'apiGetWaveMonitoring', args: [queryDate, queryDate] })
+                    });
+                    if (waveResp.ok) {
+                        const waveJson = await waveResp.json();
+                        if (waveJson.success && waveJson.data && waveJson.data.length > 0) {
+                            waveStats = waveJson.data[0];
                         }
-                    } else {
-                        info3.innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.15);">On-time ทุกบิล</span>`;
+                    }
+                } catch (err) {}
+
+                let isApiSuccess = (parseInt(waveStats.total_orders) > 0);
+                let latePick = isApiSuccess ? (parseInt(waveStats.late_pick_orders) || 0) : 0;
+                let lateLoad = isApiSuccess ? (parseInt(waveStats.late_load_orders) || 0) : aLate;
+                let totalLate = Math.max(latePick + lateLoad, (aLate || 0));
+
+                let maxPickDelay = isApiSuccess ? (parseInt(waveStats.max_pick_delay_mins) || 0) : 0;
+                let maxLoadDelay = isApiSuccess ? (parseInt(waveStats.max_load_delay_mins) || 0) : (aDelay > 0 ? aDelay : 0);
+                let maxOverallDelay = Math.max(maxPickDelay, maxLoadDelay, (aDelay || 0));
+                let pEarly = isApiSuccess ? parseInt(waveStats.min_pick_early_mins) : null;
+                let lEarly = isApiSuccess ? parseInt(waveStats.min_load_early_mins) : null;
+                const formatTime = (mins) => `${Math.floor(mins/60)}h ${mins%60}m`;
+
+                // กล่อง 1,2 Info
+                let info1 = document.getElementById('wave-active-info-1');
+                if(info1) info1.innerHTML = `<span class="text-muted">เป้าหมายบิลวันนี้</span>`;
+                let info2 = document.getElementById('wave-active-info-2');
+                if(info2) info2.innerHTML = `<span class="text-muted">หยิบและโหลดเสร็จสิ้น</span>`;
+
+                if (document.getElementById('wave-late')) {
+                    document.getElementById('wave-late').innerText = totalLate > 0 ? fmtN(totalLate) : "0";
+                    let info3 = document.getElementById('wave-active-info-3');
+                    if (info3) {
+                        if (totalLate > 0) {
+                            if (isApiSuccess && (latePick + lateLoad) > 0) {
+                                info3.innerHTML = `<span class="trend-badge" style="background:rgba(255,255,255,0.25);">หลุด SLA</span> Pick: ${fmtN(latePick)} | Load: ${fmtN(lateLoad)}`;
+                            } else {
+                                info3.innerHTML = `<span class="trend-badge" style="background:rgba(255,255,255,0.25);">หลุด SLA</span> ${fmtN(totalLate)} บิล`;
+                            }
+                        } else {
+                            info3.innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.15);">On-time ทุกบิล</span>`;
+                        }
                     }
                 }
-            }
 
-            // [FIX] อัปเดตข้อมูลกล่อง 4 (CURRENT STATUS)
-            if (document.getElementById('wave-delay')) {
-                let pStr = "Done", lStr = "Done", overallMainText = "0h 0m";
-                if (isApiSuccess) {
-                    if (maxPickDelay > 0) { pStr = `Delay ${formatTime(maxPickDelay)}`; }
-                    else if (!isNaN(pEarly) && pEarly !== null) { pStr = `Early ${formatTime(pEarly)}`; }
+                if (document.getElementById('wave-delay')) {
+                    let pStr = "Done", lStr = "Done", overallMainText = "0h 0m";
+                    if (isApiSuccess) {
+                        if (maxPickDelay > 0) { pStr = `Delay ${formatTime(maxPickDelay)}`; }
+                        else if (!isNaN(pEarly) && pEarly !== null) { pStr = `Early ${formatTime(pEarly)}`; }
 
-                    if (maxLoadDelay > 0) { lStr = `Delay ${formatTime(maxLoadDelay)}`; }
-                    else if (!isNaN(lEarly) && lEarly !== null) { lStr = `Early ${formatTime(lEarly)}`; }
-                    
-                    document.getElementById('wave-active-info-4').innerHTML = `Pick: ${pStr} &bull; Load: ${lStr}`;
-                } else {
-                    if (aDelay > 0) {
-                        document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge" style="background:rgba(255,255,255,0.25);">ดีเลย์อยู่</span> ช้าสุด: ${worstBU}`;
+                        if (maxLoadDelay > 0) { lStr = `Delay ${formatTime(maxLoadDelay)}`; }
+                        else if (!isNaN(lEarly) && lEarly !== null) { lStr = `Early ${formatTime(lEarly)}`; }
+                        
+                        document.getElementById('wave-active-info-4').innerHTML = `Pick: ${pStr} &bull; Load: ${lStr}`;
                     } else {
-                        document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.15);">เวลาปกติ</span>`;
+                        if (aDelay > 0) {
+                            document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge" style="background:rgba(255,255,255,0.25);">ดีเลย์อยู่</span> ช้าสุด: ${worstBU}`;
+                        } else {
+                            document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.15);">เวลาปกติ</span>`;
+                        }
                     }
+                    if (maxOverallDelay > 0) overallMainText = formatTime(maxOverallDelay);
+                    document.getElementById('wave-delay').innerText = overallMainText;
                 }
-                if (maxOverallDelay > 0) overallMainText = formatTime(maxOverallDelay);
-                document.getElementById('wave-delay').innerText = overallMainText;
-            }
 
-            if (document.getElementById('stage-pick-pct')) {
-                let fTotal = aTotal > 0 ? aTotal : (parseInt(waveStats.total_orders) || 0);
-                let isDataIncomplete = (isApiSuccess === false);
-                let fPicked = isDataIncomplete ? aComp : (parseInt(waveStats.picked_orders) || 0);
-                let fShipped = isDataIncomplete ? aComp : (parseInt(waveStats.shipped_orders) || 0);
-                let fQcDone = isDataIncomplete ? fShipped : (parseInt(waveStats.qc_orders) || 0);
+                if (document.getElementById('stage-pick-pct')) {
+                    let fTotal = aTotal > 0 ? aTotal : (parseInt(waveStats.total_orders) || 0);
+                    let isDataIncomplete = (isApiSuccess === false);
+                    let fPicked = isDataIncomplete ? aComp : (parseInt(waveStats.picked_orders) || 0);
+                    let fShipped = isDataIncomplete ? aComp : (parseInt(waveStats.shipped_orders) || 0);
+                    let fQcDone = isDataIncomplete ? fShipped : (parseInt(waveStats.qc_orders) || 0);
 
-                fPicked = Math.min(fPicked, fTotal);
-                fQcDone = Math.min(fQcDone, fPicked); 
-                fShipped = Math.min(fShipped, fQcDone); 
-                let fQcPending = Math.max(0, fPicked - fQcDone);
+                    fPicked = Math.min(fPicked, fTotal);
+                    fQcDone = Math.min(fQcDone, fPicked); 
+                    fShipped = Math.min(fShipped, fQcDone); 
+                    let fQcPending = Math.max(0, fPicked - fQcDone);
 
-                let pctPick = fTotal > 0 ? ((fPicked / fTotal) * 100).toFixed(1) : 0;
-                document.getElementById('stage-pick-pct').innerText = pctPick + '%';
-                document.getElementById('stage-pick-done').innerText = fmtN(fPicked);
-                document.getElementById('stage-pick-total').innerText = fmtN(fTotal);
-                if(document.getElementById('stage-pick-bar')) document.getElementById('stage-pick-bar').style.width = pctPick + '%';
-                document.getElementById('stage-pick-text').innerHTML = `⏳ รอดำเนินการหยิบ: <b>${fmtN(fTotal - fPicked)}</b> บิล`;
+                    let pctPick = fTotal > 0 ? ((fPicked / fTotal) * 100).toFixed(1) : 0;
+                    document.getElementById('stage-pick-pct').innerText = pctPick + '%';
+                    document.getElementById('stage-pick-done').innerText = fmtN(fPicked);
+                    document.getElementById('stage-pick-total').innerText = fmtN(fTotal);
+                    if(document.getElementById('stage-pick-bar')) document.getElementById('stage-pick-bar').style.width = pctPick + '%';
+                    document.getElementById('stage-pick-text').innerHTML = `⏳ รอดำเนินการหยิบ: <b>${fmtN(fTotal - fPicked)}</b> บิล`;
 
-                let pctQc = fTotal > 0 ? ((fQcDone / fTotal) * 100).toFixed(1) : 0;
-                document.getElementById('stage-qc-pct').innerText = pctQc + '%';
-                document.getElementById('stage-qc-done').innerText = fmtN(fQcDone); 
-                document.getElementById('stage-qc-pending').innerText = fmtN(fQcPending);
-                if(document.getElementById('stage-qc-bar')) document.getElementById('stage-qc-bar').style.width = pctQc + '%';
-                document.getElementById('stage-qc-text').innerHTML = `🔍 ค้างตรวจ/รอแพ็ค: <b>${fmtN(fQcPending)}</b> บิล`;
+                    let pctQc = fTotal > 0 ? ((fQcDone / fTotal) * 100).toFixed(1) : 0;
+                    document.getElementById('stage-qc-pct').innerText = pctQc + '%';
+                    document.getElementById('stage-qc-done').innerText = fmtN(fQcDone); 
+                    document.getElementById('stage-qc-pending').innerText = fmtN(fQcPending);
+                    if(document.getElementById('stage-qc-bar')) document.getElementById('stage-qc-bar').style.width = pctQc + '%';
+                    document.getElementById('stage-qc-text').innerHTML = `🔍 ค้างตรวจ/รอแพ็ค: <b>${fmtN(fQcPending)}</b> บิล`;
 
-                let pctShip = fTotal > 0 ? ((fShipped / fTotal) * 100).toFixed(1) : 0;
-                let pendingShip = Math.max(0, fTotal - fShipped);
-                document.getElementById('stage-ship-pct').innerText = pctShip + '%';
-                document.getElementById('stage-ship-done').innerText = fmtN(fShipped);
-                if(document.getElementById('stage-ship-pending')) document.getElementById('stage-ship-pending').innerText = fmtN(pendingShip);
-                if(document.getElementById('stage-ship-bar')) document.getElementById('stage-ship-bar').style.width = pctShip + '%';
-                document.getElementById('stage-ship-text').innerHTML = `📦 คงเหลือยังไม่ส่งออก: <b>${fmtN(pendingShip)}</b> บิล`;
-            }
-            
-            let targetWaveDate = activeWaveKey || todayKeyStr;
-            if (targetWaveDate) {
-                let dispDate = getDisplayDate(targetWaveDate);
-                ['1','2','3','4'].forEach(n => {
-                    let el = document.getElementById(`wave-date-${n}`);
-                    if(el) el.innerText = `Updated: ${dispDate}`;
-                });
-                ['pick','qc','ship'].forEach(s => {
-                    let el = document.getElementById(`stage-${s}-date`);
-                    if(el) el.innerText = `Updated: ${dispDate}`;
-                });
-            }
-
-            // [FIX] สั่งให้ Incident Alerts แสดงผลตรงนี้เลย
-            generateExecutiveAlerts(targetTimestamp, activeWaveKey, totalLate, maxOverallDelay, diffDays, worstBU);
-        }
+                    let pctShip = fTotal > 0 ? ((fShipped / fTotal) * 100).toFixed(1) : 0;
+                    let pendingShip = Math.max(0, fTotal - fShipped);
+                    document.getElementById('stage-ship-pct').innerText = pctShip + '%';
+                    document.getElementById('stage-ship-done').innerText = fmtN(fShipped);
+                    if(document.getElementById('stage-ship-pending')) document.getElementById('stage-ship-pending').innerText = fmtN(pendingShip);
+                    if(document.getElementById('stage-ship-bar')) document.getElementById('stage-ship-bar').style.width = pctShip + '%';
+                    document.getElementById('stage-ship-text').innerHTML = `📦 คงเหลือยังไม่ส่งออก: <b>${fmtN(pendingShip)}</b> บิล`;
+                }
+                
+                let targetWaveDate = activeWaveKey || todayKeyStr;
+                if (targetWaveDate) {
+                    let dispDate = getDisplayDate(targetWaveDate);
+                    ['1','2','3','4'].forEach(n => {
+                        let el = document.getElementById(`wave-date-${n}`);
+                        if(el) el.innerText = `Updated: ${dispDate}`;
+                    });
+                    ['pick','qc','ship'].forEach(s => {
+                        let el = document.getElementById(`stage-${s}-date`);
+                        if(el) el.innerText = `Updated: ${dispDate}`;
+                    });
+                }
+                
+                generateExecutiveAlerts(targetTimestamp, activeWaveKey, totalLate, maxOverallDelay, diffDays, worstBU);
             }
         }
 
@@ -1654,6 +1656,9 @@ function updateInventoryUI() {
     }
 }
 
+// ------------------------------------------------------------
+// 🚚 TRANSPORT PERFORMANCE
+// ------------------------------------------------------------
 function updateTransportUI() {
     let tbody = document.querySelector('#new-transport-table tbody');
     if (!globalData.transport || Object.keys(globalData.transport).length === 0) {
@@ -1664,11 +1669,10 @@ function updateTransportUI() {
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
     const targetTime = new Date(dpVal).setHours(23,59,59,999);
     
-    // [FIX] แปลงวันที่ตรงๆ เพื่อไม่ให้เกิด Error
     let availableDates = Object.keys(globalData.transport).filter(k => {
-        let d = new Date(k).getTime();
-        return !isNaN(d) && d <= targetTime;
-    }).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
+        let dObj = new Date(getStandardDate(k));
+        return !isNaN(dObj.getTime()) && dObj.getTime() <= targetTime;
+    }).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
 
     if (availableDates.length === 0) {
         document.getElementById('tp-kpi-total').innerText = "0";
@@ -1682,7 +1686,7 @@ function updateTransportUI() {
     let todayKey = availableDates[0];
     let data = globalData.transport[todayKey];
     
-    let dObj = new Date(todayKey);
+    let dObj = new Date(getStandardDate(todayKey));
     document.getElementById('carrier-update-time').innerText = `อัปเดต: ${getDisplayDate(dObj)}`;
 
     document.getElementById('tp-kpi-total').innerText = fmtN(data.total_orders);
