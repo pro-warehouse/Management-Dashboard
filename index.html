@@ -250,6 +250,19 @@
             <div class="card">
                 <div class="card-head-bar">
                     <h3 class="panel-title m-0">ON-TIME TREND</h3>
+                    <!-- Filter ใหม่สำหรับเลือกเส้นกราฟ -->
+                    <div style="display:flex; gap:10px; position:relative;">
+                        <div id="ontime-line-ms" class="filter-control select-dropdown" style="width: auto; min-width: 110px; height: 28px; font-size: 0.7rem; padding: 2px 8px;">
+                            <span id="ontime-line-text">ภาพรวม</span><span class="dropdown-arrow">▼</span>
+                        </div>
+                        <div id="ontime-line-menu" class="dropdown-card" style="min-width: 140px; right: 0; top: 100%;">
+                            <label class="dropdown-item"><input type="checkbox" id="cb-ot-overall" value="OVERALL" checked> ภาพรวม</label>
+                            <div class="dropdown-divider"></div>
+                            <label class="dropdown-item"><input type="checkbox" id="cb-ot-ptglg" value="PTGLG"> PTGLG</label>
+                            <label class="dropdown-item"><input type="checkbox" id="cb-ot-hub" value="HUB"> HUB</label>
+                            <button id="btn-apply-ot-line" class="btn-apply mt-10">Apply</button>
+                        </div>
+                    </div>
                 </div>
                 <div id="ontime-summary-box" class="info-alert alert-green">💡 กำลังวิเคราะห์ข้อมูล...</div>
                 <div class="chart-canvas-box"><canvas id="ontimeChart2"></canvas></div>
@@ -381,6 +394,33 @@
                         <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
                     </table>
                 </div>
+            </div>
+        </section>
+
+        <section class="card mb-20">
+            <h3 class="panel-title">STOCK ACCURACY SUMMARY</h3>
+            <div id="inv-summary-box" class="text-sm mt-10">💡 กำลังสรุปข้อมูล...</div>
+        </section>
+
+        <section class="card mb-30" style="overflow:visible;">
+            <div class="card-head-bar">
+                <h3 class="panel-title m-0">LOCATION ACCURACY & ANALYSIS</h3>
+                <div style="display: flex; gap: 10px; flex-wrap:wrap;">
+                    <div id="loc-bu-select" class="filter-control select-dropdown" style="width:110px;"><span id="loc-bu-text">BU: All</span></div>
+                    <div id="loc-bu-menu" class="dropdown-card"><label class="dropdown-item"><input type="checkbox" id="loc-bu-all" checked> All BUs</label><div class="dropdown-divider"></div><div id="loc-bu-list" class="checkbox-container"></div><button id="loc-bu-apply" class="btn-apply mt-10">Apply</button></div>
+                    
+                    <div id="loc-type-select" class="filter-control select-dropdown" style="width:110px;"><span id="loc-type-text">Type: All</span></div>
+                    <div id="loc-type-menu" class="dropdown-card"><label class="dropdown-item"><input type="checkbox" id="loc-type-all" checked> All Types</label><div class="dropdown-divider"></div><div id="loc-type-list" class="checkbox-container"></div><button id="loc-type-apply" class="btn-apply mt-10">Apply</button></div>
+                    
+                    <div id="loc-zone-select" class="filter-control select-dropdown" style="width:110px;"><span id="loc-zone-text">Zone: All</span></div>
+                    <div id="loc-zone-menu" class="dropdown-card"><label class="dropdown-item"><input type="checkbox" id="loc-zone-all" checked> All Zones</label><div class="dropdown-divider"></div><div id="loc-zone-list" class="checkbox-container"></div><button id="loc-zone-apply" class="btn-apply mt-10">Apply</button></div>
+                </div>
+            </div>
+            <div id="loc-analysis-box" class="info-alert alert-blue mb-20 mt-10">💡 กำลังวิเคราะห์ข้อมูล Location...</div>
+            <div class="table-scroll-wrap max-h-300">
+                <table class="data-table" id="loc-accuracy-table">
+                    <thead><tr><th class="text-center text-muted">Loading Location Data...</th></tr></thead>
+                </table>
             </div>
         </section>
 
