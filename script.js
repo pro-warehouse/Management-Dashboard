@@ -68,7 +68,7 @@ Chart.defaults.plugins.tooltip.titleFont = { size: 12, family: 'Inter', weight: 
 Chart.defaults.plugins.tooltip.padding = 10;
 Chart.defaults.plugins.tooltip.cornerRadius = 6;
 Chart.defaults.elements.bar.borderWidth = 0; 
-Chart.defaults.elements.line.tension = 0.4; 
+Chart.defaults.elements.line.tension = 0.4; // ทำให้เส้นกราฟสมูทโค้งมน
 Chart.defaults.elements.point.radius = 4;
 
 const dataLabelPlugin = {
@@ -193,7 +193,8 @@ let transportTrendChartInstance = new Chart(document.getElementById('transportTr
             y1: { 
                 type: 'linear', position: 'right', 
                 title: { display: true, text: 'Cost (฿)', color: '#EF4444', font: {weight: 'bold'} }, 
-                grid: { display: false } 
+                grid: { display: false },
+                beginAtZero: true
             }
         }
     },
@@ -1699,7 +1700,7 @@ function updateTransportUI() {
     
     if (!globalData.transport || Object.keys(globalData.transport).length === 0) {
         if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">กำลังรอข้อมูลขนส่งเข้าระบบ...</td></tr>`;
-        if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted" style="padding:20px;">กำลังรอข้อมูลขนส่งเข้าระบบ...</td></tr>`;
+        if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding:20px;">กำลังรอข้อมูลขนส่งเข้าระบบ...</td></tr>`;
         return;
     }
     
@@ -1725,17 +1726,16 @@ function updateTransportUI() {
         let eDisp = `${String(endTarget.getDate()).padStart(2, '0')} ${shortMonths[endTarget.getMonth()]}`;
         document.getElementById('carrier-update-time').innerText = `ย้อนหลัง 7 วัน: ${sDisp} - ${eDisp}`;
         if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่ง ในช่วง 7 วันที่เลือก</td></tr>`;
-        if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลรายละเอียดรายวัน</td></tr>`;
+        if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลรายละเอียดรายวัน</td></tr>`;
         return;
     }
 
     let aggData = { total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, carriers: {} };
-    let dailyHtml = ""; // ตัวแปรสำหรับตารางใหม่
+    let dailyHtml = ""; 
     
     validDates.forEach(dateKey => {
         let dayData = globalData.transport[dateKey];
         
-        // 1. เตรียมข้อมูลตารางสรุป 7 วัน (ตารางบน)
         aggData.total_orders += dayData.total_orders;
         aggData.success_orders += dayData.success_orders;
         aggData.sla_hit += dayData.sla_hit;
@@ -1751,15 +1751,14 @@ function updateTransportUI() {
             aggData.carriers[cName].total_cost += dayData.carriers[cName].total_cost;
         });
 
-        // 2. เตรียมข้อมูลตารางแยกรายวัน (ตารางล่าง)
         let dObj = new Date(dateKey);
-        let dateDisp = `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]} ${dObj.getFullYear()}`;
+        let dateDisp = `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
         
         if (dayData.details) {
             let detailKeys = Object.keys(dayData.details).sort(); 
             detailKeys.forEach(k => {
                 let d = dayData.details[k];
-                let vehCount = Object.keys(d.plates).length; // นับจำนวนคันรถที่ไม่ซ้ำกัน
+                let vehCount = Object.keys(d.plates).length;
                 let succPct = d.total_orders > 0 ? (d.success_orders / d.total_orders) * 100 : 0;
                 let slaPct = d.success_orders > 0 ? (d.sla_hit / d.success_orders) * 100 : 0;
                 
@@ -1773,19 +1772,16 @@ function updateTransportUI() {
                     
                 dailyHtml += `<tr>
                     <td style="position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:700; white-space:nowrap;">${dateDisp}</td>
-                    <td class="font-bold text-dark">${d.carrier}</td>
-                    <td class="text-muted font-bold">${d.vType}</td>
+                    <td class="font-bold text-dark">${d.carrier}<br><span class="text-xs text-muted font-normal">${d.vType}</span></td>
                     <td class="text-center font-bold text-purple">${vehCount}</td>
                     <td class="text-center font-bold">${fmtN(d.total_orders)}</td>
                     <td>${bar(succPct, 'grad-fill-green')}</td>
-                    <td>${bar(slaPct, 'grad-fill-blue')}</td>
                     <td class="text-center text-red font-bold">${fmtN(d.total_cost)}</td>
                 </tr>`;
             });
         }
     });
     
-    // อัปเดตตารางบน (ของเดิม)
     let startDisp = `${String(startTarget.getDate()).padStart(2, '0')} ${shortMonths[startTarget.getMonth()]} ${startTarget.getFullYear()}`;
     let endDisp = `${String(endTarget.getDate()).padStart(2, '0')} ${shortMonths[endTarget.getMonth()]} ${endTarget.getFullYear()}`;
     document.getElementById('carrier-update-time').innerText = `ข้อมูล 7 วัน: ${startDisp} - ${endDisp}`;
@@ -1823,20 +1819,19 @@ function updateTransportUI() {
         tbody.innerHTML = html;
     }
 
-    // อัปเดตตารางใหม่ (รายวัน)
     if(dailyTbody) {
-        if(dailyHtml === "") dailyHtml = `<tr><td colspan="8" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลรายละเอียดรายวัน</td></tr>`;
+        if(dailyHtml === "") dailyHtml = `<tr><td colspan="6" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลรายละเอียดรายวัน</td></tr>`;
         dailyTbody.innerHTML = dailyHtml;
     }
+
     // -----------------------------------------------------------
-    // --- ส่วนที่เพิ่มใหม่: วาดกราฟรายวัน SLA 98% และวิเคราะห์ค่าขนส่ง ---
+    // --- วาดกราฟรายวัน SLA 98% และวิเคราะห์แบบหุ้น (Stock Ticker) ---
     // -----------------------------------------------------------
     let chartLabels = [];
     let costData = [];
     let slaData = [];
     let targetData = [];
 
-    // validDates ตอนนี้เรียงจากใหม่ไปเก่า ต้องกลับด้านให้เก่าไปใหม่สำหรับวาดกราฟ
     let chartDates = [...validDates].reverse();
     
     chartDates.forEach(dKey => {
@@ -1847,7 +1842,7 @@ function updateTransportUI() {
         costData.push(dayData.total_cost);
         let slaPct = dayData.success_orders > 0 ? (dayData.sla_hit / dayData.success_orders) * 100 : 0;
         slaData.push(parseFloat(slaPct.toFixed(2)));
-        targetData.push(98); // เส้น Target 98%
+        targetData.push(98); 
     });
 
     if (typeof transportTrendChartInstance !== 'undefined' && transportTrendChartInstance) {
@@ -1862,19 +1857,22 @@ function updateTransportUI() {
             {
                 type: 'line', label: 'SLA Adherence (%)',
                 data: slaData, borderColor: '#3B82F6', backgroundColor: '#3B82F6',
-                borderWidth: 3, pointRadius: 4,
+                borderWidth: 3, pointRadius: 5, tension: 0.4, // ทำให้เส้นสมูท
                 yAxisID: 'y', fill: false
             },
             {
                 type: 'bar', label: 'Daily Cost (฿)',
                 data: costData, backgroundColor: 'rgba(239, 68, 68, 0.85)',
-                borderRadius: 4, yAxisID: 'y1'
+                borderRadius: 50, // มุมโค้งมนแบบสุดๆ 
+                borderSkipped: false, // โค้งทั้งบนและล่าง
+                barThickness: 12, // ขนาดแท่งให้เพรียวสวย
+                yAxisID: 'y1'
             }
         ];
         transportTrendChartInstance.update();
     }
 
-    // วิเคราะห์แนวโน้มค่าใช้จ่าย
+    // วิเคราะห์แนวโน้มค่าใช้จ่าย ทำเป็น Stock Ticker
     let trendSummaryBox = document.getElementById('tp-trend-summary');
     if (trendSummaryBox && chartDates.length > 0) {
         let latestCost = costData[costData.length - 1] || 0;
@@ -1882,27 +1880,35 @@ function updateTransportUI() {
         let latestSla = slaData[slaData.length - 1] || 0;
         
         let diff = latestCost - prevCost;
-        let diffText = "";
-        let colorClass = "alert-blue";
+        let diffPct = prevCost > 0 ? (diff / prevCost) * 100 : 0;
         
+        let diffHtml = "";
+        
+        // ขึ้น/ลง เทียบกับวันก่อนหน้า 
         if (chartDates.length === 1 || prevCost === 0) {
-            diffText = `ยอดค่าขนส่งล่าสุด <b>${fmtN(latestCost)} ฿</b>`;
+            diffHtml = `<div class="stock-change stock-neutral">- 0.00%</div>`;
         } else if (diff > 0) {
-            diffText = `ค่าขนส่ง <b>เพิ่มขึ้น +${fmtN(diff)} ฿</b> จากเมื่อวาน (ล่าสุด ${fmtN(latestCost)} ฿)`;
-            colorClass = "alert-red"; // ค่าส่งแพงขึ้น เป็นสีแดงเตือน
+            // ค่าขนส่งแพงขึ้น (Up = สีแดง)
+            diffHtml = `<div class="stock-change stock-up">▲ +${fmtN(diff)} ฿ (+${diffPct.toFixed(1)}%)</div>`;
         } else if (diff < 0) {
-            diffText = `ค่าขนส่ง <b>ลดลง ${fmtN(Math.abs(diff))} ฿</b> จากเมื่อวาน (ล่าสุด ${fmtN(latestCost)} ฿)`;
-            colorClass = "alert-green"; // ค่าส่งลดลง เป็นสีเขียว
+            // ค่าขนส่งลดลง (Down = สีเขียวประหยัดเงิน)
+            diffHtml = `<div class="stock-change stock-down">▼ ${fmtN(Math.abs(diff))} ฿ (${diffPct.toFixed(1)}%)</div>`;
         } else {
-            diffText = `ค่าขนส่ง <b>คงที่</b> (ล่าสุด ${fmtN(latestCost)} ฿)`;
+            diffHtml = `<div class="stock-change stock-neutral">- 0.00%</div>`;
         }
         
         let slaStatus = latestSla >= 98 
-            ? `<span class="text-green font-bold">ผ่านเป้า 98% (ทำได้ ${latestSla}%)</span>` 
-            : `<span class="text-red font-bold">ต่ำกว่าเป้า 98% (ทำได้ ${latestSla}%)</span>`;
+            ? `<span class="text-green font-bold">🎯 SLA: ${latestSla.toFixed(1)}% (Pass)</span>` 
+            : `<span class="text-red font-bold">⚠️ SLA: ${latestSla.toFixed(1)}% (Fail)</span>`;
         
-        trendSummaryBox.innerHTML = `💡 <b>วิเคราะห์แนวโน้ม:</b> ${diffText} &nbsp;|&nbsp; SLA ล่าสุด: ${slaStatus}`;
-        trendSummaryBox.className = `info-alert ${colorClass} mb-10 mt-10`;
+        trendSummaryBox.innerHTML = `
+            <div class="stock-val-wrap">
+                <span class="stock-label">Total Cost (Latest)</span>
+                <span class="stock-price">฿ ${fmtN(latestCost)}</span>
+                <div class="mt-10">${slaStatus}</div>
+            </div>
+            <div>${diffHtml}</div>
+        `;
     }
 }
 // ------------------------------------------------------------
