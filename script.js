@@ -1606,6 +1606,86 @@ function updateTransportUI() {
         tbody.innerHTML = html;
     }
 
+    // -----------------------------------------------------------
+    // --- สร้างตารางแนวนอน (Horizontal Comparison Table) ---
+    // -----------------------------------------------------------
+    let chronPeriods = Object.values(groupedByPeriod).sort((a,b) => a.time - b.time); // เรียงเก่าไปใหม่
+    let htmlHead = `<tr><th style="position:sticky; top:0; left:0; z-index:40; background:var(--bg-card);">วันที่ / Period</th>`;
+    let htmlOrders = `<tr><td class="text-dark">Orders</td>`;
+    let htmlVehicles = `<tr><td class="text-dark">จำนวนรถ</td>`;
+    let htmlSucc = `<tr><td class="text-dark">Succ.%</td>`;
+    let htmlSla = `<tr><td class="text-dark">SLA Adherence %</td>`;
+    let htmlCost = `<tr><td class="text-dark">Cost (฿)</td>`;
+    let htmlAccum = `<tr><td class="text-dark">Accumulate Cost (฿)</td>`;
+
+    let accumCost = 0;
+    let prevP = null;
+
+    chronPeriods.forEach((p, idx) => {
+        // นับจำนวนรถแบบ Unique
+        let uniquePlates = new Set();
+        p.details.forEach(d => { Object.keys(d.plates).forEach(pl => uniquePlates.add(pl)); });
+        let vCount = uniquePlates.size;
+
+        let succPct = p.total_orders > 0 ? (p.success_orders / p.total_orders * 100) : 0;
+        let slaPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders * 100) : 0;
+        accumCost += p.total_cost; // บวกทบยอดค่าขนส่ง
+
+        htmlHead += `<th style="position:sticky; top:0; z-index:30; background:var(--bg-card);">${p.label}</th>`;
+        htmlOrders += `<td class="font-bold text-dark">${fmtN(p.total_orders)}</td>`;
+        htmlVehicles += `<td>${fmtN(vCount)}</td>`;
+        htmlSucc += `<td>${succPct.toFixed(1)}%</td>`;
+        htmlSla += `<td>${slaPct.toFixed(1)}%</td>`;
+        htmlCost += `<td class="text-red">${fmtN(p.total_cost)}</td>`;
+        htmlAccum += `<td class="font-bold text-blue">${fmtN(accumCost)}</td>`;
+
+        // คอลัมน์เปรียบเทียบ (เริ่มทำเมื่อมีวันก่อนหน้า)
+        if (idx > 0) {
+            htmlHead += `<th class="diff-col text-muted" style="position:sticky; top:0; z-index:20;">เทียบก่อนหน้า</th>`;
+            
+            let diffOrd = p.total_orders - prevP.orders;
+            let diffVeh = vCount - prevP.vehicles;
+            let diffSucc = succPct - prevP.succ;
+            let diffSla = slaPct - prevP.sla;
+            let diffCost = p.total_cost - prevP.cost;
+
+            // ฟังก์ชันกำหนดสีบวก/ลบ
+            const fmtDiff = (v, isGoodPositive, isPct = false) => {
+                if (v === 0) return `<td class="diff-col diff-neutral">-</td>`;
+                let sign = v > 0 ? '+' : '';
+                let clrClass = isGoodPositive ? (v > 0 ? 'diff-good' : 'diff-bad') : (v > 0 ? 'diff-bad' : 'diff-good');
+                let valStr = isPct ? v.toFixed(1) + '%' : fmtN(v);
+                return `<td class="diff-col ${clrClass}">${sign}${valStr}</td>`;
+            };
+
+            // ใส่สูตร (อะไรเยอะแล้วดีให้ใส่ true, อะไรเยอะแล้วไม่ดีอย่าง Cost ใส่ false)
+            htmlOrders += fmtDiff(diffOrd, true); 
+            htmlVehicles += fmtDiff(diffVeh, false); 
+            htmlSucc += fmtDiff(diffSucc, true, true);
+            htmlSla += fmtDiff(diffSla, true, true);
+            htmlCost += fmtDiff(diffCost, false); 
+            htmlAccum += `<td class="diff-col"></td>`; // ช่องสะสมไม่ต้องเปรียบเทียบ
+        }
+        // เซฟค่าไว้ใช้เทียบรอบถัดไป
+        prevP = { orders: p.total_orders, vehicles: vCount, succ: succPct, sla: slaPct, cost: p.total_cost };
+    });
+
+    htmlHead += `</tr>`; htmlOrders += `</tr>`; htmlVehicles += `</tr>`; 
+    htmlSucc += `</tr>`; htmlSla += `</tr>`; htmlCost += `</tr>`; htmlAccum += `</tr>`;
+
+    let tcTable = document.getElementById('transport-comparison-table');
+    if(tcTable) {
+        tcTable.querySelector('thead').innerHTML = htmlHead;
+        tcTable.querySelector('tbody').innerHTML = htmlOrders + htmlVehicles + htmlSucc + htmlSla + htmlCost + htmlAccum;
+    }
+
+    // เลื่อน Scrollbar แนวนอนไปขวาสุดอัตโนมัติ เพื่อให้โชว์ข้อมูลล่าสุดก่อน
+    setTimeout(() => {
+        let scroller = document.getElementById('comparison-scroll-container');
+        if(scroller) scroller.scrollLeft = scroller.scrollWidth;
+    }, 400);
+    // -----------------------------------------------------------
+
     // อัปเดตตาราง DAILY DETAILS ด้วย Summary Row คั่น
     let dailyHtml = "";
     let sortedPeriods = Object.values(groupedByPeriod).sort((a,b) => b.time - a.time);
