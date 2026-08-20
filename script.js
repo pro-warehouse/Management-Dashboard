@@ -1672,37 +1672,41 @@ function updateInventoryUI() {
 function updateTransportUI() {
     let tbody = document.querySelector('#new-transport-table tbody');
     if (!globalData.transport || Object.keys(globalData.transport).length === 0) {
-        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่งในระบบ</td></tr>`;
+        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">กำลังรอข้อมูลขนส่งเข้าระบบ...</td></tr>`;
         return;
     }
     
-    // 1. กำหนดช่วงเวลา (จากวันที่เลือก ย้อนหลังไป 6 วัน รวมเป็น 7 วัน)
+    // 1. อ่านวันที่จากปฏิทิน แล้วแปลงค่าแบบหลีกเลี่ยง Timezone Shift 
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
-    const endTarget = new Date(dpVal);
-    endTarget.setHours(23, 59, 59, 999);
+    let parts = dpVal.split('-');
     
-    const startTarget = new Date(dpVal);
+    // 2. เซ็ตเวลาให้ครอบคลุม 7 วันย้อนหลัง (รวมวันที่เลือก)
+    const endTarget = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 23, 59, 59, 999);
+    const startTarget = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 0, 0, 0, 0);
     startTarget.setDate(startTarget.getDate() - 6);
-    startTarget.setHours(0, 0, 0, 0);
     
-    // 2. ดึงคีย์วันที่ทั้งหมดที่อยู่ในช่วง 7 วันนี้
+    // 3. กรองเฉพาะข้อมูลที่อยู่ในช่วง 7 วัน
     let validDates = Object.keys(globalData.transport).filter(k => {
         let dTime = new Date(k).getTime();
         return !isNaN(dTime) && dTime >= startTarget.getTime() && dTime <= endTarget.getTime();
     }).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
 
-    // ถ้าไม่มีข้อมูลในช่วง 7 วันนั้นเลย
+    // ถ้าไม่มีข้อมูลเลยใน 7 วันนั้น
     if (validDates.length === 0) {
         document.getElementById('tp-kpi-total').innerText = "0";
         document.getElementById('tp-kpi-success').innerText = "0";
         document.getElementById('tp-kpi-sla').innerText = "0";
         document.getElementById('tp-kpi-cost').innerText = "0";
-        document.getElementById('carrier-update-time').innerText = `อัปเดต: ไม่มีข้อมูล (ย้อนหลัง 7 วัน)`;
-        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่งใน 7 วันที่เลือก</td></tr>`;
+        
+        let sDisp = `${String(startTarget.getDate()).padStart(2, '0')} ${shortMonths[startTarget.getMonth()]}`;
+        let eDisp = `${String(endTarget.getDate()).padStart(2, '0')} ${shortMonths[endTarget.getMonth()]}`;
+        document.getElementById('carrier-update-time').innerText = `ย้อนหลัง 7 วัน: ${sDisp} - ${eDisp}`;
+        
+        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่ง ในช่วง 7 วันที่เลือก</td></tr>`;
         return;
     }
 
-    // 3. นำข้อมูลทั้ง 7 วันมารวมเข้าด้วยกัน (Aggregate)
+    // 4. เอาข้อมูลรายวันมารวมร่างกัน (Aggregate)
     let aggData = { total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, carriers: {} };
     
     validDates.forEach(dateKey => {
@@ -1723,10 +1727,10 @@ function updateTransportUI() {
         });
     });
     
-    // 4. อัปเดตหน้าจอ UI
-    let startDisp = getDisplayDate(startTarget);
-    let endDisp = getDisplayDate(endTarget);
-    document.getElementById('carrier-update-time').innerText = `ข้อมูล: ${startDisp} - ${endDisp}`;
+    // 5. แสดงผลขึ้นหน้าเว็บ
+    let startDisp = `${String(startTarget.getDate()).padStart(2, '0')} ${shortMonths[startTarget.getMonth()]} ${startTarget.getFullYear()}`;
+    let endDisp = `${String(endTarget.getDate()).padStart(2, '0')} ${shortMonths[endTarget.getMonth()]} ${endTarget.getFullYear()}`;
+    document.getElementById('carrier-update-time').innerText = `ข้อมูล 7 วัน: ${startDisp} - ${endDisp}`;
 
     document.getElementById('tp-kpi-total').innerText = fmtN(aggData.total_orders);
     document.getElementById('tp-kpi-success').innerText = fmtN(aggData.success_orders);
@@ -1735,7 +1739,7 @@ function updateTransportUI() {
 
     if(tbody) {
         let html = "";
-        // เรียงลำดับบริษัทขนส่งตามจำนวนออเดอร์ (จากมากไปน้อย)
+        // เรียงลำดับคนวิ่งเยอะสุดไว้บน
         let carriers = Object.keys(aggData.carriers).sort((a,b) => aggData.carriers[b].total_orders - aggData.carriers[a].total_orders);
         
         carriers.forEach(c => {
