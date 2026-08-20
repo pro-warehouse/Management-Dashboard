@@ -117,7 +117,7 @@ body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color
 
 /* Alerts */
 .info-alert { padding: 10px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; margin-bottom: 8px; }
-.alert-green { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; } .alert-red { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; } .alert-blue { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
+.alert-green { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; } .alert-red { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; } .alert-blue { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; } .alert-yellow { background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A; }
 
 /* Tables */
 .table-scroll-wrap { width: 100%; overflow-x: auto; border-radius: 6px; }
@@ -157,6 +157,6 @@ body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color
 .comparison-table th { text-align: center; }
 .diff-col { background-color: #F8FAFC; font-size: 0.75rem; border-left: 1px dashed #CBD5E1; }
 [data-theme="dark"] .diff-col { background-color: #0F172A; border-left: 1px dashed #334155; }
-.diff-good { color: #10B981; font-weight: 700; } /* เขียว (แนวโน้มดี) */
-.diff-bad { color: #EF4444; font-weight: 700; } /* แดง (แนวโน้มแย่) */
+.diff-good { color: #10B981; font-weight: 700; } 
+.diff-bad { color: #EF4444; font-weight: 700; } 
 .diff-neutral { color: var(--text-muted); font-weight: 500; }
