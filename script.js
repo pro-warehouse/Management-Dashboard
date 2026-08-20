@@ -1667,25 +1667,25 @@ function updateInventoryUI() {
 }
 
 // ------------------------------------------------------------
-// 🚚 TRANSPORT PERFORMANCE (7 DAYS AGGREGATION)
+// 🚚 TRANSPORT PERFORMANCE (7 DAYS AGGREGATION & DAILY DETAILS)
 // ------------------------------------------------------------
 function updateTransportUI() {
     let tbody = document.querySelector('#new-transport-table tbody');
+    let dailyTbody = document.querySelector('#daily-transport-table tbody');
+    
     if (!globalData.transport || Object.keys(globalData.transport).length === 0) {
         if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">กำลังรอข้อมูลขนส่งเข้าระบบ...</td></tr>`;
+        if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted" style="padding:20px;">กำลังรอข้อมูลขนส่งเข้าระบบ...</td></tr>`;
         return;
     }
     
-    // 1. อ่านวันที่จากปฏิทิน
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
     let parts = dpVal.split('-');
     
-    // 2. เซ็ตเวลาให้ครอบคลุม 7 วันย้อนหลัง (ป้องกันปัญหา Timezone หน้าเว็บเพี้ยน)
     const endTarget = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 23, 59, 59, 999);
     const startTarget = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 0, 0, 0, 0);
-    startTarget.setDate(startTarget.getDate() - 6); // ลบออก 6 วันรวมวันนี้เป็น 7 วัน
+    startTarget.setDate(startTarget.getDate() - 6);
     
-    // 3. กรองเฉพาะข้อมูล 7 วันที่เลือก
     let validDates = Object.keys(globalData.transport).filter(k => {
         let dTime = new Date(k).getTime();
         return !isNaN(dTime) && dTime >= startTarget.getTime() && dTime <= endTarget.getTime();
@@ -1701,20 +1701,23 @@ function updateTransportUI() {
         let eDisp = `${String(endTarget.getDate()).padStart(2, '0')} ${shortMonths[endTarget.getMonth()]}`;
         document.getElementById('carrier-update-time').innerText = `ย้อนหลัง 7 วัน: ${sDisp} - ${eDisp}`;
         if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่ง ในช่วง 7 วันที่เลือก</td></tr>`;
+        if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลรายละเอียดรายวัน</td></tr>`;
         return;
     }
 
-    // 4. เอายอดรวม 7 วันมาบวกกัน
     let aggData = { total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, carriers: {} };
+    let dailyHtml = ""; // ตัวแปรสำหรับตารางใหม่
     
     validDates.forEach(dateKey => {
         let dayData = globalData.transport[dateKey];
+        
+        // 1. เตรียมข้อมูลตารางสรุป 7 วัน (ตารางบน)
         aggData.total_orders += dayData.total_orders;
         aggData.success_orders += dayData.success_orders;
         aggData.sla_hit += dayData.sla_hit;
         aggData.total_cost += dayData.total_cost;
         
-        Object.keys(dayData.carriers).forEach(cName => {
+        Object.keys(dayData.carriers || {}).forEach(cName => {
             if (!aggData.carriers[cName]) {
                 aggData.carriers[cName] = { total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0 };
             }
@@ -1723,9 +1726,42 @@ function updateTransportUI() {
             aggData.carriers[cName].sla_hit += dayData.carriers[cName].sla_hit;
             aggData.carriers[cName].total_cost += dayData.carriers[cName].total_cost;
         });
+
+        // 2. เตรียมข้อมูลตารางแยกรายวัน (ตารางล่าง)
+        let dObj = new Date(dateKey);
+        let dateDisp = `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]} ${dObj.getFullYear()}`;
+        
+        if (dayData.details) {
+            let detailKeys = Object.keys(dayData.details).sort(); 
+            detailKeys.forEach(k => {
+                let d = dayData.details[k];
+                let vehCount = Object.keys(d.plates).length; // นับจำนวนคันรถที่ไม่ซ้ำกัน
+                let succPct = d.total_orders > 0 ? (d.success_orders / d.total_orders) * 100 : 0;
+                let slaPct = d.success_orders > 0 ? (d.sla_hit / d.success_orders) * 100 : 0;
+                
+                let bar = (pct, colorClass) => `
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div class="modern-bar-bg" style="height:6px;">
+                            <div class="${colorClass}" style="width:${pct}%;"></div>
+                        </div>
+                        <span style="font-size:10px; font-weight:700; width:35px; text-align:right;">${pct.toFixed(1)}%</span>
+                    </div>`;
+                    
+                dailyHtml += `<tr>
+                    <td style="position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:700; white-space:nowrap;">${dateDisp}</td>
+                    <td class="font-bold text-dark">${d.carrier}</td>
+                    <td class="text-muted font-bold">${d.vType}</td>
+                    <td class="text-center font-bold text-purple">${vehCount}</td>
+                    <td class="text-center font-bold">${fmtN(d.total_orders)}</td>
+                    <td>${bar(succPct, 'grad-fill-green')}</td>
+                    <td>${bar(slaPct, 'grad-fill-blue')}</td>
+                    <td class="text-center text-red font-bold">${fmtN(d.total_cost)}</td>
+                </tr>`;
+            });
+        }
     });
     
-    // 5. อัปเดตหน้าจอ
+    // อัปเดตตารางบน (ของเดิม)
     let startDisp = `${String(startTarget.getDate()).padStart(2, '0')} ${shortMonths[startTarget.getMonth()]} ${startTarget.getFullYear()}`;
     let endDisp = `${String(endTarget.getDate()).padStart(2, '0')} ${shortMonths[endTarget.getMonth()]} ${endTarget.getFullYear()}`;
     document.getElementById('carrier-update-time').innerText = `ข้อมูล 7 วัน: ${startDisp} - ${endDisp}`;
@@ -1761,6 +1797,12 @@ function updateTransportUI() {
             </tr>`;
         });
         tbody.innerHTML = html;
+    }
+
+    // อัปเดตตารางใหม่ (รายวัน)
+    if(dailyTbody) {
+        if(dailyHtml === "") dailyHtml = `<tr><td colspan="8" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลรายละเอียดรายวัน</td></tr>`;
+        dailyTbody.innerHTML = dailyHtml;
     }
 }
 // ------------------------------------------------------------
