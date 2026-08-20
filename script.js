@@ -1667,49 +1667,79 @@ function updateInventoryUI() {
 }
 
 // ------------------------------------------------------------
-// 🚚 TRANSPORT PERFORMANCE
+// 🚚 TRANSPORT PERFORMANCE (7 DAYS AGGREGATION)
 // ------------------------------------------------------------
 function updateTransportUI() {
     let tbody = document.querySelector('#new-transport-table tbody');
     if (!globalData.transport || Object.keys(globalData.transport).length === 0) {
-        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่งในวันที่เลือก</td></tr>`;
+        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่งในระบบ</td></tr>`;
         return;
     }
     
+    // 1. กำหนดช่วงเวลา (จากวันที่เลือก ย้อนหลังไป 6 วัน รวมเป็น 7 วัน)
     const dpVal = document.getElementById('date-picker')?.value || new Date().toISOString().split('T')[0];
-    const targetTime = new Date(dpVal).setHours(23,59,59,999);
+    const endTarget = new Date(dpVal);
+    endTarget.setHours(23, 59, 59, 999);
     
-    let availableDates = Object.keys(globalData.transport).filter(k => {
-        let d = new Date(k).getTime();
-        return !isNaN(d) && d <= targetTime;
+    const startTarget = new Date(dpVal);
+    startTarget.setDate(startTarget.getDate() - 6);
+    startTarget.setHours(0, 0, 0, 0);
+    
+    // 2. ดึงคีย์วันที่ทั้งหมดที่อยู่ในช่วง 7 วันนี้
+    let validDates = Object.keys(globalData.transport).filter(k => {
+        let dTime = new Date(k).getTime();
+        return !isNaN(dTime) && dTime >= startTarget.getTime() && dTime <= endTarget.getTime();
     }).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
 
-    if (availableDates.length === 0) {
+    // ถ้าไม่มีข้อมูลในช่วง 7 วันนั้นเลย
+    if (validDates.length === 0) {
         document.getElementById('tp-kpi-total').innerText = "0";
         document.getElementById('tp-kpi-success').innerText = "0";
         document.getElementById('tp-kpi-sla').innerText = "0";
         document.getElementById('tp-kpi-cost').innerText = "0";
-        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่งในวันที่เลือก</td></tr>`;
+        document.getElementById('carrier-update-time').innerText = `อัปเดต: ไม่มีข้อมูล (ย้อนหลัง 7 วัน)`;
+        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่งใน 7 วันที่เลือก</td></tr>`;
         return;
     }
 
-    let todayKey = availableDates[0];
-    let data = globalData.transport[todayKey];
+    // 3. นำข้อมูลทั้ง 7 วันมารวมเข้าด้วยกัน (Aggregate)
+    let aggData = { total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, carriers: {} };
     
-    let dObj = new Date(todayKey);
-    document.getElementById('carrier-update-time').innerText = `อัปเดต: ${getDisplayDate(dObj)}`;
+    validDates.forEach(dateKey => {
+        let dayData = globalData.transport[dateKey];
+        aggData.total_orders += dayData.total_orders;
+        aggData.success_orders += dayData.success_orders;
+        aggData.sla_hit += dayData.sla_hit;
+        aggData.total_cost += dayData.total_cost;
+        
+        Object.keys(dayData.carriers).forEach(cName => {
+            if (!aggData.carriers[cName]) {
+                aggData.carriers[cName] = { total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0 };
+            }
+            aggData.carriers[cName].total_orders += dayData.carriers[cName].total_orders;
+            aggData.carriers[cName].success_orders += dayData.carriers[cName].success_orders;
+            aggData.carriers[cName].sla_hit += dayData.carriers[cName].sla_hit;
+            aggData.carriers[cName].total_cost += dayData.carriers[cName].total_cost;
+        });
+    });
+    
+    // 4. อัปเดตหน้าจอ UI
+    let startDisp = getDisplayDate(startTarget);
+    let endDisp = getDisplayDate(endTarget);
+    document.getElementById('carrier-update-time').innerText = `ข้อมูล: ${startDisp} - ${endDisp}`;
 
-    document.getElementById('tp-kpi-total').innerText = fmtN(data.total_orders);
-    document.getElementById('tp-kpi-success').innerText = fmtN(data.success_orders);
-    document.getElementById('tp-kpi-sla').innerText = fmtN(data.sla_hit);
-    document.getElementById('tp-kpi-cost').innerText = fmtN(data.total_cost);
+    document.getElementById('tp-kpi-total').innerText = fmtN(aggData.total_orders);
+    document.getElementById('tp-kpi-success').innerText = fmtN(aggData.success_orders);
+    document.getElementById('tp-kpi-sla').innerText = fmtN(aggData.sla_hit);
+    document.getElementById('tp-kpi-cost').innerText = fmtN(aggData.total_cost);
 
     if(tbody) {
         let html = "";
-        let carriers = Object.keys(data.carriers || {}).sort((a,b) => data.carriers[b].total_orders - data.carriers[a].total_orders);
+        // เรียงลำดับบริษัทขนส่งตามจำนวนออเดอร์ (จากมากไปน้อย)
+        let carriers = Object.keys(aggData.carriers).sort((a,b) => aggData.carriers[b].total_orders - aggData.carriers[a].total_orders);
         
         carriers.forEach(c => {
-            let cd = data.carriers[c];
+            let cd = aggData.carriers[c];
             let succPct = cd.total_orders > 0 ? (cd.success_orders / cd.total_orders) * 100 : 0;
             let slaPct = cd.success_orders > 0 ? (cd.sla_hit / cd.success_orders) * 100 : 0;
 
@@ -1732,7 +1762,6 @@ function updateTransportUI() {
         tbody.innerHTML = html;
     }
 }
-
 // ------------------------------------------------------------
 // 🚀 LOCATION ACCURACY
 // ------------------------------------------------------------
