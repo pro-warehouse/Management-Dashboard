@@ -146,3 +146,17 @@ body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color
 
 @media (max-width: 1024px) { .grid-2-col { grid-template-columns: 1fr; } .wave-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 768px) { .top-nav { flex-direction: column; align-items: flex-start; gap: 12px; } .filter-card { justify-content: flex-start;} .grid-3-col { grid-template-columns: 1fr; } }
+/* =========================================
+   HORIZONTAL COMPARISON TABLE
+========================================= */
+.comparison-table th, .comparison-table td { min-width: 110px; text-align: right; white-space: nowrap; font-size: 0.8rem; }
+.comparison-table th:first-child, .comparison-table td:first-child { 
+    position: sticky; left: 0; background: var(--bg-card); z-index: 30; 
+    text-align: left; font-weight: 700; border-right: 2px solid var(--border-color);
+}
+.comparison-table th { text-align: center; }
+.diff-col { background-color: #F8FAFC; font-size: 0.75rem; border-left: 1px dashed #CBD5E1; }
+[data-theme="dark"] .diff-col { background-color: #0F172A; border-left: 1px dashed #334155; }
+.diff-good { color: #10B981; font-weight: 700; } /* เขียว (แนวโน้มดี) */
+.diff-bad { color: #EF4444; font-weight: 700; } /* แดง (แนวโน้มแย่) */
+.diff-neutral { color: var(--text-muted); font-weight: 500; }
