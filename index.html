@@ -358,7 +358,7 @@
             </div>
         </section>
 
-        <!-- Transport Trend & Daily Tables -->
+        <!-- Transport Trend & Carrier Overview (สลับเอาภาพรวมบริษัทมาไว้คู่กับกราฟ) -->
         <section class="grid-2-col mb-30">
             <!-- กราฟหุ้น (Stock Ticker + Chart) -->
             <div class="card">
@@ -372,47 +372,48 @@
                 <div class="chart-canvas-box" style="height: 250px;"><canvas id="transportTrendChart"></canvas></div>
             </div>
             
-            <!-- ตารางลงรายละเอียดประเภทรถรายวัน -->
+            <!-- ภาพรวมบริษัทขนส่ง -->
             <div class="card" style="overflow: hidden;">
                 <div class="card-head-bar">
-                    <h3 class="panel-title m-0">DAILY DETAILS (รายวัน & ประเภทรถ)</h3>
+                    <h3 class="panel-title m-0">CARRIER PERFORMANCE OVERVIEW</h3>
+                    <span id="carrier-update-time" class="text-muted text-sm"></span>
                 </div>
-                <div class="table-scroll-wrap max-h-300 mt-10">
-                    <table class="data-table" id="daily-transport-table">
+                <div class="table-scroll-wrap mt-10 max-h-300">
+                    <table class="data-table" id="new-transport-table">
                         <thead>
                             <tr>
-                                <th style="position:sticky; top:0; left:0; z-index:20;">วันที่ส่ง</th>
-                                <th style="position:sticky; top:0; z-index:15;">บริษัท/รถ</th>
-                                <th class="text-center" style="position:sticky; top:0; z-index:15;">คัน</th>
-                                <th class="text-center" style="position:sticky; top:0; z-index:15;">Orders</th>
-                                <th style="width:15%; position:sticky; top:0; z-index:15;">Succ.%</th>
-                                <th class="text-center" style="position:sticky; top:0; z-index:15;">Cost (฿)</th>
+                                <th>บริษัทขนส่ง</th>
+                                <th class="text-center">Total Orders</th>
+                                <th style="width:25%;">Success Rate</th>
+                                <th style="width:25%;">SLA Adherence</th>
+                                <th class="text-center">Cost (฿)</th>
                             </tr>
                         </thead>
-                        <tbody><tr><td colspan="6" class="text-center text-muted">กำลังรอข้อมูล...</td></tr></tbody>
+                        <tbody><tr><td colspan="5" class="text-center text-muted">Loading Transport Data...</td></tr></tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- ภาพรวมบริษัทขนส่ง -->
-        <section class="card mb-30">
+        <!-- ตารางลงรายละเอียดประเภทรถรายวัน (สลับลงมาเป็นตารางยาวด้านล่างเต็มจอ) -->
+        <section class="card mb-30" style="overflow: hidden;">
             <div class="card-head-bar">
-                <h3 class="panel-title m-0">CARRIER PERFORMANCE OVERVIEW</h3>
-                <span id="carrier-update-time" class="text-muted text-sm"></span>
+                <h3 class="panel-title m-0">DAILY DETAILS (รายวัน & ประเภทรถ)</h3>
             </div>
-            <div class="table-scroll-wrap mt-10">
-                <table class="data-table" id="new-transport-table">
+            <div class="table-scroll-wrap max-h-400 mt-10">
+                <table class="data-table" id="daily-transport-table">
                     <thead>
                         <tr>
-                            <th>บริษัทขนส่ง</th>
-                            <th class="text-center">Total Orders</th>
-                            <th style="width:25%;">Success Rate</th>
-                            <th style="width:25%;">SLA Adherence</th>
-                            <th class="text-center">Cost (฿)</th>
+                            <th style="position:sticky; top:0; left:0; z-index:20;">วันที่ส่ง</th>
+                            <th style="position:sticky; top:0; z-index:15;">บริษัท/รถ</th>
+                            <th class="text-center" style="position:sticky; top:0; z-index:15;">คัน</th>
+                            <th class="text-center" style="position:sticky; top:0; z-index:15;">Orders</th>
+                            <th style="width:15%; position:sticky; top:0; z-index:15;">Succ.%</th>
+                            <th style="width:15%; position:sticky; top:0; z-index:15;">SLA Adherence</th>
+                            <th class="text-center" style="position:sticky; top:0; z-index:15;">Cost (฿)</th>
                         </tr>
                     </thead>
-                    <tbody><tr><td colspan="5" class="text-center text-muted">Loading Transport Data...</td></tr></tbody>
+                    <tbody><tr><td colspan="7" class="text-center text-muted">กำลังรอข้อมูล...</td></tr></tbody>
                 </table>
             </div>
         </section>
