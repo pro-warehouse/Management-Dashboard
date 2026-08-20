@@ -176,6 +176,30 @@ let productivityChartInstance = new Chart(document.getElementById('productivityC
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, stacked: false }, y: { display: false, grace: '25%' } } } 
 });
 
+let transportTrendChartInstance = new Chart(document.getElementById('transportTrendChart'), {
+    type: 'bar',
+    data: { labels: [], datasets: [] },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } } },
+        scales: {
+            x: { grid: { display: false } },
+            y: { 
+                type: 'linear', position: 'left', min: 0, max: 105, 
+                title: { display: true, text: 'SLA (%)', color: '#3B82F6', font: {weight: 'bold'} }, 
+                grid: { borderDash: [4, 4] } 
+            },
+            y1: { 
+                type: 'linear', position: 'right', 
+                title: { display: true, text: 'Cost (฿)', color: '#EF4444', font: {weight: 'bold'} }, 
+                grid: { display: false } 
+            }
+        }
+    },
+    plugins: [dataLabelPlugin]
+});
+
 // ==========================================
 // DATA FETCHING & PROCESSING 
 // ==========================================
@@ -1803,6 +1827,82 @@ function updateTransportUI() {
     if(dailyTbody) {
         if(dailyHtml === "") dailyHtml = `<tr><td colspan="8" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลรายละเอียดรายวัน</td></tr>`;
         dailyTbody.innerHTML = dailyHtml;
+    }
+    // -----------------------------------------------------------
+    // --- ส่วนที่เพิ่มใหม่: วาดกราฟรายวัน SLA 98% และวิเคราะห์ค่าขนส่ง ---
+    // -----------------------------------------------------------
+    let chartLabels = [];
+    let costData = [];
+    let slaData = [];
+    let targetData = [];
+
+    // validDates ตอนนี้เรียงจากใหม่ไปเก่า ต้องกลับด้านให้เก่าไปใหม่สำหรับวาดกราฟ
+    let chartDates = [...validDates].reverse();
+    
+    chartDates.forEach(dKey => {
+        let dayData = globalData.transport[dKey];
+        let dObj = new Date(dKey);
+        chartLabels.push(`${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`);
+        
+        costData.push(dayData.total_cost);
+        let slaPct = dayData.success_orders > 0 ? (dayData.sla_hit / dayData.success_orders) * 100 : 0;
+        slaData.push(parseFloat(slaPct.toFixed(2)));
+        targetData.push(98); // เส้น Target 98%
+    });
+
+    if (typeof transportTrendChartInstance !== 'undefined' && transportTrendChartInstance) {
+        transportTrendChartInstance.data.labels = chartLabels;
+        transportTrendChartInstance.data.datasets = [
+            {
+                type: 'line', label: 'SLA Target (98%)',
+                data: targetData, borderColor: '#F59E0B',
+                borderDash: [5, 5], borderWidth: 2, pointRadius: 0,
+                yAxisID: 'y', fill: false
+            },
+            {
+                type: 'line', label: 'SLA Adherence (%)',
+                data: slaData, borderColor: '#3B82F6', backgroundColor: '#3B82F6',
+                borderWidth: 3, pointRadius: 4,
+                yAxisID: 'y', fill: false
+            },
+            {
+                type: 'bar', label: 'Daily Cost (฿)',
+                data: costData, backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                borderRadius: 4, yAxisID: 'y1'
+            }
+        ];
+        transportTrendChartInstance.update();
+    }
+
+    // วิเคราะห์แนวโน้มค่าใช้จ่าย
+    let trendSummaryBox = document.getElementById('tp-trend-summary');
+    if (trendSummaryBox && chartDates.length > 0) {
+        let latestCost = costData[costData.length - 1] || 0;
+        let prevCost = costData.length > 1 ? costData[costData.length - 2] : 0;
+        let latestSla = slaData[slaData.length - 1] || 0;
+        
+        let diff = latestCost - prevCost;
+        let diffText = "";
+        let colorClass = "alert-blue";
+        
+        if (chartDates.length === 1 || prevCost === 0) {
+            diffText = `ยอดค่าขนส่งล่าสุด <b>${fmtN(latestCost)} ฿</b>`;
+        } else if (diff > 0) {
+            diffText = `ค่าขนส่ง <b>เพิ่มขึ้น +${fmtN(diff)} ฿</b> จากเมื่อวาน (ล่าสุด ${fmtN(latestCost)} ฿)`;
+            colorClass = "alert-red"; // ค่าส่งแพงขึ้น เป็นสีแดงเตือน
+        } else if (diff < 0) {
+            diffText = `ค่าขนส่ง <b>ลดลง ${fmtN(Math.abs(diff))} ฿</b> จากเมื่อวาน (ล่าสุด ${fmtN(latestCost)} ฿)`;
+            colorClass = "alert-green"; // ค่าส่งลดลง เป็นสีเขียว
+        } else {
+            diffText = `ค่าขนส่ง <b>คงที่</b> (ล่าสุด ${fmtN(latestCost)} ฿)`;
+        }
+        
+        let slaStatus = latestSla >= 98 
+            ? `<span class="text-green font-bold">ผ่านเป้า 98% (ทำได้ ${latestSla}%)</span>` 
+            : `<span class="text-red font-bold">ต่ำกว่าเป้า 98% (ทำได้ ${latestSla}%)</span>`;
+        
+        trendSummaryBox.innerHTML = `💡 <b>วิเคราะห์แนวโน้ม:</b> ${diffText} &nbsp;|&nbsp; SLA ล่าสุด: ${slaStatus}`;
+        trendSummaryBox.className = `info-alert ${colorClass} mb-10 mt-10`;
     }
 }
 // ------------------------------------------------------------
