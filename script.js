@@ -1557,12 +1557,35 @@ function updateTransportUI() {
             let diffSla = slaPct - prevP.sla;
             let diffCost = p.total_cost - prevP.cost;
 
+            // ฟังก์ชันกำหนดสีบวก/ลบ แบบ Stock Ticker (หุ้น)
             const fmtDiff = (v, isGoodPositive, isPct = false) => {
-                if (v === 0) return `<td class="diff-col diff-neutral">-</td>`;
-                let sign = v > 0 ? '+' : '';
-                let clrClass = isGoodPositive ? (v > 0 ? 'diff-good' : 'diff-bad') : (v > 0 ? 'diff-bad' : 'diff-good');
-                let valStr = isPct ? v.toFixed(1) + '%' : fmtN(v);
-                return `<td class="diff-col ${clrClass}">${sign}${valStr}</td>`;
+                // ถ้าค่าเป็น 0 (ไม่มีการเปลี่ยนแปลง)
+                if (v === 0) {
+                    return `<td class="diff-col text-right"><span style="background:#f1f5f9; color:#64748b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">- 0</span></td>`;
+                }
+
+                // เช็คว่าเป็นทิศทางที่ดี (Good) หรือไม่
+                // เช่น ออเดอร์ (isGoodPositive=true) ถ้าค่า > 0 คือดี (เขียว)
+                // แต่ถ้าเป็น Cost (isGoodPositive=false) ถ้าค่า > 0 คือแย่ (แพงขึ้น=แดง)
+                let isGood = isGoodPositive ? (v > 0) : (v < 0);
+                
+                // กำหนดลูกศรและเครื่องหมาย
+                let arrow = v > 0 ? '▲' : '▼';
+                let sign = v > 0 ? '+' : '-';
+                
+                // จัดฟอร์แมตตัวเลข (ใส่คอมม่า / ทศนิยม)
+                let absVal = Math.abs(v);
+                let valStr = isPct ? absVal.toFixed(1) + '%' : fmtN(absVal);
+                
+                // กำหนดสี: ดี = พื้นเขียวตัวเขียว / แย่ = พื้นแดงตัวแดง
+                let bgClr = isGood ? '#dcfce7' : '#fee2e2';
+                let txtClr = isGood ? '#10B981' : '#EF4444';
+                
+                return `<td class="diff-col text-right">
+                    <span style="background:${bgClr}; color:${txtClr}; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">
+                        ${arrow} ${sign}${valStr}
+                    </span>
+                </td>`;
             };
 
             htmlOrders += fmtDiff(diffOrd, true); 
