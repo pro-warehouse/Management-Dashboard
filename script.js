@@ -1849,24 +1849,52 @@ function updateTransportUI() {
         transportTrendChartInstance.data.labels = chartLabels;
         transportTrendChartInstance.data.datasets = [
             {
-                type: 'line', label: 'SLA Target (98%)',
-                data: targetData, borderColor: '#F59E0B',
-                borderDash: [5, 5], borderWidth: 2, pointRadius: 0,
-                yAxisID: 'y', fill: false
+                type: 'line', 
+                label: 'SLA Target (98%)',
+                data: targetData, 
+                borderColor: '#F59E0B', // สีส้ม
+                borderDash: [5, 5], 
+                borderWidth: 2, 
+                pointRadius: 0,
+                yAxisID: 'y', 
+                fill: false,
+                order: 1
             },
             {
-                type: 'line', label: 'SLA Adherence (%)',
-                data: slaData, borderColor: '#3B82F6', backgroundColor: '#3B82F6',
-                borderWidth: 3, pointRadius: 5, tension: 0.4, // ทำให้เส้นสมูท
-                yAxisID: 'y', fill: false
+                type: 'bar', 
+                label: 'SLA Adherence (%)',
+                data: slaData, 
+                backgroundColor: (context) => {
+                    const chart = context.chart;
+                    const {ctx, chartArea} = chart;
+                    if (!chartArea) return null;
+                    const val = context.raw;
+                    
+                    // ไล่สีพรีเมียม: >= 98 เป็นสีเขียว, < 98 เป็นสีแดง
+                    if (val >= 98) {
+                        return getGradient(ctx, chartArea, '#10B981', '#6EE7B7'); // Green Gradient
+                    } else {
+                        return getGradient(ctx, chartArea, '#EF4444', '#FCA5A5'); // Red Gradient
+                    }
+                },
+                borderRadius: 6, // มุมโค้งมนกำลังสวย
+                borderSkipped: false, 
+                barThickness: 16, // ปรับแท่งให้เพรียว
+                yAxisID: 'y',
+                order: 3
             },
             {
-                type: 'bar', label: 'Daily Cost (฿)',
-                data: costData, backgroundColor: 'rgba(239, 68, 68, 0.85)',
-                borderRadius: 50, // มุมโค้งมนแบบสุดๆ 
-                borderSkipped: false, // โค้งทั้งบนและล่าง
-                barThickness: 12, // ขนาดแท่งให้เพรียวสวย
-                yAxisID: 'y1'
+                type: 'line', 
+                label: 'Daily Cost (฿)',
+                data: costData, 
+                borderColor: '#8B5CF6', // สีม่วงพรีเมียม (Indigo/Purple)
+                backgroundColor: 'rgba(139, 92, 246, 0.1)', 
+                borderWidth: 3, 
+                pointRadius: 5, 
+                tension: 0.4, // ทำให้เส้นสมูทโค้งมน
+                yAxisID: 'y1', 
+                fill: true, // ระบายสีใต้เส้นเบาๆ
+                order: 2
             }
         ];
         transportTrendChartInstance.update();
