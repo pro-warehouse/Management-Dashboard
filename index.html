@@ -349,19 +349,29 @@
                 <span id="carrier-update-time" class="text-muted text-sm"></span>
             </div>
             <div class="table-scroll-wrap mt-10">
-                <table class="data-table" id="new-transport-table">
+                <!-- ตารางใหม่: แยกรายละเอียดรายวัน และประเภทรถ -->
+        <section class="card mb-30" id="daily-transport-section">
+            <div class="card-head-bar">
+                <h3 class="panel-title m-0">DAILY TRANSPORT DETAILS (รายวัน & ประเภทรถ)</h3>
+            </div>
+            <div class="table-scroll-wrap mt-10 max-h-400">
+                <table class="data-table" id="daily-transport-table">
                     <thead>
                         <tr>
-                            <th>บริษัทขนส่ง</th>
-                            <th class="text-center">Total Orders</th>
-                            <th style="width:25%;">Success Rate</th>
-                            <th style="width:25%;">SLA Adherence</th>
-                            <th class="text-center">Cost (฿)</th>
+                            <th style="position:sticky; top:0; left:0; z-index:20;">วันที่ส่ง</th>
+                            <th style="position:sticky; top:0; z-index:15;">บริษัทขนส่ง</th>
+                            <th style="position:sticky; top:0; z-index:15;">ประเภทรถ</th>
+                            <th class="text-center" style="position:sticky; top:0; z-index:15;">ใช้รถ (คัน)</th>
+                            <th class="text-center" style="position:sticky; top:0; z-index:15;">Total Orders</th>
+                            <th style="width:15%; position:sticky; top:0; z-index:15;">Success Rate</th>
+                            <th style="width:15%; position:sticky; top:0; z-index:15;">SLA Adherence</th>
+                            <th class="text-center" style="position:sticky; top:0; z-index:15;">Cost (฿)</th>
                         </tr>
                     </thead>
-                    <tbody><tr><td colspan="5" class="text-center text-muted">Loading Transport Data...</td></tr></tbody>
+                    <tbody><tr><td colspan="8" class="text-center text-muted">กำลังรอข้อมูล...</td></tr></tbody>
                 </table>
             </div>
+        </section>
         </section>
 
         <!-- 🌟 2. ACTIVE WORKFORCE 🌟 -->
