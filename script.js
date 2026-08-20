@@ -438,6 +438,46 @@ function populateGlobalBUFilters() {
             }
             refreshAllSections();
             initFulfillmentRealtime();
+            // --- เริ่มโค้ดแทรก WAVE PLAN SUMMARY ---
+                const waveSummaryTable = document.getElementById('wave-summary-table');
+                if (waveSummaryTable) {
+                    if (validChartDates.length === 0 || allBUsArray.length === 0) {
+                        waveSummaryTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูลออเดอร์</th></tr></thead>`;
+                    } else {
+                        let thead = `<thead><tr><th class="text-center" style="position:sticky; left:0; z-index:20;">Planned Date</th>${allBUsArray.map(bu => `<th class="text-center">${bu}</th>`).join('')}<th class="text-center">Total (เสร็จ/ทั้งหมด)</th><th class="text-center">% Completed</th></tr></thead>`;
+                        let tbody = "<tbody>";
+                        
+                        [...validChartDates].reverse().forEach(dStr => {
+                            let dObj = new Date(dStr);
+                            let dispDate = isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
+                            
+                            let tr = `<tr><td class="text-center font-bold" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${dispDate}</td>`;
+                            let dayTot = 0, dayComp = 0;
+                            
+                            allBUsArray.forEach(bu => {
+                                let bData = getBestOrderData(unifiedDatesMap[dStr]?.bq?.[bu], unifiedDatesMap[dStr]?.wave?.[bu], unifiedDatesMap[dStr]?.ffm?.[bu]);
+                                let ordTotal = bData.tot; let ordFull = bData.full;
+                                dayTot += ordTotal; dayComp += ordFull;
+                                if (ordTotal === 0) { tr += `<td class="text-center text-muted">-</td>`; } 
+                                else {
+                                    let color = (ordFull === ordTotal) ? 'var(--brand-green)' : (ordFull > 0 ? 'var(--brand-yellow)' : 'var(--brand-red)');
+                                    tr += `<td class="text-center"><span style="color:${color}; font-weight:700;">${fmtN(ordFull)}</span> <span class="text-xs text-muted">/ ${fmtN(ordTotal)}</span></td>`;
+                                }
+                            });
+                            
+                            let grandColor = (dayComp === dayTot && dayTot > 0) ? 'var(--brand-green)' : (dayComp > 0 ? 'var(--brand-yellow)' : 'var(--brand-red)');
+                            tr += `<td class="text-center"><span style="color:${grandColor}; font-weight:700;">${fmtN(dayComp)}</span> <span class="text-xs text-muted">/ ${fmtN(dayTot)}</span></td>`;
+                            
+                            let pct = dayTot > 0 ? Math.min(100, (dayComp / dayTot) * 100).toFixed(2) : 0;
+                            let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
+                            let pctColor = pct >= 100 ? '#10B981' : (pct > 0 ? '#F59E0B' : '#EF4444');
+                            tr += `<td class="text-center"><span style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600;">${pct}%</span></td></tr>`;
+                            tbody += tr;
+                        });
+                        waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
+                    }
+                }
+                // --- จบโค้ดแทรก WAVE PLAN SUMMARY ---
         });
 
         document.getElementById('bu-multi-select').addEventListener('click', (e) => {
@@ -1680,6 +1720,82 @@ function updateTransportUI() {
     }
 
     // เลื่อน Scrollbar แนวนอนไปขวาสุดอัตโนมัติ เพื่อให้โชว์ข้อมูลล่าสุดก่อน
+    setTimeout(() => {
+        let scroller = document.getElementById('comparison-scroll-container');
+        if(scroller) scroller.scrollLeft = scroller.scrollWidth;
+    }, 400);
+    // -----------------------------------------------------------
+
+    // -----------------------------------------------------------
+    // --- สร้างตารางแนวนอน (Horizontal Comparison Table) ---
+    // -----------------------------------------------------------
+    let chronPeriods = Object.values(groupedByPeriod).sort((a,b) => a.time - b.time); // เรียงเก่าไปใหม่
+    let htmlHead = `<tr><th style="position:sticky; top:0; left:0; z-index:40; background:var(--bg-card);">วันที่ / Period</th>`;
+    let htmlOrders = `<tr><td class="text-dark font-bold">Orders</td>`;
+    let htmlVehicles = `<tr><td class="text-dark font-bold">จำนวนรถ</td>`;
+    let htmlSucc = `<tr><td class="text-dark font-bold">Succ.%</td>`;
+    let htmlSla = `<tr><td class="text-dark font-bold">SLA Adherence %</td>`;
+    let htmlCost = `<tr><td class="text-dark font-bold">Cost (฿)</td>`;
+    let htmlAccum = `<tr><td class="text-dark font-bold">Accumulate Cost (฿)</td>`;
+
+    let accumCost = 0;
+    let prevP = null;
+
+    chronPeriods.forEach((p, idx) => {
+        let uniquePlates = new Set();
+        p.details.forEach(d => { Object.keys(d.plates).forEach(pl => uniquePlates.add(pl)); });
+        let vCount = uniquePlates.size;
+
+        let succPct = p.total_orders > 0 ? (p.success_orders / p.total_orders * 100) : 0;
+        let slaPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders * 100) : 0;
+        accumCost += p.total_cost; 
+
+        htmlHead += `<th style="position:sticky; top:0; z-index:30; background:var(--bg-card);">${p.label}</th>`;
+        htmlOrders += `<td class="font-bold text-dark">${fmtN(p.total_orders)}</td>`;
+        htmlVehicles += `<td>${fmtN(vCount)}</td>`;
+        htmlSucc += `<td>${succPct.toFixed(1)}%</td>`;
+        htmlSla += `<td>${slaPct.toFixed(1)}%</td>`;
+        htmlCost += `<td class="text-red font-bold">${fmtN(p.total_cost)}</td>`;
+        htmlAccum += `<td class="font-bold text-blue">${fmtN(accumCost)}</td>`;
+
+        if (idx > 0) {
+            htmlHead += `<th class="diff-col text-muted" style="position:sticky; top:0; z-index:20;">เทียบก่อนหน้า</th>`;
+            
+            let diffOrd = p.total_orders - prevP.orders;
+            let diffVeh = vCount - prevP.vehicles;
+            let diffSucc = succPct - prevP.succ;
+            let diffSla = slaPct - prevP.sla;
+            let diffCost = p.total_cost - prevP.cost;
+
+            const fmtDiff = (v, isGoodPositive, isPct = false) => {
+                if (v === 0) return `<td class="diff-col diff-neutral">-</td>`;
+                let sign = v > 0 ? '+' : '';
+                let clrClass = isGoodPositive ? (v > 0 ? 'diff-good' : 'diff-bad') : (v > 0 ? 'diff-bad' : 'diff-good');
+                let valStr = isPct ? v.toFixed(1) + '%' : fmtN(v);
+                return `<td class="diff-col ${clrClass}">${sign}${valStr}</td>`;
+            };
+
+            htmlOrders += fmtDiff(diffOrd, true); 
+            htmlVehicles += fmtDiff(diffVeh, false); 
+            htmlSucc += fmtDiff(diffSucc, true, true);
+            htmlSla += fmtDiff(diffSla, true, true);
+            htmlCost += fmtDiff(diffCost, false); 
+            htmlAccum += `<td class="diff-col"></td>`; 
+        }
+        prevP = { orders: p.total_orders, vehicles: vCount, succ: succPct, sla: slaPct, cost: p.total_cost };
+    });
+
+    htmlHead += `</tr>`; htmlOrders += `</tr>`; htmlVehicles += `</tr>`; 
+    htmlSucc += `</tr>`; htmlSla += `</tr>`; htmlCost += `</tr>`; htmlAccum += `</tr>`;
+
+    let tcTable = document.getElementById('transport-comparison-table');
+    if(tcTable) {
+        let thead = tcTable.querySelector('thead');
+        let tbody = tcTable.querySelector('tbody');
+        if(thead) thead.innerHTML = htmlHead;
+        if(tbody) tbody.innerHTML = htmlOrders + htmlVehicles + htmlSucc + htmlSla + htmlCost + htmlAccum;
+    }
+
     setTimeout(() => {
         let scroller = document.getElementById('comparison-scroll-container');
         if(scroller) scroller.scrollLeft = scroller.scrollWidth;
