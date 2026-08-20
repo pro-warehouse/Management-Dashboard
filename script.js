@@ -129,17 +129,16 @@ const lineDataLabelPlugin = {
     afterDatasetsDraw(chart) {
         if (!['ontimeChart2', 'inventoryChart'].includes(chart.canvas.id)) return;
         const { ctx } = chart;
-        const _otManyLines = (chart.canvas.id === 'ontimeChart2' && chart.data.datasets.length > 3);
         chart.data.datasets.forEach((dataset, i) => {
             if (!chart.isDatasetVisible(i)) return;
-            if (_otManyLines && !dataset.isOverall) return;
             const meta = chart.getDatasetMeta(i);
             meta.data.forEach((point, index) => {
                 const data = dataset.data[index];
                 if(data !== null && data !== undefined && data !== 0 && data !== "0.00"){
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
-                    ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = i === 0 ? 'bottom' : 'top'; 
-                    let yOffset = i === 0 ? -8 : 8;
+                    ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; 
+                    ctx.textBaseline = i % 2 === 0 ? 'bottom' : 'top'; 
+                    let yOffset = i % 2 === 0 ? -8 : 8;
                     ctx.fillText(Number(data).toFixed(1) + '%', point.x, point.y + yOffset);
                 }
             });
@@ -153,7 +152,19 @@ const lineDataLabelPlugin = {
 let ffmTrendChartInstance = new Chart(document.getElementById('ffmTrendChart'), { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grid: { borderDash: [4, 4] }, grace: '15%' } } }, plugins: [dataLabelPlugin] });
 let ffmVolumeChartInstance = new Chart(document.getElementById('ffmVolumeChart'), { type: 'doughnut', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels:{usePointStyle:true, boxWidth:8} } } } });
 let workforceChartInstance = new Chart(document.getElementById('workforceChart'), { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grid: { borderDash: [4, 4] }, grace: '15%' } } }, plugins: [dataLabelPlugin] });
-let ontimeChartInstance = new Chart(document.getElementById('ontimeChart2'), { type: 'line', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { borderDash: [4, 4] }, max: 105 } } }, plugins: [lineDataLabelPlugin]});
+let ontimeChartInstance = new Chart(document.getElementById('ontimeChart2'), { 
+    type: 'line', data: { labels: [], datasets: [] }, 
+    options: { 
+        responsive: true, maintainAspectRatio: false, 
+        layout: { padding: { top: 20 } },
+        plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, 
+        scales: { 
+            x: { grid: { display: false } }, 
+            y: { border: { display: false }, grid: { borderDash: [4, 4] }, suggestedMin: 80, max: 100 } 
+        } 
+    }, 
+    plugins: [lineDataLabelPlugin]
+});
 let claimChart2Instance = new Chart(document.getElementById('claimChart2'), { type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#EF4444', borderRadius: 4, yAxisID: 'y' }, { label: 'จำนวนชิ้น', data: [], type: 'line', yAxisID: 'y1', pointRadius: 4, borderWidth: 2, borderColor: '#3B82F6', backgroundColor: '#3B82F6' } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: {grid:{display:false}}, y: {position: 'left', grace: '15%', border:{display:false}, grid: { borderDash: [4, 4] }}, y1: {position: 'right', display:false} } }, plugins: [dataLabelPlugin] });
 let inventoryChartInstance = new Chart(document.getElementById('inventoryChart'), { type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { borderDash: [4, 4] }, grace: '5%' } } }, plugins: [lineDataLabelPlugin]});
 let productivityChartInstance = new Chart(document.getElementById('productivityChart'), { type: 'bar', data: { labels: [], datasets: [{type:'bar', label:'Background'}, {type:'bar', label:'Actual UPH'}, {type:'line', label:'Target', borderColor:'#F59E0B', borderDash:[5,5]}] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, stacked: false }, y: { display: false, grace: '25%' } } } });
@@ -230,6 +241,28 @@ document.getElementById('theme-toggle')?.addEventListener('click', () => {
     document.getElementById('theme-toggle').innerText = isDark ? '🌙 Dark Mode' : '☀️ Light Mode';
     Chart.defaults.color = isDark ? '#94A3B8' : '#64748B';
     Object.values(Chart.instances).forEach(chart => chart.update());
+});
+
+document.getElementById('ontime-line-ms')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    let menu = document.getElementById('ontime-line-menu');
+    document.querySelectorAll('.dropdown-card').forEach(m => { if (m !== menu) m.style.display = 'none'; });
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+});
+
+document.getElementById('btn-apply-ot-line')?.addEventListener('click', () => {
+    document.getElementById('ontime-line-menu').style.display = 'none';
+    let selected = [];
+    if (document.getElementById('cb-ot-overall').checked) selected.push('ภาพรวม');
+    if (document.getElementById('cb-ot-ptglg').checked) selected.push('PTGLG');
+    if (document.getElementById('cb-ot-hub').checked) selected.push('HUB');
+    
+    if (selected.length === 0) {
+        document.getElementById('cb-ot-overall').checked = true;
+        selected.push('ภาพรวม');
+    }
+    document.getElementById('ontime-line-text').innerText = selected.length > 1 ? `${selected.length} Selected` : selected[0];
+    updateOnTimeUI();
 });
 
 function cleanDataBeforeLoad() {
@@ -1244,20 +1277,53 @@ function updateOnTimeUI() {
         });
 
         let pLabels = Object.keys(pMap);
-        let plotData = pLabels.map(p => {
+        let plotData = []; 
+        let ptglgData = []; 
+        let hubData = [];
+        
+        pLabels.forEach(p => {
             let pAvg = pMap[p].p.length ? pMap[p].p.reduce((a,b)=>a+b,0)/pMap[p].p.length : null;
             let hAvg = pMap[p].h.length ? pMap[p].h.reduce((a,b)=>a+b,0)/pMap[p].h.length : null;
             let v = (pAvg !== null && hAvg !== null) ? (pAvg+hAvg)/2 : pAvg;
-            return v !== null ? parseFloat(v.toFixed(2)) : null;
+            
+            plotData.push(v !== null ? parseFloat(v.toFixed(2)) : null);
+            ptglgData.push(pAvg !== null ? parseFloat(pAvg.toFixed(2)) : null);
+            hubData.push(hAvg !== null ? parseFloat(hAvg.toFixed(2)) : null);
         });
 
         if(ontimeChartInstance) {
             ontimeChartInstance.data.labels = pLabels;
-            ontimeChartInstance.data.datasets = [{
-                label: 'On-Time', data: plotData, borderColor: '#10B981', 
-                backgroundColor: (ctx) => (!ctx.chart.chartArea) ? 'rgba(16, 185, 129, 0.4)' : getGradient(ctx.chart.ctx, ctx.chart.chartArea, 'rgba(16, 185, 129, 0.4)', 'rgba(16, 185, 129, 0.01)'),
-                borderWidth: 3, fill: true, tension: 0.4, pointRadius: 4
-            }];
+            let newDatasets = [];
+            
+            let showOverall = document.getElementById('cb-ot-overall')?.checked;
+            let showPTGLG = document.getElementById('cb-ot-ptglg')?.checked;
+            let showHUB = document.getElementById('cb-ot-hub')?.checked;
+            
+            if(!showOverall && !showPTGLG && !showHUB) showOverall = true;
+
+            if(showOverall) {
+                newDatasets.push({
+                    label: 'ภาพรวม (Overall)', data: plotData, borderColor: '#10B981', 
+                    backgroundColor: (ctx) => (!ctx.chart.chartArea) ? 'rgba(16, 185, 129, 0.4)' : getGradient(ctx.chart.ctx, ctx.chart.chartArea, 'rgba(16, 185, 129, 0.4)', 'rgba(16, 185, 129, 0.01)'),
+                    borderWidth: 3, fill: true, tension: 0.4, pointRadius: 4, isOverall: true
+                });
+            }
+            if(showPTGLG) {
+                newDatasets.push({
+                    label: 'PTGLG', data: ptglgData, borderColor: '#3B82F6', 
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2, fill: false, tension: 0.4, pointRadius: 4, borderDash: [5, 5]
+                });
+            }
+            if(showHUB) {
+                newDatasets.push({
+                    label: 'HUB', data: hubData, borderColor: '#F59E0B', 
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    borderWidth: 2, fill: false, tension: 0.4, pointRadius: 4, borderDash: [5, 5]
+                });
+            }
+            
+            ontimeChartInstance.data.datasets = newDatasets;
             ontimeChartInstance.update();
         }
 
@@ -1557,27 +1623,18 @@ function updateTransportUI() {
             let diffSla = slaPct - prevP.sla;
             let diffCost = p.total_cost - prevP.cost;
 
-            // ฟังก์ชันกำหนดสีบวก/ลบ แบบ Stock Ticker (หุ้น)
             const fmtDiff = (v, isGoodPositive, isPct = false) => {
-                // ถ้าค่าเป็น 0 (ไม่มีการเปลี่ยนแปลง)
                 if (v === 0) {
                     return `<td class="diff-col text-right"><span style="background:#f1f5f9; color:#64748b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">- 0</span></td>`;
                 }
 
-                // เช็คว่าเป็นทิศทางที่ดี (Good) หรือไม่
-                // เช่น ออเดอร์ (isGoodPositive=true) ถ้าค่า > 0 คือดี (เขียว)
-                // แต่ถ้าเป็น Cost (isGoodPositive=false) ถ้าค่า > 0 คือแย่ (แพงขึ้น=แดง)
                 let isGood = isGoodPositive ? (v > 0) : (v < 0);
-                
-                // กำหนดลูกศรและเครื่องหมาย
                 let arrow = v > 0 ? '▲' : '▼';
                 let sign = v > 0 ? '+' : '-';
                 
-                // จัดฟอร์แมตตัวเลข (ใส่คอมม่า / ทศนิยม)
                 let absVal = Math.abs(v);
                 let valStr = isPct ? absVal.toFixed(1) + '%' : fmtN(absVal);
                 
-                // กำหนดสี: ดี = พื้นเขียวตัวเขียว / แย่ = พื้นแดงตัวแดง
                 let bgClr = isGood ? '#dcfce7' : '#fee2e2';
                 let txtClr = isGood ? '#10B981' : '#EF4444';
                 
@@ -2157,10 +2214,7 @@ function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveD
             let allRoles = new Set([...Object.keys(dayData.targets || {}), ...Object.keys(dayData.roles || {})]);
             allRoles.forEach(role => {
                 let trg = dayData.targets?.[role] || 0; let act = dayData.roles?.[role] || 0;
-                if (window.selectedBUs.includes('ALL')) { 
-                    trgCount += trg; 
-                    if (trg > act) absCount += (trg - act); 
-                }
+                if (window.selectedBUs.includes('ALL')) { trgCount += trg; if (trg > act) absCount += (trg - act); }
             });
             if (absCount > 0 && window.selectedBUs.includes('ALL')) {
                 let absPct = ((absCount / trgCount) * 100).toFixed(1);
@@ -2180,5 +2234,4 @@ function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveD
     }
 }
 
-// เริ่มทำงาน Dashboard
 initDashboard();
