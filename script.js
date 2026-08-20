@@ -52,15 +52,9 @@ function getGradient(ctx, chartArea, colorStart, colorEnd) {
 }
 
 const gradPalettes = [
-    { s: '#60A5FA', e: '#3B82F6' }, // Blue
-    { s: '#34D399', e: '#10B981' }, // Green
-    { s: '#FCD34D', e: '#F59E0B' }, // Yellow
-    { s: '#A78BFA', e: '#8B5CF6' }, // Purple
-    { s: '#F87171', e: '#EF4444' }, // Red
-    { s: '#22D3EE', e: '#06B6D4' }  // Teal
+    { s: '#60A5FA', e: '#3B82F6' }, { s: '#34D399', e: '#10B981' }, { s: '#FCD34D', e: '#F59E0B' }, { s: '#A78BFA', e: '#8B5CF6' }, { s: '#F87171', e: '#EF4444' }, { s: '#22D3EE', e: '#06B6D4' }
 ];
 
-// --- GROUP BY PERIOD HELPER ---
 function getPeriodLabel(dObj, period) {
     if (period === 'Monthly') return `${shortMonths[dObj.getMonth()]} ${dObj.getFullYear()}`;
     if (period === 'Weekly') {
@@ -154,42 +148,15 @@ const lineDataLabelPlugin = {
 };
 
 // ==========================================
-// 🌟 INITIALIZE CHART INSTANCES
+// INITIALIZE CHART INSTANCES
 // ==========================================
-let ffmTrendChartInstance = new Chart(document.getElementById('ffmTrendChart'), { 
-    type: 'bar', data: { labels: [], datasets: [] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grid: { borderDash: [4, 4] }, grace: '15%' } } }, plugins: [dataLabelPlugin] 
-});
-
-let ffmVolumeChartInstance = new Chart(document.getElementById('ffmVolumeChart'), { 
-    type: 'doughnut', data: { labels: [], datasets: [] }, 
-    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels:{usePointStyle:true, boxWidth:8} } } } 
-});
-
-let workforceChartInstance = new Chart(document.getElementById('workforceChart'), { 
-    type: 'bar', data: { labels: [], datasets: [] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grid: { borderDash: [4, 4] }, grace: '15%' } } }, plugins: [dataLabelPlugin] 
-});
-
-let ontimeChartInstance = new Chart(document.getElementById('ontimeChart2'), { 
-    type: 'line', data: { labels: [], datasets: [] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { borderDash: [4, 4] }, max: 105 } } }, plugins: [lineDataLabelPlugin]
-});
-
-let claimChart2Instance = new Chart(document.getElementById('claimChart2'), { 
-    type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#EF4444', borderRadius: 4, yAxisID: 'y' }, { label: 'จำนวนชิ้น', data: [], type: 'line', yAxisID: 'y1', pointRadius: 4, borderWidth: 2, borderColor: '#3B82F6', backgroundColor: '#3B82F6' } ] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: {grid:{display:false}}, y: {position: 'left', grace: '15%', border:{display:false}, grid: { borderDash: [4, 4] }}, y1: {position: 'right', display:false} } }, plugins: [dataLabelPlugin] 
-});
-
-let inventoryChartInstance = new Chart(document.getElementById('inventoryChart'), { 
-    type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], fill: true }] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { borderDash: [4, 4] }, grace: '5%' } } }, plugins: [lineDataLabelPlugin]
-});
-
-let productivityChartInstance = new Chart(document.getElementById('productivityChart'), { 
-    type: 'bar', data: { labels: [], datasets: [{type:'bar', label:'Background'}, {type:'bar', label:'Actual UPH'}, {type:'line', label:'Target', borderColor:'#F59E0B', borderDash:[5,5]}] }, 
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, stacked: false }, y: { display: false, grace: '25%' } } } 
-});
+let ffmTrendChartInstance = new Chart(document.getElementById('ffmTrendChart'), { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grid: { borderDash: [4, 4] }, grace: '15%' } } }, plugins: [dataLabelPlugin] });
+let ffmVolumeChartInstance = new Chart(document.getElementById('ffmVolumeChart'), { type: 'doughnut', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels:{usePointStyle:true, boxWidth:8} } } } });
+let workforceChartInstance = new Chart(document.getElementById('workforceChart'), { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grid: { borderDash: [4, 4] }, grace: '15%' } } }, plugins: [dataLabelPlugin] });
+let ontimeChartInstance = new Chart(document.getElementById('ontimeChart2'), { type: 'line', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { borderDash: [4, 4] }, max: 105 } } }, plugins: [lineDataLabelPlugin]});
+let claimChart2Instance = new Chart(document.getElementById('claimChart2'), { type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#EF4444', borderRadius: 4, yAxisID: 'y' }, { label: 'จำนวนชิ้น', data: [], type: 'line', yAxisID: 'y1', pointRadius: 4, borderWidth: 2, borderColor: '#3B82F6', backgroundColor: '#3B82F6' } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: {grid:{display:false}}, y: {position: 'left', grace: '15%', border:{display:false}, grid: { borderDash: [4, 4] }}, y1: {position: 'right', display:false} } }, plugins: [dataLabelPlugin] });
+let inventoryChartInstance = new Chart(document.getElementById('inventoryChart'), { type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { borderDash: [4, 4] }, grace: '5%' } } }, plugins: [lineDataLabelPlugin]});
+let productivityChartInstance = new Chart(document.getElementById('productivityChart'), { type: 'bar', data: { labels: [], datasets: [{type:'bar', label:'Background'}, {type:'bar', label:'Actual UPH'}, {type:'line', label:'Target', borderColor:'#F59E0B', borderDash:[5,5]}] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, stacked: false }, y: { display: false, grace: '25%' } } } });
 
 let transportTrendChartInstance = new Chart(document.getElementById('transportTrendChart'), {
     type: 'bar',
@@ -222,7 +189,6 @@ let transportTrendChartInstance = new Chart(document.getElementById('transportTr
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxB0bNU1P9qrG_6aHoeiKyHMXT0_k76VlL0aq1I9xxHVpPDQK9qcd3FJMip4Jk9o6RY/exec';
 let globalData = { workforce:{}, fulfillment:{}, wave_ops:{}, ontime:{}, ontime_hub:{}, ontime_by_aff:{}, claims:{}, inventory:{}, inventory_daily:{}, transport:{}, productivity:{}, prod_area:{}, prod_zone:{}, prod_users_map:{} };
 window.selectedBUs = ['ALL'];
-window.locFilters = { bu: ['ALL'], type: ['ALL'], zone: ['ALL'] };
 
 const standardizeBU = (bu) => {
     let b = (bu || '').toString().trim().toUpperCase();
@@ -233,9 +199,6 @@ const standardizeBU = (bu) => {
     return b;
 };
 
-// ------------------------------------------------------------
-// PROGRESS BAR ANIMATION
-// ------------------------------------------------------------
 function updateLoaderPct(targetPct, durationMs) {
     const pctEl = document.getElementById('loader-pct');
     if (!pctEl) return;
@@ -268,96 +231,6 @@ document.getElementById('theme-toggle')?.addEventListener('click', () => {
     Chart.defaults.color = isDark ? '#94A3B8' : '#64748B';
     Object.values(Chart.instances).forEach(chart => chart.update());
 });
-
-let ontimeAffMS = null, claimBuMS = null, invLocTypeMS = null;
-function createMultiSelect(mountEl, opts) {
-    if (!mountEl) return null;
-    opts = opts || {};
-    const label = opts.label || 'Filter';
-    let options = [];
-    let selected = new Set();
-
-    mountEl.style.position = 'relative';
-    mountEl.innerHTML = `
-        <div class="ms-btn filter-control select-dropdown" style="min-width:110px;">
-            <span class="ms-text">${label}: All</span><span class="dropdown-arrow">▼</span>
-        </div>
-        <div class="ms-menu dropdown-card">
-            <label class="dropdown-item"><input type="checkbox" class="ms-all" checked> All</label>
-            <div class="dropdown-divider"></div>
-            <div class="ms-list checkbox-container"></div>
-            <button class="ms-apply btn-apply mt-10">Apply</button>
-        </div>
-    `;
-
-    const btn = mountEl.querySelector('.ms-btn');
-    const menu = mountEl.querySelector('.ms-menu');
-    const textEl = mountEl.querySelector('.ms-text');
-    const allCb = mountEl.querySelector('.ms-all');
-    const listEl = mountEl.querySelector('.ms-list');
-    const applyBtn = mountEl.querySelector('.ms-apply');
-
-    const isAll = () => options.length > 0 && selected.size === options.length;
-    const refreshText = () => {
-        if (options.length === 0 || isAll()) textEl.innerText = `${label}: All`;
-        else if (selected.size === 0) textEl.innerText = `${label}: None`;
-        else if (selected.size === 1) textEl.innerText = `${label}: ${Array.from(selected)[0]}`;
-        else textEl.innerText = `${label}: ${selected.size} selected`;
-    };
-    const renderList = () => {
-        listEl.innerHTML = '';
-        options.forEach(v => {
-            const lbl = document.createElement('label');
-            lbl.className = 'dropdown-item';
-            lbl.innerHTML = `<input type="checkbox" class="ms-item" value="${v}" ${selected.has(v) ? 'checked' : ''}> ${v}`;
-            listEl.appendChild(lbl);
-        });
-        allCb.checked = isAll();
-        refreshText();
-    };
-
-    btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        document.querySelectorAll('.dropdown-card').forEach(m => { if (m !== menu) m.style.display = 'none'; });
-        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-    });
-    allCb.addEventListener('change', (e) => { listEl.querySelectorAll('.ms-item').forEach(cb => cb.checked = e.target.checked); });
-    listEl.addEventListener('change', () => {
-        const cbs = Array.from(listEl.querySelectorAll('.ms-item'));
-        allCb.checked = cbs.length > 0 && cbs.every(cb => cb.checked);
-    });
-    applyBtn.addEventListener('click', () => {
-        menu.style.display = 'none';
-        const cbs = Array.from(listEl.querySelectorAll('.ms-item'));
-        selected = new Set(cbs.filter(cb => cb.checked).map(cb => cb.value));
-        refreshText();
-        if (typeof opts.onApply === 'function') opts.onApply(getSelected());
-    });
-    document.addEventListener('click', (e) => { if (!mountEl.contains(e.target)) menu.style.display = 'none'; });
-
-    const getSelected = () => (isAll() || selected.size === 0) ? ['ALL'] : Array.from(selected);
-
-    return {
-        el: mountEl,
-        getSelected,
-        setOptions(arr, keepSelection = true) {
-            let newOpts = Array.from(new Set(arr || [])).filter(v => v);
-            newOpts.sort();
-            let wasAll = isAll() || selected.size === 0;
-            options = newOpts;
-            if (!keepSelection || wasAll) selected = new Set(options);
-            else {
-                selected = new Set(Array.from(selected).filter(v => options.includes(v)));
-                if (selected.size === 0) selected = new Set(options);
-            }
-            renderList();
-        }
-    };
-}
-
-ontimeAffMS = createMultiSelect(document.getElementById('ontime-aff-ms'), { label: 'สังกัด', onApply: () => updateOnTimeUI() });
-claimBuMS   = createMultiSelect(document.getElementById('claim-bu-ms'),   { label: 'BU',     onApply: () => updateClaimUI() });
-invLocTypeMS = createMultiSelect(document.getElementById('inv-loctype-ms'), { label: 'Type',  onApply: () => updateInventoryUI() });
 
 function cleanDataBeforeLoad() {
     ['fulfillment', 'wave_ops', 'claims', 'inventory', 'inventory_daily', 'transport'].forEach(module => {
@@ -438,46 +311,6 @@ function populateGlobalBUFilters() {
             }
             refreshAllSections();
             initFulfillmentRealtime();
-            // --- เริ่มโค้ดแทรก WAVE PLAN SUMMARY ---
-                const waveSummaryTable = document.getElementById('wave-summary-table');
-                if (waveSummaryTable) {
-                    if (validChartDates.length === 0 || allBUsArray.length === 0) {
-                        waveSummaryTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูลออเดอร์</th></tr></thead>`;
-                    } else {
-                        let thead = `<thead><tr><th class="text-center" style="position:sticky; left:0; z-index:20;">Planned Date</th>${allBUsArray.map(bu => `<th class="text-center">${bu}</th>`).join('')}<th class="text-center">Total (เสร็จ/ทั้งหมด)</th><th class="text-center">% Completed</th></tr></thead>`;
-                        let tbody = "<tbody>";
-                        
-                        [...validChartDates].reverse().forEach(dStr => {
-                            let dObj = new Date(dStr);
-                            let dispDate = isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
-                            
-                            let tr = `<tr><td class="text-center font-bold" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${dispDate}</td>`;
-                            let dayTot = 0, dayComp = 0;
-                            
-                            allBUsArray.forEach(bu => {
-                                let bData = getBestOrderData(unifiedDatesMap[dStr]?.bq?.[bu], unifiedDatesMap[dStr]?.wave?.[bu], unifiedDatesMap[dStr]?.ffm?.[bu]);
-                                let ordTotal = bData.tot; let ordFull = bData.full;
-                                dayTot += ordTotal; dayComp += ordFull;
-                                if (ordTotal === 0) { tr += `<td class="text-center text-muted">-</td>`; } 
-                                else {
-                                    let color = (ordFull === ordTotal) ? 'var(--brand-green)' : (ordFull > 0 ? 'var(--brand-yellow)' : 'var(--brand-red)');
-                                    tr += `<td class="text-center"><span style="color:${color}; font-weight:700;">${fmtN(ordFull)}</span> <span class="text-xs text-muted">/ ${fmtN(ordTotal)}</span></td>`;
-                                }
-                            });
-                            
-                            let grandColor = (dayComp === dayTot && dayTot > 0) ? 'var(--brand-green)' : (dayComp > 0 ? 'var(--brand-yellow)' : 'var(--brand-red)');
-                            tr += `<td class="text-center"><span style="color:${grandColor}; font-weight:700;">${fmtN(dayComp)}</span> <span class="text-xs text-muted">/ ${fmtN(dayTot)}</span></td>`;
-                            
-                            let pct = dayTot > 0 ? Math.min(100, (dayComp / dayTot) * 100).toFixed(2) : 0;
-                            let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
-                            let pctColor = pct >= 100 ? '#10B981' : (pct > 0 ? '#F59E0B' : '#EF4444');
-                            tr += `<td class="text-center"><span style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600;">${pct}%</span></td></tr>`;
-                            tbody += tr;
-                        });
-                        waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
-                    }
-                }
-                // --- จบโค้ดแทรก WAVE PLAN SUMMARY ---
         });
 
         document.getElementById('bu-multi-select').addEventListener('click', (e) => {
@@ -555,18 +388,15 @@ async function initDashboard() {
 }
 
 function refreshAllSections() {
-    try { updateTransportUI(); } catch(e) { console.error("Transport Error:", e); }
-    try { updateWorkforceUI(); } catch(e) { console.error("Workforce Error:", e); }
-    try { updateOnTimeUI(); } catch(e) { console.error("OnTime Error:", e); }
-    try { updateClaimUI(); } catch(e) { console.error("Claim Error:", e); }
-    try { updateInventoryUI(); } catch(e) { console.error("Inventory Error:", e); }
-    try { renderLocationAccuracy(); } catch(e) { console.error("LocAcc Error:", e); }
-    try { renderProductivitySection(); } catch(e) { console.error("Prod Error:", e); }
+    try { updateTransportUI(); } catch(e) {}
+    try { updateWorkforceUI(); } catch(e) {}
+    try { updateOnTimeUI(); } catch(e) {}
+    try { updateClaimUI(); } catch(e) {}
+    try { updateInventoryUI(); } catch(e) {}
+    try { renderLocationAccuracy(); } catch(e) {}
+    try { renderProductivitySection(); } catch(e) {}
 }
 
-// ==========================================
-// 1. BIGQUERY FULFILLMENT & WAVE 
-// ==========================================
 function toggleCapSetup() {
     const p = document.getElementById('cap-setup-panel');
     p.style.display = p.style.display === 'none' ? 'block' : 'none';
@@ -835,10 +665,6 @@ async function initFulfillmentRealtime() {
         }
 
         let allBUsArray = Array.from(buNamesSet).sort();
-        const ffmBuFilter = document.getElementById('ffm-bu-filter');
-        if (ffmBuFilter && ffmBuFilter.options.length <= 1) {
-            allBUsArray.forEach(bu => ffmBuFilter.appendChild(new Option(bu, bu)));
-        }
         let chartBUsArray = window.selectedBUs.includes('ALL') ? allBUsArray : window.selectedBUs.filter(b => allBUsArray.includes(b));
         let period = document.getElementById('global-period').value;
 
@@ -1103,6 +929,47 @@ async function initFulfillmentRealtime() {
                 }
                 
                 generateExecutiveAlerts(targetEnd, latestD, totalLate, maxOverallDelay, diffDays, worstBU);
+
+                // --- เริ่มโค้ดแทรก WAVE PLAN SUMMARY ---
+                const waveSummaryTable = document.getElementById('wave-summary-table');
+                if (waveSummaryTable) {
+                    if (validChartDates.length === 0 || allBUsArray.length === 0) {
+                        waveSummaryTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูลออเดอร์</th></tr></thead>`;
+                    } else {
+                        let thead = `<thead><tr><th class="text-center" style="position:sticky; left:0; z-index:20;">Planned Date</th>${allBUsArray.map(bu => `<th class="text-center">${bu}</th>`).join('')}<th class="text-center">Total (เสร็จ/ทั้งหมด)</th><th class="text-center">% Completed</th></tr></thead>`;
+                        let tbody = "<tbody>";
+                        
+                        [...validChartDates].reverse().forEach(dStr => {
+                            let dObj = new Date(dStr);
+                            let dispDate = isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
+                            
+                            let tr = `<tr><td class="text-center font-bold" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${dispDate}</td>`;
+                            let dayTot = 0, dayComp = 0;
+                            
+                            allBUsArray.forEach(bu => {
+                                let bData = getBestOrderData(unifiedDatesMap[dStr]?.bq?.[bu], unifiedDatesMap[dStr]?.wave?.[bu], unifiedDatesMap[dStr]?.ffm?.[bu]);
+                                let ordTotal = bData.tot; let ordFull = bData.full;
+                                dayTot += ordTotal; dayComp += ordFull;
+                                if (ordTotal === 0) { tr += `<td class="text-center text-muted">-</td>`; } 
+                                else {
+                                    let color = (ordFull === ordTotal) ? 'var(--brand-green)' : (ordFull > 0 ? 'var(--brand-yellow)' : 'var(--brand-red)');
+                                    tr += `<td class="text-center"><span style="color:${color}; font-weight:700;">${fmtN(ordFull)}</span> <span class="text-xs text-muted">/ ${fmtN(ordTotal)}</span></td>`;
+                                }
+                            });
+                            
+                            let grandColor = (dayComp === dayTot && dayTot > 0) ? 'var(--brand-green)' : (dayComp > 0 ? 'var(--brand-yellow)' : 'var(--brand-red)');
+                            tr += `<td class="text-center"><span style="color:${grandColor}; font-weight:700;">${fmtN(dayComp)}</span> <span class="text-xs text-muted">/ ${fmtN(dayTot)}</span></td>`;
+                            
+                            let pct = dayTot > 0 ? Math.min(100, (dayComp / dayTot) * 100).toFixed(2) : 0;
+                            let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
+                            let pctColor = pct >= 100 ? '#10B981' : (pct > 0 ? '#F59E0B' : '#EF4444');
+                            tr += `<td class="text-center"><span style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600;">${pct}%</span></td></tr>`;
+                            tbody += tr;
+                        });
+                        waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
+                    }
+                }
+                // --- จบโค้ดแทรก WAVE PLAN SUMMARY ---
             }
         }
 
@@ -1605,6 +1472,9 @@ function updateTransportUI() {
         document.getElementById('carrier-update-time').innerText = `ช่วงเวลาที่เลือกไม่มีข้อมูล`;
         if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่ง ในช่วงเวลาที่เลือก</td></tr>`;
         if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลรายละเอียด</td></tr>`;
+        
+        let tcTable = document.getElementById('transport-comparison-table');
+        if(tcTable) tcTable.querySelector('tbody').innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลเปรียบเทียบย้อนหลัง</td></tr>`;
         return;
     }
 
@@ -1645,86 +1515,6 @@ function updateTransportUI() {
         });
         tbody.innerHTML = html;
     }
-
-    // -----------------------------------------------------------
-    // --- สร้างตารางแนวนอน (Horizontal Comparison Table) ---
-    // -----------------------------------------------------------
-    let chronPeriods = Object.values(groupedByPeriod).sort((a,b) => a.time - b.time); // เรียงเก่าไปใหม่
-    let htmlHead = `<tr><th style="position:sticky; top:0; left:0; z-index:40; background:var(--bg-card);">วันที่ / Period</th>`;
-    let htmlOrders = `<tr><td class="text-dark">Orders</td>`;
-    let htmlVehicles = `<tr><td class="text-dark">จำนวนรถ</td>`;
-    let htmlSucc = `<tr><td class="text-dark">Succ.%</td>`;
-    let htmlSla = `<tr><td class="text-dark">SLA Adherence %</td>`;
-    let htmlCost = `<tr><td class="text-dark">Cost (฿)</td>`;
-    let htmlAccum = `<tr><td class="text-dark">Accumulate Cost (฿)</td>`;
-
-    let accumCost = 0;
-    let prevP = null;
-
-    chronPeriods.forEach((p, idx) => {
-        // นับจำนวนรถแบบ Unique
-        let uniquePlates = new Set();
-        p.details.forEach(d => { Object.keys(d.plates).forEach(pl => uniquePlates.add(pl)); });
-        let vCount = uniquePlates.size;
-
-        let succPct = p.total_orders > 0 ? (p.success_orders / p.total_orders * 100) : 0;
-        let slaPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders * 100) : 0;
-        accumCost += p.total_cost; // บวกทบยอดค่าขนส่ง
-
-        htmlHead += `<th style="position:sticky; top:0; z-index:30; background:var(--bg-card);">${p.label}</th>`;
-        htmlOrders += `<td class="font-bold text-dark">${fmtN(p.total_orders)}</td>`;
-        htmlVehicles += `<td>${fmtN(vCount)}</td>`;
-        htmlSucc += `<td>${succPct.toFixed(1)}%</td>`;
-        htmlSla += `<td>${slaPct.toFixed(1)}%</td>`;
-        htmlCost += `<td class="text-red">${fmtN(p.total_cost)}</td>`;
-        htmlAccum += `<td class="font-bold text-blue">${fmtN(accumCost)}</td>`;
-
-        // คอลัมน์เปรียบเทียบ (เริ่มทำเมื่อมีวันก่อนหน้า)
-        if (idx > 0) {
-            htmlHead += `<th class="diff-col text-muted" style="position:sticky; top:0; z-index:20;">เทียบก่อนหน้า</th>`;
-            
-            let diffOrd = p.total_orders - prevP.orders;
-            let diffVeh = vCount - prevP.vehicles;
-            let diffSucc = succPct - prevP.succ;
-            let diffSla = slaPct - prevP.sla;
-            let diffCost = p.total_cost - prevP.cost;
-
-            // ฟังก์ชันกำหนดสีบวก/ลบ
-            const fmtDiff = (v, isGoodPositive, isPct = false) => {
-                if (v === 0) return `<td class="diff-col diff-neutral">-</td>`;
-                let sign = v > 0 ? '+' : '';
-                let clrClass = isGoodPositive ? (v > 0 ? 'diff-good' : 'diff-bad') : (v > 0 ? 'diff-bad' : 'diff-good');
-                let valStr = isPct ? v.toFixed(1) + '%' : fmtN(v);
-                return `<td class="diff-col ${clrClass}">${sign}${valStr}</td>`;
-            };
-
-            // ใส่สูตร (อะไรเยอะแล้วดีให้ใส่ true, อะไรเยอะแล้วไม่ดีอย่าง Cost ใส่ false)
-            htmlOrders += fmtDiff(diffOrd, true); 
-            htmlVehicles += fmtDiff(diffVeh, false); 
-            htmlSucc += fmtDiff(diffSucc, true, true);
-            htmlSla += fmtDiff(diffSla, true, true);
-            htmlCost += fmtDiff(diffCost, false); 
-            htmlAccum += `<td class="diff-col"></td>`; // ช่องสะสมไม่ต้องเปรียบเทียบ
-        }
-        // เซฟค่าไว้ใช้เทียบรอบถัดไป
-        prevP = { orders: p.total_orders, vehicles: vCount, succ: succPct, sla: slaPct, cost: p.total_cost };
-    });
-
-    htmlHead += `</tr>`; htmlOrders += `</tr>`; htmlVehicles += `</tr>`; 
-    htmlSucc += `</tr>`; htmlSla += `</tr>`; htmlCost += `</tr>`; htmlAccum += `</tr>`;
-
-    let tcTable = document.getElementById('transport-comparison-table');
-    if(tcTable) {
-        tcTable.querySelector('thead').innerHTML = htmlHead;
-        tcTable.querySelector('tbody').innerHTML = htmlOrders + htmlVehicles + htmlSucc + htmlSla + htmlCost + htmlAccum;
-    }
-
-    // เลื่อน Scrollbar แนวนอนไปขวาสุดอัตโนมัติ เพื่อให้โชว์ข้อมูลล่าสุดก่อน
-    setTimeout(() => {
-        let scroller = document.getElementById('comparison-scroll-container');
-        if(scroller) scroller.scrollLeft = scroller.scrollWidth;
-    }, 400);
-    // -----------------------------------------------------------
 
     // -----------------------------------------------------------
     // --- สร้างตารางแนวนอน (Horizontal Comparison Table) ---
@@ -1800,9 +1590,10 @@ function updateTransportUI() {
         let scroller = document.getElementById('comparison-scroll-container');
         if(scroller) scroller.scrollLeft = scroller.scrollWidth;
     }, 400);
-    // -----------------------------------------------------------
 
-    // อัปเดตตาราง DAILY DETAILS ด้วย Summary Row คั่น
+    // -----------------------------------------------------------
+    // --- อัปเดตตาราง DAILY DETAILS ด้วย Summary Row คั่น ---
+    // -----------------------------------------------------------
     let dailyHtml = "";
     let sortedPeriods = Object.values(groupedByPeriod).sort((a,b) => b.time - a.time);
     
@@ -2343,7 +2134,10 @@ function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveD
             let allRoles = new Set([...Object.keys(dayData.targets || {}), ...Object.keys(dayData.roles || {})]);
             allRoles.forEach(role => {
                 let trg = dayData.targets?.[role] || 0; let act = dayData.roles?.[role] || 0;
-                if (window.selectedBUs.includes('ALL')) { trgCount += trg; if (trg > act) absCount += (trg - act); }
+                if (window.selectedBUs.includes('ALL')) { 
+                    trgCount += trg; 
+                    if (trg > act) absCount += (trg - act); 
+                }
             });
             if (absCount > 0 && window.selectedBUs.includes('ALL')) {
                 let absPct = ((absCount / trgCount) * 100).toFixed(1);
@@ -2363,4 +2157,5 @@ function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveD
     }
 }
 
+// เริ่มทำงาน Dashboard
 initDashboard();
