@@ -442,50 +442,54 @@ function refreshAllSections() {
     try { renderProductivitySection(); } catch(e) {}
 }
 
-function toggleCapSetup() {
-    const p = document.getElementById('cap-setup-panel');
-    p.style.display = p.style.display === 'none' ? 'block' : 'none';
-    if(p.style.display === 'block') { document.getElementById('cap-target-date').value = document.getElementById('date-end').value; fetchAndRenderCapInputs(); }
+// ฟังก์ชันเปิด Popup
+function openCapacityModal() {
+    const modal = document.getElementById('capacity-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+    // ใช้วันที่จากตัวกรองหลักเป็นค่าตั้งต้น
+    document.getElementById('cap-target-date').value = document.getElementById('date-end').value;
+    fetchAndRenderCapInputs();
 }
-async function fetchAndRenderCapInputs() {
-    const targetDate = document.getElementById('cap-target-date').value;
-    const container = document.getElementById('cap-inputs-container');
-    container.innerHTML = '<span class="text-sm text-muted">⏳ กำลังดึงข้อมูล...</span>';
-    try {
-        const capResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fn: 'apiGetCapacity', args: [targetDate, targetDate] }) });
-        const capJson = await capResp.json();
-        if (capJson.success && capJson.data) {
-            if (!globalCapacities[targetDate]) globalCapacities[targetDate] = {};
-            capJson.data.forEach(row => globalCapacities[row.target_date][row.owner] = row.capacity);
-        }
-    } catch (e) {}
-    container.innerHTML = '';
-    const allBUs = (window.selectedBUs && window.selectedBUs.includes('ALL')) ? ['DM02', 'DP02', '1115', 'DCWN', 'DG02'] : (window.selectedBUs || ['DM02', 'DP02', '1115', 'DCWN', 'DG02']); 
-    allBUs.forEach(bu => {
-        let currentCap = globalCapacities[targetDate]?.[bu] || DEFAULT_CAPACITY;
-        container.innerHTML += `<div style="display:flex; flex-direction:column;"><label class="text-xs text-muted font-bold">${bu}</label><input type="number" id="cap-input-${bu}" value="${currentCap}" data-bu="${bu}" class="filter-control" style="width:75px;"></div>`;
-    });
+
+// ฟังก์ชันปิด Popup
+function closeCapacityModal() {
+    const modal = document.getElementById('capacity-modal');
+    modal.classList.remove('show');
+    setTimeout(() => modal.style.display = 'none', 300);
 }
+
+// อัปเดตฟังก์ชันบันทึกข้อมูล (เพิ่มคำสั่งปิด Modal เมื่อเซฟเสร็จ)
 async function saveDailyCapacity() {
     const targetDate = document.getElementById('cap-target-date').value;
     const inputs = document.querySelectorAll('#cap-inputs-container input');
     if (inputs.length === 0) return;
-    const saveBtn = document.querySelector('#cap-setup-panel button[onclick="saveDailyCapacity()"]');
-    let originalBtnHtml = ''; if (saveBtn) { originalBtnHtml = saveBtn.innerHTML; saveBtn.disabled = true; saveBtn.innerHTML = '⏳ กำลังบันทึก...'; }
+    
+    const saveBtn = document.querySelector('#capacity-modal button.btn-primary');
+    let originalBtnHtml = ''; 
+    if (saveBtn) { originalBtnHtml = saveBtn.innerHTML; saveBtn.disabled = true; saveBtn.innerHTML = '⏳ กำลังบันทึก...'; }
+    
     showToast('⏳ กำลังบันทึก Capacity...', 'info', 0);
     let capacityData = [];
     inputs.forEach(input => capacityData.push({ target_date: targetDate, owner: input.getAttribute('data-bu'), capacity: parseInt(input.value) || 0 }));
+    
     try {
         const response = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fn: 'apiSaveCapacityBulk', args: [capacityData] }) });
         if (!response.ok) throw new Error(`HTTP Error Status`);
         const resData = await response.json();
         if (resData.success === false) throw new Error('บันทึกไม่สำเร็จ');
+        
         if (!globalCapacities[targetDate]) globalCapacities[targetDate] = {};
         capacityData.forEach(item => globalCapacities[targetDate][item.owner] = item.capacity);
+        
         showToast(`✅ บันทึก Capacity สำเร็จ!`, 'success');
-        initFulfillmentRealtime();
-    } catch (error) { showToast('❌ บันทึกไม่สำเร็จ: ' + error.message, 'error'); } 
-    finally { if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = originalBtnHtml; } }
+        initFulfillmentRealtime(); // รีโหลดตาราง
+        closeCapacityModal(); // ปิด Popup ทันที
+    } catch (error) { 
+        showToast('❌ บันทึกไม่สำเร็จ: ' + error.message, 'error'); 
+    } finally { 
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = originalBtnHtml; } 
+    }
 }
 
 function hasEffectiveCap(dateStr, bu) {
