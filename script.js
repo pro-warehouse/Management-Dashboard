@@ -18,7 +18,7 @@ function showToast(message, type = 'success', duration = 3000) {
 }
 
 // ------------------------------------------------------------
-// GLOBAL HELPERS
+// GLOBAL HELPERS & COLOR MAPPING
 // ------------------------------------------------------------
 const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -43,6 +43,35 @@ const getDisplayDate = (dStr) => {
 
 const fmtN = (v) => (v || 0).toLocaleString();
 
+// ฟังก์ชันแปลงเลขหลักพัน/ล้านเป็น K และ M
+const formatK = (num) => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return Math.round(num / 1000) + 'K';
+    return num;
+};
+
+// 🎨 ล็อกสีตามชื่อ BU (ให้ตรงกับ CI ของแต่ละบริษัท)
+const buColorMap = {
+    'DM02': { s: '#8CC63F', e: '#009245' }, // เขียว (PT)
+    'DP02': { s: '#F59E0B', e: '#B45309' }, // ส้มน้ำตาล (พันธุ์ไทย)
+    'DG02': { s: '#38BDF8', e: '#0284C7' }, // น้ำเงิน (GFA)
+    '1715': { s: '#F87171', e: '#DC2626' }, // แดง
+    '1115': { s: '#F87171', e: '#DC2626' }, // แดง
+    'DCWN': { s: '#2DD4BF', e: '#0D9488' }, // เขียวอมฟ้า
+    'DS02': { s: '#A78BFA', e: '#7C3AED' }  // ม่วง
+};
+const defaultColor = { s: '#94A3B8', e: '#64748B' };
+const getBuColor = (bu) => buColorMap[bu] || defaultColor;
+
+const gradPalettes = [
+    { s: '#8CC63F', e: '#009245' },
+    { s: '#38BDF8', e: '#0284C7' },
+    { s: '#FBBF24', e: '#F59E0B' },
+    { s: '#F87171', e: '#ED1C24' },
+    { s: '#A78BFA', e: '#8B5CF6' },
+    { s: '#2DD4BF', e: '#0D9488' }
+];
+
 function getGradient(ctx, chartArea, colorStart, colorEnd) {
     if (!chartArea) return colorStart;
     let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
@@ -50,15 +79,6 @@ function getGradient(ctx, chartArea, colorStart, colorEnd) {
     gradient.addColorStop(1, colorEnd);
     return gradient;
 }
-
-const gradPalettes = [
-    { s: '#8CC63F', e: '#009245' }, // เขียว PT
-    { s: '#38BDF8', e: '#0284C7' }, // ฟ้า/น้ำเงิน
-    { s: '#FBBF24', e: '#F59E0B' }, // เหลืองทอง
-    { s: '#F87171', e: '#ED1C24' }, // แดง PT
-    { s: '#A78BFA', e: '#8B5CF6' }, // ม่วง
-    { s: '#2DD4BF', e: '#0D9488' }  // เขียวอมฟ้า
-];
 
 function getPeriodLabel(dObj, period) {
     if (period === 'Monthly') return `${shortMonths[dObj.getMonth()]} ${dObj.getFullYear()}`;
@@ -92,15 +112,17 @@ const dataLabelPlugin = {
         const { ctx } = chart;
         
         chart.data.datasets.forEach((dataset, i) => {
-            if (dataset.type === 'line' || !chart.isDatasetVisible(i)) return;
+            if (dataset.type === 'line' || !chart.isDatasetVisible(i) || dataset.stack) return;
             const meta = chart.getDatasetMeta(i);
             meta.data.forEach((bar, index) => {
                 const data = dataset.data[index];
-                // วาดเลขย่อย "กลางแท่ง" (เฉพาะแท่งที่สูงพอ จะได้ไม่รก)
-                if(data > 0 && bar.height > 25){
-                    ctx.fillStyle = '#FFFFFF'; // ใช้สีขาวให้ตัดกับกราฟ
-                    ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                    let val = (chart.canvas.id.includes('claim')) ? fmtN(data) : (data%1!==0 ? data.toFixed(1)+'%' : fmtN(data));
+                // วาดเลขย่อย "กลางแท่ง"
+                if(data > 0 && bar.height > 20){
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = 'bold 9px Inter'; 
+                    ctx.textAlign = 'center'; 
+                    ctx.textBaseline = 'middle';
+                    let val = (chart.canvas.id.includes('claim')) ? fmtN(data) : (data%1!==0 ? data.toFixed(1)+'%' : formatK(data));
                     ctx.fillText(val, bar.x, bar.y + (bar.height / 2));
                 }
             });
@@ -123,8 +145,10 @@ const dataLabelPlugin = {
             chart.data.labels.forEach((_, index) => {
                 if (totals[index] > 0 && xCoords[index] && topY[index]) {
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
-                    ctx.font = 'bold 11px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-                    ctx.fillText(fmtN(Math.round(totals[index])), xCoords[index], topY[index] - 8);
+                    ctx.font = 'bold 10px Inter'; 
+                    ctx.textAlign = 'center'; 
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillText(formatK(Math.round(totals[index])), xCoords[index], topY[index] - 6);
                 }
             });
         }
@@ -247,7 +271,6 @@ function updateLoaderPct(targetPct, durationMs) {
     _loadAnimFrame = requestAnimationFrame(animate);
 }
 
-// ระบบ Auto Refresh ทุกๆ 30 นาที
 setInterval(() => {
     console.log("Auto refreshing data...");
     initDashboard();
@@ -442,24 +465,52 @@ function refreshAllSections() {
     try { renderProductivitySection(); } catch(e) {}
 }
 
-// ฟังก์ชันเปิด Popup
+// ------------------------------------------------------------
+// CAPACITY MODAL POPUP
+// ------------------------------------------------------------
 function openCapacityModal() {
     const modal = document.getElementById('capacity-modal');
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('show'), 10);
-    // ใช้วันที่จากตัวกรองหลักเป็นค่าตั้งต้น
     document.getElementById('cap-target-date').value = document.getElementById('date-end').value;
     fetchAndRenderCapInputs();
 }
 
-// ฟังก์ชันปิด Popup
 function closeCapacityModal() {
     const modal = document.getElementById('capacity-modal');
     modal.classList.remove('show');
     setTimeout(() => modal.style.display = 'none', 300);
 }
 
-// อัปเดตฟังก์ชันบันทึกข้อมูล (เพิ่มคำสั่งปิด Modal เมื่อเซฟเสร็จ)
+async function fetchAndRenderCapInputs() {
+    const targetDate = document.getElementById('cap-target-date').value;
+    const container = document.getElementById('cap-inputs-container');
+    container.innerHTML = '<span class="text-sm text-muted">⏳ กำลังดึงข้อมูล...</span>';
+    try {
+        const capResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", { 
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ fn: 'apiGetCapacity', args: [targetDate, targetDate] }) 
+        });
+        const capJson = await capResp.json();
+        if (capJson.success && capJson.data) {
+            if (!globalCapacities[targetDate]) globalCapacities[targetDate] = {};
+            capJson.data.forEach(row => globalCapacities[row.target_date][row.owner] = row.capacity);
+        }
+    } catch (e) {}
+    
+    container.innerHTML = '';
+    const allBUs = (window.selectedBUs && window.selectedBUs.includes('ALL')) ? ['DM02', 'DP02', '1115', '1715', 'DCWN', 'DG02'] : (window.selectedBUs || ['DM02', 'DP02', '1115', '1715', 'DCWN', 'DG02']); 
+    
+    allBUs.forEach(bu => {
+        let currentCap = globalCapacities[targetDate]?.[bu] || DEFAULT_CAPACITY;
+        container.innerHTML += `
+        <div style="display:flex; flex-direction:column; gap:4px;">
+            <label class="text-xs text-muted font-bold">${bu}</label>
+            <input type="number" id="cap-input-${bu}" value="${currentCap}" data-bu="${bu}" class="filter-control" style="width:75px; text-align:center;">
+        </div>`;
+    });
+}
+
 async function saveDailyCapacity() {
     const targetDate = document.getElementById('cap-target-date').value;
     const inputs = document.querySelectorAll('#cap-inputs-container input');
@@ -483,8 +534,8 @@ async function saveDailyCapacity() {
         capacityData.forEach(item => globalCapacities[targetDate][item.owner] = item.capacity);
         
         showToast(`✅ บันทึก Capacity สำเร็จ!`, 'success');
-        initFulfillmentRealtime(); // รีโหลดตาราง
-        closeCapacityModal(); // ปิด Popup ทันที
+        initFulfillmentRealtime(); 
+        closeCapacityModal(); 
     } catch (error) { 
         showToast('❌ บันทึกไม่สำเร็จ: ' + error.message, 'error'); 
     } finally { 
@@ -766,21 +817,15 @@ async function initFulfillmentRealtime() {
                 });
                 
                 let pLabels = Object.keys(pMap);
-let runningClaim = 0;
-pLabels.forEach(p => {
-    runningClaim += pMap[p].cost;
-    pMap[p].accumCost = runningClaim;
-});
-                let tpDatasets = chartBUsArray.map((bu, i) => {
-                    let colorIndex = allBUsArray.indexOf(bu) !== -1 ? allBUsArray.indexOf(bu) : i; 
+                let tpDatasets = chartBUsArray.map((bu) => {
                     return {
                         label: bu,
                         data: pLabels.map(p => pMap[p].buReq[bu]), 
                         backgroundColor: (context) => {
                             const chart = context.chart;
                             const {ctx, chartArea} = chart;
-                            if (!chartArea) return gradPalettes[colorIndex % 6].s;
-                            return getGradient(ctx, chartArea, gradPalettes[colorIndex % 6].s, gradPalettes[colorIndex % 6].e);
+                            if (!chartArea) return getBuColor(bu).s;
+                            return getGradient(ctx, chartArea, getBuColor(bu).s, getBuColor(bu).e);
                         },
                         borderRadius: 4
                     };
@@ -812,8 +857,8 @@ pLabels.forEach(p => {
                     backgroundColor: (context) => {
                         const chart = context.chart;
                         const {ctx, chartArea} = chart;
-                        if (!chartArea) return mixLabels.map((_, i) => gradPalettes[i % 6].s);
-                        return mixLabels.map((_, i) => getGradient(ctx, chartArea, gradPalettes[i % 6].s, gradPalettes[i % 6].e));
+                        if (!chartArea) return mixLabels.map(bu => getBuColor(bu).s);
+                        return mixLabels.map(bu => getGradient(ctx, chartArea, getBuColor(bu).s, getBuColor(bu).e));
                     },
                     borderWidth: 0
                 }];
@@ -1063,7 +1108,6 @@ pLabels.forEach(p => {
                     }
                 }
                 
-                // คำนวณยอด Avg Fulfillment Rate กลับมา
                 let latestShipDateStr = null, prevShipDateStr = null;
                 for (let d of validChartDates) {
                     let s = chartDataMap[d]?.ship || 0;
@@ -1141,13 +1185,11 @@ function updateWorkforceUI() {
     
     let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
     
-    // หา Key สำหรับแสดงกราฟ/ตาราง (เฉพาะช่วงที่เลือก)
     let validKeys = wfKeys.filter(k => {
         let t = new Date(getStandardDate(k)).getTime();
         return t >= targetStart && t <= targetEnd;
     });
 
-    // 🌟 FIX: หา Key สำหรับโชว์บนกล่อง KPI หลัก (ถ้า Filter ไม่มีข้อมูล ให้ดึงข้อมูลล่าสุด)
     let displayKey = validKeys.length > 0 ? validKeys[0] : wfKeys.find(k => new Date(getStandardDate(k)).getTime() <= targetEnd);
     
     if (displayKey) {
@@ -1183,7 +1225,6 @@ function updateWorkforceUI() {
         if(updEl) updEl.innerText = "Updated: --";
     }
 
-    // --- ส่วนแสดงผลกราฟและตารางยังคงยึดตาม Filter ---
     let dynamicTeamsSet = new Set();
     Object.values(globalData.workforce).forEach(day => {
         Object.values(day.matrix || {}).forEach(aff => {
@@ -1265,6 +1306,96 @@ function updateWorkforceUI() {
                 matrixTable.innerHTML = headerHtml + bodyHtml + "</tbody>";
             }
         }
+
+        const attBody = document.getElementById('daily-attendance-body');
+        const attHead = document.getElementById('daily-attendance-head');
+        if (attHead) {
+            let h = `<tr><th rowspan="2" style="position:sticky; left:0; z-index:15; min-width:120px;">DATE / DEPT.</th><th rowspan="2">TARGET</th><th rowspan="2">ACTUAL</th><th rowspan="2">ABSENT</th><th rowspan="2">RATE</th>`;
+            dynamicTeams.forEach(t => { h += `<th colspan="4" class="team-divider">Team ${t}</th>`; });
+            h += `</tr><tr>`;
+            dynamicTeams.forEach(() => { h += `<th class="team-divider">TRG</th><th>ACT</th><th>ABS</th><th>%</th>`; });
+            h += `</tr>`;
+            attHead.innerHTML = h;
+        }
+        
+        let excelHtml = "";
+        const tableRows = [ { key: 'Pick', label: 'Pick' }, { key: 'RT', label: 'RT' }, { key: 'QCQA', label: 'QC / QA' }, { key: 'Grouping', label: 'Grouping' }, { key: 'Putaway', label: 'Put-away' }, { key: 'Receive', label: 'Receive' } ];
+        
+        validKeys.slice(0, 14).forEach(dateKey => {
+            const data = globalData.workforce[dateKey];
+            excelHtml += `<tr><td colspan="${5 + (dynamicTeams.length * 4)}" style="background:var(--bg-body); font-weight:700;">Date: ${getDisplayDate(dateKey)}</td></tr>`;
+            
+            tableRows.forEach(r => {
+                let act = 0, trgTot = 0;
+                if (r.key === 'QCQA') {
+                    act = (data.roles?.QC || 0) + (data.roles?.QA || 0); trgTot = (data.targets?.QC || 0) + (data.targets?.QA || 0);
+                } else { act = data.roles?.[r.key] || 0; trgTot = data.targets?.[r.key] || 0; }
+
+                const calcAbs = (a, t) => (t===0&&a===0) ? '-' : (a-t<0 ? `<span class="text-red font-bold">${a-t}</span>` : a-t);
+                const calcRate = (a, t) => t===0 ? '-' : `<span class="${(a/t*100)<95?'text-red':'text-green'} font-bold">${(a/t*100).toFixed(2)}%</span>`;
+
+                let rowHtml = `<tr>
+                    <td style="position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${r.label}</td>
+                    <td>${trgTot>0?trgTot:'-'}</td><td>${act>0?act:'-'}</td><td>${calcAbs(act, trgTot)}</td><td>${calcRate(act, trgTot)}</td>`;
+                
+                dynamicTeams.forEach(t => {
+                    let tTrg = 0, tAct = 0;
+                    if (r.key === 'QCQA') {
+                        tAct = (data.roleByTeam?.QC?.[t] || 0) + (data.roleByTeam?.QA?.[t] || 0); tTrg = (data.targetByTeam?.QC?.[t] || 0) + (data.targetByTeam?.QA?.[t] || 0);
+                    } else {
+                        tAct = data.roleByTeam?.[r.key]?.[t] || 0; tTrg = data.targetByTeam?.[r.key]?.[t] || 0;
+                    }
+                    rowHtml += `<td class="team-divider">${tTrg>0?tTrg:'-'}</td><td>${tAct>0?tAct:'-'}</td><td>${calcAbs(tAct, tTrg)}</td><td>${calcRate(tAct, tTrg)}</td>`;
+                });
+                excelHtml += rowHtml + `</tr>`;
+            });
+        });
+        if(attBody) attBody.innerHTML = excelHtml !== "" ? excelHtml : `<tr><td colspan="100%" class="text-center text-muted">ไม่มีข้อมูลในช่วงที่เลือก</td></tr>`;
+
+        if(document.getElementById('hc-summary-table')) {
+            let hcHtml = `<thead><tr><th style="position:sticky; top:0; z-index:15;">HC Type</th><th style="position:sticky; top:0; z-index:15;">Detail</th><th class="text-center">Target</th><th class="text-center">Actual</th><th class="text-center">Absent</th><th class="text-center">% Rate</th></tr></thead><tbody>`;
+            let groupedHC = {};
+            (d.hc_summary_list || []).forEach(item => {
+                let key = `${item.lv3}|${item.lv4}`;
+                if (!groupedHC[key]) groupedHC[key] = { target: 0, actual: 0, lv3: item.lv3, lv4: item.lv4 };
+                if (item.status !== "" && item.status !== "H") groupedHC[key].target++;
+                if (["R","C","V"].includes(item.status)) groupedHC[key].actual++;
+            });
+            let totalTrg = 0, totalAct = 0;
+            if (Object.keys(groupedHC).length === 0) hcHtml += `<tr><td colspan="6" class="text-center text-muted">ไม่มีข้อมูลพนักงานที่เริ่มงานแล้ว</td></tr>`;
+            else {
+                Object.keys(groupedHC).sort().forEach(k => {
+                    let g = groupedHC[k];
+                    let abs = g.target > g.actual ? g.target - g.actual : 0;
+                    let rate = g.target === 0 ? '-' : `<span class="${(g.actual/g.target*100)<95?'text-red':'text-green'} font-bold">${(g.actual/g.target*100).toFixed(2)}%</span>`;
+                    totalTrg += g.target; totalAct += g.actual;
+                    hcHtml += `<tr><td>${g.lv3}</td><td>${g.lv4}</td><td class="text-center">${g.target>0?g.target:'-'}</td><td class="text-center">${g.actual>0?g.actual:'-'}</td><td class="text-center">${abs>0?abs:'-'}</td><td class="text-center">${rate}</td></tr>`;
+                });
+                let totAbs = totalTrg > totalAct ? totalTrg - totalAct : 0;
+                let totRate = totalTrg === 0 ? '-' : `<span class="${(totalAct/totalTrg*100)<95?'text-red':'text-green'} font-bold">${(totalAct/totalTrg*100).toFixed(2)}%</span>`;
+                hcHtml += `<tr style="background:#F9FAFB; font-weight:700;"><td colspan="2" class="text-right">GRAND TOTAL</td><td class="text-center">${totalTrg}</td><td class="text-center">${totalAct}</td><td class="text-center">${totAbs}</td><td class="text-center">${totRate}</td></tr>`;
+            }
+            document.getElementById('hc-summary-table').innerHTML = hcHtml + `</tbody>`;
+        }
+
+        if(document.getElementById('resigned-table')) {
+            let resHtml = `<thead><tr><th style="position:sticky; top:0; z-index:15;">ชื่อ-นามสกุล</th><th>ตำแหน่ง</th><th>รายละเอียด</th><th class="text-center">สังกัด</th><th class="text-center">วันที่สิ้นสุด</th></tr></thead><tbody>`;
+            let rList = d.resigned || [];
+            if (rList.length === 0) resHtml += `<tr><td colspan="5" class="text-center text-muted">ไม่พบประวัติพนักงานลาออกในวันนี้</td></tr>`;
+            else {
+                rList.sort((a, b) => (b.resignTs || 0) - (a.resignTs || 0));
+                rList.forEach(emp => {
+                    resHtml += `<tr>
+                        <td><b class="text-dark">${emp.name}</b> <span class="text-xs text-muted">(${emp.nickname})</span></td>
+                        <td class="text-muted">${emp.lv3}</td>
+                        <td class="font-bold">${emp.lv4}</td>
+                        <td class="text-center"><span style="background:var(--border-color); padding:4px 8px; border-radius:4px; font-size:11px;">${emp.bu}</span></td>
+                        <td class="text-center text-red font-bold">${emp.resignDateStr || '-'}</td>
+                    </tr>`;
+                });
+            }
+            document.getElementById('resigned-table').innerHTML = resHtml + `</tbody>`;
+        }
     } else {
         const matrixTable = document.getElementById('wf-matrix-table');
         if (matrixTable) matrixTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูลในช่วงที่เลือก</th></tr></thead>`;
@@ -1272,9 +1403,6 @@ function updateWorkforceUI() {
     }
 }
 
-// ------------------------------------------------------------
-// ⏱️ ON-TIME SECTION
-// ------------------------------------------------------------
 function updateOnTimeUI() {
     const valEl = document.getElementById('ontime-val');
     const updEl = document.getElementById('ontime-update');
@@ -1372,16 +1500,19 @@ function updateOnTimeUI() {
 
         const otTable = document.getElementById('ontime-detail-table');
         if (otTable) {
-            // 🛠️ เปลี่ยนเป็น:
-let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Period</th><th class="text-center">มูลค่ารวม (฿)</th><th class="text-center">จำนวนชิ้น</th><th class="text-center">สะสม (Accumulate)</th></tr></thead>`;
-let tbody = "<tbody>" + pLabels.slice().reverse().map(p => {
-    return `<tr>
-        <td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${p}</td>
-        <td class="text-center text-red font-bold">${fmtN(parseFloat(pMap[p].cost.toFixed(2)))}</td>
-        <td class="text-center">${fmtN(pMap[p].qty)}</td>
-        <td class="text-center text-purple font-bold">${fmtN(parseFloat(pMap[p].accumCost.toFixed(2)))}</td>
-    </tr>`;
-}).join('') + "</tbody>";
+            let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Period</th><th class="text-center">ภาพรวม</th><th class="text-center">PTGLG</th><th class="text-center">HUB</th></tr></thead>`;
+            let tbody = "<tbody>" + pLabels.slice().reverse().map(p => {
+                let pAvg = pMap[p].p.length ? pMap[p].p.reduce((a,b)=>a+b,0)/pMap[p].p.length : null;
+                let hAvg = pMap[p].h.length ? pMap[p].h.reduce((a,b)=>a+b,0)/pMap[p].h.length : null;
+                let _o = (pAvg !== null && hAvg !== null) ? (pAvg+hAvg)/2 : pAvg;
+                
+                const formatPct = (v) => {
+                    if (v === null || v === undefined) return '<span class="text-muted">-</span>';
+                    let clr = v >= 99 ? 'var(--brand-green)' : (v >= 95 ? 'var(--brand-yellow)' : 'var(--brand-red)');
+                    return `<span style="color:${clr}; font-weight:700;">${v.toFixed(2)}%</span>`;
+                };
+                return `<tr><td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${p}</td><td class="text-center">${formatPct(_o)}</td><td class="text-center">${formatPct(pAvg)}</td><td class="text-center">${formatPct(hAvg)}</td></tr>`;
+            }).join('') + "</tbody>";
             otTable.innerHTML = thead + tbody;
         }
     } else {
@@ -1440,7 +1571,7 @@ function updateClaimUI() {
 
     if (latestAvailable) {
         let displayCost = combinedData.reduce((sum, item) => sum + item.cost, 0);
-        if(valEl) valEl.innerText = fmtN(parseFloat(displayCost.toFixed(2))); // โชว์ยอดรวมของช่วงเวลาที่เลือก
+        if(valEl) valEl.innerText = fmtN(parseFloat(displayCost.toFixed(2))); 
         if(updEl) updEl.innerText = `Updated: ${getDisplayDate(latestAvailable.dateObj)}`;
         
         if (claimSummary) {
@@ -1456,7 +1587,7 @@ function updateClaimUI() {
             let pLabel = getPeriodLabel(i.dateObj, period);
             if(!pMap[pLabel]) pMap[pLabel] = { cost: 0, qty: 0, accumCost: 0 };
             pMap[pLabel].cost += i.cost; pMap[pLabel].qty += i.qty;
-            pMap[pLabel].accumCost = i.accumCost; // เอายอดสะสมของวันสุดท้ายในกรุ๊ปมา
+            pMap[pLabel].accumCost = i.accumCost;
         });
 
         let pLabels = Object.keys(pMap);
@@ -1506,13 +1637,12 @@ function updateInventoryUI() {
     const targetStart = new Date(dpStartVal).setHours(0, 0, 0, 0);
     const targetEnd = new Date(dpEndVal).setHours(23, 59, 59, 999);
     
-    // 1. ดึงข้อมูลประวัติทั้งหมดเพื่อทำ True Accumulate (YTD)
     let allData = [];
     Object.keys(globalData.inventory).forEach(mLabel => {
         let parts = mLabel.split('-');
         if (parts.length === 2) {
             let dObj = new Date(`${parts[0]} 1, 20${parts[1]}`);
-            if(dObj.getTime() <= targetEnd) { // กรองไม่ให้เกินวันสิ้นสุดที่เลือก
+            if(dObj.getTime() <= targetEnd) { 
                 let monthGroup = globalData.inventory[mLabel] || {};
                 let sumOnhand = 0, sumDiff = 0, count = 0;
                 let buDataMap = monthGroup.bu_data || {};
@@ -1531,7 +1661,6 @@ function updateInventoryUI() {
 
     allData.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
 
-    // 2. คำนวณสะสม
     let runningInvOnhand = 0;
     let runningInvDiff = 0;
     allData.forEach(item => {
@@ -1540,13 +1669,11 @@ function updateInventoryUI() {
         item.accumPct = runningInvOnhand > 0 ? Math.max(0, (1 - (runningInvDiff / runningInvOnhand)) * 100) : null;
     });
 
-    // 3. กรองข้อมูลเฉพาะช่วงเวลาที่เลือก (รวมวันสิ้นเดือน) สำหรับกราฟ/ตาราง
     let parsedData = allData.filter(i => {
         let dObjEnd = new Date(i.dateObj.getFullYear(), i.dateObj.getMonth() + 1, 0, 23, 59, 59).getTime();
         return dObjEnd >= targetStart && i.dateObj.getTime() <= targetEnd;
     });
 
-    // 🌟 FIX: ถ้าไม่มีข้อมูลในสัปดาห์ที่เลือก ให้ดึงเดือนล่าสุดมาแสดงที่ KPI Box เสมอ
     let latestAvailable = parsedData.length > 0 ? parsedData[parsedData.length-1] : (allData.length > 0 ? allData[allData.length-1] : null);
 
     if (latestAvailable) {
@@ -1580,7 +1707,7 @@ function updateInventoryUI() {
 
         const tableEl = document.getElementById('inv-detail-table');
         if (tableEl) {
-            let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Month</th><th class="text-center">% Overall</th><th class="text-center">% Accumulate</th></tr></thead>`;
+            let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Month</th><th class="text-center">% Overall</th><th class="text-center">% Accumulate (YTD)</th></tr></thead>`;
             let tbody = "<tbody>" + parsedData.slice().reverse().map(i => {
                 let clr = i.pct >= 99 ? 'var(--brand-green)' : 'var(--brand-red)';
                 let accumClr = (i.accumPct && i.accumPct >= 99) ? 'var(--brand-green)' : 'var(--brand-red)';
@@ -1599,9 +1726,6 @@ function updateInventoryUI() {
     }
 }
 
-// ------------------------------------------------------------
-// 🚚 TRANSPORT PERFORMANCE (DATE RANGE + PERIOD GROUPING + SLA/COST COMBO)
-// ------------------------------------------------------------
 function updateTransportUI() {
     let tbody = document.querySelector('#new-transport-table tbody');
     let dailyTbody = document.querySelector('#daily-transport-table tbody');
@@ -1869,9 +1993,6 @@ function updateTransportUI() {
 }
 document.getElementById('tp-metric-filter')?.addEventListener('change', updateTransportUI);
 
-// ------------------------------------------------------------
-// 🚀 LOCATION ACCURACY
-// ------------------------------------------------------------
 function renderLocationAccuracy() {
     const locTableEl = document.getElementById('loc-accuracy-table');
     const locBoxEl = document.getElementById('loc-analysis-box');
@@ -1891,10 +2012,7 @@ function renderLocationAccuracy() {
         }
     });
     parsedData.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
-    let validData = parsedData.filter(i => {
-    let dObjEnd = new Date(i.dateObj.getFullYear(), i.dateObj.getMonth() + 1, 0, 23, 59, 59).getTime();
-    return dObjEnd >= targetStart && i.dateObj.getTime() <= targetEnd;
-});
+    let validData = parsedData.filter(i => i.dateObj.getTime() >= targetStart && i.dateObj.getTime() <= targetEnd);
 
     if(validData.length === 0) return;
 
@@ -1969,9 +2087,6 @@ function renderLocationAccuracy() {
     }
 }
 
-// ------------------------------------------------------------
-// 🚀 PRODUCTIVITY SECTION
-// ------------------------------------------------------------
 function renderProductivitySection() {
     try {
         let pUsers = globalData.productivity || {};
@@ -2267,9 +2382,6 @@ async function saveTargets() {
     }
 }
 
-// ------------------------------------------------------------
-// 🚀 ALERT NOTIFICATION SYSTEM
-// ------------------------------------------------------------
 function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveDelay, delayDays, worstBU) {
     const alertBox = document.getElementById('smart-alerts-container');
     if (!alertBox) return;
