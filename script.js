@@ -755,6 +755,11 @@ async function initFulfillmentRealtime() {
                 });
                 
                 let pLabels = Object.keys(pMap);
+let runningClaim = 0;
+pLabels.forEach(p => {
+    runningClaim += pMap[p].cost;
+    pMap[p].accumCost = runningClaim;
+});
                 let tpDatasets = chartBUsArray.map((bu, i) => {
                     let colorIndex = allBUsArray.indexOf(bu) !== -1 ? allBUsArray.indexOf(bu) : i; 
                     return {
