@@ -1,21 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root { 
-    --bg-body: #F4F6F8; /* ปรับให้สว่างพรีเมียมขึ้นนิดหน่อย */
+    --bg-body: #F4F6F8;
     --bg-card: #FFFFFF; 
     --text-main: #1E293B; 
     --text-muted: #64748B;
     --text-dark: #0F172A; 
     --border-color: #E2E8F0;
-    /* ปรับเงาให้ดูนุ่มลึก มีมิติแบบแอปพรีเมียม */
     --shadow-card: 0 10px 25px -5px rgba(0, 138, 68, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
     
     /* 🎨 โทนสีหลักจากโลโก้ PT */
     --brand-blue: #0284C7; 
-    --brand-green: #009245; /* PT Dark Green */
-    --brand-light-green: #8CC63F; /* PT Light Green */
+    --brand-green: #009245; 
+    --brand-light-green: #8CC63F; 
     --brand-yellow: #F59E0B;
-    --brand-red: #ED1C24; /* PT Red */
+    --brand-red: #ED1C24; 
     --brand-purple: #8B5CF6; 
     --brand-teal: #0D9488;
 }
@@ -56,11 +55,11 @@ body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color
 .filter-group { display: flex; flex-direction: column; gap: 4px; }
 .filter-label { font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 0;}
 .filter-control { border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark); padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; font-family: inherit; outline: none; transition: all 0.2s; height: 34px; }
-.filter-control:focus, .filter-control:hover { border-color: var(--brand-green); box-shadow: 0 0 0 3px rgba(0, 146, 69, 0.15); } /* เปลี่ยน hover เป็นสีเขียว PT */
+.filter-control:focus, .filter-control:hover { border-color: var(--brand-green); box-shadow: 0 0 0 3px rgba(0, 146, 69, 0.15); } 
 .select-dropdown { display: flex; justify-content: space-between; align-items: center; cursor: pointer; min-width: 130px; }
 .dropdown-arrow { font-size: 9px; margin-left: 6px; color: var(--text-muted); }
 
-/* ปุ่มต่างๆ ปรับใช้โทนเขียว PT ไล่สีสวยๆ */
+/* ปุ่มต่างๆ ไล่สี PT Green */
 .btn-primary { background: linear-gradient(135deg, var(--brand-light-green) 0%, var(--brand-green) 100%); color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; height: 34px; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(0, 146, 69, 0.2); }
 .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0, 146, 69, 0.3); }
 .btn-outline { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-dark); padding: 6px 14px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 34px; transition: all 0.2s; }
@@ -75,19 +74,21 @@ body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color
 
 .dashboard-body { padding: 0 40px 40px 40px; max-width: 1440px; margin: 0 auto; }
 
-/* KPI Cards - ปรับ Gradient ให้เข้มและพรีเมียมขึ้น */
+/* =========================================
+   MAIN KPI CARDS (แถวบนสุดเท่านั้น) 
+========================================= */
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
 .wave-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
 .kpi-box { padding: 18px; border-radius: 16px; color: white; display: flex; flex-direction: column; box-shadow: var(--shadow-card); min-height: 110px; position: relative; overflow: hidden; }
-/* เพิ่มแสงสะท้อนเบาๆ ให้ Card */
 .kpi-box::before { content: ""; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%); transform: skewX(-20deg); transition: 0.5s; }
 .kpi-box:hover::before { left: 150%; }
 .min-h-110 { min-height: 100px; }
 
 .card-purple { background: linear-gradient(135deg, #9333EA 0%, #6B21A8 100%); }
-.card-green  { background: linear-gradient(135deg, var(--brand-light-green) 0%, var(--brand-green) 100%); } /* เขียว PT */
+.card-green  { background: linear-gradient(135deg, var(--brand-light-green) 0%, var(--brand-green) 100%); } 
 .card-blue   { background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%); }
-.card-red    { background: linear-gradient(135deg, var(--brand-red) 0%, #991B1B 100%); } /* แดง PT */
+.card-red    { background: linear-gradient(135deg, var(--brand-red) 0%, #991B1B 100%); } 
 .card-orange { background: linear-gradient(135deg, #F59E0B 0%, #B45309 100%); }
 .card-teal   { background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%); }
 
@@ -101,7 +102,50 @@ body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color
 .trend-badge { background: rgba(255,255,255,0.25); box-shadow: 0 1px 2px rgba(0,0,0,0.05); } .badge-glass { background: rgba(0,0,0,0.15); }
 .trend-note, .kpi-timestamp { font-size: 0.65rem; font-weight: 500; opacity: 0.9; }
 
-/* Cards & Layout */
+/* =========================================
+   SECONDARY KPI BOXES (กล่องย่อยตามหัวข้อ) 
+   ปรับให้ซอฟต์ลง พรีเมียม ไม่แย่งซีนแถวบน
+========================================= */
+.wave-kpi-grid .kpi-box {
+    background: var(--bg-card); 
+    color: var(--text-dark); 
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+
+.wave-kpi-grid .kpi-box::before { display: none; } /* ปิดเอฟเฟกต์แสงสะท้อน */
+.wave-kpi-grid .kpi-head { color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+
+/* ดักการใช้สีขาวจากฝั่ง JS ให้แสดงเป็นสีเทาเข้มอ่านง่ายขึ้น */
+.wave-kpi-grid .kpi-foot-col div, 
+.wave-kpi-grid .kpi-timestamp,
+.wave-kpi-grid .kpi-foot-col span { color: var(--text-muted) !important; text-shadow: none !important;}
+
+.wave-kpi-grid .trend-badge {
+    background: var(--bg-body) !important;
+    color: var(--text-dark) !important;
+    border: 1px solid var(--border-color);
+}
+
+/* เล่นขอบสีที่ด้านบน และให้ตัวเลขเป็นสีตามธีม */
+.wave-kpi-grid .card-purple { background: var(--bg-card); border-top: 4px solid #9333EA; }
+.wave-kpi-grid .card-purple .kpi-main-val { color: #9333EA; text-shadow: none;}
+
+.wave-kpi-grid .card-green { background: var(--bg-card); border-top: 4px solid var(--brand-green); }
+.wave-kpi-grid .card-green .kpi-main-val { color: var(--brand-green); text-shadow: none;}
+
+.wave-kpi-grid .card-blue { background: var(--bg-card); border-top: 4px solid var(--brand-blue); }
+.wave-kpi-grid .card-blue .kpi-main-val { color: var(--brand-blue); text-shadow: none;}
+
+.wave-kpi-grid .card-red { background: var(--bg-card); border-top: 4px solid var(--brand-red); }
+.wave-kpi-grid .card-red .kpi-main-val { color: var(--brand-red); text-shadow: none;}
+
+.wave-kpi-grid .card-orange { background: var(--bg-card); border-top: 4px solid var(--brand-yellow); }
+.wave-kpi-grid .card-orange .kpi-main-val { color: var(--brand-yellow); text-shadow: none;}
+
+/* =========================================
+   CARDS & LAYOUTS
+========================================= */
 .card { background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-card); padding: 24px; transition: transform 0.2s, box-shadow 0.2s; border: 1px solid rgba(0,0,0,0.02); }
 .card:hover { box-shadow: 0 14px 28px rgba(0,0,0,0.05), 0 10px 10px rgba(0,0,0,0.02); transform: translateY(-2px); }
 [data-theme="dark"] .card { border: 1px solid rgba(255,255,255,0.05); }
@@ -162,7 +206,7 @@ body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color
 /* Dropdowns & Modals */
 .dropdown-card { display: none; position: absolute; top: calc(100% + 8px); right: 0; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 999; padding: 10px; min-width: 180px; max-height: 260px; overflow-y: auto; }
 .dropdown-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 500; padding: 8px 12px; color: var(--text-dark); border-radius: 8px; margin: 0; transition: background 0.2s;}
-.dropdown-item:hover { background: var(--bg-body); color: var(--brand-green); } /* ให้ Hover เป็นสี PT */
+.dropdown-item:hover { background: var(--bg-body); color: var(--brand-green); }
 .dropdown-divider { height: 1px; background: var(--border-color); margin: 8px 0; }
 .checkbox-container { max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
 .btn-apply { background: linear-gradient(135deg, var(--brand-light-green) 0%, var(--brand-green) 100%); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; width: 100%; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0, 146, 69, 0.2);}
@@ -171,7 +215,6 @@ body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color
 /* Gradient Bars */
 .modern-bar-bg { background: #F1F5F9; border-radius: 12px; height: 10px; width: 100%; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.06); }
 [data-theme="dark"] .modern-bar-bg { background: #334155; }
-/* อัปเดตสี Gradient Bar ให้เป็นสี PT */
 .grad-fill-green { background: linear-gradient(90deg, var(--brand-light-green) 0%, var(--brand-green) 100%); height: 100%; border-radius: 12px; }
 .grad-fill-blue { background: linear-gradient(90deg, #60A5FA 0%, #2563EB 100%); height: 100%; border-radius: 12px; }
 .grad-fill-red { background: linear-gradient(90deg, #F87171 0%, var(--brand-red) 100%); height: 100%; border-radius: 12px; }
@@ -179,6 +222,7 @@ body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color
 
 @media (max-width: 1024px) { .grid-2-col { grid-template-columns: 1fr; } .wave-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 768px) { .top-nav { flex-direction: column; align-items: flex-start; gap: 12px; } .filter-card { justify-content: flex-start;} .grid-3-col { grid-template-columns: 1fr; } }
+
 /* =========================================
    HORIZONTAL COMPARISON TABLE
 ========================================= */
