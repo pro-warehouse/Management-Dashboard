@@ -415,3 +415,27 @@ body {
 .excel-grid td:first-child { position: sticky; left: 0; background: var(--bg-card); z-index: 10; box-shadow: inset -1px 0 0 var(--border-color); }
 .excel-grid th { top: 0; z-index: 15; }
 .excel-grid th:first-child { z-index: 25; }
+
+/* =========================================
+   5. STOCK TREND BADGES (ปุ่มแบบหุ้น)
+========================================= */
+.trend-up { background: rgba(16, 185, 129, 0.25) !important; color: #A7F3D0 !important; border: 1px solid rgba(16, 185, 129, 0.4) !important; }
+.trend-down { background: rgba(239, 68, 68, 0.25) !important; color: #FECACA !important; border: 1px solid rgba(239, 68, 68, 0.4) !important; }
+.trend-neutral { background: rgba(255, 255, 255, 0.2) !important; color: #F8FAFC !important; border: 1px solid rgba(255, 255, 255, 0.3) !important; }
+
+/* ย่อตัวหนังสือใน KPI ให้ดูคลีนขึ้น ไม่รก */
+.kpi-main-val { font-size: 1.7rem !important; letter-spacing: -0.5px; }
+.kpi-head span { font-size: 0.8rem !important; text-transform: uppercase; letter-spacing: 0.5px;}
+.kpi-sub-row span { font-size: 0.7rem !important; }
+
+/* =========================================
+   6. CLEAN WORKFORCE MATRIX TABLE
+========================================= */
+#wf-matrix-table th { background: #F8FAFC; color: #475569; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; }
+[data-theme="dark"] #wf-matrix-table th { background: #0F172A; color: #CBD5E1; }
+/* สร้างเส้นแบ่งแยกแบรนด์ให้ชัดเจน */
+.matrix-border-left { border-left: 2px solid #CBD5E1 !important; }
+[data-theme="dark"] .matrix-border-left { border-left: 2px solid #334155 !important; }
+/* ไฮไลต์คอลัมน์ Total */
+.matrix-total-col { background: #F1F5F9 !important; font-weight: 800 !important; color: var(--text-dark) !important; }
+[data-theme="dark"] .matrix-total-col { background: #1E293B !important; }
