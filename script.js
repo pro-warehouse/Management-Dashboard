@@ -6,15 +6,18 @@ let _loadProgress = 0;
 let _loadAnimFrame = null;
 
 // ==========================================
-// 🌟 1. STABLE DATE PARSING (ป้องกัน Timezone Bug 100%)
+// 🌟 1. SAFE DATE PARSER (ป้องกันบั๊ก Timezone)
 // ==========================================
-function parseDateLocal(str) {
+function safeParseDate(str) {
     if (!str) return new Date();
-    if (str.includes('-')) {
-        let parts = str.split('-'); // e.g. "2026-08-21"
-        return new Date(parts[0], parseInt(parts[1]) - 1, parts[2]);
-    }
-    return new Date(str);
+    let d = new Date(str);
+    if (!isNaN(d.getTime())) return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    
+    // Fallback สำหรับเบราว์เซอร์ที่แปลง Format เพี้ยน
+    let clean = str.replace(/-/g, ' ').replace(/\s+/g, ' ');
+    d = new Date(clean);
+    if (!isNaN(d.getTime())) return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return new Date();
 }
 
 function showToast(message, type = 'success', duration = 3000) {
@@ -283,9 +286,7 @@ function updateLoaderPct(targetPct, durationMs) {
     _loadAnimFrame = requestAnimationFrame(animate);
 }
 
-setInterval(() => {
-    initDashboard();
-}, 15 * 60 * 1000); 
+setInterval(() => { initDashboard(); }, 15 * 60 * 1000); 
 
 document.getElementById('theme-toggle')?.addEventListener('click', () => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -295,9 +296,6 @@ document.getElementById('theme-toggle')?.addEventListener('click', () => {
     Object.values(Chart.instances).forEach(chart => chart.update());
 });
 
-// ==========================================
-// 🌟 2. ROBUST EVENT LISTENERS FOR FILTERS
-// ==========================================
 document.addEventListener('click', (e) => {
     let buBtn = document.getElementById('bu-multi-select');
     let buMenu = document.getElementById('bu-dropdown-menu');
@@ -415,13 +413,6 @@ function populateGlobalBUFilters() {
             }
             refreshAllSections();
             initFulfillmentRealtime();
-        });
-
-        document.getElementById('bu-multi-select').addEventListener('click', (e) => {
-            e.stopPropagation();
-            let menu = document.getElementById('bu-dropdown-menu');
-            document.querySelectorAll('.dropdown-card').forEach(m => { if (m !== menu) m.style.display = 'none'; });
-            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
         });
     }
 }
@@ -568,7 +559,7 @@ async function saveDailyCapacity() {
     }
 }
 
-// === Productivity UPH Modal Functions ===
+// 🌟 UPH Modal Functions 🌟
 function openUphModal() {
     const modal = document.getElementById('uph-modal');
     if(!modal) return;
@@ -596,13 +587,60 @@ function applyUphCostInputs(dateStr) {
     if(document.getElementById('cost-days')) document.getElementById('cost-days').value = eff.cost_days || 26;
 }
 
+function getEffectiveUphCost(dateStr) {
+    if (!dateStr) return { trg_all: 150, trg_full: 180, trg_half: 120, trg_ea: 80, cost_salary: 400, cost_days: 26 };
+    let ref = safeParseDate(dateStr).getTime();
+    let cand = Object.keys(globalUphCost)
+        .filter(d => safeParseDate(d).getTime() <= ref)
+        .sort((a,b) => safeParseDate(b).getTime() - safeParseDate(a).getTime());
+    
+    if (cand.length > 0) return globalUphCost[cand[0]];
+    return { trg_all: 150, trg_full: 180, trg_half: 120, trg_ea: 80, cost_salary: 400, cost_days: 26 };
+}
+
+async function saveTargets() {
+    const targetDate = document.getElementById('uph-target-date')?.value
+        || document.getElementById('date-end')?.value
+        || new Date().toISOString().split('T')[0];
+    const rec = {
+        target_date: targetDate,
+        trg_all:  parseFloat(document.getElementById('trg-all')?.value)  || 0,
+        trg_full: parseFloat(document.getElementById('trg-full')?.value) || 0,
+        trg_half: parseFloat(document.getElementById('trg-half')?.value) || 0,
+        trg_ea:   parseFloat(document.getElementById('trg-ea')?.value)   || 0,
+        cost_salary: parseFloat(document.getElementById('cost-salary')?.value) || 0,
+        cost_days:   parseFloat(document.getElementById('cost-days')?.value)   || 0
+    };
+    const btn = document.querySelector('#uph-modal button.btn-primary');
+    let orig = ''; if (btn) { orig = btn.innerHTML; btn.disabled = true; btn.innerHTML = '⏳ กำลังบันทึก...'; }
+    showToast('⏳ กำลังบันทึก UPH Target / Cost...', 'info', 0);
+    try {
+        const resp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fn: 'apiSaveUphCostBulk', args: [[rec]] })
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const j = await resp.json();
+        if (j.success === false) throw new Error(j.message || 'บันทึกไม่สำเร็จ');
+        
+        globalUphCost[targetDate] = { ...rec };
+        showToast(`✅ บันทึก UPH Target / Cost สำเร็จ!`, 'success');
+        closeUphModal(); 
+        renderProductivitySection(); 
+    } catch (err) {
+        showToast('❌ บันทึกไม่สำเร็จ: ' + err.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = orig || '💾 บันทึกข้อมูลไปยัง Sheet'; }
+    }
+}
+
 function hasEffectiveCap(dateStr, bu) {
-    if (!bu || !dateStr) return false; let ref = new Date(dateStr).getTime();
-    return Object.keys(globalCapacities).some(d => globalCapacities[d] && globalCapacities[d][bu] != null && new Date(d).getTime() <= ref);
+    if (!bu || !dateStr) return false; let ref = safeParseDate(dateStr).getTime();
+    return Object.keys(globalCapacities).some(d => globalCapacities[d] && globalCapacities[d][bu] != null && safeParseDate(d).getTime() <= ref);
 }
 function getEffectiveCap(dateStr, bu) {
-    if (!bu || !dateStr) return DEFAULT_CAPACITY; let ref = new Date(dateStr).getTime();
-    let cand = Object.keys(globalCapacities).filter(d => globalCapacities[d] && globalCapacities[d][bu] != null && new Date(d).getTime() <= ref).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
+    if (!bu || !dateStr) return DEFAULT_CAPACITY; let ref = safeParseDate(dateStr).getTime();
+    let cand = Object.keys(globalCapacities).filter(d => globalCapacities[d] && globalCapacities[d][bu] != null && safeParseDate(d).getTime() <= ref).sort((a,b) => safeParseDate(b).getTime() - safeParseDate(a).getTime());
     return cand.length > 0 ? globalCapacities[cand[0]][bu] : DEFAULT_CAPACITY;
 }
 
@@ -614,24 +652,20 @@ async function initFulfillmentRealtime() {
         let bt = parseFloat(bItem?.ordTotal || 0), bf = parseFloat(bItem?.ordFull || 0);
         let wt = parseFloat(wItem?.ordTotal || 0), wf = parseFloat(wItem?.ordFull || 0);
         let ft = parseFloat(fItem?.ordTotal || 0), ff = parseFloat(fItem?.ordFull || 0);
-        
         let maxTotal = Math.max(bt, wt, ft);
         if (maxTotal === 0) return { tot: 0, full: 0 };
-        
         let validSources = [];
         if (bt >= maxTotal * 0.9) validSources.push({ tot: bt, full: bf });
         if (wt >= maxTotal * 0.9) validSources.push({ tot: wt, full: wf });
         if (ft >= maxTotal * 0.9) validSources.push({ tot: ft, full: ff });
-        
         validSources.sort((a, b) => b.full - a.full);
         return { tot: validSources[0].tot, full: validSources[0].full };
     };
     
-    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
     const dpStartVal = document.getElementById('date-start').value;
     const dpEndVal = document.getElementById('date-end').value;
-    const targetStartObj = parseDateLocal(dpStartVal);
-    const targetEndObj = parseDateLocal(dpEndVal);
+    const targetStartObj = safeParseDate(dpStartVal);
+    const targetEndObj = safeParseDate(dpEndVal);
     const targetStart = targetStartObj.setHours(0, 0, 0, 0);
     const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     const period = document.getElementById('global-period').value;
@@ -649,7 +683,7 @@ async function initFulfillmentRealtime() {
             if (result.success && result.data) bqDataList = result.data;
         }
         
-        let dObj = parseDateLocal(dpEndVal); dObj.setDate(dObj.getDate() - 90);
+        let dObj = safeParseDate(dpEndVal); dObj.setDate(dObj.getDate() - 90);
         const startDateCap = dObj.toISOString().split('T')[0];
         const capResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -661,6 +695,20 @@ async function initFulfillmentRealtime() {
                 capJson.data.forEach(row => {
                     if (!globalCapacities[row.target_date]) globalCapacities[row.target_date] = {};
                     globalCapacities[row.target_date][row.owner] = row.capacity;
+                });
+            }
+        }
+        
+        // 🌟 ดึงข้อมูล UPH Cost 🌟
+        const uphResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fn: 'apiGetUphCost', args: [startDateCap, dpEndVal] }) 
+        });
+        if (uphResp.ok) {
+            const uphJson = await uphResp.json();
+            if (uphJson.success && uphJson.data) {
+                uphJson.data.forEach(row => {
+                    globalUphCost[row.target_date] = row;
                 });
             }
         }
@@ -731,14 +779,14 @@ async function initFulfillmentRealtime() {
         });
 
         delete unifiedDatesMap[""];
-        let sortedDates = Object.keys(unifiedDatesMap).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
+        let sortedDates = Object.keys(unifiedDatesMap).sort((a,b) => safeParseDate(b).getTime() - safeParseDate(a).getTime());
 
         let htmlTable = ``;
         let buNamesSet = new Set();
         let chartDataMap = {};
 
         let validChartDates = sortedDates.filter(d => {
-            let t = new Date(d).getTime();
+            let t = safeParseDate(d).getTime();
             return t >= targetStart && t <= targetEnd;
         }).reverse(); 
 
@@ -871,7 +919,7 @@ async function initFulfillmentRealtime() {
         
         let pMap = {};
         validChartDates.forEach(dStr => {
-            let pLabel = getPeriodLabel(new Date(dStr), period);
+            let pLabel = getPeriodLabel(safeParseDate(dStr), period);
             if(!pMap[pLabel]) pMap[pLabel] = { req:0, alloc:0, ship:0, ordTotal:0, ordFull:0, buReq:{} };
             
             let dData = chartDataMap[dStr];
@@ -901,12 +949,12 @@ async function initFulfillmentRealtime() {
             document.getElementById('ffm-orders-update').innerText = `Updated: ${latestPLabel || '--'}`;
         }
 
+        // 🌟 แก้ไข: วนหาข้อมูล FFM Rate ของวันล่าสุดที่มีการส่งของจริงๆ (Ship > 0)
         let latestShipDateStr = null, prevShipDateStr = null;
         let revDates = [...validChartDates].reverse();
         for (let d of revDates) {
             let s = chartDataMap[d]?.ship || 0;
-            let r = chartDataMap[d]?.req || 0;
-            if (s > 0 || r > 0) { 
+            if (s > 0) { 
                 if (!latestShipDateStr) latestShipDateStr = d; 
                 else if (!prevShipDateStr) { prevShipDateStr = d; break; } 
             }
@@ -1052,10 +1100,10 @@ async function initFulfillmentRealtime() {
             
             let diffDays = 0; let activeDateStr = "--";
             if (latestD) { 
-                let dObj = new Date(latestD);
+                let dObj = safeParseDate(latestD);
                 activeDateStr = isNaN(dObj.getTime()) ? latestD : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`; 
                 let todayD = new Date(); todayD.setHours(0,0,0,0); 
-                let workDMid = new Date(latestD); workDMid.setHours(0,0,0,0); 
+                let workDMid = safeParseDate(latestD); workDMid.setHours(0,0,0,0); 
                 diffDays = Math.floor((todayD - workDMid) / (1000 * 60 * 60 * 24)); 
             }
 
@@ -1071,7 +1119,7 @@ async function initFulfillmentRealtime() {
                 
                 let waveStats = { total_orders: 0, late_pick_orders: 0, late_load_orders: 0, max_pick_delay_mins: 0, max_load_delay_mins: 0, min_pick_early_mins: null, min_load_early_mins: null, picked_orders: 0, shipped_orders: 0 };
                 try {
-                    let queryDate = latestD ? new Date(latestD).toISOString().split('T')[0] : "";
+                    let queryDate = latestD ? safeParseDate(latestD).toISOString().split('T')[0] : "";
                     const waveResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fn: 'apiGetWaveMonitoring', args: [queryDate, queryDate] })
                     });
@@ -1187,7 +1235,7 @@ async function initFulfillmentRealtime() {
                         let tbody = "<tbody>";
                         
                         [...validChartDates].reverse().forEach(dStr => {
-                            let dObj = new Date(dStr);
+                            let dObj = safeParseDate(dStr);
                             let dispDate = isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
                             
                             let tr = `<tr><td class="text-center font-bold" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${dispDate}</td>`;
@@ -1236,16 +1284,16 @@ function updateWorkforceUI() {
         return;
     }
     
-    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
-    const targetStartObj = parseDateLocal(document.getElementById('date-start').value);
-    const targetEndObj = parseDateLocal(document.getElementById('date-end').value);
+    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน safeParseDate ที่กันบัค Timezone แล้ว 🌟
+    const targetStartObj = safeParseDate(document.getElementById('date-start').value);
+    const targetEndObj = safeParseDate(document.getElementById('date-end').value);
     const targetStart = targetStartObj.setHours(0, 0, 0, 0);
     const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     
-    let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(getStandardDate(a)).getTime() - new Date(getStandardDate(b)).getTime());
-    let validKeys = wfKeys.filter(k => { let t = new Date(getStandardDate(k)).getTime(); return t >= targetStart && t <= targetEnd; });
+    let wfKeys = Object.keys(globalData.workforce).sort((a,b) => safeParseDate(a).getTime() - safeParseDate(b).getTime());
+    let validKeys = wfKeys.filter(k => { let t = safeParseDate(k).getTime(); return t >= targetStart && t <= targetEnd; });
     
-    let displayKey = validKeys.length > 0 ? validKeys[validKeys.length-1] : wfKeys.find(k => new Date(getStandardDate(k)).getTime() <= targetEnd);
+    let displayKey = validKeys.length > 0 ? validKeys[validKeys.length-1] : wfKeys.find(k => safeParseDate(k).getTime() <= targetEnd);
     let prevKey = wfKeys[wfKeys.indexOf(displayKey) - 1]; 
 
     const calcTotal = (dObj) => {
@@ -1302,7 +1350,7 @@ function updateWorkforceUI() {
 
         let pMap = {};
         chartKeys.forEach(k => {
-            let pLabel = getPeriodLabel(new Date(getStandardDate(k)), period);
+            let pLabel = getPeriodLabel(safeParseDate(k), period);
             if(!pMap[pLabel]) pMap[pLabel] = {};
             affList.forEach(aff => {
                 let m = globalData.workforce[k]?.matrix?.[aff]; 
@@ -1498,8 +1546,8 @@ function updateOnTimeUI() {
         return;
     }
     
-    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
-    const targetEndObj = parseDateLocal(document.getElementById('date-end').value);
+    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน safeParseDate ที่กันบัค Timezone แล้ว 🌟
+    const targetEndObj = safeParseDate(document.getElementById('date-end').value);
     const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
     
@@ -1611,8 +1659,8 @@ function updateClaimUI() {
         return;
     }
 
-    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
-    const targetEndObj = parseDateLocal(document.getElementById('date-end').value);
+    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน safeParseDate ที่กันบัค Timezone แล้ว 🌟
+    const targetEndObj = safeParseDate(document.getElementById('date-end').value);
     const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
     const targetMonth = targetEndObj.getMonth();
@@ -1633,6 +1681,7 @@ function updateClaimUI() {
                     let _qty = typeof buData === 'object' ? (buData.qty||0) : 0;
                     cTotalCost += _cost;
                     cTotalQty += _qty;
+                    // 🌟 FIX: ใช้ dKey แทน dStr เพื่อป้องกัน Error
                     if(dObj.getTime() >= targetStartMTD && (_cost > 0 || _qty > 0)) {
                         tableRecords.push({ date: formatShortDate(dKey), owner: bu, cost: _cost, qty: _qty, ts: dObj.getTime() });
                     }
@@ -1715,8 +1764,8 @@ function updateInventoryUI() {
         return;
     }
 
-    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
-    const targetEndObj = parseDateLocal(document.getElementById('date-end').value);
+    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน safeParseDate ที่กันบัค Timezone แล้ว 🌟
+    const targetEndObj = safeParseDate(document.getElementById('date-end').value);
     const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
     const ownerFilter = document.getElementById('inv-owner-filter')?.value || 'ALL';
@@ -1813,8 +1862,8 @@ function renderLocationAccuracy() {
     const locBoxEl = document.getElementById('loc-analysis-box');
     if(!locTableEl || !locBoxEl || !globalData.inventory || Object.keys(globalData.inventory).length === 0) return;
 
-    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
-    const targetEndObj = parseDateLocal(document.getElementById('date-end').value);
+    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน safeParseDate ที่กันบัค Timezone แล้ว 🌟
+    const targetEndObj = safeParseDate(document.getElementById('date-end').value);
     let targetM = targetEndObj.getMonth();
     let targetY = targetEndObj.getFullYear().toString().substring(2);
     let mLabelReq = shortMonths[targetM] + "-" + targetY; // e.g., "Aug-26"
@@ -1902,16 +1951,16 @@ function updateTransportUI() {
         return;
     }
     
-    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
-    const targetStartObj = parseDateLocal(document.getElementById('date-start').value);
-    const targetEndObj = parseDateLocal(document.getElementById('date-end').value);
+    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน safeParseDate ที่กันบัค Timezone แล้ว 🌟
+    const targetStartObj = safeParseDate(document.getElementById('date-start').value);
+    const targetEndObj = safeParseDate(document.getElementById('date-end').value);
     const targetStart = targetStartObj.setHours(0, 0, 0, 0);
     const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     const period = document.getElementById('global-period').value;
     
     let validDates = Object.keys(globalData.transport).filter(k => {
-        let dTime = new Date(k).getTime(); return !isNaN(dTime) && dTime >= targetStart && dTime <= targetEnd;
-    }).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
+        let dTime = safeParseDate(k).getTime(); return !isNaN(dTime) && dTime >= targetStart && dTime <= targetEnd;
+    }).sort((a,b) => safeParseDate(b).getTime() - safeParseDate(a).getTime());
 
     if (validDates.length === 0) {
         document.getElementById('tp-kpi-total').innerText = "0"; document.getElementById('tp-kpi-success').innerText = "0"; document.getElementById('tp-kpi-sla').innerText = "0"; document.getElementById('tp-kpi-cost').innerText = "0";
@@ -1928,7 +1977,7 @@ function updateTransportUI() {
     let groupedByPeriod = {};
     
     validDates.forEach(dateKey => {
-        let dObj = new Date(dateKey);
+        let dObj = safeParseDate(dateKey);
         let pLabel = getPeriodLabel(dObj, period);
         let dayData = globalData.transport[dateKey];
         
@@ -2154,9 +2203,17 @@ function renderProductivitySection() {
         let pZones = globalData.prod_zone || {};
         let uMap = globalData.prod_users_map || {};
 
-        // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
-        const targetStartObj = parseDateLocal(document.getElementById('date-start').value);
-        const targetEndObj = parseDateLocal(document.getElementById('date-end').value);
+        if (Object.keys(pUsers).length === 0) {
+            let msg = `<tr><td colspan="100%" class="text-center text-muted" style="padding:30px;">ไม่มีข้อมูล Productivity ในระบบ</td></tr>`;
+            if(document.getElementById('prod-area-table')) document.getElementById('prod-area-table').innerHTML = msg;
+            if(document.getElementById('prod-user-table')) document.getElementById('prod-user-table').innerHTML = msg;
+            if(document.getElementById('prod-overall-table')) document.getElementById('prod-overall-table').innerHTML = msg;
+            return;
+        }
+
+        // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน safeParseDate ที่กันบัค Timezone แล้ว 🌟
+        const targetStartObj = safeParseDate(document.getElementById('date-start').value);
+        const targetEndObj = safeParseDate(document.getElementById('date-end').value);
         const targetStart = targetStartObj.setHours(0, 0, 0, 0);
         const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
         
@@ -2164,7 +2221,6 @@ function renderProductivitySection() {
         let selectedArea = areaFilterEl ? areaFilterEl.value : 'ALL';
         let period = document.getElementById('global-period').value;
 
-        // ดัก Event Listener ให้กับ Area Filter หากยังไม่ได้ผูกไว้
         if (areaFilterEl && !areaFilterEl.hasAttribute('data-bound')) {
             areaFilterEl.addEventListener('change', renderProductivitySection);
             areaFilterEl.setAttribute('data-bound', 'true');
@@ -2176,13 +2232,12 @@ function renderProductivitySection() {
 
         let validDates = Array.from(activeDates)
             .map(dKey => {
-                let d = new Date(getStandardDate(dKey));
+                let d = safeParseDate(dKey);
                 return { key: dKey, time: d.getTime(), dObj: d };
             })
             .filter(item => !isNaN(item.time) && item.time >= targetStart && item.time <= targetEnd)
             .sort((a,b) => a.time - b.time);
 
-        // 🌟 สร้าง Fallback UI กรณีไม่มีข้อมูลช่วงที่เลือก 🌟
         if(validDates.length === 0) {
             let msg = `<tr><td colspan="100%" class="text-center text-muted" style="padding:30px;">ไม่มีข้อมูลในช่วงเวลาที่เลือก</td></tr>`;
             if(document.getElementById('prod-area-table')) document.getElementById('prod-area-table').innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูล</th></tr></thead><tbody>${msg}</tbody>`;
