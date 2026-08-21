@@ -1129,24 +1129,19 @@ function updateWorkforceUI() {
     const targetEnd = new Date(dpEndVal).setHours(23, 59, 59, 999);
     
     let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
+    
+    // หา Key สำหรับแสดงกราฟ/ตาราง (เฉพาะช่วงที่เลือก)
     let validKeys = wfKeys.filter(k => {
         let t = new Date(getStandardDate(k)).getTime();
         return t >= targetStart && t <= targetEnd;
     });
-    
-    if (validKeys.length > 0) {
-        let tKey = validKeys[0];
-        let d = globalData.workforce[tKey];
-        let opsTotal = 0;
 
-        let dynamicTeamsSet = new Set();
-        Object.values(globalData.workforce).forEach(day => {
-            Object.values(day.matrix || {}).forEach(aff => {
-                Object.values(aff).forEach(roleObj => { Object.keys(roleObj).forEach(t => dynamicTeamsSet.add(t)); });
-            });
-        });
-        let dynamicTeams = Array.from(dynamicTeamsSet).filter(t => t && t !== "N/A").sort();
-        if (dynamicTeams.length === 0) dynamicTeams = ["A", "B", "C"]; 
+    // 🌟 FIX: หา Key สำหรับโชว์บนกล่อง KPI หลัก (ถ้า Filter ไม่มีข้อมูล ให้ดึงข้อมูลล่าสุด)
+    let displayKey = validKeys.length > 0 ? validKeys[0] : wfKeys.find(k => new Date(getStandardDate(k)).getTime() <= targetEnd);
+    
+    if (displayKey) {
+        let d = globalData.workforce[displayKey];
+        let opsTotal = 0;
 
         const calcTotal = (dataObj) => {
             let sum = 0;
@@ -1160,7 +1155,7 @@ function updateWorkforceUI() {
 
         opsTotal = calcTotal(d);
         if (totalEl) totalEl.innerText = fmtN(opsTotal);
-        if (updEl) updEl.innerText = `Updated: ${getDisplayDate(tKey)}`;
+        if (updEl) updEl.innerText = `Updated: ${getDisplayDate(displayKey)}`;
 
         if (d.nationality) {
             let nT = 0, nF = 0;
@@ -1172,7 +1167,22 @@ function updateWorkforceUI() {
             if (document.getElementById('wf-thai')) document.getElementById('wf-thai').innerText = fmtN(nT);
             if (document.getElementById('wf-foreign')) document.getElementById('wf-foreign').innerText = fmtN(nF);
         }
+    } else {
+        if(totalEl) totalEl.innerText = "0";
+        if(updEl) updEl.innerText = "Updated: --";
+    }
 
+    // --- ส่วนแสดงผลกราฟและตารางยังคงยึดตาม Filter ---
+    let dynamicTeamsSet = new Set();
+    Object.values(globalData.workforce).forEach(day => {
+        Object.values(day.matrix || {}).forEach(aff => {
+            Object.values(aff).forEach(roleObj => { Object.keys(roleObj).forEach(t => dynamicTeamsSet.add(t)); });
+        });
+    });
+    let dynamicTeams = Array.from(dynamicTeamsSet).filter(t => t && t !== "N/A").sort();
+    if (dynamicTeams.length === 0) dynamicTeams = ["A", "B", "C"]; 
+
+    if (validKeys.length > 0) {
         let chartKeys = validKeys.slice(0,7).reverse();
         let affSet = new Set();
         chartKeys.forEach(k => Object.keys(globalData.workforce[k]?.matrix || {}).forEach(aff => {
@@ -1188,12 +1198,11 @@ function updateWorkforceUI() {
             affList.forEach(aff => {
                 let m = globalData.workforce[k]?.matrix?.[aff]; 
                 let sum=0; if(m) Object.keys(m).forEach(r => Object.values(m[r]).forEach(v => sum+=v));
-                pMap[pLabel][aff] = Math.max(pMap[pLabel][aff]||0, sum); // For aggregate, taking max HC is safer than sum
+                pMap[pLabel][aff] = Math.max(pMap[pLabel][aff]||0, sum);
             });
         });
         
         let pLabels = Object.keys(pMap);
-
         let datasets = affList.map((aff, i) => ({
             label: aff,
             data: pLabels.map(p => pMap[p][aff]),
@@ -1208,7 +1217,9 @@ function updateWorkforceUI() {
         }
 
         const matrixTable = document.getElementById('wf-matrix-table');
-        if (matrixTable) {
+        if (matrixTable && displayKey) {
+            let d = globalData.workforce[displayKey];
+            let opsTotal = parseInt(document.getElementById('headcount-total').innerText.replace(/,/g, '')) || 0;
             let affiliations = Object.keys(d.matrix || {}).sort();
             if (!window.selectedBUs.includes('ALL')) affiliations = affiliations.filter(a => window.selectedBUs.includes(a));
             
@@ -1243,101 +1254,10 @@ function updateWorkforceUI() {
                 matrixTable.innerHTML = headerHtml + bodyHtml + "</tbody>";
             }
         }
-
-        // Attendance Table
-        const attBody = document.getElementById('daily-attendance-body');
-        const attHead = document.getElementById('daily-attendance-head');
-        if (attHead) {
-            let h = `<tr><th rowspan="2" style="position:sticky; left:0; z-index:15; min-width:120px;">DATE / DEPT.</th><th rowspan="2">TARGET</th><th rowspan="2">ACTUAL</th><th rowspan="2">ABSENT</th><th rowspan="2">RATE</th>`;
-            dynamicTeams.forEach(t => { h += `<th colspan="4" class="team-divider">Team ${t}</th>`; });
-            h += `</tr><tr>`;
-            dynamicTeams.forEach(() => { h += `<th class="team-divider">TRG</th><th>ACT</th><th>ABS</th><th>%</th>`; });
-            h += `</tr>`;
-            attHead.innerHTML = h;
-        }
-        
-        let excelHtml = "";
-        const tableRows = [ { key: 'Pick', label: 'Pick' }, { key: 'RT', label: 'RT' }, { key: 'QCQA', label: 'QC / QA' }, { key: 'Grouping', label: 'Grouping' }, { key: 'Putaway', label: 'Put-away' }, { key: 'Receive', label: 'Receive' } ];
-        
-        validKeys.slice(0, 14).forEach(dateKey => {
-            const data = globalData.workforce[dateKey];
-            excelHtml += `<tr><td colspan="${5 + (dynamicTeams.length * 4)}" style="background:var(--bg-body); font-weight:700;">Date: ${getDisplayDate(dateKey)}</td></tr>`;
-            
-            tableRows.forEach(r => {
-                let act = 0, trgTot = 0;
-                if (r.key === 'QCQA') {
-                    act = (data.roles?.QC || 0) + (data.roles?.QA || 0); trgTot = (data.targets?.QC || 0) + (data.targets?.QA || 0);
-                } else { act = data.roles?.[r.key] || 0; trgTot = data.targets?.[r.key] || 0; }
-
-                const calcAbs = (a, t) => (t===0&&a===0) ? '-' : (a-t<0 ? `<span class="text-red font-bold">${a-t}</span>` : a-t);
-                const calcRate = (a, t) => t===0 ? '-' : `<span class="${(a/t*100)<95?'text-red':'text-green'} font-bold">${(a/t*100).toFixed(2)}%</span>`;
-
-                let rowHtml = `<tr>
-                    <td style="position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${r.label}</td>
-                    <td>${trgTot>0?trgTot:'-'}</td><td>${act>0?act:'-'}</td><td>${calcAbs(act, trgTot)}</td><td>${calcRate(act, trgTot)}</td>`;
-                
-                dynamicTeams.forEach(t => {
-                    let tTrg = 0, tAct = 0;
-                    if (r.key === 'QCQA') {
-                        tAct = (data.roleByTeam?.QC?.[t] || 0) + (data.roleByTeam?.QA?.[t] || 0); tTrg = (data.targetByTeam?.QC?.[t] || 0) + (data.targetByTeam?.QA?.[t] || 0);
-                    } else {
-                        tAct = data.roleByTeam?.[r.key]?.[t] || 0; tTrg = data.targetByTeam?.[r.key]?.[t] || 0;
-                    }
-                    rowHtml += `<td class="team-divider">${tTrg>0?tTrg:'-'}</td><td>${tAct>0?tAct:'-'}</td><td>${calcAbs(tAct, tTrg)}</td><td>${calcRate(tAct, tTrg)}</td>`;
-                });
-                excelHtml += rowHtml + `</tr>`;
-            });
-        });
-        if(attBody) attBody.innerHTML = excelHtml !== "" ? excelHtml : `<tr><td colspan="100%" class="text-center text-muted">ไม่มีข้อมูลในช่วงที่เลือก</td></tr>`;
-
-        // HC Summary / Resigned
-        if(document.getElementById('hc-summary-table')) {
-            let hcHtml = `<thead><tr><th style="position:sticky; top:0; z-index:15;">HC Type</th><th style="position:sticky; top:0; z-index:15;">Detail</th><th class="text-center">Target</th><th class="text-center">Actual</th><th class="text-center">Absent</th><th class="text-center">% Rate</th></tr></thead><tbody>`;
-            let groupedHC = {};
-            (d.hc_summary_list || []).forEach(item => {
-                let key = `${item.lv3}|${item.lv4}`;
-                if (!groupedHC[key]) groupedHC[key] = { target: 0, actual: 0, lv3: item.lv3, lv4: item.lv4 };
-                if (item.status !== "" && item.status !== "H") groupedHC[key].target++;
-                if (["R","C","V"].includes(item.status)) groupedHC[key].actual++;
-            });
-            let totalTrg = 0, totalAct = 0;
-            if (Object.keys(groupedHC).length === 0) hcHtml += `<tr><td colspan="6" class="text-center text-muted">ไม่มีข้อมูลพนักงานที่เริ่มงานแล้ว</td></tr>`;
-            else {
-                Object.keys(groupedHC).sort().forEach(k => {
-                    let g = groupedHC[k];
-                    let abs = g.target > g.actual ? g.target - g.actual : 0;
-                    let rate = g.target === 0 ? '-' : `<span class="${(g.actual/g.target*100)<95?'text-red':'text-green'} font-bold">${(g.actual/g.target*100).toFixed(2)}%</span>`;
-                    totalTrg += g.target; totalAct += g.actual;
-                    hcHtml += `<tr><td>${g.lv3}</td><td>${g.lv4}</td><td class="text-center">${g.target>0?g.target:'-'}</td><td class="text-center">${g.actual>0?g.actual:'-'}</td><td class="text-center">${abs>0?abs:'-'}</td><td class="text-center">${rate}</td></tr>`;
-                });
-                let totAbs = totalTrg > totalAct ? totalTrg - totalAct : 0;
-                let totRate = totalTrg === 0 ? '-' : `<span class="${(totalAct/totalTrg*100)<95?'text-red':'text-green'} font-bold">${(totalAct/totalTrg*100).toFixed(2)}%</span>`;
-                hcHtml += `<tr style="background:#F9FAFB; font-weight:700;"><td colspan="2" class="text-right">GRAND TOTAL</td><td class="text-center">${totalTrg}</td><td class="text-center">${totalAct}</td><td class="text-center">${totAbs}</td><td class="text-center">${totRate}</td></tr>`;
-            }
-            document.getElementById('hc-summary-table').innerHTML = hcHtml + `</tbody>`;
-        }
-
-        if(document.getElementById('resigned-table')) {
-            let resHtml = `<thead><tr><th style="position:sticky; top:0; z-index:15;">ชื่อ-นามสกุล</th><th>ตำแหน่ง</th><th>รายละเอียด</th><th class="text-center">สังกัด</th><th class="text-center">วันที่สิ้นสุด</th></tr></thead><tbody>`;
-            let rList = d.resigned || [];
-            if (rList.length === 0) resHtml += `<tr><td colspan="5" class="text-center text-muted">ไม่พบประวัติพนักงานลาออกในวันนี้</td></tr>`;
-            else {
-                rList.sort((a, b) => (b.resignTs || 0) - (a.resignTs || 0));
-                rList.forEach(emp => {
-                    resHtml += `<tr>
-                        <td><b class="text-dark">${emp.name}</b> <span class="text-xs text-muted">(${emp.nickname})</span></td>
-                        <td class="text-muted">${emp.lv3}</td>
-                        <td class="font-bold">${emp.lv4}</td>
-                        <td class="text-center"><span style="background:var(--border-color); padding:4px 8px; border-radius:4px; font-size:11px;">${emp.bu}</span></td>
-                        <td class="text-center text-red font-bold">${emp.resignDateStr || '-'}</td>
-                    </tr>`;
-                });
-            }
-            document.getElementById('resigned-table').innerHTML = resHtml + `</tbody>`;
-        }
     } else {
-        if(totalEl) totalEl.innerText = "0";
-        if(updEl) updEl.innerText = "Updated: --";
+        const matrixTable = document.getElementById('wf-matrix-table');
+        if (matrixTable) matrixTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูลในช่วงที่เลือก</th></tr></thead>`;
+        if(workforceChartInstance) { workforceChartInstance.data.labels = []; workforceChartInstance.update(); }
     }
 }
 
@@ -1462,9 +1382,6 @@ let tbody = "<tbody>" + pLabels.slice().reverse().map(p => {
     }
 }
 
-// ------------------------------------------------------------
-// 💰 CLAIM SECTION
-// ------------------------------------------------------------
 function updateClaimUI() {
     const valEl = document.getElementById('claim-val');
     const updEl = document.getElementById('claim-update');
@@ -1473,7 +1390,7 @@ function updateClaimUI() {
     if (!globalData.claims || Object.keys(globalData.claims).length === 0) {
         if(valEl) valEl.innerText = "0";
         if(updEl) updEl.innerText = "Updated: --";
-        if(claimSummary) { claimSummary.innerHTML = "💡 ไม่มียอดเคลมในช่วงเวลาที่เลือก (0 บาท)"; claimSummary.className = 'info-alert alert-green'; }
+        if(claimSummary) { claimSummary.innerHTML = "💡 ไม่มียอดเคลม (0 บาท)"; claimSummary.className = 'info-alert alert-green'; }
         return;
     }
 
@@ -1482,10 +1399,10 @@ function updateClaimUI() {
     const targetStart = new Date(dpStartVal).setHours(0, 0, 0, 0);
     const targetEnd = new Date(dpEndVal).setHours(23, 59, 59, 999);
     
-    let combinedData = [];
+    let allDatesData = [];
     Object.keys(globalData.claims).forEach(dKey => {
         let dObj = new Date(getStandardDate(dKey));
-        if (!isNaN(dObj.getTime()) && dObj.getTime() >= targetStart && dObj.getTime() <= targetEnd) {
+        if (!isNaN(dObj.getTime()) && dObj.getTime() <= targetEnd) { 
             let cTotalCost = 0; let cTotalQty = 0;
             let buDataMap = globalData.claims[dKey]?.bu_data || {};
             Object.keys(buDataMap).forEach(bu => {
@@ -1495,31 +1412,40 @@ function updateClaimUI() {
                     cTotalQty += typeof buData === 'object' ? (buData.qty||0) : 0;
                 }
             });
-            if(cTotalCost>0 || cTotalQty>0) combinedData.push({ dateObj: dObj, cost: cTotalCost, qty: cTotalQty });
+            if(cTotalCost>0 || cTotalQty>0) allDatesData.push({ dateObj: dObj, cost: cTotalCost, qty: cTotalQty });
         }
     });
 
-    combinedData.sort((a,b) => a.dateObj.getTime() - b.dateObj.getTime());
+    allDatesData.sort((a,b) => a.dateObj.getTime() - b.dateObj.getTime());
 
-    if (combinedData.length > 0) {
-        let totalVal = combinedData.reduce((sum, item) => sum + item.cost, 0);
-        let totalQty = combinedData.reduce((sum, item) => sum + item.qty, 0);
-        let curr = combinedData[combinedData.length-1];
-        
-        if(valEl) valEl.innerText = fmtN(parseFloat(totalVal.toFixed(2)));
-        if(updEl) updEl.innerText = `Updated: ${getDisplayDate(curr.dateObj)}`;
+    let runningCost = 0;
+    allDatesData.forEach(i => {
+        runningCost += i.cost;
+        i.accumCost = runningCost;
+    });
+
+    let combinedData = allDatesData.filter(i => i.dateObj.getTime() >= targetStart);
+    let latestAvailable = allDatesData.length > 0 ? allDatesData[allDatesData.length-1] : null;
+
+    if (latestAvailable) {
+        let displayCost = combinedData.reduce((sum, item) => sum + item.cost, 0);
+        if(valEl) valEl.innerText = fmtN(parseFloat(displayCost.toFixed(2))); // โชว์ยอดรวมของช่วงเวลาที่เลือก
+        if(updEl) updEl.innerText = `Updated: ${getDisplayDate(latestAvailable.dateObj)}`;
         
         if (claimSummary) {
-            claimSummary.innerHTML = `💡 <b>ภาพรวมเคลม:</b> ในช่วงเวลาที่เลือกมียอดเคลมรวม <b>${fmtN(totalVal)} ฿</b> (จำนวน ${fmtN(totalQty)} ชิ้น)`;
-            claimSummary.className = totalVal > 0 ? 'info-alert alert-red' : 'info-alert alert-green';
+            claimSummary.innerHTML = `💡 <b>ภาพรวมเคลมช่วงที่เลือก:</b> มียอดเคลมรวม <b>${fmtN(displayCost)} ฿</b> (ยอดสะสมตั้งแต่ต้น: <b>${fmtN(latestAvailable.accumCost)} ฿</b>)`;
+            claimSummary.className = displayCost > 0 ? 'info-alert alert-red' : 'info-alert alert-green';
         }
+    }
 
+    if (combinedData.length > 0) {
         let period = document.getElementById('global-period').value;
         let pMap = {};
         combinedData.forEach(i => {
             let pLabel = getPeriodLabel(i.dateObj, period);
-            if(!pMap[pLabel]) pMap[pLabel] = { cost: 0, qty: 0 };
+            if(!pMap[pLabel]) pMap[pLabel] = { cost: 0, qty: 0, accumCost: 0 };
             pMap[pLabel].cost += i.cost; pMap[pLabel].qty += i.qty;
+            pMap[pLabel].accumCost = i.accumCost; // เอายอดสะสมของวันสุดท้ายในกรุ๊ปมา
         });
 
         let pLabels = Object.keys(pMap);
@@ -1534,24 +1460,24 @@ function updateClaimUI() {
 
         const tableEl = document.getElementById('claim-detail-table');
         if (tableEl) {
-            let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Period</th><th class="text-center">มูลค่ารวม (฿)</th><th class="text-center">จำนวนชิ้น</th></tr></thead>`;
+            let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Period</th><th class="text-center">มูลค่ารวม (฿)</th><th class="text-center">จำนวนชิ้น</th><th class="text-center">สะสม (Accumulate)</th></tr></thead>`;
             let tbody = "<tbody>" + pLabels.slice().reverse().map(p => {
-                return `<tr><td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${p}</td><td class="text-center text-red font-bold">${fmtN(parseFloat(pMap[p].cost.toFixed(2)))}</td><td class="text-center">${fmtN(pMap[p].qty)}</td></tr>`;
+                return `<tr>
+                    <td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${p}</td>
+                    <td class="text-center text-red font-bold">${fmtN(parseFloat(pMap[p].cost.toFixed(2)))}</td>
+                    <td class="text-center">${fmtN(pMap[p].qty)}</td>
+                    <td class="text-center text-purple font-bold">${fmtN(parseFloat(pMap[p].accumCost.toFixed(2)))}</td>
+                </tr>`;
             }).join('') + "</tbody>";
             tableEl.innerHTML = thead + tbody;
         }
     } else {
-        if(valEl) valEl.innerText = "0";
-        if(updEl) updEl.innerText = "Updated: --";
-        if(claimSummary) { claimSummary.innerHTML = "💡 ไม่มียอดเคลมในช่วงเวลาที่เลือก (0 บาท)"; claimSummary.className = 'info-alert alert-green'; }
         const tableEl = document.getElementById('claim-detail-table');
-        if (tableEl) tableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูลในช่วงที่เลือก</th></tr></thead>`;
+        if (tableEl) tableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูลเคลมในช่วงที่เลือก</th></tr></thead>`;
+        if(claimChart2Instance) { claimChart2Instance.data.labels = []; claimChart2Instance.update(); }
     }
 }
 
-// ------------------------------------------------------------
-// 📦 INVENTORY SECTION
-// ------------------------------------------------------------
 function updateInventoryUI() {
     const valEl = document.getElementById('inv-val');
     const updEl = document.getElementById('inv-update');
@@ -1560,7 +1486,7 @@ function updateInventoryUI() {
     if (!globalData.inventory || Object.keys(globalData.inventory).length === 0) {
         if(valEl) valEl.innerText = "-";
         if(updEl) updEl.innerText = "Updated: --";
-        if(invSummary) invSummary.innerHTML = "💡 ไม่มีข้อมูล Inventory Accuracy ในช่วงเวลาที่เลือก";
+        if(invSummary) invSummary.innerHTML = "💡 ไม่มีข้อมูล Inventory Accuracy";
         return;
     }
 
@@ -1569,16 +1495,13 @@ function updateInventoryUI() {
     const targetStart = new Date(dpStartVal).setHours(0, 0, 0, 0);
     const targetEnd = new Date(dpEndVal).setHours(23, 59, 59, 999);
     
-    let parsedData = [];
+    // 1. ดึงข้อมูลประวัติทั้งหมดเพื่อทำ True Accumulate (YTD)
+    let allData = [];
     Object.keys(globalData.inventory).forEach(mLabel => {
         let parts = mLabel.split('-');
         if (parts.length === 2) {
             let dObj = new Date(`${parts[0]} 1, 20${parts[1]}`);
-// เพิ่มตัวแปรหาวันสุดท้ายของเดือนนั้น
-let dObjEnd = new Date(dObj.getFullYear(), dObj.getMonth() + 1, 0, 23, 59, 59).getTime();
-
-// เช็กว่าช่วงเวลาของเดือนนั้น คาบเกี่ยวกับช่วงเวลาที่เลือกใน Filter หรือไม่
-if(dObjEnd >= targetStart && dObj.getTime() <= targetEnd) {
+            if(dObj.getTime() <= targetEnd) { // กรองไม่ให้เกินวันสิ้นสุดที่เลือก
                 let monthGroup = globalData.inventory[mLabel] || {};
                 let sumOnhand = 0, sumDiff = 0, count = 0;
                 let buDataMap = monthGroup.bu_data || {};
@@ -1590,32 +1513,45 @@ if(dObjEnd >= targetStart && dObj.getTime() <= targetEnd) {
                     }
                 });
                 let pct = count > 0 ? (sumOnhand > 0 ? Math.max(0, (1 - (sumDiff/sumOnhand))*100) : 0) : null;
-                parsedData.push({ label: mLabel, dateObj: dObj, pct: pct, sumOnhand: sumOnhand, sumDiff: sumDiff });
+                allData.push({ label: mLabel, dateObj: dObj, pct: pct, sumOnhand: sumOnhand, sumDiff: sumDiff });
             }
         }
     });
 
-    // 🛠️ เปลี่ยนเป็น (เพิ่มการคำนวณต่อท้าย):
-parsedData.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+    allData.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
 
-let runningInvOnhand = 0;
-let runningInvDiff = 0;
-parsedData.forEach(item => {
-    runningInvOnhand += item.sumOnhand;
-    runningInvDiff += item.sumDiff;
-    item.accumPct = runningInvOnhand > 0 ? Math.max(0, (1 - (runningInvDiff / runningInvOnhand)) * 100) : null;
-});
+    // 2. คำนวณสะสม
+    let runningInvOnhand = 0;
+    let runningInvDiff = 0;
+    allData.forEach(item => {
+        runningInvOnhand += item.sumOnhand;
+        runningInvDiff += item.sumDiff;
+        item.accumPct = runningInvOnhand > 0 ? Math.max(0, (1 - (runningInvDiff / runningInvOnhand)) * 100) : null;
+    });
+
+    // 3. กรองข้อมูลเฉพาะช่วงเวลาที่เลือก (รวมวันสิ้นเดือน) สำหรับกราฟ/ตาราง
+    let parsedData = allData.filter(i => {
+        let dObjEnd = new Date(i.dateObj.getFullYear(), i.dateObj.getMonth() + 1, 0, 23, 59, 59).getTime();
+        return dObjEnd >= targetStart && i.dateObj.getTime() <= targetEnd;
+    });
+
+    // 🌟 FIX: ถ้าไม่มีข้อมูลในสัปดาห์ที่เลือก ให้ดึงเดือนล่าสุดมาแสดงที่ KPI Box เสมอ
+    let latestAvailable = parsedData.length > 0 ? parsedData[parsedData.length-1] : (allData.length > 0 ? allData[allData.length-1] : null);
+
+    if (latestAvailable) {
+        if(valEl) valEl.innerText = latestAvailable.pct !== null ? `${latestAvailable.pct.toFixed(2)}%` : "-";
+        if(updEl) updEl.innerText = `Updated: เดือน ${latestAvailable.label}`;
+        if (invSummary) {
+            invSummary.innerHTML = `💡 <b>ความแม่นยำสต็อกล่าสุด (${latestAvailable.label}):</b> อยู่ที่ <b>${latestAvailable.pct !== null ? latestAvailable.pct.toFixed(2) : 0}%</b> (สะสม YTD: ${latestAvailable.accumPct !== null ? latestAvailable.accumPct.toFixed(2) : 0}%)`;
+            invSummary.className = latestAvailable.pct >= 99 ? 'info-alert alert-green mt-10 text-sm' : 'info-alert alert-red mt-10 text-sm';
+        }
+    } else {
+        if(valEl) valEl.innerText = "-";
+        if(updEl) updEl.innerText = "Updated: --";
+        if (invSummary) { invSummary.innerHTML = "💡 ไม่มีข้อมูล Inventory Accuracy"; invSummary.className = 'info-alert alert-yellow mt-10 text-sm'; }
+    }
 
     if (parsedData.length > 0) {
-        let curr = parsedData[parsedData.length-1];
-        if(valEl) valEl.innerText = curr.pct !== null ? `${curr.pct.toFixed(2)}%` : "-";
-        if(updEl) updEl.innerText = `Updated: เดือน ${curr.label}`;
-
-        if (invSummary) {
-            invSummary.innerHTML = `💡 <b>ความแม่นยำสต็อกล่าสุด (${curr.label}):</b> อยู่ที่ <b>${curr.pct !== null ? curr.pct.toFixed(2) : 0}%</b>`;
-            invSummary.className = curr.pct >= 99 ? 'info-alert alert-green mt-10 text-sm' : 'info-alert alert-red mt-10 text-sm';
-        }
-
         if(inventoryChartInstance) {
             inventoryChartInstance.data.labels = parsedData.map(i => i.label);
             inventoryChartInstance.data.datasets[0] = {
@@ -1626,33 +1562,29 @@ parsedData.forEach(item => {
                     if(!context.chart.chartArea) return 'rgba(6, 182, 212, 0.4)';
                     return getGradient(context.chart.ctx, context.chart.chartArea, 'rgba(6, 182, 212, 0.4)', 'rgba(6, 182, 212, 0.01)');
                 },
-                borderWidth: 3,
-                fill: true, tension: 0.4, pointRadius: 4
+                borderWidth: 3, fill: true, tension: 0.4, pointRadius: 4
             };
             inventoryChartInstance.update();
         }
 
         const tableEl = document.getElementById('inv-detail-table');
         if (tableEl) {
-            // 🛠️ เปลี่ยนเป็น:
-let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Month</th><th class="text-center">% Overall</th><th class="text-center">% Accumulate (YTD)</th></tr></thead>`;
-let tbody = "<tbody>" + parsedData.slice().reverse().map(i => {
-    let clr = i.pct >= 99 ? 'var(--brand-green)' : 'var(--brand-red)';
-    let accumClr = (i.accumPct && i.accumPct >= 99) ? 'var(--brand-green)' : 'var(--brand-red)';
-    return `<tr>
-        <td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${i.label}</td>
-        <td class="text-center font-bold" style="color:${clr};">${i.pct !== null ? i.pct.toFixed(2)+'%' : '-'}</td>
-        <td class="text-center font-bold" style="color:${accumClr};">${i.accumPct !== null ? i.accumPct.toFixed(2)+'%' : '-'}</td>
-    </tr>`;
-}).join('') + "</tbody>";
+            let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Month</th><th class="text-center">% Overall</th><th class="text-center">% Accumulate</th></tr></thead>`;
+            let tbody = "<tbody>" + parsedData.slice().reverse().map(i => {
+                let clr = i.pct >= 99 ? 'var(--brand-green)' : 'var(--brand-red)';
+                let accumClr = (i.accumPct && i.accumPct >= 99) ? 'var(--brand-green)' : 'var(--brand-red)';
+                return `<tr>
+                    <td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${i.label}</td>
+                    <td class="text-center font-bold" style="color:${clr};">${i.pct !== null ? i.pct.toFixed(2)+'%' : '-'}</td>
+                    <td class="text-center font-bold" style="color:${accumClr};">${i.accumPct !== null ? i.accumPct.toFixed(2)+'%' : '-'}</td>
+                </tr>`;
+            }).join('') + "</tbody>";
             tableEl.innerHTML = thead + tbody;
         }
     } else {
-        if(valEl) valEl.innerText = "-";
-        if(updEl) updEl.innerText = "Updated: --";
-        if(invSummary) { invSummary.innerHTML = "💡 ไม่มีข้อมูล Inventory Accuracy ในช่วงเวลาที่เลือก"; invSummary.className = 'info-alert alert-yellow mt-10 text-sm'; }
         const tableEl = document.getElementById('inv-detail-table');
-        if (tableEl) tableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูลในช่วงที่เลือก</th></tr></thead>`;
+        if (tableEl) tableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูลในช่วงที่เลือก (แสดงผลจากล่าสุดด้านบน)</th></tr></thead>`;
+        if(inventoryChartInstance) { inventoryChartInstance.data.labels = []; inventoryChartInstance.update(); }
     }
 }
 
