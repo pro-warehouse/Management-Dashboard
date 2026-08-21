@@ -260,3 +260,126 @@ body {
 .diff-good { color: var(--brand-green); font-weight: 700; } 
 .diff-bad { color: var(--brand-red); font-weight: 700; } 
 .diff-neutral { color: var(--text-muted); font-weight: 500; }
+
+/* =========================================
+   1. แก้ปัญหาแถบแจ้งเตือน (Toast) ด้านล่าง ให้ลอยอยู่มุมขวาแบบพรีเมียม
+========================================= */
+.toast-popup {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: linear-gradient(135deg, var(--brand-light-green) 0%, var(--brand-green) 100%);
+    color: white;
+    padding: 12px 28px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 146, 69, 0.4);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: auto !important;
+    min-width: 200px;
+}
+.toast-popup.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* =========================================
+   2. ย่อขนาดกล่อง 1-2-3 (PICK, QC, SHIPPED) ให้กะทัดรัดและซอฟต์ลง
+========================================= */
+.stage-panel { 
+    padding: 14px 18px !important; /* ลดขนาดขอบ */
+    border-radius: 14px !important;
+}
+.stage-top { 
+    gap: 10px !important; 
+    margin-bottom: 10px !important; 
+}
+.stage-icon { 
+    width: 30px !important; 
+    height: 30px !important; 
+    border-radius: 8px !important; 
+    font-size: 1rem !important; 
+}
+.stage-label { 
+    font-size: 0.9rem !important; 
+}
+.stage-middle { 
+    margin-bottom: 8px !important; 
+}
+.stage-big-pct { 
+    font-size: 1.6rem !important; /* ย่อฟอนต์เปอร์เซ็นต์ลงจาก 2rem */
+}
+.stage-counts { 
+    font-size: 0.7rem !important; 
+    gap: 2px !important;
+}
+.stage-counts strong { 
+    font-size: 0.8rem !important; 
+}
+.progress-bar-bg { 
+    height: 6px !important; 
+    margin-bottom: 10px !important; 
+}
+.stage-status-msg { 
+    font-size: 0.75rem !important; 
+    padding: 6px 10px !important; 
+    border-radius: 6px !important;
+}
+
+/* =========================================
+   3. ปรับกล่อง Wave Operations ให้สวยแบบ Soft Modern (ลบขอบหนาๆ ทิ้ง)
+========================================= */
+.wave-kpi-grid .kpi-box {
+    border-radius: 14px !important;
+    padding: 16px 20px !important;
+    min-height: 90px !important; /* ลดความสูงลง */
+    border-top: 1px solid var(--border-color) !important; /* ล้างค่าขอบสีหนาๆ ทิ้ง */
+}
+.wave-kpi-grid .kpi-head { 
+    font-size: 0.75rem !important; 
+    margin-bottom: 6px !important; 
+}
+.wave-kpi-grid .kpi-main-val { 
+    font-size: 1.7rem !important; /* ย่อตัวเลขลงนิดหน่อยให้สมดุล */
+    margin-bottom: 10px !important; 
+}
+
+/* ตกแต่งพื้นหลังให้ไล่สีอ่อนๆ จากด้านบนลงมา (Soft Gradient) แทนการใช้เส้นขอบ */
+.wave-kpi-grid .card-purple { 
+    background: linear-gradient(180deg, rgba(147, 51, 234, 0.05) 0%, var(--bg-card) 100%) !important; 
+    border: 1px solid rgba(147, 51, 234, 0.15) !important;
+}
+.wave-kpi-grid .card-green { 
+    background: linear-gradient(180deg, rgba(0, 146, 69, 0.05) 0%, var(--bg-card) 100%) !important; 
+    border: 1px solid rgba(0, 146, 69, 0.15) !important;
+}
+.wave-kpi-grid .card-red { 
+    background: linear-gradient(180deg, rgba(237, 28, 36, 0.05) 0%, var(--bg-card) 100%) !important; 
+    border: 1px solid rgba(237, 28, 36, 0.15) !important;
+}
+.wave-kpi-grid .card-orange { 
+    background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, var(--bg-card) 100%) !important; 
+    border: 1px solid rgba(245, 158, 11, 0.15) !important;
+}
+
+/* ปรับแต่ง Badge ด้านล่างของกล่องย่อยให้ดูมินิมอล */
+.wave-kpi-grid .trend-badge, 
+.wave-kpi-grid .kpi-foot-col span {
+    background: var(--bg-body) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-color) !important;
+    padding: 4px 10px !important;
+    border-radius: 6px !important;
+    font-size: 0.7rem !important;
+    display: inline-block !important;
+    margin-bottom: 4px !important;
+    font-weight: 600 !important;
+}
