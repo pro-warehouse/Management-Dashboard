@@ -79,36 +79,70 @@
         </div>
 
         <section class="kpi-grid mb-24">
+            <!-- 1. FFM Orders -->
             <div class="kpi-box card-purple">
-                <div class="kpi-head"><span>Orders Shipped Target</span></div>
-                <div class="kpi-main-val" id="ffm-orders-shipped">...</div>
-                <div class="kpi-foot"><div class="kpi-trend-box"><span class="trend-badge" id="ffm-orders-trend">-</span><span class="trend-note" id="ffm-orders-note">vs prev</span></div><span class="kpi-timestamp" id="ffm-orders-update">Updated: --</span></div>
+                <div class="kpi-head"><span>Orders Shipped</span></div>
+                <div class="kpi-main-val" id="ffm-orders-shipped">0</div>
+                <div class="kpi-sub-row"><span id="ffm-target-text" style="font-weight:600; opacity:0.9;">Target: 0</span></div>
+                <div class="kpi-foot">
+                    <div class="kpi-trend-box" id="ffm-orders-trend-box"><span class="trend-badge trend-neutral">-</span></div>
+                    <span class="kpi-timestamp" id="ffm-orders-update">Updated: --</span>
+                </div>
             </div>
+            
+            <!-- 2. Avg Fulfillment -->
             <div class="kpi-box card-green">
                 <div class="kpi-head"><span>Avg. Fulfillment Rate</span></div>
-                <div class="kpi-main-val" id="ffm-rate-val">...</div>
-                <div class="kpi-sub-row"><span id="ffm-rate-eta" style="font-weight:700;">DC SLA: ...</span><span class="badge-glass" id="eta-rate-trend">-</span></div>
-                <div class="kpi-foot"><div class="kpi-trend-box"><span class="trend-badge" id="ffm-rate-trend">-</span><span class="trend-note" id="ffm-rate-note">vs prev</span></div><span class="kpi-timestamp" id="ffm-rate-update">Updated: --</span></div>
+                <div class="kpi-main-val" id="ffm-rate-val">0.00%</div>
+                <div class="kpi-sub-row"><span id="ffm-rate-eta" style="font-weight:600; opacity:0.9;">DC SLA: 0.00%</span></div>
+                <div class="kpi-foot">
+                    <div class="kpi-trend-box" id="ffm-rate-trend-box"><span class="trend-badge trend-neutral">-</span></div>
+                    <span class="kpi-timestamp" id="ffm-rate-update">Updated: --</span>
+                </div>
             </div>
+            
+            <!-- 3. Workforce -->
             <div class="kpi-box card-blue">
                 <div class="kpi-head"><span>Active Workforce</span></div>
-                <div class="kpi-main-val" id="headcount-total">...</div>
-                <div class="kpi-foot"><div class="kpi-trend-box"><span class="trend-badge" id="headcount-trend">-</span><span class="trend-note" id="headcount-note">vs prev</span></div><span class="kpi-timestamp" id="headcount-update">Updated: --</span></div>
+                <div class="kpi-main-val" id="headcount-total">0</div>
+                <div class="kpi-sub-row"><span style="font-weight:600; opacity:0.9;">Manpower (คน)</span></div>
+                <div class="kpi-foot">
+                    <div class="kpi-trend-box" id="hc-trend-box"><span class="trend-badge trend-neutral">-</span></div>
+                    <span class="kpi-timestamp" id="headcount-update">Updated: --</span>
+                </div>
             </div>
+            
+            <!-- 4. On-Time -->
             <div class="kpi-box card-red">
                 <div class="kpi-head"><span>On-Time Delivery</span></div>
-                <div class="kpi-main-val" id="ontime-val">...</div>
-                <div class="kpi-foot"><div class="kpi-trend-box"><span class="trend-badge" id="ontime-trend">-</span><span class="trend-note" id="ontime-note">vs prev</span></div><span class="kpi-timestamp" id="ontime-update">Updated: --</span></div>
+                <div class="kpi-main-val" id="ontime-val">0.00%</div>
+                <div class="kpi-sub-row"><span style="font-weight:600; opacity:0.9;">SLA Target: 98%</span></div>
+                <div class="kpi-foot">
+                    <div class="kpi-trend-box" id="ontime-trend-box"><span class="trend-badge trend-neutral">-</span></div>
+                    <span class="kpi-timestamp" id="ontime-update">Updated: --</span>
+                </div>
             </div>
+            
+            <!-- 5. Claim Cost -->
             <div class="kpi-box card-orange">
                 <div class="kpi-head"><span>Claim Cost (฿)</span></div>
-                <div class="kpi-main-val" id="claim-val">...</div>
-                <div class="kpi-foot"><div class="kpi-trend-box"><span class="trend-badge" id="claim-trend">-</span><span class="trend-note" id="claim-note">vs prev</span></div><span class="kpi-timestamp" id="claim-update">Updated: --</span></div>
+                <div class="kpi-main-val" id="claim-val">0</div>
+                <div class="kpi-sub-row"><span id="claim-accum-text" style="font-weight:600; opacity:0.9; color:#FFFBEB;">YTD Accumulate: 0 ฿</span></div>
+                <div class="kpi-foot">
+                    <div class="kpi-trend-box" id="claim-trend-box"><span class="trend-badge trend-neutral">-</span></div>
+                    <span class="kpi-timestamp" id="claim-update">Updated: --</span>
+                </div>
             </div>
+            
+            <!-- 6. Inventory -->
             <div class="kpi-box card-teal">
                 <div class="kpi-head"><span>Inventory Accuracy</span></div>
-                <div class="kpi-main-val" id="inv-val">...</div>
-                <div class="kpi-foot"><div class="kpi-trend-box"><span class="trend-badge" id="inv-trend">-</span><span class="trend-note" id="inv-note">vs prev</span></div><span class="kpi-timestamp" id="inv-update">Updated: --</span></div>
+                <div class="kpi-main-val" id="inv-val">0.00%</div>
+                <div class="kpi-sub-row"><span id="inv-accum-text" style="font-weight:600; opacity:0.9;">YTD: 0.00%</span></div>
+                <div class="kpi-foot">
+                    <div class="kpi-trend-box" id="inv-trend-box"><span class="trend-badge trend-neutral">-</span></div>
+                    <span class="kpi-timestamp" id="inv-update">Updated: --</span>
+                </div>
             </div>
         </section>
 
