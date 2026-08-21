@@ -84,7 +84,6 @@ function getPeriodLabel(dObj, period) {
     return `${String(dObj.getDate()).padStart(2,'0')} ${shortMonths[dObj.getMonth()]} ${dObj.getFullYear()}`;
 }
 
-// 📈 ฟังก์ชันคำนวณหุ้น (Trend Badge)
 function generateTrendHtml(current, previous, isInverse = false, isPct = false) {
     if (previous === null || previous === undefined || previous === 0 || isNaN(current) || isNaN(previous)) {
         return `<span class="trend-badge trend-neutral">-</span> <span class="trend-note">No Data</span>`;
@@ -208,7 +207,6 @@ let ontimeChartInstance = new Chart(document.getElementById('ontimeChart2'), {
 
 let claimChart2Instance = new Chart(document.getElementById('claimChart2'), { type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#F59E0B', borderRadius: 4, yAxisID: 'y' }, { label: 'จำนวนชิ้น', data: [], type: 'line', yAxisID: 'y1', pointRadius: 4, borderWidth: 2, borderColor: '#3B82F6', backgroundColor: '#3B82F6' } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: {grid:{display:false}}, y: {position: 'left', grace: '15%', border:{display:false}, grid: { borderDash: [4, 4] }}, y1: {position: 'right', display:false} } }, plugins: [dataLabelPlugin] });
 let inventoryChartInstance = new Chart(document.getElementById('inventoryChart'), { type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { borderDash: [4, 4] }, grace: '5%' } } }, plugins: [lineDataLabelPlugin]});
-// 🌟 เปลี่ยนกราฟ UPH เป็นแบบ Stacked Overlay (เป้าซ้อนด้วยผลงานจริง) 🌟
 let productivityChartInstance = new Chart(document.getElementById('productivityChart'), { 
     type: 'bar', 
     data: { labels: [], datasets: [] }, 
@@ -216,32 +214,21 @@ let productivityChartInstance = new Chart(document.getElementById('productivityC
         responsive: true, maintainAspectRatio: false, 
         plugins: { legend: { position: 'top' } }, 
         scales: { 
-            x: { stacked: true, grid: { display: false } }, // ใช้ Stack เดียวกันเพื่อให้แท่งซ้อนกัน
-            y: { stacked: false, border: { display: false }, grace: '15%', grid: { borderDash: [4, 4] } } // Stacked = false เพื่อให้มันวาดทับกันจาก 0 ขึ้นไป
+            x: { stacked: true, grid: { display: false } }, 
+            y: { stacked: false, border: { display: false }, grace: '15%', grid: { borderDash: [4, 4] } } 
         } 
     } 
 });
 
 let transportTrendChartInstance = new Chart(document.getElementById('transportTrendChart'), {
-    type: 'bar',
-    data: { labels: [], datasets: [] },
+    type: 'bar', data: { labels: [], datasets: [] },
     options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } } },
         scales: {
             x: { grid: { display: false } },
-            y: { 
-                type: 'linear', position: 'left', min: 0, max: 105, 
-                title: { display: true, text: 'SLA (%)', color: '#3B82F6', font: {weight: 'bold'} }, 
-                grid: { borderDash: [4, 4] } 
-            },
-            y1: { 
-                type: 'linear', position: 'right', 
-                title: { display: true, text: 'Cost (฿)', color: '#8B5CF6', font: {weight: 'bold'} }, 
-                grid: { display: false },
-                beginAtZero: true
-            }
+            y: { type: 'linear', position: 'left', min: 0, max: 105, title: { display: true, text: 'SLA (%)', color: '#3B82F6', font: {weight: 'bold'} }, grid: { borderDash: [4, 4] } },
+            y1: { type: 'linear', position: 'right', title: { display: true, text: 'Cost (฿)', color: '#8B5CF6', font: {weight: 'bold'} }, grid: { display: false }, beginAtZero: true }
         }
     },
     plugins: [dataLabelPlugin]
@@ -285,7 +272,6 @@ function updateLoaderPct(targetPct, durationMs) {
 }
 
 setInterval(() => {
-    console.log("Auto refreshing data...");
     initDashboard();
 }, 15 * 60 * 1000); 
 
@@ -381,7 +367,6 @@ function populateGlobalBUFilters() {
             label.className = 'dropdown-item';
             label.innerHTML = `<input type="checkbox" class="bu-item-cb" value="${bu}" checked> ${bu}`;
             cbList.appendChild(label);
-            
             if (invOwnerList) invOwnerList.appendChild(new Option(bu, bu));
         });
 
@@ -561,8 +546,10 @@ async function saveDailyCapacity() {
     }
 }
 
+// === Productivity UPH Modal Functions ===
 function openUphModal() {
     const modal = document.getElementById('uph-modal');
+    if(!modal) return;
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('show'), 10);
     let dVal = document.getElementById('date-end').value || new Date().toISOString().split('T')[0];
@@ -572,18 +559,19 @@ function openUphModal() {
 
 function closeUphModal() {
     const modal = document.getElementById('uph-modal');
+    if(!modal) return;
     modal.classList.remove('show');
     setTimeout(() => modal.style.display = 'none', 300);
 }
 
 function applyUphCostInputs(dateStr) {
     let eff = getEffectiveUphCost(dateStr);
-    document.getElementById('trg-all').value = eff.trg_all;
-    document.getElementById('trg-full').value = eff.trg_full;
-    document.getElementById('trg-half').value = eff.trg_half;
-    document.getElementById('trg-ea').value = eff.trg_ea;
-    document.getElementById('cost-salary').value = eff.cost_salary;
-    document.getElementById('cost-days').value = eff.cost_days;
+    if(document.getElementById('trg-all')) document.getElementById('trg-all').value = eff.trg_all || 150;
+    if(document.getElementById('trg-full')) document.getElementById('trg-full').value = eff.trg_full || 180;
+    if(document.getElementById('trg-half')) document.getElementById('trg-half').value = eff.trg_half || 120;
+    if(document.getElementById('trg-ea')) document.getElementById('trg-ea').value = eff.trg_ea || 80;
+    if(document.getElementById('cost-salary')) document.getElementById('cost-salary').value = eff.cost_salary || 400;
+    if(document.getElementById('cost-days')) document.getElementById('cost-days').value = eff.cost_days || 26;
 }
 
 function hasEffectiveCap(dateStr, bu) {
@@ -888,15 +876,35 @@ async function initFulfillmentRealtime() {
             document.getElementById('ffm-orders-update').innerText = `Updated: ${latestPLabel || '--'}`;
         }
 
-        let currentFfm = (curPData && curPData.req > 0) ? (curPData.ship / curPData.req) * 100 : 0;
-        let currentEtaFfm = (curPData && curPData.alloc > 0) ? Math.min(100, (curPData.ship / curPData.alloc) * 100) : 0;
-        let prevFfm = (prvPData && prvPData.req > 0) ? (prvPData.ship / prvPData.req) * 100 : 0;
-
-        if (document.getElementById('ffm-rate-val')) {
+        // 🌟 แก้ไข: วนหาข้อมูล FFM Rate ของวันล่าสุดที่มีการส่งของจริงๆ (Ship > 0)
+        let latestShipDateStr = null, prevShipDateStr = null;
+        let revDates = [...validChartDates].reverse();
+        for (let d of revDates) {
+            let s = chartDataMap[d]?.ship || 0;
+            let r = chartDataMap[d]?.req || 0;
+            if (s > 0 || r > 0) { 
+                if (!latestShipDateStr) latestShipDateStr = d; 
+                else if (!prevShipDateStr) { prevShipDateStr = d; break; } 
+            }
+        }
+        
+        if (latestShipDateStr && document.getElementById('ffm-rate-val')) {
+            let curD = chartDataMap[latestShipDateStr];
+            let prvd = prevShipDateStr ? chartDataMap[prevShipDateStr] : null;
+            
+            let currentFfm = curD.req > 0 ? (curD.ship / curD.req) * 100 : 0;
+            let currentEtaFfm = curD.alloc > 0 ? Math.min(100, (curD.ship / curD.alloc) * 100) : 0;
+            let prevFfm = (prvd && prvd.req > 0) ? (prvd.ship / prvd.req) * 100 : 0;
+            
             document.getElementById('ffm-rate-val').innerText = `${currentFfm.toFixed(2)}%`;
             document.getElementById('ffm-rate-eta').innerText = `DC SLA: ${currentEtaFfm.toFixed(2)}%`;
             document.getElementById('ffm-rate-trend-box').innerHTML = generateTrendHtml(currentFfm, prevFfm, false, true);
-            document.getElementById('ffm-rate-update').innerText = `Updated: ${latestPLabel || '--'}`;
+            document.getElementById('ffm-rate-update').innerText = `Updated: ${formatShortDate(latestShipDateStr)}`;
+        } else if (document.getElementById('ffm-rate-val')) {
+            document.getElementById('ffm-rate-val').innerText = `0.00%`;
+            document.getElementById('ffm-rate-eta').innerText = `DC SLA: 0.00%`;
+            document.getElementById('ffm-rate-trend-box').innerHTML = `<span class="trend-badge trend-neutral">-</span>`;
+            document.getElementById('ffm-rate-update').innerText = `Updated: --`;
         }
 
         try {
@@ -1209,12 +1217,11 @@ function updateWorkforceUI() {
     const targetStart = new Date(dpStartVal).setHours(0, 0, 0, 0);
     const targetEnd = new Date(dpEndVal).setHours(23, 59, 59, 999);
     
-    let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
+    let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(getStandardDate(a)).getTime() - new Date(getStandardDate(b)).getTime());
     let validKeys = wfKeys.filter(k => { let t = new Date(getStandardDate(k)).getTime(); return t >= targetStart && t <= targetEnd; });
     
-    // หา Key วันล่าสุดที่มีข้อมูลเสมอ (ป้องกันปัญหากล่องบนสุดเป็น 0 เวลาเลือกเสาร์อาทิตย์)
-    let displayKey = validKeys.length > 0 ? validKeys[0] : wfKeys.find(k => new Date(getStandardDate(k)).getTime() <= targetEnd);
-    let prevKey = wfKeys[wfKeys.indexOf(displayKey) + 1]; // +1 คือวันก่อนหน้าเพราะเรียงจากล่าสุดไปเก่าสุด
+    let displayKey = validKeys.length > 0 ? validKeys[validKeys.length-1] : wfKeys.find(k => new Date(getStandardDate(k)).getTime() <= targetEnd);
+    let prevKey = wfKeys[wfKeys.indexOf(displayKey) - 1]; 
 
     const calcTotal = (dObj) => {
         if (!dObj) return 0;
@@ -1260,7 +1267,7 @@ function updateWorkforceUI() {
     if (dynamicTeams.length === 0) dynamicTeams = ["A", "B", "C"]; 
 
     if (validKeys.length > 0) {
-        let chartKeys = validKeys.slice(0,7).reverse();
+        let chartKeys = validKeys.slice(-7);
         let affSet = new Set();
         chartKeys.forEach(k => Object.keys(globalData.workforce[k]?.matrix || {}).forEach(aff => {
             if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(aff)) affSet.add(aff);
@@ -1469,7 +1476,6 @@ function updateOnTimeUI() {
     const dpEndVal = document.getElementById('date-end').value;
     const targetEndObj = new Date(dpEndVal);
     const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
-    // ใช้ 1st of month สำหรับ MTD
     const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
     
     let otArray = Object.keys(globalData.ontime || {}).map(k => ({
@@ -1479,7 +1485,6 @@ function updateOnTimeUI() {
     })).filter(i => !isNaN(i.dateObj.getTime()) && i.dateObj.getTime() >= targetStartMTD && i.dateObj.getTime() <= targetEnd).sort((a,b) => a.dateObj.getTime() - b.dateObj.getTime());
 
     if (otArray.length > 0) {
-        // หาค่าเฉลี่ย MTD รวม
         let mtdSum = 0; let mtdCount = 0;
         otArray.forEach(i => {
             let over = (i.ptglg !== null && i.hub !== null) ? (i.ptglg+i.hub)/2 : i.ptglg;
@@ -1565,7 +1570,7 @@ function updateOnTimeUI() {
 }
 
 // ----------------------------------------------------
-// CLAIM COST (MTD Logic + Owner Table)
+// CLAIM COST (MTD Logic + Owner Table FIXED)
 // ----------------------------------------------------
 function updateClaimUI() {
     const valEl = document.getElementById('claim-val');
@@ -1589,7 +1594,7 @@ function updateClaimUI() {
     const targetYear = targetEndObj.getFullYear();
     
     let allDatesData = [];
-    let tableRecords = []; // สำหรับโชว์แบบ Period | Owner
+    let tableRecords = []; 
     
     Object.keys(globalData.claims).forEach(dKey => {
         let dObj = new Date(getStandardDate(dKey));
@@ -1603,9 +1608,9 @@ function updateClaimUI() {
                     let _qty = typeof buData === 'object' ? (buData.qty||0) : 0;
                     cTotalCost += _cost;
                     cTotalQty += _qty;
-                    // เก็บ Record ละเอียดเฉพาะช่วง MTD
+                    // 🌟 FIX: ใช้ dKey แทน dStr เพื่อป้องกัน Error
                     if(dObj.getTime() >= targetStartMTD && (_cost > 0 || _qty > 0)) {
-                        tableRecords.push({ date: formatShortDate(dStr), owner: bu, cost: _cost, qty: _qty, ts: dObj.getTime() });
+                        tableRecords.push({ date: formatShortDate(dKey), owner: bu, cost: _cost, qty: _qty, ts: dObj.getTime() });
                     }
                 }
             });
@@ -1647,7 +1652,7 @@ function updateClaimUI() {
             claimChart2Instance.data.labels = pLabels;
             claimChart2Instance.data.datasets[0].data = mtdData.map(p => parseFloat(p.cost.toFixed(2)));
             claimChart2Instance.data.datasets[1].data = mtdData.map(p => p.qty);
-            claimChart2Instance.data.datasets[0].backgroundColor = (ctx) => (!ctx.chart.chartArea) ? '#F59E0B' : getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#F59E0B', '#D97706'); // ใช้ส้ม
+            claimChart2Instance.data.datasets[0].backgroundColor = (ctx) => (!ctx.chart.chartArea) ? '#F59E0B' : getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#F59E0B', '#D97706');
             claimChart2Instance.update();
         }
 
@@ -1811,7 +1816,6 @@ function renderLocationAccuracy() {
             let passBU = window.locFilters ? (window.locFilters.bu.includes('ALL') || window.locFilters.bu.includes(item.bu)) : true;
             let passType = window.locFilters ? (window.locFilters.type.includes('ALL') || window.locFilters.type.includes(item.type)) : true;
             let passZone = window.locFilters ? (window.locFilters.zone.includes('ALL') || window.locFilters.zone.includes(item.zone)) : true;
-            // ดักเพิ่มตัวกรองหลัก
             let passMasterBU = window.selectedBUs.includes('ALL') || window.selectedBUs.includes(item.bu);
             return passBU && passType && passZone && passMasterBU;
         });
@@ -1862,261 +1866,7 @@ function renderLocationAccuracy() {
 }
 
 // ----------------------------------------------------
-// TRANSPORT PERFORMANCE (MTD Logic)
-// ----------------------------------------------------
-function updateTransportUI() {
-    let tbody = document.querySelector('#new-transport-table tbody');
-    let dailyTbody = document.querySelector('#daily-transport-table tbody');
-    
-    if (!globalData.transport || Object.keys(globalData.transport).length === 0) {
-        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">กำลังรอข้อมูลขนส่งเข้าระบบ...</td></tr>`;
-        if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">กำลังรอข้อมูลขนส่งเข้าระบบ...</td></tr>`;
-        return;
-    }
-    
-    const dpEndVal = document.getElementById('date-end').value;
-    const targetEndObj = new Date(dpEndVal);
-    const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
-    const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
-    
-    let validDates = Object.keys(globalData.transport).filter(k => {
-        let dTime = new Date(k).getTime(); return !isNaN(dTime) && dTime >= targetStartMTD && dTime <= targetEnd;
-    }).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
-
-    if (validDates.length === 0) {
-        document.getElementById('tp-kpi-total').innerText = "0"; document.getElementById('tp-kpi-success').innerText = "0"; document.getElementById('tp-kpi-sla').innerText = "0"; document.getElementById('tp-kpi-cost').innerText = "0";
-        document.getElementById('carrier-update-time').innerText = `ช่วงเวลาที่เลือกไม่มีข้อมูล MTD`;
-        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่ง ในช่วงเวลาที่เลือก</td></tr>`;
-        if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลรายละเอียด</td></tr>`;
-        
-        let tcTable = document.getElementById('transport-comparison-table');
-        if(tcTable) tcTable.querySelector('tbody').innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลเปรียบเทียบย้อนหลัง</td></tr>`;
-        return;
-    }
-
-    let aggData = { total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, carriers: {} };
-    let groupedByPeriod = {};
-    
-    validDates.forEach(dateKey => {
-        let dObj = new Date(dateKey);
-        let pLabel = formatShortDate(dObj); // บังคับดูเป็นรายวันเลยให้เห็น Trend ของเดือน
-        let dayData = globalData.transport[dateKey];
-        
-        aggData.total_orders += dayData.total_orders; aggData.success_orders += dayData.success_orders; aggData.sla_hit += dayData.sla_hit; aggData.total_cost += dayData.total_cost;
-        Object.keys(dayData.carriers || {}).forEach(cName => {
-            if (!aggData.carriers[cName]) aggData.carriers[cName] = { total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0 };
-            aggData.carriers[cName].total_orders += dayData.carriers[cName].total_orders; aggData.carriers[cName].success_orders += dayData.carriers[cName].success_orders; aggData.carriers[cName].sla_hit += dayData.carriers[cName].sla_hit; aggData.carriers[cName].total_cost += dayData.carriers[cName].total_cost;
-        });
-
-        if (!groupedByPeriod[pLabel]) groupedByPeriod[pLabel] = { label: pLabel, time: dObj.getTime(), total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, details: [] };
-        groupedByPeriod[pLabel].total_orders += dayData.total_orders; groupedByPeriod[pLabel].success_orders += dayData.success_orders; groupedByPeriod[pLabel].sla_hit += dayData.sla_hit; groupedByPeriod[pLabel].total_cost += dayData.total_cost;
-        if (dayData.details) Object.values(dayData.details).forEach(d => groupedByPeriod[pLabel].details.push(d));
-    });
-    
-    let startDisp = getDisplayDate(new Date(targetStartMTD)); let endDisp = getDisplayDate(new Date(targetEnd));
-    document.getElementById('carrier-update-time').innerText = `ข้อมูล MTD: ${startDisp} - ${endDisp}`;
-    document.getElementById('tp-kpi-total').innerText = fmtN(aggData.total_orders); document.getElementById('tp-kpi-success').innerText = fmtN(aggData.success_orders); document.getElementById('tp-kpi-sla').innerText = fmtN(aggData.sla_hit); document.getElementById('tp-kpi-cost').innerText = fmtN(aggData.total_cost);
-
-    if(tbody) {
-        let html = "";
-        let carriers = Object.keys(aggData.carriers).sort((a,b) => aggData.carriers[b].total_orders - aggData.carriers[a].total_orders);
-        carriers.forEach(c => {
-            let cd = aggData.carriers[c];
-            let succPct = cd.total_orders > 0 ? (cd.success_orders / cd.total_orders) * 100 : 0; let slaPct = cd.success_orders > 0 ? (cd.sla_hit / cd.success_orders) * 100 : 0;
-            let bar = (pct, clr) => `<div style="display:flex; align-items:center; gap:8px;"><div class="modern-bar-bg" style="height:6px;"><div class="${clr}" style="width:${pct}%;"></div></div><span style="font-size:10px; font-weight:700; width:35px; text-align:right;">${pct.toFixed(1)}%</span></div>`;
-            html += `<tr><td style="font-weight:700;">${c}</td><td class="text-center font-bold">${fmtN(cd.total_orders)}</td><td>${bar(succPct, 'grad-fill-green')}</td><td>${bar(slaPct, 'grad-fill-blue')}</td><td class="text-center text-red font-bold">${fmtN(cd.total_cost)}</td></tr>`;
-        });
-        tbody.innerHTML = html;
-    }
-
-    let chronPeriods = Object.values(groupedByPeriod).sort((a,b) => a.time - b.time); 
-    let htmlHead = `<tr><th style="position:sticky; top:0; left:0; z-index:40; background:var(--bg-card);">วันที่ / Period</th>`;
-    let htmlOrders = `<tr><td class="text-dark font-bold">Orders</td>`;
-    let htmlVehicles = `<tr><td class="text-dark font-bold">จำนวนรถ</td>`;
-    let htmlSucc = `<tr><td class="text-dark font-bold">Succ.%</td>`;
-    let htmlSla = `<tr><td class="text-dark font-bold">SLA Adherence %</td>`;
-    let htmlCost = `<tr><td class="text-dark font-bold">Cost (฿)</td>`;
-    let htmlAccum = `<tr><td class="text-dark font-bold">Accumulate Cost (฿)</td>`;
-
-    let accumCost = 0;
-    let prevP = null;
-
-    chronPeriods.forEach((p, idx) => {
-        let uniquePlates = new Set();
-        p.details.forEach(d => { Object.keys(d.plates).forEach(pl => uniquePlates.add(pl)); });
-        let vCount = uniquePlates.size;
-
-        let succPct = p.total_orders > 0 ? (p.success_orders / p.total_orders * 100) : 0;
-        let slaPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders * 100) : 0;
-        accumCost += p.total_cost; 
-
-        htmlHead += `<th style="position:sticky; top:0; z-index:30; background:var(--bg-card);">${p.label}</th>`;
-        htmlOrders += `<td class="font-bold text-dark">${fmtN(p.total_orders)}</td>`;
-        htmlVehicles += `<td>${fmtN(vCount)}</td>`;
-        htmlSucc += `<td>${succPct.toFixed(1)}%</td>`;
-        htmlSla += `<td>${slaPct.toFixed(1)}%</td>`;
-        htmlCost += `<td class="text-red font-bold">${fmtN(p.total_cost)}</td>`;
-        htmlAccum += `<td class="font-bold text-blue">${fmtN(accumCost)}</td>`;
-
-        if (idx > 0) {
-            htmlHead += `<th class="diff-col text-muted" style="position:sticky; top:0; z-index:20;">เทียบก่อนหน้า</th>`;
-            
-            let diffOrd = p.total_orders - prevP.orders;
-            let diffVeh = vCount - prevP.vehicles;
-            let diffSucc = succPct - prevP.succ;
-            let diffSla = slaPct - prevP.sla;
-            let diffCost = p.total_cost - prevP.cost;
-
-            const fmtDiff = (v, isGoodPositive, isPct = false) => {
-                if (v === 0) return `<td class="diff-col text-right"><span style="background:#f1f5f9; color:#64748b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">- 0</span></td>`;
-                let isGood = isGoodPositive ? (v > 0) : (v < 0);
-                let arrow = v > 0 ? '▲' : '▼';
-                let sign = v > 0 ? '+' : '-';
-                let absVal = Math.abs(v);
-                let valStr = isPct ? absVal.toFixed(1) + '%' : fmtN(absVal);
-                let bgClr = isGood ? '#dcfce7' : '#fee2e2';
-                let txtClr = isGood ? '#10B981' : '#EF4444';
-                return `<td class="diff-col text-right"><span style="background:${bgClr}; color:${txtClr}; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">${arrow} ${sign}${valStr}</span></td>`;
-            };
-
-            htmlOrders += fmtDiff(diffOrd, true); htmlVehicles += fmtDiff(diffVeh, false); htmlSucc += fmtDiff(diffSucc, true, true);
-            htmlSla += fmtDiff(diffSla, true, true); htmlCost += fmtDiff(diffCost, false); htmlAccum += `<td class="diff-col"></td>`; 
-        }
-        prevP = { orders: p.total_orders, vehicles: vCount, succ: succPct, sla: slaPct, cost: p.total_cost };
-    });
-
-    htmlHead += `</tr>`; htmlOrders += `</tr>`; htmlVehicles += `</tr>`; 
-    htmlSucc += `</tr>`; htmlSla += `</tr>`; htmlCost += `</tr>`; htmlAccum += `</tr>`;
-
-    let tcTable = document.getElementById('transport-comparison-table');
-    if(tcTable) {
-        let thead = tcTable.querySelector('thead');
-        let tbody = tcTable.querySelector('tbody');
-        if(thead) thead.innerHTML = htmlHead;
-        if(tbody) tbody.innerHTML = htmlOrders + htmlVehicles + htmlSucc + htmlSla + htmlCost + htmlAccum;
-    }
-
-    setTimeout(() => {
-        let scroller = document.getElementById('comparison-scroll-container');
-        if(scroller) scroller.scrollLeft = scroller.scrollWidth;
-    }, 400);
-
-    let dailyHtml = "";
-    let sortedPeriods = Object.values(groupedByPeriod).sort((a,b) => b.time - a.time);
-    
-    sortedPeriods.forEach(p => {
-        let succPct = p.total_orders > 0 ? (p.success_orders / p.total_orders * 100).toFixed(1) : 0;
-        let slaPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders * 100).toFixed(1) : 0;
-
-        dailyHtml += `<tr class="summary-row">
-            <td colspan="2" class="font-bold text-dark text-sm">📅 ${p.label} - SUMMARY</td>
-            <td class="text-center font-bold text-sm">-</td>
-            <td class="text-center font-bold text-sm">${fmtN(p.total_orders)}</td>
-            <td><span class="text-green font-bold text-sm">${succPct}%</span></td>
-            <td><span class="text-blue font-bold text-sm">${slaPct}%</span></td>
-            <td class="text-center font-bold text-red text-sm">${fmtN(p.total_cost)} ฿</td>
-        </tr>`;
-
-        let mergedDetails = {};
-        p.details.forEach(d => {
-            let k = d.carrier + '|' + d.vType;
-            if(!mergedDetails[k]) mergedDetails[k] = { carrier: d.carrier, vType: d.vType, total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, plates: {} };
-            let md = mergedDetails[k];
-            md.total_orders += d.total_orders; md.success_orders += d.success_orders; md.sla_hit += d.sla_hit; md.total_cost += d.total_cost;
-            Object.keys(d.plates).forEach(pl => md.plates[pl] = true);
-        });
-
-        Object.values(mergedDetails).sort((a,b) => b.total_orders - a.total_orders).forEach(d => {
-            let vehCount = Object.keys(d.plates).length;
-            let dSucc = d.total_orders > 0 ? (d.success_orders / d.total_orders) * 100 : 0;
-            let dSla = d.success_orders > 0 ? (d.sla_hit / d.success_orders) * 100 : 0;
-            let bar = (pct, clr) => `<div style="display:flex; align-items:center; gap:8px;"><div class="modern-bar-bg" style="height:6px;"><div class="${clr}" style="width:${pct}%;"></div></div><span style="font-size:10px; font-weight:700; width:35px; text-align:right;">${pct.toFixed(1)}%</span></div>`;
-            dailyHtml += `<tr>
-                <td class="text-muted" style="padding-left:20px;">${p.label}</td>
-                <td><b class="text-dark">${d.carrier}</b><br><span class="text-xs text-muted">${d.vType}</span></td>
-                <td class="text-center font-bold text-purple">${vehCount}</td>
-                <td class="text-center font-bold">${fmtN(d.total_orders)}</td>
-                <td>${bar(dSucc, 'grad-fill-green')}</td>
-                <td>${bar(dSla, 'grad-fill-blue')}</td>
-                <td class="text-center text-red font-bold">${fmtN(d.total_cost)}</td>
-            </tr>`;
-        });
-    });
-    if(dailyTbody) dailyTbody.innerHTML = dailyHtml;
-
-    let chartLabels = []; let costData = []; let slaData = []; let targetData = [];
-    let chartPeriods = [...sortedPeriods].reverse(); 
-    
-    chartPeriods.forEach(p => {
-        chartLabels.push(p.label);
-        costData.push(p.total_cost);
-        let sPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders) * 100 : 0;
-        slaData.push(parseFloat(sPct.toFixed(2)));
-        targetData.push(98); 
-    });
-
-    if (typeof transportTrendChartInstance !== 'undefined' && transportTrendChartInstance) {
-        let tpMetric = document.getElementById('tp-metric-filter')?.value || 'BOTH';
-        let datasets = [];
-
-        if (tpMetric === 'BOTH' || tpMetric === 'SLA') {
-            datasets.push({
-                type: 'line', label: 'SLA Target (98%)', data: targetData, borderColor: '#F59E0B', borderDash: [5, 5], borderWidth: 2, pointRadius: 0, yAxisID: 'y', fill: false, order: 1
-            });
-            datasets.push({
-                type: 'bar', label: 'SLA Adherence (%)', data: slaData,
-                backgroundColor: (ctx) => {
-                    if (!ctx.chart.chartArea) return '#10B981';
-                    return ctx.raw >= 98 ? getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#10B981', '#6EE7B7') : getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#EF4444', '#FCA5A5');
-                },
-                borderRadius: 6, borderSkipped: false, barThickness: 16, yAxisID: 'y', order: 3
-            });
-        }
-        if (tpMetric === 'BOTH' || tpMetric === 'COST') {
-            datasets.push({
-                type: 'line', label: 'Cost (฿)', data: costData,
-                borderColor: '#8B5CF6', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderWidth: 3, pointRadius: 5, tension: 0.4, yAxisID: 'y1', fill: true, order: 2
-            });
-        }
-
-        transportTrendChartInstance.data.labels = chartLabels;
-        transportTrendChartInstance.data.datasets = datasets;
-        transportTrendChartInstance.options.scales.y.display = (tpMetric === 'BOTH' || tpMetric === 'SLA');
-        transportTrendChartInstance.options.scales.y1.display = (tpMetric === 'BOTH' || tpMetric === 'COST');
-        transportTrendChartInstance.update();
-    }
-
-    let trendSummaryBox = document.getElementById('tp-trend-summary');
-    if (trendSummaryBox && chartPeriods.length > 0) {
-        let latestCost = costData[costData.length - 1] || 0;
-        let prevCost = costData.length > 1 ? costData[costData.length - 2] : 0;
-        let latestSla = slaData[slaData.length - 1] || 0;
-        
-        let diff = latestCost - prevCost;
-        let diffPct = prevCost > 0 ? (diff / prevCost) * 100 : 0;
-        let diffHtml = "";
-        
-        if (chartPeriods.length === 1 || prevCost === 0) diffHtml = `<div class="stock-change stock-neutral">- 0.00%</div>`;
-        else if (diff > 0) diffHtml = `<div class="stock-change stock-up">▲ +${fmtN(diff)} ฿ (+${diffPct.toFixed(1)}%)</div>`;
-        else if (diff < 0) diffHtml = `<div class="stock-change stock-down">▼ ${fmtN(Math.abs(diff))} ฿ (${diffPct.toFixed(1)}%)</div>`;
-        else diffHtml = `<div class="stock-change stock-neutral">- 0.00%</div>`;
-        
-        let slaStatus = latestSla >= 98 ? `<span class="text-green font-bold">🎯 SLA: ${latestSla.toFixed(1)}% (Pass)</span>` : `<span class="text-red font-bold">⚠️ SLA: ${latestSla.toFixed(1)}% (Fail)</span>`;
-        
-        trendSummaryBox.innerHTML = `
-            <div class="stock-val-wrap">
-                <span class="stock-label">Total Cost (Latest)</span>
-                <span class="stock-price">฿ ${fmtN(latestCost)}</span>
-                <div class="mt-10">${slaStatus}</div>
-            </div>
-            <div>${diffHtml}</div>
-        `;
-    }
-}
-document.getElementById('tp-metric-filter')?.addEventListener('change', updateTransportUI);
-
-// ----------------------------------------------------
-// PRODUCTIVITY (Overlay Chart & MTD Logic)
+// PRODUCTIVITY (Overlay Chart + Area Table)
 // ----------------------------------------------------
 function renderProductivitySection() {
     try {
@@ -2219,27 +1969,27 @@ function renderProductivitySection() {
             return { picks: p, hours: h };
         };
 
+        // 🌟 กราฟ UPH แบบ Stacked Overlay (เป้าซ้อนกับผลงานจริง)
         if (productivityChartInstance) {
             let labels = [], dataActual = [], dataTarget = [];
 
             chartSlice.forEach(g => {
                 labels.push(g.label);
-                let uph = 0, picks = 0;
+                let uph = 0;
                 let gt = getTarget(selectedArea, groupDateStr(g)); 
 
-                if (selectedArea === 'ALL') { let nb = nonBulkTotals(g); uph = nb.hours > 0 ? Math.round(nb.picks / nb.hours) : 0; picks = Math.round(nb.picks); } 
-                else if (g.areas[selectedArea]) { uph = g.areas[selectedArea].hours > 0 ? Math.round(g.areas[selectedArea].picks / g.areas[selectedArea].hours) : 0; picks = Math.round(g.areas[selectedArea].picks); }
+                if (selectedArea === 'ALL') { let nb = nonBulkTotals(g); uph = nb.hours > 0 ? Math.round(nb.picks / nb.hours) : 0; } 
+                else if (g.areas[selectedArea]) { uph = g.areas[selectedArea].hours > 0 ? Math.round(g.areas[selectedArea].picks / g.areas[selectedArea].hours) : 0; }
 
                 dataActual.push(uph); 
                 dataTarget.push(gt); 
             });
 
             productivityChartInstance.data.labels = labels;
-            // วาดแท่ง 2 ชั้นให้ทับกัน (Target สีเทา, Actual สีเขียว/แดง)
             productivityChartInstance.data.datasets = [
                 {
                     type: 'bar', label: 'Target', data: dataTarget,
-                    backgroundColor: 'rgba(226, 232, 240, 0.7)', // สีเทาอ่อน (เป็นพื้นหลัง)
+                    backgroundColor: 'rgba(226, 232, 240, 0.8)', // สีเทาอ่อน (เป็นพื้นหลังเป้าหมาย)
                     barPercentage: 0.6, categoryPercentage: 0.8
                 },
                 {
@@ -2247,7 +1997,7 @@ function renderProductivitySection() {
                     backgroundColor: (ctx) => {
                         let actual = ctx.raw;
                         let target = dataTarget[ctx.dataIndex];
-                        return actual >= target ? '#10B981' : '#EF4444'; // สีเขียวถ้าผ่าน สีแดงถ้าตก
+                        return actual >= target ? '#10B981' : '#EF4444'; // เขียวถ้าผ่านเป้า แดงถ้าตก
                     },
                     barPercentage: 0.6, categoryPercentage: 0.8
                 }
@@ -2272,6 +2022,7 @@ function renderProductivitySection() {
             summaryEl.className = uph >= currentTarget ? 'info-alert alert-green mb-20 mt-10' : 'info-alert alert-red mb-20 mt-10';
         }
 
+        // 🌟 ตาราง AREA (ดึงยืดสุดหน้าจอ)
         const areaTableEl = document.getElementById('prod-area-table');
         if (areaTableEl) {
             let zoneObj = latest.zones || {};
@@ -2282,7 +2033,11 @@ function renderProductivitySection() {
             });
 
             let html = `<thead><tr>
-                <th style="position:sticky; left:0; z-index:20;">Picking Zone</th><th class="text-center">Area</th><th class="text-center">Productivity (UPH)</th><th class="text-center">Gap</th><th class="text-center text-blue">Cost/Pick (฿)</th>
+                <th style="position:sticky; left:0; z-index:20; background:var(--bg-card); width:20%;">Picking Zone</th>
+                <th class="text-center" style="width:20%;">Area</th>
+                <th class="text-center" style="width:20%;">Productivity (UPH)</th>
+                <th class="text-center" style="width:20%;">Gap</th>
+                <th class="text-center text-blue" style="width:20%;">Cost/Pick (฿)</th>
             </tr></thead><tbody>`;
 
             if(zoneNames.length === 0) { html += `<tr><td colspan="5" class="text-center text-muted">ไม่มีข้อมูล Zone ในช่วงที่เลือก</td></tr>`; } 
@@ -2338,7 +2093,8 @@ function renderProductivitySection() {
             }
             userTableEl.innerHTML = html + "</tbody>";
         }
-const overallTableEl = document.getElementById('prod-overall-table');
+
+        const overallTableEl = document.getElementById('prod-overall-table');
         if (overallTableEl) {
             let html = `<thead><tr>
                 <th style="position:sticky; left:0; z-index:20;">Date</th><th class="text-center">Active Pickers</th><th class="text-center">Total Picks</th><th class="text-center">Overall UPH</th><th class="text-center text-blue">Avg Cost/Pick (฿)</th>
@@ -2362,22 +2118,6 @@ const overallTableEl = document.getElementById('prod-overall-table');
         }
 
     } catch (e) { console.error("Productivity Render Error:", e); }
-}
-
-function getTarget(areaName, dateStr) {
-    let eff = getEffectiveUphCost(dateStr);
-    let areaStr = (areaName || "").toString().toLowerCase();
-    if (areaStr === 'all') return eff.trg_all;
-    if (areaStr.includes('full')) return eff.trg_full;
-    if (areaStr.includes('half')) return eff.trg_half;
-    if (areaStr.includes('ea')) return eff.trg_ea;
-    return eff.trg_all;
-}
-
-function getEffectiveUphCost(dateStr) {
-    return {
-        trg_all: 0, trg_full: 0, trg_half: 0, trg_ea: 0, cost_salary: 0, cost_days: 0
-    };
 }
 
 async function saveTargets() {
@@ -2404,13 +2144,15 @@ async function saveTargets() {
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const j = await resp.json();
         if (j.success === false) throw new Error(j.message || 'บันทึกไม่สำเร็จ');
+        
         globalUphCost[targetDate] = { ...rec };
         showToast(`✅ บันทึก UPH Target / Cost สำเร็จ!`, 'success');
+        closeUphModal(); // เซฟเสร็จแล้วปิด Popup
+        renderProductivitySection(); // รีเฟรชตารางใหม่
     } catch (err) {
         showToast('❌ บันทึกไม่สำเร็จ: ' + err.message, 'error');
     } finally {
         if (btn) { btn.disabled = false; btn.innerHTML = orig || '💾 Save'; }
-        renderProductivitySection();
     }
 }
 
