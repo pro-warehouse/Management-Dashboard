@@ -2460,3 +2460,7 @@ function renderProductivitySection() {
 
     } catch (e) { console.error("Productivity Render Error:", e); }
 }
+// เพิ่มโค้ดนี้ไว้บรรทัดล่างสุดของ script.js
+document.addEventListener('DOMContentLoaded', () => {
+    initDashboard();
+});
