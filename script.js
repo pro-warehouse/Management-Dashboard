@@ -52,7 +52,12 @@ function getGradient(ctx, chartArea, colorStart, colorEnd) {
 }
 
 const gradPalettes = [
-    { s: '#60A5FA', e: '#3B82F6' }, { s: '#34D399', e: '#10B981' }, { s: '#FCD34D', e: '#F59E0B' }, { s: '#A78BFA', e: '#8B5CF6' }, { s: '#F87171', e: '#EF4444' }, { s: '#22D3EE', e: '#06B6D4' }
+    { s: '#8CC63F', e: '#009245' }, // เขียว PT
+    { s: '#38BDF8', e: '#0284C7' }, // ฟ้า/น้ำเงิน
+    { s: '#FBBF24', e: '#F59E0B' }, // เหลืองทอง
+    { s: '#F87171', e: '#ED1C24' }, // แดง PT
+    { s: '#A78BFA', e: '#8B5CF6' }, // ม่วง
+    { s: '#2DD4BF', e: '#0D9488' }  // เขียวอมฟ้า
 ];
 
 function getPeriodLabel(dObj, period) {
@@ -87,19 +92,21 @@ const dataLabelPlugin = {
         const { ctx } = chart;
         
         chart.data.datasets.forEach((dataset, i) => {
-            if (dataset.type === 'line' || !chart.isDatasetVisible(i) || dataset.stack) return;
+            if (dataset.type === 'line' || !chart.isDatasetVisible(i)) return;
             const meta = chart.getDatasetMeta(i);
             meta.data.forEach((bar, index) => {
                 const data = dataset.data[index];
-                if(data > 0 && bar.height > 20){
-                    ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
-                    ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                // วาดเลขย่อย "กลางแท่ง" (เฉพาะแท่งที่สูงพอ จะได้ไม่รก)
+                if(data > 0 && bar.height > 25){
+                    ctx.fillStyle = '#FFFFFF'; // ใช้สีขาวให้ตัดกับกราฟ
+                    ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                     let val = (chart.canvas.id.includes('claim')) ? fmtN(data) : (data%1!==0 ? data.toFixed(1)+'%' : fmtN(data));
-                    ctx.fillText(val, bar.x, bar.y - 6);
+                    ctx.fillText(val, bar.x, bar.y + (bar.height / 2));
                 }
             });
         });
         
+        // วาดเลข "ยอดรวม" ไว้บนสุดของกราฟแท่ง
         if (chart.canvas.id === 'ffmTrendChart' || chart.canvas.id === 'workforceChart') {
             let totals = []; let xCoords = []; let topY = [];
             chart.data.datasets.forEach((dataset, i) => {
@@ -107,7 +114,7 @@ const dataLabelPlugin = {
                 const meta = chart.getDatasetMeta(i);
                 dataset.data.forEach((val, index) => { 
                     totals[index] = (totals[index] || 0) + (val || 0); 
-                    if (meta.data[index]) {
+                    if (meta.data[index] && val > 0) {
                         xCoords[index] = meta.data[index].x;
                         topY[index] = Math.min(topY[index] || 99999, meta.data[index].y);
                     }
@@ -116,8 +123,8 @@ const dataLabelPlugin = {
             chart.data.labels.forEach((_, index) => {
                 if (totals[index] > 0 && xCoords[index] && topY[index]) {
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
-                    ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-                    ctx.fillText(fmtN(Math.round(totals[index])), xCoords[index], topY[index] - 6);
+                    ctx.font = 'bold 11px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                    ctx.fillText(fmtN(Math.round(totals[index])), xCoords[index], topY[index] - 8);
                 }
             });
         }
