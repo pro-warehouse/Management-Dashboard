@@ -410,3 +410,8 @@ body {
 .btn-close-modal { background: transparent; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-muted); transition: 0.2s;}
 .btn-close-modal:hover { color: var(--brand-red); transform: scale(1.1);}
 .modal-body { padding: 24px; }
+
+/* Fix z-index issue for Attendance & Matrix Tables */
+.excel-grid td:first-child { position: sticky; left: 0; background: var(--bg-card); z-index: 10; box-shadow: inset -1px 0 0 var(--border-color); }
+.excel-grid th { top: 0; z-index: 15; }
+.excel-grid th:first-child { z-index: 25; }
