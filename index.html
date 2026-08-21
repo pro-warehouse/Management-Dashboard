@@ -191,15 +191,10 @@
             <div class="card">
                 <div class="card-head-bar">
                     <h3 class="panel-title m-0">VOLUME UTILIZATION</h3>
-                    <button onclick="toggleCapSetup()" class="btn-outline" style="padding: 4px 8px; font-size: 0.75rem; height: auto;">⚙️ Set</button>
+                    <!-- เปลี่ยน onclick เป็นฟังก์ชันเรียก Popup -->
+                    <button onclick="openCapacityModal()" class="btn-outline" style="padding: 4px 8px; font-size: 0.75rem; height: auto;">⚙️ Set</button>
                 </div>
-                <div id="cap-setup-panel" class="settings-box mb-10 mt-10" style="display:none;">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                        <input type="date" id="cap-target-date" class="filter-control" style="height: 30px; font-size: 0.75rem;" onchange="fetchAndRenderCapInputs()">
-                    </div>
-                    <div id="cap-inputs-container" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;"></div>
-                    <button onclick="saveDailyCapacity()" class="btn-primary" style="height: 30px; font-size: 0.75rem; padding: 4px 12px;">💾 Save</button>
-                </div>
+                <!-- ลบ cap-setup-panel ออกไป -->
                 <div class="table-scroll-wrap max-h-300 mt-10">
                     <table class="data-table" id="utilization-table">
                         <thead><tr><th>OWNER</th><th class="text-right">VOLUME</th><th style="width:35%;">UTIL %</th><th class="text-center">STATUS</th></tr></thead>
@@ -498,6 +493,27 @@
     </main>
 
     <div id="custom-toast" class="toast-popup"><span id="toast-message">Ready!</span></div>
+    <!-- 🌟 Modal Popup สำหรับตั้งค่า Volume Utilization 🌟 -->
+    <div id="capacity-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="panel-title m-0">⚙️ ตั้งค่าเป้าหมาย Volume Utilization</h3>
+                <button onclick="closeCapacityModal()" class="btn-close-modal">✖</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <label class="text-sm font-bold text-muted">เลือกวันที่:</label>
+                    <input type="date" id="cap-target-date" class="filter-control" style="height: 34px; font-size: 0.85rem;" onchange="fetchAndRenderCapInputs()">
+                </div>
+                <!-- จุดแสดงกล่องกรอกข้อมูล -->
+                <div id="cap-inputs-container" style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;"></div>
+                
+                <div style="text-align: right;">
+                    <button onclick="saveDailyCapacity()" class="btn-primary" style="padding: 8px 24px;">💾 บันทึกข้อมูล (Save)</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
