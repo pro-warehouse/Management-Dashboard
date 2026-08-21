@@ -5,6 +5,18 @@ let _toastTimer = null;
 let _loadProgress = 0; 
 let _loadAnimFrame = null;
 
+// ==========================================
+// 🌟 1. STABLE DATE PARSING (ป้องกัน Timezone Bug 100%)
+// ==========================================
+function parseDateLocal(str) {
+    if (!str) return new Date();
+    if (str.includes('-')) {
+        let parts = str.split('-'); // e.g. "2026-08-21"
+        return new Date(parts[0], parseInt(parts[1]) - 1, parts[2]);
+    }
+    return new Date(str);
+}
+
 function showToast(message, type = 'success', duration = 3000) {
     const toast = document.getElementById('custom-toast');
     const msgEl = document.getElementById('toast-message');
@@ -283,6 +295,19 @@ document.getElementById('theme-toggle')?.addEventListener('click', () => {
     Object.values(Chart.instances).forEach(chart => chart.update());
 });
 
+// ==========================================
+// 🌟 2. ROBUST EVENT LISTENERS FOR FILTERS
+// ==========================================
+document.addEventListener('click', (e) => {
+    let buBtn = document.getElementById('bu-multi-select');
+    let buMenu = document.getElementById('bu-dropdown-menu');
+    if (buBtn && buMenu && !buBtn.contains(e.target) && !buMenu.contains(e.target)) buMenu.style.display = 'none';
+
+    let otBtn = document.getElementById('ontime-line-ms');
+    let otMenu = document.getElementById('ontime-line-menu');
+    if (otBtn && otMenu && !otBtn.contains(e.target) && !otMenu.contains(e.target)) otMenu.style.display = 'none';
+});
+
 document.getElementById('ontime-line-ms')?.addEventListener('click', (e) => {
     e.stopPropagation();
     let menu = document.getElementById('ontime-line-menu');
@@ -304,6 +329,8 @@ document.getElementById('btn-apply-ot-line')?.addEventListener('click', () => {
     document.getElementById('ontime-line-text').innerText = selected.length > 1 ? `${selected.length} Selected` : selected[0];
     updateOnTimeUI();
 });
+
+document.getElementById('tp-metric-filter')?.addEventListener('change', updateTransportUI);
 
 function cleanDataBeforeLoad() {
     ['fulfillment', 'wave_ops', 'claims', 'inventory', 'inventory_daily', 'transport'].forEach(module => {
@@ -395,11 +422,6 @@ function populateGlobalBUFilters() {
             let menu = document.getElementById('bu-dropdown-menu');
             document.querySelectorAll('.dropdown-card').forEach(m => { if (m !== menu) m.style.display = 'none'; });
             menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-        });
-        document.addEventListener('click', (e) => {
-            let btn = document.getElementById('bu-multi-select');
-            let menu = document.getElementById('bu-dropdown-menu');
-            if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) menu.style.display = 'none';
         });
     }
 }
@@ -605,10 +627,13 @@ async function initFulfillmentRealtime() {
         return { tot: validSources[0].tot, full: validSources[0].full };
     };
     
+    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
     const dpStartVal = document.getElementById('date-start').value;
     const dpEndVal = document.getElementById('date-end').value;
-    const targetStart = new Date(dpStartVal).setHours(0, 0, 0, 0);
-    const targetEnd = new Date(dpEndVal).setHours(23, 59, 59, 999);
+    const targetStartObj = parseDateLocal(dpStartVal);
+    const targetEndObj = parseDateLocal(dpEndVal);
+    const targetStart = targetStartObj.setHours(0, 0, 0, 0);
+    const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     const period = document.getElementById('global-period').value;
     
     const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
@@ -624,7 +649,7 @@ async function initFulfillmentRealtime() {
             if (result.success && result.data) bqDataList = result.data;
         }
         
-        let dObj = new Date(dpEndVal); dObj.setDate(dObj.getDate() - 90);
+        let dObj = parseDateLocal(dpEndVal); dObj.setDate(dObj.getDate() - 90);
         const startDateCap = dObj.toISOString().split('T')[0];
         const capResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -876,7 +901,6 @@ async function initFulfillmentRealtime() {
             document.getElementById('ffm-orders-update').innerText = `Updated: ${latestPLabel || '--'}`;
         }
 
-        // 🌟 แก้ไข: วนหาข้อมูล FFM Rate ของวันล่าสุดที่มีการส่งของจริงๆ (Ship > 0)
         let latestShipDateStr = null, prevShipDateStr = null;
         let revDates = [...validChartDates].reverse();
         for (let d of revDates) {
@@ -1212,10 +1236,11 @@ function updateWorkforceUI() {
         return;
     }
     
-    const dpStartVal = document.getElementById('date-start').value;
-    const dpEndVal = document.getElementById('date-end').value;
-    const targetStart = new Date(dpStartVal).setHours(0, 0, 0, 0);
-    const targetEnd = new Date(dpEndVal).setHours(23, 59, 59, 999);
+    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
+    const targetStartObj = parseDateLocal(document.getElementById('date-start').value);
+    const targetEndObj = parseDateLocal(document.getElementById('date-end').value);
+    const targetStart = targetStartObj.setHours(0, 0, 0, 0);
+    const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     
     let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(getStandardDate(a)).getTime() - new Date(getStandardDate(b)).getTime());
     let validKeys = wfKeys.filter(k => { let t = new Date(getStandardDate(k)).getTime(); return t >= targetStart && t <= targetEnd; });
@@ -1473,8 +1498,8 @@ function updateOnTimeUI() {
         return;
     }
     
-    const dpEndVal = document.getElementById('date-end').value;
-    const targetEndObj = new Date(dpEndVal);
+    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
+    const targetEndObj = parseDateLocal(document.getElementById('date-end').value);
     const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
     
@@ -1586,8 +1611,8 @@ function updateClaimUI() {
         return;
     }
 
-    const dpEndVal = document.getElementById('date-end').value;
-    const targetEndObj = new Date(dpEndVal);
+    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
+    const targetEndObj = parseDateLocal(document.getElementById('date-end').value);
     const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
     const targetMonth = targetEndObj.getMonth();
@@ -1608,7 +1633,6 @@ function updateClaimUI() {
                     let _qty = typeof buData === 'object' ? (buData.qty||0) : 0;
                     cTotalCost += _cost;
                     cTotalQty += _qty;
-                    // 🌟 FIX: ใช้ dKey แทน dStr เพื่อป้องกัน Error
                     if(dObj.getTime() >= targetStartMTD && (_cost > 0 || _qty > 0)) {
                         tableRecords.push({ date: formatShortDate(dKey), owner: bu, cost: _cost, qty: _qty, ts: dObj.getTime() });
                     }
@@ -1691,8 +1715,8 @@ function updateInventoryUI() {
         return;
     }
 
-    const dpEndVal = document.getElementById('date-end').value;
-    const targetEndObj = new Date(dpEndVal);
+    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
+    const targetEndObj = parseDateLocal(document.getElementById('date-end').value);
     const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
     const ownerFilter = document.getElementById('inv-owner-filter')?.value || 'ALL';
@@ -1789,8 +1813,8 @@ function renderLocationAccuracy() {
     const locBoxEl = document.getElementById('loc-analysis-box');
     if(!locTableEl || !locBoxEl || !globalData.inventory || Object.keys(globalData.inventory).length === 0) return;
 
-    const dpEndVal = document.getElementById('date-end').value;
-    const targetEndObj = new Date(dpEndVal);
+    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
+    const targetEndObj = parseDateLocal(document.getElementById('date-end').value);
     let targetM = targetEndObj.getMonth();
     let targetY = targetEndObj.getFullYear().toString().substring(2);
     let mLabelReq = shortMonths[targetM] + "-" + targetY; // e.g., "Aug-26"
@@ -1866,6 +1890,261 @@ function renderLocationAccuracy() {
 }
 
 // ----------------------------------------------------
+// TRANSPORT PERFORMANCE (FIX DATE RANGE BUG)
+// ----------------------------------------------------
+function updateTransportUI() {
+    let tbody = document.querySelector('#new-transport-table tbody');
+    let dailyTbody = document.querySelector('#daily-transport-table tbody');
+    
+    if (!globalData.transport || Object.keys(globalData.transport).length === 0) {
+        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">กำลังรอข้อมูลขนส่งเข้าระบบ...</td></tr>`;
+        if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">กำลังรอข้อมูลขนส่งเข้าระบบ...</td></tr>`;
+        return;
+    }
+    
+    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
+    const targetStartObj = parseDateLocal(document.getElementById('date-start').value);
+    const targetEndObj = parseDateLocal(document.getElementById('date-end').value);
+    const targetStart = targetStartObj.setHours(0, 0, 0, 0);
+    const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
+    const period = document.getElementById('global-period').value;
+    
+    let validDates = Object.keys(globalData.transport).filter(k => {
+        let dTime = new Date(k).getTime(); return !isNaN(dTime) && dTime >= targetStart && dTime <= targetEnd;
+    }).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
+
+    if (validDates.length === 0) {
+        document.getElementById('tp-kpi-total').innerText = "0"; document.getElementById('tp-kpi-success').innerText = "0"; document.getElementById('tp-kpi-sla').innerText = "0"; document.getElementById('tp-kpi-cost').innerText = "0";
+        document.getElementById('carrier-update-time').innerText = `ช่วงเวลาที่เลือกไม่มีข้อมูล`;
+        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่ง ในช่วงเวลาที่เลือก</td></tr>`;
+        if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลรายละเอียด</td></tr>`;
+        
+        let tcTable = document.getElementById('transport-comparison-table');
+        if(tcTable) tcTable.querySelector('tbody').innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลเปรียบเทียบย้อนหลัง</td></tr>`;
+        return;
+    }
+
+    let aggData = { total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, carriers: {} };
+    let groupedByPeriod = {};
+    
+    validDates.forEach(dateKey => {
+        let dObj = new Date(dateKey);
+        let pLabel = getPeriodLabel(dObj, period);
+        let dayData = globalData.transport[dateKey];
+        
+        aggData.total_orders += dayData.total_orders; aggData.success_orders += dayData.success_orders; aggData.sla_hit += dayData.sla_hit; aggData.total_cost += dayData.total_cost;
+        Object.keys(dayData.carriers || {}).forEach(cName => {
+            if (!aggData.carriers[cName]) aggData.carriers[cName] = { total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0 };
+            aggData.carriers[cName].total_orders += dayData.carriers[cName].total_orders; aggData.carriers[cName].success_orders += dayData.carriers[cName].success_orders; aggData.carriers[cName].sla_hit += dayData.carriers[cName].sla_hit; aggData.carriers[cName].total_cost += dayData.carriers[cName].total_cost;
+        });
+
+        if (!groupedByPeriod[pLabel]) groupedByPeriod[pLabel] = { label: pLabel, time: dObj.getTime(), total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, details: [] };
+        groupedByPeriod[pLabel].total_orders += dayData.total_orders; groupedByPeriod[pLabel].success_orders += dayData.success_orders; groupedByPeriod[pLabel].sla_hit += dayData.sla_hit; groupedByPeriod[pLabel].total_cost += dayData.total_cost;
+        if (dayData.details) Object.values(dayData.details).forEach(d => groupedByPeriod[pLabel].details.push(d));
+    });
+    
+    let startDisp = getDisplayDate(new Date(targetStart)); let endDisp = getDisplayDate(new Date(targetEnd));
+    document.getElementById('carrier-update-time').innerText = `ข้อมูล: ${startDisp} - ${endDisp}`;
+    document.getElementById('tp-kpi-total').innerText = fmtN(aggData.total_orders); document.getElementById('tp-kpi-success').innerText = fmtN(aggData.success_orders); document.getElementById('tp-kpi-sla').innerText = fmtN(aggData.sla_hit); document.getElementById('tp-kpi-cost').innerText = fmtN(aggData.total_cost);
+
+    if(tbody) {
+        let html = "";
+        let carriers = Object.keys(aggData.carriers).sort((a,b) => aggData.carriers[b].total_orders - aggData.carriers[a].total_orders);
+        carriers.forEach(c => {
+            let cd = aggData.carriers[c];
+            let succPct = cd.total_orders > 0 ? (cd.success_orders / cd.total_orders) * 100 : 0; let slaPct = cd.success_orders > 0 ? (cd.sla_hit / cd.success_orders) * 100 : 0;
+            let bar = (pct, clr) => `<div style="display:flex; align-items:center; gap:8px;"><div class="modern-bar-bg" style="height:6px;"><div class="${clr}" style="width:${pct}%;"></div></div><span style="font-size:10px; font-weight:700; width:35px; text-align:right;">${pct.toFixed(1)}%</span></div>`;
+            html += `<tr><td style="font-weight:700;">${c}</td><td class="text-center font-bold">${fmtN(cd.total_orders)}</td><td>${bar(succPct, 'grad-fill-green')}</td><td>${bar(slaPct, 'grad-fill-blue')}</td><td class="text-center text-red font-bold">${fmtN(cd.total_cost)}</td></tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    let chronPeriods = Object.values(groupedByPeriod).sort((a,b) => a.time - b.time); 
+    let htmlHead = `<tr><th style="position:sticky; top:0; left:0; z-index:40; background:var(--bg-card);">วันที่ / Period</th>`;
+    let htmlOrders = `<tr><td class="text-dark font-bold">Orders</td>`;
+    let htmlVehicles = `<tr><td class="text-dark font-bold">จำนวนรถ</td>`;
+    let htmlSucc = `<tr><td class="text-dark font-bold">Succ.%</td>`;
+    let htmlSla = `<tr><td class="text-dark font-bold">SLA Adherence %</td>`;
+    let htmlCost = `<tr><td class="text-dark font-bold">Cost (฿)</td>`;
+    let htmlAccum = `<tr><td class="text-dark font-bold">Accumulate Cost (฿)</td>`;
+
+    let accumCost = 0;
+    let prevP = null;
+
+    chronPeriods.forEach((p, idx) => {
+        let uniquePlates = new Set();
+        p.details.forEach(d => { Object.keys(d.plates).forEach(pl => uniquePlates.add(pl)); });
+        let vCount = uniquePlates.size;
+
+        let succPct = p.total_orders > 0 ? (p.success_orders / p.total_orders * 100) : 0;
+        let slaPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders * 100) : 0;
+        accumCost += p.total_cost; 
+
+        htmlHead += `<th style="position:sticky; top:0; z-index:30; background:var(--bg-card);">${p.label}</th>`;
+        htmlOrders += `<td class="font-bold text-dark">${fmtN(p.total_orders)}</td>`;
+        htmlVehicles += `<td>${fmtN(vCount)}</td>`;
+        htmlSucc += `<td>${succPct.toFixed(1)}%</td>`;
+        htmlSla += `<td>${slaPct.toFixed(1)}%</td>`;
+        htmlCost += `<td class="text-red font-bold">${fmtN(p.total_cost)}</td>`;
+        htmlAccum += `<td class="font-bold text-blue">${fmtN(accumCost)}</td>`;
+
+        if (idx > 0) {
+            htmlHead += `<th class="diff-col text-muted" style="position:sticky; top:0; z-index:20;">เทียบก่อนหน้า</th>`;
+            
+            let diffOrd = p.total_orders - prevP.orders;
+            let diffVeh = vCount - prevP.vehicles;
+            let diffSucc = succPct - prevP.succ;
+            let diffSla = slaPct - prevP.sla;
+            let diffCost = p.total_cost - prevP.cost;
+
+            const fmtDiff = (v, isGoodPositive, isPct = false) => {
+                if (v === 0) return `<td class="diff-col text-right"><span style="background:#f1f5f9; color:#64748b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">- 0</span></td>`;
+                let isGood = isGoodPositive ? (v > 0) : (v < 0);
+                let arrow = v > 0 ? '▲' : '▼';
+                let sign = v > 0 ? '+' : '-';
+                let absVal = Math.abs(v);
+                let valStr = isPct ? absVal.toFixed(1) + '%' : fmtN(absVal);
+                let bgClr = isGood ? '#dcfce7' : '#fee2e2';
+                let txtClr = isGood ? '#10B981' : '#EF4444';
+                return `<td class="diff-col text-right"><span style="background:${bgClr}; color:${txtClr}; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">${arrow} ${sign}${valStr}</span></td>`;
+            };
+
+            htmlOrders += fmtDiff(diffOrd, true); htmlVehicles += fmtDiff(diffVeh, false); htmlSucc += fmtDiff(diffSucc, true, true);
+            htmlSla += fmtDiff(diffSla, true, true); htmlCost += fmtDiff(diffCost, false); htmlAccum += `<td class="diff-col"></td>`; 
+        }
+        prevP = { orders: p.total_orders, vehicles: vCount, succ: succPct, sla: slaPct, cost: p.total_cost };
+    });
+
+    htmlHead += `</tr>`; htmlOrders += `</tr>`; htmlVehicles += `</tr>`; 
+    htmlSucc += `</tr>`; htmlSla += `</tr>`; htmlCost += `</tr>`; htmlAccum += `</tr>`;
+
+    let tcTable = document.getElementById('transport-comparison-table');
+    if(tcTable) {
+        let thead = tcTable.querySelector('thead');
+        let tbody = tcTable.querySelector('tbody');
+        if(thead) thead.innerHTML = htmlHead;
+        if(tbody) tbody.innerHTML = htmlOrders + htmlVehicles + htmlSucc + htmlSla + htmlCost + htmlAccum;
+    }
+
+    setTimeout(() => {
+        let scroller = document.getElementById('comparison-scroll-container');
+        if(scroller) scroller.scrollLeft = scroller.scrollWidth;
+    }, 400);
+
+    let dailyHtml = "";
+    let sortedPeriods = Object.values(groupedByPeriod).sort((a,b) => b.time - a.time);
+    
+    sortedPeriods.forEach(p => {
+        let succPct = p.total_orders > 0 ? (p.success_orders / p.total_orders * 100).toFixed(1) : 0;
+        let slaPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders * 100).toFixed(1) : 0;
+
+        dailyHtml += `<tr class="summary-row">
+            <td colspan="2" class="font-bold text-dark text-sm">📅 ${p.label} - SUMMARY</td>
+            <td class="text-center font-bold text-sm">-</td>
+            <td class="text-center font-bold text-sm">${fmtN(p.total_orders)}</td>
+            <td><span class="text-green font-bold text-sm">${succPct}%</span></td>
+            <td><span class="text-blue font-bold text-sm">${slaPct}%</span></td>
+            <td class="text-center font-bold text-red text-sm">${fmtN(p.total_cost)} ฿</td>
+        </tr>`;
+
+        let mergedDetails = {};
+        p.details.forEach(d => {
+            let k = d.carrier + '|' + d.vType;
+            if(!mergedDetails[k]) mergedDetails[k] = { carrier: d.carrier, vType: d.vType, total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, plates: {} };
+            let md = mergedDetails[k];
+            md.total_orders += d.total_orders; md.success_orders += d.success_orders; md.sla_hit += d.sla_hit; md.total_cost += d.total_cost;
+            Object.keys(d.plates).forEach(pl => md.plates[pl] = true);
+        });
+
+        Object.values(mergedDetails).sort((a,b) => b.total_orders - a.total_orders).forEach(d => {
+            let vehCount = Object.keys(d.plates).length;
+            let dSucc = d.total_orders > 0 ? (d.success_orders / d.total_orders) * 100 : 0;
+            let dSla = d.success_orders > 0 ? (d.sla_hit / d.success_orders) * 100 : 0;
+            let bar = (pct, clr) => `<div style="display:flex; align-items:center; gap:8px;"><div class="modern-bar-bg" style="height:6px;"><div class="${clr}" style="width:${pct}%;"></div></div><span style="font-size:10px; font-weight:700; width:35px; text-align:right;">${pct.toFixed(1)}%</span></div>`;
+            dailyHtml += `<tr>
+                <td class="text-muted" style="padding-left:20px;">${p.label}</td>
+                <td><b class="text-dark">${d.carrier}</b><br><span class="text-xs text-muted">${d.vType}</span></td>
+                <td class="text-center font-bold text-purple">${vehCount}</td>
+                <td class="text-center font-bold">${fmtN(d.total_orders)}</td>
+                <td>${bar(dSucc, 'grad-fill-green')}</td>
+                <td>${bar(dSla, 'grad-fill-blue')}</td>
+                <td class="text-center text-red font-bold">${fmtN(d.total_cost)}</td>
+            </tr>`;
+        });
+    });
+    if(dailyTbody) dailyTbody.innerHTML = dailyHtml;
+
+    let chartLabels = []; let costData = []; let slaData = []; let targetData = [];
+    let chartPeriods = [...sortedPeriods].reverse(); 
+    
+    chartPeriods.forEach(p => {
+        chartLabels.push(p.label);
+        costData.push(p.total_cost);
+        let sPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders) * 100 : 0;
+        slaData.push(parseFloat(sPct.toFixed(2)));
+        targetData.push(98); 
+    });
+
+    if (typeof transportTrendChartInstance !== 'undefined' && transportTrendChartInstance) {
+        let tpMetric = document.getElementById('tp-metric-filter')?.value || 'BOTH';
+        let datasets = [];
+
+        if (tpMetric === 'BOTH' || tpMetric === 'SLA') {
+            datasets.push({
+                type: 'line', label: 'SLA Target (98%)', data: targetData, borderColor: '#F59E0B', borderDash: [5, 5], borderWidth: 2, pointRadius: 0, yAxisID: 'y', fill: false, order: 1
+            });
+            datasets.push({
+                type: 'bar', label: 'SLA Adherence (%)', data: slaData,
+                backgroundColor: (ctx) => {
+                    if (!ctx.chart.chartArea) return '#10B981';
+                    return ctx.raw >= 98 ? getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#10B981', '#6EE7B7') : getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#EF4444', '#FCA5A5');
+                },
+                borderRadius: 6, borderSkipped: false, barThickness: 16, yAxisID: 'y', order: 3
+            });
+        }
+        if (tpMetric === 'BOTH' || tpMetric === 'COST') {
+            datasets.push({
+                type: 'line', label: 'Cost (฿)', data: costData,
+                borderColor: '#8B5CF6', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderWidth: 3, pointRadius: 5, tension: 0.4, yAxisID: 'y1', fill: true, order: 2
+            });
+        }
+
+        transportTrendChartInstance.data.labels = chartLabels;
+        transportTrendChartInstance.data.datasets = datasets;
+        transportTrendChartInstance.options.scales.y.display = (tpMetric === 'BOTH' || tpMetric === 'SLA');
+        transportTrendChartInstance.options.scales.y1.display = (tpMetric === 'BOTH' || tpMetric === 'COST');
+        transportTrendChartInstance.update();
+    }
+
+    let trendSummaryBox = document.getElementById('tp-trend-summary');
+    if (trendSummaryBox && chartPeriods.length > 0) {
+        let latestCost = costData[costData.length - 1] || 0;
+        let prevCost = costData.length > 1 ? costData[costData.length - 2] : 0;
+        let latestSla = slaData[slaData.length - 1] || 0;
+        
+        let diff = latestCost - prevCost;
+        let diffPct = prevCost > 0 ? (diff / prevCost) * 100 : 0;
+        let diffHtml = "";
+        
+        if (chartPeriods.length === 1 || prevCost === 0) diffHtml = `<div class="stock-change stock-neutral">- 0.00%</div>`;
+        else if (diff > 0) diffHtml = `<div class="stock-change stock-up">▲ +${fmtN(diff)} ฿ (+${diffPct.toFixed(1)}%)</div>`;
+        else if (diff < 0) diffHtml = `<div class="stock-change stock-down">▼ ${fmtN(Math.abs(diff))} ฿ (${diffPct.toFixed(1)}%)</div>`;
+        else diffHtml = `<div class="stock-change stock-neutral">- 0.00%</div>`;
+        
+        let slaStatus = latestSla >= 98 ? `<span class="text-green font-bold">🎯 SLA: ${latestSla.toFixed(1)}% (Pass)</span>` : `<span class="text-red font-bold">⚠️ SLA: ${latestSla.toFixed(1)}% (Fail)</span>`;
+        
+        trendSummaryBox.innerHTML = `
+            <div class="stock-val-wrap">
+                <span class="stock-label">Total Cost (Latest)</span>
+                <span class="stock-price">฿ ${fmtN(latestCost)}</span>
+                <div class="mt-10">${slaStatus}</div>
+            </div>
+            <div>${diffHtml}</div>
+        `;
+    }
+}
+
+// ----------------------------------------------------
 // PRODUCTIVITY (Overlay Chart + Area Table)
 // ----------------------------------------------------
 function renderProductivitySection() {
@@ -1875,22 +2154,21 @@ function renderProductivitySection() {
         let pZones = globalData.prod_zone || {};
         let uMap = globalData.prod_users_map || {};
 
-        if (Object.keys(pUsers).length === 0) {
-            let msg = `<tr><td colspan="100%" class="text-center text-muted" style="padding:30px;">ไม่มีข้อมูล Productivity ในระบบ</td></tr>`;
-            if(document.getElementById('prod-area-table')) document.getElementById('prod-area-table').innerHTML = msg;
-            if(document.getElementById('prod-user-table')) document.getElementById('prod-user-table').innerHTML = msg;
-            if(document.getElementById('prod-overall-table')) document.getElementById('prod-overall-table').innerHTML = msg;
-            return;
-        }
-
-        const dpStartVal = document.getElementById('date-start').value;
-        const dpEndVal = document.getElementById('date-end').value;
-        const targetStart = new Date(dpStartVal).setHours(0, 0, 0, 0);
-        const targetEnd = new Date(dpEndVal).setHours(23, 59, 59, 999);
+        // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน parseDateLocal ที่กันบัค Timezone แล้ว 🌟
+        const targetStartObj = parseDateLocal(document.getElementById('date-start').value);
+        const targetEndObj = parseDateLocal(document.getElementById('date-end').value);
+        const targetStart = targetStartObj.setHours(0, 0, 0, 0);
+        const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
         
         let areaFilterEl = document.getElementById('prod-area-filter');
         let selectedArea = areaFilterEl ? areaFilterEl.value : 'ALL';
         let period = document.getElementById('global-period').value;
+
+        // ดัก Event Listener ให้กับ Area Filter หากยังไม่ได้ผูกไว้
+        if (areaFilterEl && !areaFilterEl.hasAttribute('data-bound')) {
+            areaFilterEl.addEventListener('change', renderProductivitySection);
+            areaFilterEl.setAttribute('data-bound', 'true');
+        }
 
         let grouped = {};
         let allAreasList = new Set();
@@ -1903,6 +2181,18 @@ function renderProductivitySection() {
             })
             .filter(item => !isNaN(item.time) && item.time >= targetStart && item.time <= targetEnd)
             .sort((a,b) => a.time - b.time);
+
+        // 🌟 สร้าง Fallback UI กรณีไม่มีข้อมูลช่วงที่เลือก 🌟
+        if(validDates.length === 0) {
+            let msg = `<tr><td colspan="100%" class="text-center text-muted" style="padding:30px;">ไม่มีข้อมูลในช่วงเวลาที่เลือก</td></tr>`;
+            if(document.getElementById('prod-area-table')) document.getElementById('prod-area-table').innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูล</th></tr></thead><tbody>${msg}</tbody>`;
+            if(document.getElementById('prod-user-table')) document.getElementById('prod-user-table').innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูล</th></tr></thead><tbody>${msg}</tbody>`;
+            if(document.getElementById('prod-overall-table')) document.getElementById('prod-overall-table').innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูล</th></tr></thead><tbody>${msg}</tbody>`;
+            if(productivityChartInstance) { productivityChartInstance.data.labels = []; productivityChartInstance.update(); }
+            const summaryEl = document.getElementById('prod-summary-box');
+            if(summaryEl) { summaryEl.innerHTML = '💡 ไม่มีข้อมูลในช่วงเวลาที่เลือก'; summaryEl.className = 'info-alert alert-yellow mb-20 mt-10'; }
+            return;
+        }
 
         validDates.forEach(item => {
             let dKey = item.key; let dObj = item.dObj;
@@ -1953,8 +2243,6 @@ function renderProductivitySection() {
         }
 
         let sortedGroups = Object.values(grouped).sort((a,b) => a.time - b.time);
-        if(sortedGroups.length === 0) return;
-
         let chartSlice = sortedGroups;
         let latest = sortedGroups[sortedGroups.length - 1];
         
@@ -1969,7 +2257,6 @@ function renderProductivitySection() {
             return { picks: p, hours: h };
         };
 
-        // 🌟 กราฟ UPH แบบ Stacked Overlay (เป้าซ้อนกับผลงานจริง)
         if (productivityChartInstance) {
             let labels = [], dataActual = [], dataTarget = [];
 
@@ -1989,7 +2276,7 @@ function renderProductivitySection() {
             productivityChartInstance.data.datasets = [
                 {
                     type: 'bar', label: 'Target', data: dataTarget,
-                    backgroundColor: 'rgba(226, 232, 240, 0.8)', // สีเทาอ่อน (เป็นพื้นหลังเป้าหมาย)
+                    backgroundColor: 'rgba(226, 232, 240, 0.8)',
                     barPercentage: 0.6, categoryPercentage: 0.8
                 },
                 {
@@ -1997,7 +2284,7 @@ function renderProductivitySection() {
                     backgroundColor: (ctx) => {
                         let actual = ctx.raw;
                         let target = dataTarget[ctx.dataIndex];
-                        return actual >= target ? '#10B981' : '#EF4444'; // เขียวถ้าผ่านเป้า แดงถ้าตก
+                        return actual >= target ? '#10B981' : '#EF4444'; 
                     },
                     barPercentage: 0.6, categoryPercentage: 0.8
                 }
@@ -2022,7 +2309,6 @@ function renderProductivitySection() {
             summaryEl.className = uph >= currentTarget ? 'info-alert alert-green mb-20 mt-10' : 'info-alert alert-red mb-20 mt-10';
         }
 
-        // 🌟 ตาราง AREA (ดึงยืดสุดหน้าจอ)
         const areaTableEl = document.getElementById('prod-area-table');
         if (areaTableEl) {
             let zoneObj = latest.zones || {};
@@ -2119,84 +2405,3 @@ function renderProductivitySection() {
 
     } catch (e) { console.error("Productivity Render Error:", e); }
 }
-
-async function saveTargets() {
-    const targetDate = document.getElementById('uph-target-date')?.value
-        || document.getElementById('date-end')?.value
-        || new Date().toISOString().split('T')[0];
-    const rec = {
-        target_date: targetDate,
-        trg_all:  parseFloat(document.getElementById('trg-all')?.value)  || 0,
-        trg_full: parseFloat(document.getElementById('trg-full')?.value) || 0,
-        trg_half: parseFloat(document.getElementById('trg-half')?.value) || 0,
-        trg_ea:   parseFloat(document.getElementById('trg-ea')?.value)   || 0,
-        cost_salary: parseFloat(document.getElementById('cost-salary')?.value) || 0,
-        cost_days:   parseFloat(document.getElementById('cost-days')?.value)   || 0
-    };
-    const btn = document.querySelector('button[onclick="saveTargets()"]');
-    let orig = ''; if (btn) { orig = btn.innerHTML; btn.disabled = true; btn.innerHTML = '⏳ กำลังบันทึก...'; }
-    showToast('⏳ กำลังบันทึก UPH Target / Cost...', 'info', 0);
-    try {
-        const resp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fn: 'apiSaveUphCostBulk', args: [[rec]] })
-        });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const j = await resp.json();
-        if (j.success === false) throw new Error(j.message || 'บันทึกไม่สำเร็จ');
-        
-        globalUphCost[targetDate] = { ...rec };
-        showToast(`✅ บันทึก UPH Target / Cost สำเร็จ!`, 'success');
-        closeUphModal(); // เซฟเสร็จแล้วปิด Popup
-        renderProductivitySection(); // รีเฟรชตารางใหม่
-    } catch (err) {
-        showToast('❌ บันทึกไม่สำเร็จ: ' + err.message, 'error');
-    } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = orig || '💾 Save'; }
-    }
-}
-
-function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveDelay, delayDays, worstBU) {
-    const alertBox = document.getElementById('smart-alerts-container');
-    if (!alertBox) return;
-    alertBox.innerHTML = ''; 
-    let alerts = [];
-
-    if (waveDelay > 0) {
-        let delayText = delayDays > 0 ? `ดีเลย์ข้ามวัน (${delayDays} วัน)` : `ดีเลย์ ${Math.floor(waveDelay/60)} ชม. ${waveDelay%60} นาที`;
-        alerts.push({ type: 'critical', text: `[Wave Ops] ค้าง ${fmtN(waveLate)} บิล (${delayText}) <b>ช้าสุดที่สาขา ${worstBU}</b>` });
-    } else if (waveLate > 0) {
-        alerts.push({ type: 'warning', text: `[Wave Ops] ช้ากว่าแผน ${fmtN(waveLate)} บิล <b>(ที่ ${worstBU})</b> แต่อยู่ใน SLA` });
-    }
-
-    if (globalData.workforce) {
-        let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
-        let latestWfKey = wfKeys.find(k => new Date(getStandardDate(k)).getTime() <= targetTimestamp);
-        if (latestWfKey) {
-            let dayData = globalData.workforce[latestWfKey];
-            let absCount = 0; let trgCount = 0;
-            let allRoles = new Set([...Object.keys(dayData.targets || {}), ...Object.keys(dayData.roles || {})]);
-            allRoles.forEach(role => {
-                let trg = dayData.targets?.[role] || 0; let act = dayData.roles?.[role] || 0;
-                if (window.selectedBUs.includes('ALL')) { trgCount += trg; if (trg > act) absCount += (trg - act); }
-            });
-            if (absCount > 0 && window.selectedBUs.includes('ALL')) {
-                let absPct = ((absCount / trgCount) * 100).toFixed(1);
-                alerts.push({ type: absPct >= 5 ? 'critical' : 'warning', text: `[Workforce] วันนี้ขาด ${absCount} คน (${absPct}%) อาจกระทบการส่ง` });
-            }
-        }
-    }
-
-    if (alerts.length === 0) {
-        alertBox.innerHTML = `<div class="info-alert alert-green" style="margin:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:5px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>สถานการณ์ปกติ ไม่พบความเสี่ยงหรือเหตุขัดข้อง</div>`;
-    } else {
-        alerts.forEach(al => {
-            let clss = al.type === 'critical' ? 'alert-red' : 'alert-yellow';
-            let icon = al.type === 'critical' ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:5px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>` : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:5px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
-            alertBox.innerHTML += `<div class="info-alert ${clss}" style="margin-bottom:8px;">${icon} <span>${al.text}</span></div>`;
-        });
-    }
-}
-
-// 🚀 เริ่มต้นระบบ
-initDashboard();
