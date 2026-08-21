@@ -1441,19 +1441,16 @@ function updateOnTimeUI() {
 
         const otTable = document.getElementById('ontime-detail-table');
         if (otTable) {
-            let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Period</th><th class="text-center">ภาพรวม</th><th class="text-center">PTGLG</th><th class="text-center">HUB</th></tr></thead>`;
-            let tbody = "<tbody>" + pLabels.slice().reverse().map(p => {
-                let pAvg = pMap[p].p.length ? pMap[p].p.reduce((a,b)=>a+b,0)/pMap[p].p.length : null;
-                let hAvg = pMap[p].h.length ? pMap[p].h.reduce((a,b)=>a+b,0)/pMap[p].h.length : null;
-                let _o = (pAvg !== null && hAvg !== null) ? (pAvg+hAvg)/2 : pAvg;
-                
-                const formatPct = (v) => {
-                    if (v === null || v === undefined) return '<span class="text-muted">-</span>';
-                    let clr = v >= 99 ? 'var(--brand-green)' : (v >= 95 ? 'var(--brand-yellow)' : 'var(--brand-red)');
-                    return `<span style="color:${clr}; font-weight:700;">${v.toFixed(2)}%</span>`;
-                };
-                return `<tr><td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${p}</td><td class="text-center">${formatPct(_o)}</td><td class="text-center">${formatPct(pAvg)}</td><td class="text-center">${formatPct(hAvg)}</td></tr>`;
-            }).join('') + "</tbody>";
+            // 🛠️ เปลี่ยนเป็น:
+let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Period</th><th class="text-center">มูลค่ารวม (฿)</th><th class="text-center">จำนวนชิ้น</th><th class="text-center">สะสม (Accumulate)</th></tr></thead>`;
+let tbody = "<tbody>" + pLabels.slice().reverse().map(p => {
+    return `<tr>
+        <td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${p}</td>
+        <td class="text-center text-red font-bold">${fmtN(parseFloat(pMap[p].cost.toFixed(2)))}</td>
+        <td class="text-center">${fmtN(pMap[p].qty)}</td>
+        <td class="text-center text-purple font-bold">${fmtN(parseFloat(pMap[p].accumCost.toFixed(2)))}</td>
+    </tr>`;
+}).join('') + "</tbody>";
             otTable.innerHTML = thead + tbody;
         }
     } else {
@@ -1593,12 +1590,21 @@ if(dObjEnd >= targetStart && dObj.getTime() <= targetEnd) {
                     }
                 });
                 let pct = count > 0 ? (sumOnhand > 0 ? Math.max(0, (1 - (sumDiff/sumOnhand))*100) : 0) : null;
-                parsedData.push({ label: mLabel, dateObj: dObj, pct: pct });
+                parsedData.push({ label: mLabel, dateObj: dObj, pct: pct, sumOnhand: sumOnhand, sumDiff: sumDiff });
             }
         }
     });
 
-    parsedData.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+    // 🛠️ เปลี่ยนเป็น (เพิ่มการคำนวณต่อท้าย):
+parsedData.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+
+let runningInvOnhand = 0;
+let runningInvDiff = 0;
+parsedData.forEach(item => {
+    runningInvOnhand += item.sumOnhand;
+    runningInvDiff += item.sumDiff;
+    item.accumPct = runningInvOnhand > 0 ? Math.max(0, (1 - (runningInvDiff / runningInvOnhand)) * 100) : null;
+});
 
     if (parsedData.length > 0) {
         let curr = parsedData[parsedData.length-1];
@@ -1628,11 +1634,17 @@ if(dObjEnd >= targetStart && dObj.getTime() <= targetEnd) {
 
         const tableEl = document.getElementById('inv-detail-table');
         if (tableEl) {
-            let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Month</th><th class="text-center">% Overall</th></tr></thead>`;
-            let tbody = "<tbody>" + parsedData.slice().reverse().map(i => {
-                let clr = i.pct >= 99 ? 'var(--brand-green)' : 'var(--brand-red)';
-                return `<tr><td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${i.label}</td><td class="text-center font-bold" style="color:${clr};">${i.pct !== null ? i.pct.toFixed(2)+'%' : '-'}</td></tr>`;
-            }).join('') + "</tbody>";
+            // 🛠️ เปลี่ยนเป็น:
+let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Month</th><th class="text-center">% Overall</th><th class="text-center">% Accumulate (YTD)</th></tr></thead>`;
+let tbody = "<tbody>" + parsedData.slice().reverse().map(i => {
+    let clr = i.pct >= 99 ? 'var(--brand-green)' : 'var(--brand-red)';
+    let accumClr = (i.accumPct && i.accumPct >= 99) ? 'var(--brand-green)' : 'var(--brand-red)';
+    return `<tr>
+        <td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${i.label}</td>
+        <td class="text-center font-bold" style="color:${clr};">${i.pct !== null ? i.pct.toFixed(2)+'%' : '-'}</td>
+        <td class="text-center font-bold" style="color:${accumClr};">${i.accumPct !== null ? i.accumPct.toFixed(2)+'%' : '-'}</td>
+    </tr>`;
+}).join('') + "</tbody>";
             tableEl.innerHTML = thead + tbody;
         }
     } else {
