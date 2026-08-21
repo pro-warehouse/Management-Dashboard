@@ -43,25 +43,23 @@ const getDisplayDate = (dStr) => {
 
 const fmtN = (v) => (v || 0).toLocaleString();
 
-// ฟังก์ชันแปลงเลขหลักพัน/ล้านเป็น K และ M
 const formatK = (num) => {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return Math.round(num / 1000) + 'K';
     return num;
 };
 
-// 🎨 ล็อกสีตามชื่อ BU และต้นสังกัด (ให้ตรงกับ CI ของแต่ละบริษัท)
 const buColorMap = {
-    'DM02': { s: '#8CC63F', e: '#009245' }, // เขียว (PT)
-    'DP02': { s: '#F59E0B', e: '#B45309' }, // ส้มน้ำตาล (พันธุ์ไทย)
-    'DG02': { s: '#38BDF8', e: '#0284C7' }, // น้ำเงิน (GFA)
-    '1715': { s: '#F87171', e: '#DC2626' }, // แดง
-    '1115': { s: '#F87171', e: '#DC2626' }, // แดง
-    'DCWN': { s: '#2DD4BF', e: '#0D9488' }, // เขียวอมฟ้า
-    'DS02': { s: '#A78BFA', e: '#7C3AED' }, // ม่วง
-    'PTG': { s: '#8CC63F', e: '#009245' },  // เขียว PT (Workforce)
-    '40HRS': { s: '#94A3B8', e: '#64748B' }, // เทา (Workforce)
-    'MAN POWER': { s: '#38BDF8', e: '#0284C7' } // ฟ้า (Workforce)
+    'DM02': { s: '#8CC63F', e: '#009245' }, 
+    'DP02': { s: '#F59E0B', e: '#B45309' }, 
+    'DG02': { s: '#38BDF8', e: '#0284C7' }, 
+    '1715': { s: '#F87171', e: '#DC2626' }, 
+    '1115': { s: '#F87171', e: '#DC2626' }, 
+    'DCWN': { s: '#2DD4BF', e: '#0D9488' }, 
+    'DS02': { s: '#A78BFA', e: '#7C3AED' }, 
+    'PTG': { s: '#8CC63F', e: '#009245' },  
+    '40HRS': { s: '#94A3B8', e: '#64748B' }, 
+    'MAN POWER': { s: '#38BDF8', e: '#0284C7' } 
 };
 const defaultColor = { s: '#94A3B8', e: '#64748B' };
 const getBuColor = (bu) => buColorMap[bu] || defaultColor;
@@ -128,7 +126,6 @@ const dataLabelPlugin = {
             const meta = chart.getDatasetMeta(i);
             meta.data.forEach((bar, index) => {
                 const data = dataset.data[index];
-                // วาดเลขย่อย "กลางแท่ง" ให้ตัวเล็กและเป็น Format K
                 if(data > 0 && bar.height > 20){
                     ctx.fillStyle = '#FFFFFF';
                     ctx.font = 'bold 9px Inter'; 
@@ -140,7 +137,6 @@ const dataLabelPlugin = {
             });
         });
         
-        // วาดเลข "ยอดรวม" ไว้บนสุดของกราฟแท่ง
         if (chart.canvas.id === 'ffmTrendChart' || chart.canvas.id === 'workforceChart') {
             let totals = []; let xCoords = []; let topY = [];
             chart.data.datasets.forEach((dataset, i) => {
@@ -210,9 +206,21 @@ let ontimeChartInstance = new Chart(document.getElementById('ontimeChart2'), {
     plugins: [lineDataLabelPlugin]
 });
 
-let claimChart2Instance = new Chart(document.getElementById('claimChart2'), { type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#EF4444', borderRadius: 4, yAxisID: 'y' }, { label: 'จำนวนชิ้น', data: [], type: 'line', yAxisID: 'y1', pointRadius: 4, borderWidth: 2, borderColor: '#3B82F6', backgroundColor: '#3B82F6' } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: {grid:{display:false}}, y: {position: 'left', grace: '15%', border:{display:false}, grid: { borderDash: [4, 4] }}, y1: {position: 'right', display:false} } }, plugins: [dataLabelPlugin] });
+let claimChart2Instance = new Chart(document.getElementById('claimChart2'), { type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#F59E0B', borderRadius: 4, yAxisID: 'y' }, { label: 'จำนวนชิ้น', data: [], type: 'line', yAxisID: 'y1', pointRadius: 4, borderWidth: 2, borderColor: '#3B82F6', backgroundColor: '#3B82F6' } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: {grid:{display:false}}, y: {position: 'left', grace: '15%', border:{display:false}, grid: { borderDash: [4, 4] }}, y1: {position: 'right', display:false} } }, plugins: [dataLabelPlugin] });
 let inventoryChartInstance = new Chart(document.getElementById('inventoryChart'), { type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { borderDash: [4, 4] }, grace: '5%' } } }, plugins: [lineDataLabelPlugin]});
-let productivityChartInstance = new Chart(document.getElementById('productivityChart'), { type: 'bar', data: { labels: [], datasets: [{type:'bar', label:'Background'}, {type:'bar', label:'Actual UPH'}, {type:'line', label:'Target', borderColor:'#F59E0B', borderDash:[5,5]}] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, stacked: false }, y: { display: false, grace: '25%' } } } });
+// 🌟 เปลี่ยนกราฟ UPH เป็นแบบ Stacked Overlay (เป้าซ้อนด้วยผลงานจริง) 🌟
+let productivityChartInstance = new Chart(document.getElementById('productivityChart'), { 
+    type: 'bar', 
+    data: { labels: [], datasets: [] }, 
+    options: { 
+        responsive: true, maintainAspectRatio: false, 
+        plugins: { legend: { position: 'top' } }, 
+        scales: { 
+            x: { stacked: true, grid: { display: false } }, // ใช้ Stack เดียวกันเพื่อให้แท่งซ้อนกัน
+            y: { stacked: false, border: { display: false }, grace: '15%', grid: { borderDash: [4, 4] } } // Stacked = false เพื่อให้มันวาดทับกันจาก 0 ขึ้นไป
+        } 
+    } 
+});
 
 let transportTrendChartInstance = new Chart(document.getElementById('transportTrendChart'), {
     type: 'bar',
@@ -279,7 +287,7 @@ function updateLoaderPct(targetPct, durationMs) {
 setInterval(() => {
     console.log("Auto refreshing data...");
     initDashboard();
-}, 15 * 60 * 1000); // ปรับเป็น 15 นาทีให้สอดคล้องกับ Cache
+}, 15 * 60 * 1000); 
 
 document.getElementById('theme-toggle')?.addEventListener('click', () => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -365,6 +373,7 @@ function populateGlobalBUFilters() {
     
     let sortedBUs = Array.from(buSet).sort();
     const cbList = document.getElementById('bu-checkbox-list');
+    const invOwnerList = document.getElementById('inv-owner-filter');
     
     if (cbList && cbList.innerHTML === '') {
         sortedBUs.forEach(bu => {
@@ -372,7 +381,11 @@ function populateGlobalBUFilters() {
             label.className = 'dropdown-item';
             label.innerHTML = `<input type="checkbox" class="bu-item-cb" value="${bu}" checked> ${bu}`;
             cbList.appendChild(label);
+            
+            if (invOwnerList) invOwnerList.appendChild(new Option(bu, bu));
         });
+
+        if (invOwnerList) invOwnerList.addEventListener('change', () => { updateInventoryUI(); renderLocationAccuracy(); });
 
         document.getElementById('bu-select-all').addEventListener('change', (e) => {
             document.querySelectorAll('.bu-item-cb').forEach(cb => cb.checked = e.target.checked);
@@ -471,7 +484,7 @@ function refreshAllSections() {
 }
 
 // ------------------------------------------------------------
-// CAPACITY MODAL POPUP
+// MODALS (CAPACITY & UPH)
 // ------------------------------------------------------------
 function openCapacityModal() {
     const modal = document.getElementById('capacity-modal');
@@ -548,6 +561,31 @@ async function saveDailyCapacity() {
     }
 }
 
+function openUphModal() {
+    const modal = document.getElementById('uph-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+    let dVal = document.getElementById('date-end').value || new Date().toISOString().split('T')[0];
+    document.getElementById('uph-target-date').value = dVal;
+    applyUphCostInputs(dVal);
+}
+
+function closeUphModal() {
+    const modal = document.getElementById('uph-modal');
+    modal.classList.remove('show');
+    setTimeout(() => modal.style.display = 'none', 300);
+}
+
+function applyUphCostInputs(dateStr) {
+    let eff = getEffectiveUphCost(dateStr);
+    document.getElementById('trg-all').value = eff.trg_all;
+    document.getElementById('trg-full').value = eff.trg_full;
+    document.getElementById('trg-half').value = eff.trg_half;
+    document.getElementById('trg-ea').value = eff.trg_ea;
+    document.getElementById('cost-salary').value = eff.cost_salary;
+    document.getElementById('cost-days').value = eff.cost_days;
+}
+
 function hasEffectiveCap(dateStr, bu) {
     if (!bu || !dateStr) return false; let ref = new Date(dateStr).getTime();
     return Object.keys(globalCapacities).some(d => globalCapacities[d] && globalCapacities[d][bu] != null && new Date(d).getTime() <= ref);
@@ -559,7 +597,7 @@ function getEffectiveCap(dateStr, bu) {
 }
 
 // ------------------------------------------------------------
-// FULFILLMENT & WAVE OPS (รวมกราฟ KPI ด้านบนแบบยึดตาม Monthly)
+// FULFILLMENT & WAVE OPS 
 // ------------------------------------------------------------
 async function initFulfillmentRealtime() {
     const getBestOrderData = (bItem, wItem, fItem) => {
@@ -818,7 +856,6 @@ async function initFulfillmentRealtime() {
         let allBUsArray = Array.from(buNamesSet).sort();
         let chartBUsArray = window.selectedBUs.includes('ALL') ? allBUsArray : window.selectedBUs.filter(b => allBUsArray.includes(b));
         
-        // 🌟 สร้าง Map ของ Period (Daily/Weekly/Monthly) 🌟
         let pMap = {};
         validChartDates.forEach(dStr => {
             let pLabel = getPeriodLabel(new Date(dStr), period);
@@ -835,8 +872,6 @@ async function initFulfillmentRealtime() {
         });
 
         let pLabels = Object.keys(pMap);
-
-        // 🌟 อัปเดตกล่อง KPI ด้านบน (Orders Shipped & FFM Rate) ให้คำนวณตาม Period (Monthly/Daily) 🌟
         let latestPLabel = pLabels.length > 0 ? pLabels[pLabels.length - 1] : null;
         let prevPLabel = pLabels.length > 1 ? pLabels[pLabels.length - 2] : null;
         let curPData = latestPLabel ? pMap[latestPLabel] : null;
@@ -864,7 +899,6 @@ async function initFulfillmentRealtime() {
             document.getElementById('ffm-rate-update').innerText = `Updated: ${latestPLabel || '--'}`;
         }
 
-        // 🌟 อัปเดตกราฟ FFM 🌟
         try {
             if (typeof ffmTrendChartInstance !== 'undefined' && ffmTrendChartInstance && validChartDates.length > 0) {
                 let tpDatasets = chartBUsArray.map((bu) => {
@@ -916,7 +950,6 @@ async function initFulfillmentRealtime() {
             } 
         } catch(chartErr) { }
 
-        // 🌟 อัปเดตตาราง Utilization 🌟
         const utilTableEl = document.getElementById('utilization-table');
         if (utilTableEl && validChartDates.length > 0) {
             let targetD = validChartDates[validChartDates.length - 1]; 
@@ -970,7 +1003,6 @@ async function initFulfillmentRealtime() {
             utilTableEl.innerHTML = (theadEl ? theadEl.outerHTML : '') + tbody;
         }
         
-        // 🌟 อัปเดต Wave Ops & Stages (ยึดตามวันล่าสุดเสมอ เพราะเป็นสถานะรายวัน) 🌟
         let aComp = 0, aLate = 0, aDelay = 0; let worstBU = ""; 
         if (validChartDates.length > 0) {
             let latestD = validChartDates[validChartDates.length - 1];
@@ -1004,11 +1036,6 @@ async function initFulfillmentRealtime() {
                     if (aDelay > 0) delayEl.innerText = `${Math.floor(aDelay / 60)}h ${aDelay % 60}m`;
                     else delayEl.innerText = `0h 0m`;
                 }
-
-                let info1 = document.getElementById('wave-active-info-1');
-                if(info1) info1.innerHTML = `<span class="text-muted" style="color:rgba(255,255,255,0.8);">เป้าหมายวันนี้</span>`;
-                let info2 = document.getElementById('wave-active-info-2');
-                if(info2) info2.innerHTML = `<span class="text-muted" style="color:rgba(255,255,255,0.8);">โหลดเสร็จสิ้น</span>`;
                 
                 let waveStats = { total_orders: 0, late_pick_orders: 0, late_load_orders: 0, max_pick_delay_mins: 0, max_load_delay_mins: 0, min_pick_early_mins: null, min_load_early_mins: null, picked_orders: 0, shipped_orders: 0 };
                 try {
@@ -1164,7 +1191,7 @@ async function initFulfillmentRealtime() {
 }
 
 // ----------------------------------------------------
-// WORKFORCE (อัปเดต KPI ให้รองรับ Filter & จัดตาราง Matrix คลีนๆ)
+// WORKFORCE 
 // ----------------------------------------------------
 function updateWorkforceUI() {
     const totalEl = document.getElementById('headcount-total');
@@ -1182,16 +1209,12 @@ function updateWorkforceUI() {
     const targetStart = new Date(dpStartVal).setHours(0, 0, 0, 0);
     const targetEnd = new Date(dpEndVal).setHours(23, 59, 59, 999);
     
-    let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(getStandardDate(a)).getTime() - new Date(getStandardDate(b)).getTime());
+    let wfKeys = Object.keys(globalData.workforce).sort((a,b) => new Date(getStandardDate(b)).getTime() - new Date(getStandardDate(a)).getTime());
+    let validKeys = wfKeys.filter(k => { let t = new Date(getStandardDate(k)).getTime(); return t >= targetStart && t <= targetEnd; });
     
-    let validKeys = wfKeys.filter(k => {
-        let t = new Date(getStandardDate(k)).getTime();
-        return t >= targetStart && t <= targetEnd;
-    });
-
-    // 🌟 FIX: หา Key วันล่าสุดที่มีข้อมูลเสมอ (ป้องกันปัญหากล่องบนสุดเป็น 0 เวลาเลือกเสาร์อาทิตย์)
-    let displayKey = validKeys.length > 0 ? validKeys[validKeys.length-1] : wfKeys.find(k => new Date(getStandardDate(k)).getTime() <= targetEnd);
-    let prevKey = wfKeys[wfKeys.indexOf(displayKey) - 1];
+    // หา Key วันล่าสุดที่มีข้อมูลเสมอ (ป้องกันปัญหากล่องบนสุดเป็น 0 เวลาเลือกเสาร์อาทิตย์)
+    let displayKey = validKeys.length > 0 ? validKeys[0] : wfKeys.find(k => new Date(getStandardDate(k)).getTime() <= targetEnd);
+    let prevKey = wfKeys[wfKeys.indexOf(displayKey) + 1]; // +1 คือวันก่อนหน้าเพราะเรียงจากล่าสุดไปเก่าสุด
 
     const calcTotal = (dObj) => {
         if (!dObj) return 0;
@@ -1204,7 +1227,6 @@ function updateWorkforceUI() {
         return sum;
     };
 
-    // 🌟 1. อัปเดตกล่อง KPI ด้านบน (ทำเสมอ)
     if (displayKey) {
         let opsTotal = calcTotal(globalData.workforce[displayKey]);
         let prevTotal = prevKey ? calcTotal(globalData.workforce[prevKey]) : null;
@@ -1212,6 +1234,17 @@ function updateWorkforceUI() {
         if (totalEl) totalEl.innerText = fmtN(opsTotal);
         if (updEl) updEl.innerText = `Updated: ${getDisplayDate(displayKey)}`;
         if (trendBox) trendBox.innerHTML = generateTrendHtml(opsTotal, prevTotal, false, false);
+
+        if (globalData.workforce[displayKey].nationality) {
+            let nT = 0, nF = 0;
+            Object.keys(globalData.workforce[displayKey].nat_by_aff || {}).forEach(aff => {
+                if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(aff)) {
+                    nT += (globalData.workforce[displayKey].nat_by_aff[aff].thai || 0); nF += (globalData.workforce[displayKey].nat_by_aff[aff].foreign || 0);
+                }
+            });
+            if (document.getElementById('wf-thai')) document.getElementById('wf-thai').innerText = fmtN(nT);
+            if (document.getElementById('wf-foreign')) document.getElementById('wf-foreign').innerText = fmtN(nF);
+        }
     } else {
         if(totalEl) totalEl.innerText = "0";
         if(updEl) updEl.innerText = "Updated: --";
@@ -1226,9 +1259,8 @@ function updateWorkforceUI() {
     let dynamicTeams = Array.from(dynamicTeamsSet).filter(t => t && t !== "N/A").sort();
     if (dynamicTeams.length === 0) dynamicTeams = ["A", "B", "C"]; 
 
-    // 🌟 2. อัปเดตกราฟและตาราง (ทำเฉพาะช่วงเวลาที่มีข้อมูล)
     if (validKeys.length > 0) {
-        let chartKeys = validKeys.slice(-7);
+        let chartKeys = validKeys.slice(0,7).reverse();
         let affSet = new Set();
         chartKeys.forEach(k => Object.keys(globalData.workforce[k]?.matrix || {}).forEach(aff => {
             if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(aff)) affSet.add(aff);
@@ -1361,9 +1393,57 @@ function updateWorkforceUI() {
             }
         }
 
-        // โค้ดสร้างตาราง Attendance และอื่นๆ ทำงานตามเดิมครับ
         const attBody = document.getElementById('daily-attendance-body');
-        // ... (ส่วนที่เหลือรันตามเดิมได้เลยครับ ไม่ต้องกังวล)
+        const attHead = document.getElementById('daily-attendance-head');
+        if (attHead) {
+            let h = `<tr>
+                <th rowspan="2" style="position:sticky; left:0; top:0; z-index:25; background:var(--bg-card); min-width:120px; box-shadow:inset -1px 0 0 var(--border-color);">DATE / DEPT.</th>
+                <th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">TARGET</th>
+                <th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">ACTUAL</th>
+                <th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">ABSENT</th>
+                <th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card); border-right:2px solid var(--border-color);">RATE</th>`;
+            dynamicTeams.forEach(t => { h += `<th colspan="4" class="team-divider" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">Team ${t}</th>`; });
+            h += `</tr><tr>`;
+            dynamicTeams.forEach(() => { 
+                h += `<th class="team-divider" style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">TRG</th>
+                      <th style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">ACT</th>
+                      <th style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">ABS</th>
+                      <th style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">%</th>`; 
+            });
+            h += `</tr>`;
+            attHead.innerHTML = h;
+        }
+        
+        let excelHtml = "";
+        const tableRows = [ { key: 'Pick', label: 'Pick' }, { key: 'RT', label: 'RT' }, { key: 'QCQA', label: 'QC / QA' }, { key: 'Grouping', label: 'Grouping' }, { key: 'Putaway', label: 'Put-away' }, { key: 'Receive', label: 'Receive' } ];
+        
+        validKeys.slice(0, 14).forEach(dateKey => {
+            const data = globalData.workforce[dateKey];
+            excelHtml += `<tr><td colspan="${5 + (dynamicTeams.length * 4)}" style="background:var(--bg-body); font-weight:700;">Date: ${getDisplayDate(dateKey)}</td></tr>`;
+            
+            tableRows.forEach(r => {
+                let act = 0, trgTot = 0;
+                if (r.key === 'QCQA') { act = (data.roles?.QC || 0) + (data.roles?.QA || 0); trgTot = (data.targets?.QC || 0) + (data.targets?.QA || 0); } 
+                else { act = data.roles?.[r.key] || 0; trgTot = data.targets?.[r.key] || 0; }
+
+                const calcAbs = (a, t) => (t===0&&a===0) ? '-' : (a-t<0 ? `<span class="text-red font-bold">${a-t}</span>` : a-t);
+                const calcRate = (a, t) => t===0 ? '-' : `<span class="${(a/t*100)<95?'text-red':'text-green'} font-bold">${(a/t*100).toFixed(2)}%</span>`;
+
+                let rowHtml = `<tr>
+                    <td style="position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${r.label}</td>
+                    <td class="text-center">${trgTot>0?trgTot:'-'}</td><td class="text-center">${act>0?act:'-'}</td><td class="text-center">${calcAbs(act, trgTot)}</td><td class="text-center">${calcRate(act, trgTot)}</td>`;
+                
+                dynamicTeams.forEach(t => {
+                    let tTrg = 0, tAct = 0;
+                    if (r.key === 'QCQA') { tAct = (data.roleByTeam?.QC?.[t] || 0) + (data.roleByTeam?.QA?.[t] || 0); tTrg = (data.targetByTeam?.QC?.[t] || 0) + (data.targetByTeam?.QA?.[t] || 0); } 
+                    else { tAct = data.roleByTeam?.[r.key]?.[t] || 0; tTrg = data.targetByTeam?.[r.key]?.[t] || 0; }
+                    rowHtml += `<td class="text-center team-divider">${tTrg>0?tTrg:'-'}</td><td class="text-center">${tAct>0?tAct:'-'}</td><td class="text-center">${calcAbs(tAct, tTrg)}</td><td class="text-center">${calcRate(tAct, tTrg)}</td>`;
+                });
+                excelHtml += rowHtml + `</tr>`;
+            });
+        });
+        if(attBody) attBody.innerHTML = excelHtml !== "" ? excelHtml : `<tr><td colspan="100%" class="text-center text-muted">ไม่มีข้อมูลในช่วงที่เลือก</td></tr>`;
+
     } else {
         const matrixTable = document.getElementById('wf-matrix-table');
         if (matrixTable) matrixTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูลในช่วงที่เลือก</th></tr></thead>`;
@@ -1372,7 +1452,7 @@ function updateWorkforceUI() {
 }
 
 // ----------------------------------------------------
-// ON-TIME DELIVERY (อัปเดตหุ้นให้ดึง Period)
+// ON-TIME DELIVERY (MTD Logic)
 // ----------------------------------------------------
 function updateOnTimeUI() {
     const valEl = document.getElementById('ontime-val');
@@ -1386,55 +1466,47 @@ function updateOnTimeUI() {
         return;
     }
     
-    const dpStartVal = document.getElementById('date-start').value;
     const dpEndVal = document.getElementById('date-end').value;
-    const targetStart = new Date(dpStartVal).setHours(0, 0, 0, 0);
-    const targetEnd = new Date(dpEndVal).setHours(23, 59, 59, 999);
-    let period = document.getElementById('global-period').value;
+    const targetEndObj = new Date(dpEndVal);
+    const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
+    // ใช้ 1st of month สำหรับ MTD
+    const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
     
     let otArray = Object.keys(globalData.ontime || {}).map(k => ({
         dateObj: new Date(getStandardDate(k)), 
         ptglg: globalData.ontime[k], 
         hub: globalData.ontime_hub?.[k] || null
-    })).filter(i => !isNaN(i.dateObj.getTime()) && i.dateObj.getTime() >= targetStart && i.dateObj.getTime() <= targetEnd).sort((a,b) => a.dateObj.getTime() - b.dateObj.getTime());
+    })).filter(i => !isNaN(i.dateObj.getTime()) && i.dateObj.getTime() >= targetStartMTD && i.dateObj.getTime() <= targetEnd).sort((a,b) => a.dateObj.getTime() - b.dateObj.getTime());
 
     if (otArray.length > 0) {
-        let pMap = {};
+        // หาค่าเฉลี่ย MTD รวม
+        let mtdSum = 0; let mtdCount = 0;
         otArray.forEach(i => {
-            let pLabel = getPeriodLabel(i.dateObj, period);
-            if(!pMap[pLabel]) pMap[pLabel] = { p:[], h:[] };
-            if(i.ptglg !== null) pMap[pLabel].p.push(i.ptglg);
-            if(i.hub !== null) pMap[pLabel].h.push(i.hub);
+            let over = (i.ptglg !== null && i.hub !== null) ? (i.ptglg+i.hub)/2 : i.ptglg;
+            if (over !== null) { mtdSum += over; mtdCount++; }
         });
-
-        let pLabels = Object.keys(pMap);
-        let plotData = []; let ptglgData = []; let hubData = [];
+        let curOver = mtdCount > 0 ? (mtdSum / mtdCount) : 0;
         
-        pLabels.forEach(p => {
-            let pAvg = pMap[p].p.length ? pMap[p].p.reduce((a,b)=>a+b,0)/pMap[p].p.length : null;
-            let hAvg = pMap[p].h.length ? pMap[p].h.reduce((a,b)=>a+b,0)/pMap[p].h.length : null;
-            let v = (pAvg !== null && hAvg !== null) ? (pAvg+hAvg)/2 : pAvg;
-            plotData.push(v !== null ? parseFloat(v.toFixed(2)) : null);
-            ptglgData.push(pAvg !== null ? parseFloat(pAvg.toFixed(2)) : null);
-            hubData.push(hAvg !== null ? parseFloat(hAvg.toFixed(2)) : null);
-        });
-
-        // อัปเดตกล่อง KPI ด้านบน
-        let latestPLabel = pLabels.length > 0 ? pLabels[pLabels.length - 1] : null;
-        let prevPLabel = pLabels.length > 1 ? pLabels[pLabels.length - 2] : null;
-        let curOver = latestPLabel ? plotData[plotData.length - 1] : null;
-        let prevOver = prevPLabel ? plotData[plotData.length - 2] : null;
-        
-        if(valEl) valEl.innerText = curOver !== null ? `${curOver.toFixed(2)}%` : "0.00%";
-        if(updEl) updEl.innerText = `Updated: ${latestPLabel || '--'}`;
+        if(valEl) valEl.innerText = `${curOver.toFixed(2)}%`;
+        if(updEl) updEl.innerText = `Updated: ${getDisplayDate(otArray[otArray.length-1].dateObj)}`;
         
         let trendBox = document.getElementById('ontime-trend-box');
-        if (trendBox) trendBox.innerHTML = generateTrendHtml(curOver, prevOver, false, true); // On time เยอะดี (isInverse=false)
+        if (trendBox) trendBox.innerHTML = generateTrendHtml(curOver, 0, false, true); 
 
         if (otSummary) {
-            otSummary.innerHTML = `💡 <b>ภาพรวมล่าสุด:</b> อัตราการจัดส่งตรงเวลาอยู่ที่ <b>${curOver !== null ? curOver.toFixed(2) : 0}%</b> (PTGLG: ${ptglgData[ptglgData.length-1] !== null ? ptglgData[ptglgData.length-1].toFixed(2) : '-'}%, HUB: ${hubData[hubData.length-1] !== null ? hubData[hubData.length-1].toFixed(2) : '-'}%)`;
+            otSummary.innerHTML = `💡 <b>ภาพรวม MTD ล่าสุด:</b> อัตราการจัดส่งตรงเวลาอยู่ที่ <b>${curOver.toFixed(2)}%</b>`;
             otSummary.className = curOver >= 98 ? 'info-alert alert-green' : 'info-alert alert-red';
         }
+
+        let pLabels = []; let plotData = []; let ptglgData = []; let hubData = [];
+        otArray.forEach(i => {
+            let lbl = formatShortDate(i.dateObj);
+            pLabels.push(lbl);
+            let v = (i.ptglg !== null && i.hub !== null) ? (i.ptglg+i.hub)/2 : i.ptglg;
+            plotData.push(v !== null ? parseFloat(v.toFixed(2)) : null);
+            ptglgData.push(i.ptglg !== null ? parseFloat(i.ptglg.toFixed(2)) : null);
+            hubData.push(i.hub !== null ? parseFloat(i.hub.toFixed(2)) : null);
+        });
 
         if(ontimeChartInstance) {
             ontimeChartInstance.data.labels = pLabels;
@@ -1453,15 +1525,13 @@ function updateOnTimeUI() {
             }
             if(showPTGLG) {
                 newDatasets.push({
-                    label: 'PTGLG', data: ptglgData, borderColor: '#3B82F6', 
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    label: 'PTGLG', data: ptglgData, borderColor: '#3B82F6', backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     borderWidth: 2, fill: false, tension: 0.4, pointRadius: 4, borderDash: [5, 5]
                 });
             }
             if(showHUB) {
                 newDatasets.push({
-                    label: 'HUB', data: hubData, borderColor: '#F59E0B', 
-                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    label: 'HUB', data: hubData, borderColor: '#F59E0B', backgroundColor: 'rgba(245, 158, 11, 0.1)',
                     borderWidth: 2, fill: false, tension: 0.4, pointRadius: 4, borderDash: [5, 5]
                 });
             }
@@ -1471,11 +1541,10 @@ function updateOnTimeUI() {
 
         const otTable = document.getElementById('ontime-detail-table');
         if (otTable) {
-            let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Period</th><th class="text-center">ภาพรวม</th><th class="text-center">PTGLG</th><th class="text-center">HUB</th></tr></thead>`;
-            let tbody = "<tbody>" + pLabels.slice().reverse().map(p => {
-                let pAvg = pMap[p].p.length ? pMap[p].p.reduce((a,b)=>a+b,0)/pMap[p].p.length : null;
-                let hAvg = pMap[p].h.length ? pMap[p].h.reduce((a,b)=>a+b,0)/pMap[p].h.length : null;
-                let _o = (pAvg !== null && hAvg !== null) ? (pAvg+hAvg)/2 : pAvg;
+            let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Date</th><th class="text-center">ภาพรวม</th><th class="text-center">PTGLG</th><th class="text-center">HUB</th></tr></thead>`;
+            let tbody = "<tbody>" + pLabels.slice().reverse().map((p, idx) => {
+                let revIdx = pLabels.length - 1 - idx;
+                let _o = plotData[revIdx], pAvg = ptglgData[revIdx], hAvg = hubData[revIdx];
                 const formatPct = (v) => {
                     if (v === null || v === undefined) return '<span class="text-muted">-</span>';
                     let clr = v >= 99 ? 'var(--brand-green)' : (v >= 95 ? 'var(--brand-yellow)' : 'var(--brand-red)');
@@ -1488,14 +1557,15 @@ function updateOnTimeUI() {
     } else {
         if(valEl) valEl.innerText = "-";
         if(updEl) updEl.innerText = "Updated: --";
-        if (otSummary) { otSummary.innerHTML = "💡 ไม่มีข้อมูล On-Time ในช่วงที่เลือก"; otSummary.className = 'info-alert alert-yellow'; }
+        if (otSummary) { otSummary.innerHTML = "💡 ไม่มีข้อมูล On-Time MTD ในช่วงที่เลือก"; otSummary.className = 'info-alert alert-yellow'; }
         const otTable = document.getElementById('ontime-detail-table');
         if (otTable) otTable.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูลในช่วงที่เลือก</th></tr></thead>`;
+        if(ontimeChartInstance) { ontimeChartInstance.data.labels = []; ontimeChartInstance.update(); }
     }
 }
 
 // ----------------------------------------------------
-// CLAIM COST (เพิ่มเทียบหุ้น เดือน vs เดือน ตาม Period)
+// CLAIM COST (MTD Logic + Owner Table)
 // ----------------------------------------------------
 function updateClaimUI() {
     const valEl = document.getElementById('claim-val');
@@ -1511,13 +1581,16 @@ function updateClaimUI() {
         return;
     }
 
-    const dpStartVal = document.getElementById('date-start').value;
     const dpEndVal = document.getElementById('date-end').value;
-    const targetStart = new Date(dpStartVal).setHours(0, 0, 0, 0);
-    const targetEnd = new Date(dpEndVal).setHours(23, 59, 59, 999);
-    let period = document.getElementById('global-period').value;
+    const targetEndObj = new Date(dpEndVal);
+    const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
+    const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
+    const targetMonth = targetEndObj.getMonth();
+    const targetYear = targetEndObj.getFullYear();
     
     let allDatesData = [];
+    let tableRecords = []; // สำหรับโชว์แบบ Period | Owner
+    
     Object.keys(globalData.claims).forEach(dKey => {
         let dObj = new Date(getStandardDate(dKey));
         if (!isNaN(dObj.getTime()) && dObj.getTime() <= targetEnd) { 
@@ -1526,8 +1599,14 @@ function updateClaimUI() {
             Object.keys(buDataMap).forEach(bu => {
                 if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
                     let buData = buDataMap[bu];
-                    cTotalCost += typeof buData === 'object' ? (buData.cost||0) : (buData||0);
-                    cTotalQty += typeof buData === 'object' ? (buData.qty||0) : 0;
+                    let _cost = typeof buData === 'object' ? (buData.cost||0) : (buData||0);
+                    let _qty = typeof buData === 'object' ? (buData.qty||0) : 0;
+                    cTotalCost += _cost;
+                    cTotalQty += _qty;
+                    // เก็บ Record ละเอียดเฉพาะช่วง MTD
+                    if(dObj.getTime() >= targetStartMTD && (_cost > 0 || _qty > 0)) {
+                        tableRecords.push({ date: formatShortDate(dStr), owner: bu, cost: _cost, qty: _qty, ts: dObj.getTime() });
+                    }
                 }
             });
             if(cTotalCost>0 || cTotalQty>0) allDatesData.push({ dateObj: dObj, cost: cTotalCost, qty: cTotalQty });
@@ -1535,146 +1614,123 @@ function updateClaimUI() {
     });
 
     allDatesData.sort((a,b) => a.dateObj.getTime() - b.dateObj.getTime());
+    tableRecords.sort((a,b) => a.ts - b.ts);
 
-    let runningCost = 0;
+    let runningCost = 0; let currentMonthCost = 0; let prevMonthCost = 0;
     allDatesData.forEach(i => {
         runningCost += i.cost;
         i.accumCost = runningCost;
+        let m = i.dateObj.getMonth(); let y = i.dateObj.getFullYear();
+        if (m === targetMonth && y === targetYear) currentMonthCost += i.cost;
+        let prevM = targetMonth === 0 ? 11 : targetMonth - 1; let prevY = targetMonth === 0 ? targetYear - 1 : targetYear;
+        if (m === prevM && y === prevY) prevMonthCost += i.cost;
     });
 
-    let combinedData = allDatesData.filter(i => i.dateObj.getTime() >= targetStart);
+    let mtdData = allDatesData.filter(i => i.dateObj.getTime() >= targetStartMTD);
     let latestAvailable = allDatesData.length > 0 ? allDatesData[allDatesData.length-1] : null;
 
-    if (combinedData.length > 0) {
-        let pMap = {};
-        combinedData.forEach(i => {
-            let pLabel = getPeriodLabel(i.dateObj, period);
-            if(!pMap[pLabel]) pMap[pLabel] = { cost: 0, qty: 0, accumCost: 0 };
-            pMap[pLabel].cost += i.cost; pMap[pLabel].qty += i.qty; pMap[pLabel].accumCost = i.accumCost;
-        });
-
-        let pLabels = Object.keys(pMap);
-        let latestPLabel = pLabels.length > 0 ? pLabels[pLabels.length - 1] : null;
-        let prevPLabel = pLabels.length > 1 ? pLabels[pLabels.length - 2] : null;
-
-        let curCost = latestPLabel ? pMap[latestPLabel].cost : 0;
-        let prevCost = prevPLabel ? pMap[prevPLabel].cost : 0;
-        let curAccum = latestPLabel ? pMap[latestPLabel].accumCost : 0;
-
-        if(valEl) valEl.innerText = fmtN(parseFloat(curCost.toFixed(2))); 
-        if(updEl) updEl.innerText = `Updated: ${latestPLabel}`;
-        if(accumText) accumText.innerText = `YTD Accumulate: ${fmtN(parseFloat(curAccum.toFixed(2)))} ฿`;
-        
-        // เคลมยิ่งลดลงยิ่งดี (isInverse = true)
-        if(trendBox) trendBox.innerHTML = generateTrendHtml(curCost, prevCost, true, false);
+    if (latestAvailable) {
+        if(valEl) valEl.innerText = fmtN(parseFloat(currentMonthCost.toFixed(2))); 
+        if(updEl) updEl.innerText = `Updated: ${getDisplayDate(latestAvailable.dateObj)}`;
+        if(accumText) accumText.innerText = `YTD Accumulate: ${fmtN(parseFloat(latestAvailable.accumCost.toFixed(2)))} ฿`;
+        if(trendBox) trendBox.innerHTML = generateTrendHtml(currentMonthCost, prevMonthCost, true, false);
 
         if (claimSummary) {
-            let displayCost = combinedData.reduce((sum, item) => sum + item.cost, 0);
-            claimSummary.innerHTML = `💡 <b>ภาพรวมเคลมช่วงที่เลือก:</b> มียอดเคลมรวม <b>${fmtN(displayCost)} ฿</b> (ยอดสะสมตั้งแต่ต้น: <b>${fmtN(latestAvailable.accumCost)} ฿</b>)`;
-            claimSummary.className = displayCost > 0 ? 'info-alert alert-red' : 'info-alert alert-green';
+            claimSummary.innerHTML = `💡 <b>ภาพรวมเคลม MTD:</b> มียอดเคลมรวม <b>${fmtN(currentMonthCost)} ฿</b> (ยอดสะสมตั้งแต่ต้น: <b>${fmtN(latestAvailable.accumCost)} ฿</b>)`;
+            claimSummary.className = currentMonthCost > 0 ? 'info-alert alert-red' : 'info-alert alert-green';
         }
+    }
 
+    if (mtdData.length > 0) {
+        let pLabels = mtdData.map(i => formatShortDate(i.dateObj));
         if(claimChart2Instance) {
             claimChart2Instance.data.labels = pLabels;
-            claimChart2Instance.data.datasets[0].data = pLabels.map(p => parseFloat(pMap[p].cost.toFixed(2)));
-            claimChart2Instance.data.datasets[1].data = pLabels.map(p => pMap[p].qty);
-            claimChart2Instance.data.datasets[0].backgroundColor = (ctx) => (!ctx.chart.chartArea) ? '#EF4444' : getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#EF4444', '#F87171');
+            claimChart2Instance.data.datasets[0].data = mtdData.map(p => parseFloat(p.cost.toFixed(2)));
+            claimChart2Instance.data.datasets[1].data = mtdData.map(p => p.qty);
+            claimChart2Instance.data.datasets[0].backgroundColor = (ctx) => (!ctx.chart.chartArea) ? '#F59E0B' : getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#F59E0B', '#D97706'); // ใช้ส้ม
             claimChart2Instance.update();
         }
 
         const tableEl = document.getElementById('claim-detail-table');
         if (tableEl) {
-            let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Period</th><th class="text-center">มูลค่ารวม (฿)</th><th class="text-center">จำนวนชิ้น</th><th class="text-center">สะสม (Accumulate)</th></tr></thead>`;
-            let tbody = "<tbody>" + pLabels.slice().reverse().map(p => {
+            let thead = `<thead><tr><th style="position:sticky; top:0; left:0; z-index:20;">Date</th><th class="text-center">Owner</th><th class="text-center">มูลค่าเคลม (฿)</th><th class="text-center">จำนวนชิ้น</th></tr></thead>`;
+            let tbody = "<tbody>" + tableRecords.slice().reverse().map(p => {
                 return `<tr>
-                    <td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${p}</td>
-                    <td class="text-center text-red font-bold">${fmtN(parseFloat(pMap[p].cost.toFixed(2)))}</td>
-                    <td class="text-center">${fmtN(pMap[p].qty)}</td>
-                    <td class="text-center text-purple font-bold">${fmtN(parseFloat(pMap[p].accumCost.toFixed(2)))}</td>
+                    <td style="position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${p.date}</td>
+                    <td class="text-center font-bold text-dark">${p.owner}</td>
+                    <td class="text-center text-red font-bold">${fmtN(parseFloat(p.cost.toFixed(2)))}</td>
+                    <td class="text-center">${fmtN(p.qty)}</td>
                 </tr>`;
             }).join('') + "</tbody>";
             tableEl.innerHTML = thead + tbody;
         }
     } else {
         const tableEl = document.getElementById('claim-detail-table');
-        if (tableEl) tableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูลเคลมในช่วงที่เลือก</th></tr></thead>`;
+        if (tableEl) tableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูลเคลม MTD</th></tr></thead>`;
         if(claimChart2Instance) { claimChart2Instance.data.labels = []; claimChart2Instance.update(); }
     }
 }
 
+// ----------------------------------------------------
+// INVENTORY ACCURACY (MTD Logic + Filter)
+// ----------------------------------------------------
 function updateInventoryUI() {
     const valEl = document.getElementById('inv-val');
     const updEl = document.getElementById('inv-update');
     let invSummary = document.getElementById('inv-summary-box');
 
-    if (!globalData.inventory || Object.keys(globalData.inventory).length === 0) {
+    if (!globalData.inventory_daily || Object.keys(globalData.inventory_daily).length === 0) {
         if(valEl) valEl.innerText = "-";
         if(updEl) updEl.innerText = "Updated: --";
         if(invSummary) invSummary.innerHTML = "💡 ไม่มีข้อมูล Inventory Accuracy";
         return;
     }
 
-    const dpStartVal = document.getElementById('date-start').value;
     const dpEndVal = document.getElementById('date-end').value;
-    const targetStart = new Date(dpStartVal).setHours(0, 0, 0, 0);
-    const targetEnd = new Date(dpEndVal).setHours(23, 59, 59, 999);
+    const targetEndObj = new Date(dpEndVal);
+    const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
+    const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
+    const ownerFilter = document.getElementById('inv-owner-filter')?.value || 'ALL';
     
     let allData = [];
-    Object.keys(globalData.inventory).forEach(mLabel => {
-        let parts = mLabel.split('-');
-        if (parts.length === 2) {
-            let dObj = new Date(`${parts[0]} 1, 20${parts[1]}`);
-            if(dObj.getTime() <= targetEnd) { 
-                let monthGroup = globalData.inventory[mLabel] || {};
-                let sumOnhand = 0, sumDiff = 0, count = 0;
-                let buDataMap = monthGroup.bu_data || {};
-                Object.keys(buDataMap).forEach(bu => {
-                    if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
-                        sumOnhand += buDataMap[bu].onhand || 0; 
-                        sumDiff += buDataMap[bu].diff || 0;     
-                        count += buDataMap[bu].count || 0; 
-                    }
-                });
-                let pct = count > 0 ? (sumOnhand > 0 ? Math.max(0, (1 - (sumDiff/sumOnhand))*100) : 0) : null;
-                allData.push({ label: mLabel, dateObj: dObj, pct: pct, sumOnhand: sumOnhand, sumDiff: sumDiff });
-            }
+    Object.keys(globalData.inventory_daily).forEach(dKey => {
+        let dObj = new Date(getStandardDate(dKey));
+        if(dObj.getTime() <= targetEnd) { 
+            let dayGroup = globalData.inventory_daily[dKey] || {};
+            let sumOnhand = 0, sumDiff = 0, count = 0;
+            let buDataMap = dayGroup.bu_data || {};
+            Object.keys(buDataMap).forEach(bu => {
+                if ((window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) && (ownerFilter === 'ALL' || ownerFilter === bu)) {
+                    sumOnhand += buDataMap[bu].onhand || 0; 
+                    sumDiff += buDataMap[bu].diff || 0;     
+                    count += buDataMap[bu].count || 0; 
+                }
+            });
+            let pct = count > 0 ? (sumOnhand > 0 ? Math.max(0, (1 - (sumDiff/sumOnhand))*100) : 0) : null;
+            allData.push({ dateStr: formatShortDate(dObj), dateObj: dObj, pct: pct, sumOnhand: sumOnhand, sumDiff: sumDiff });
         }
     });
 
     allData.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
 
-    let runningInvOnhand = 0;
-    let runningInvDiff = 0;
+    let runningInvOnhand = 0; let runningInvDiff = 0;
     allData.forEach(item => {
-        runningInvOnhand += item.sumOnhand;
-        runningInvDiff += item.sumDiff;
+        runningInvOnhand += item.sumOnhand; runningInvDiff += item.sumDiff;
         item.accumPct = runningInvOnhand > 0 ? Math.max(0, (1 - (runningInvDiff / runningInvOnhand)) * 100) : null;
     });
 
-    let parsedData = allData.filter(i => {
-        let dObjEnd = new Date(i.dateObj.getFullYear(), i.dateObj.getMonth() + 1, 0, 23, 59, 59).getTime();
-        return dObjEnd >= targetStart && i.dateObj.getTime() <= targetEnd;
-    });
-
-    let latestAvailable = parsedData.length > 0 ? parsedData[parsedData.length-1] : (allData.length > 0 ? allData[allData.length-1] : null);
-    let prevAvailable = parsedData.length > 1 ? parsedData[parsedData.length-2] : null;
+    let mtdData = allData.filter(i => i.dateObj.getTime() >= targetStartMTD);
+    let latestAvailable = mtdData.length > 0 ? mtdData[mtdData.length-1] : (allData.length > 0 ? allData[allData.length-1] : null);
 
     if (latestAvailable) {
         if(valEl) valEl.innerText = latestAvailable.pct !== null ? `${latestAvailable.pct.toFixed(2)}%` : "-";
-        if(updEl) updEl.innerText = `Updated: เดือน ${latestAvailable.label}`;
+        if(updEl) updEl.innerText = `Updated: ${latestAvailable.dateStr}`;
         
         let accumText = document.getElementById('inv-accum-text');
         if (accumText) accumText.innerText = `YTD Accumulate: ${latestAvailable.accumPct !== null ? latestAvailable.accumPct.toFixed(2) : 0}%`;
 
-        let trendBox = document.getElementById('inv-trend-box');
-        if (trendBox) {
-            let currPct = latestAvailable.pct || 0;
-            let prevPct = prevAvailable ? (prevAvailable.pct || 0) : 0;
-            trendBox.innerHTML = generateTrendHtml(currPct, prevPct, false, true);
-        }
-
         if (invSummary) {
-            invSummary.innerHTML = `💡 <b>ความแม่นยำสต็อกล่าสุด (${latestAvailable.label}):</b> อยู่ที่ <b>${latestAvailable.pct !== null ? latestAvailable.pct.toFixed(2) : 0}%</b> (สะสม YTD: ${latestAvailable.accumPct !== null ? latestAvailable.accumPct.toFixed(2) : 0}%)`;
+            invSummary.innerHTML = `💡 <b>ความแม่นยำสต็อกล่าสุด (${latestAvailable.dateStr}):</b> อยู่ที่ <b>${latestAvailable.pct !== null ? latestAvailable.pct.toFixed(2) : 0}%</b> (สะสม YTD: ${latestAvailable.accumPct !== null ? latestAvailable.accumPct.toFixed(2) : 0}%)`;
             invSummary.className = latestAvailable.pct >= 99 ? 'info-alert alert-green mt-10 text-sm' : 'info-alert alert-red mt-10 text-sm';
         }
     } else {
@@ -1683,12 +1739,12 @@ function updateInventoryUI() {
         if (invSummary) { invSummary.innerHTML = "💡 ไม่มีข้อมูล Inventory Accuracy"; invSummary.className = 'info-alert alert-yellow mt-10 text-sm'; }
     }
 
-    if (parsedData.length > 0) {
+    if (mtdData.length > 0) {
         if(inventoryChartInstance) {
-            inventoryChartInstance.data.labels = parsedData.map(i => i.label);
+            inventoryChartInstance.data.labels = mtdData.map(i => i.dateStr);
             inventoryChartInstance.data.datasets[0] = {
                 label: 'Accuracy %',
-                data: parsedData.map(i => i.pct !== null ? parseFloat(i.pct.toFixed(2)) : null),
+                data: mtdData.map(i => i.pct !== null ? parseFloat(i.pct.toFixed(2)) : null),
                 borderColor: '#06B6D4',
                 backgroundColor: (context) => {
                     if(!context.chart.chartArea) return 'rgba(6, 182, 212, 0.4)';
@@ -1701,12 +1757,12 @@ function updateInventoryUI() {
 
         const tableEl = document.getElementById('inv-detail-table');
         if (tableEl) {
-            let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Month</th><th class="text-center">% Overall</th><th class="text-center">% Accumulate (YTD)</th></tr></thead>`;
-            let tbody = "<tbody>" + parsedData.slice().reverse().map(i => {
+            let thead = `<thead><tr><th style="text-align:center; position:sticky; top:0; left:0; z-index:20;">Date</th><th class="text-center">% Daily Acc.</th><th class="text-center">% Accumulate (YTD)</th></tr></thead>`;
+            let tbody = "<tbody>" + mtdData.slice().reverse().map(i => {
                 let clr = i.pct >= 99 ? 'var(--brand-green)' : 'var(--brand-red)';
                 let accumClr = (i.accumPct && i.accumPct >= 99) ? 'var(--brand-green)' : 'var(--brand-red)';
                 return `<tr>
-                    <td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${i.label}</td>
+                    <td style="text-align:center; position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${i.dateStr}</td>
                     <td class="text-center font-bold" style="color:${clr};">${i.pct !== null ? i.pct.toFixed(2)+'%' : '-'}</td>
                     <td class="text-center font-bold" style="color:${accumClr};">${i.accumPct !== null ? i.accumPct.toFixed(2)+'%' : '-'}</td>
                 </tr>`;
@@ -1715,11 +1771,99 @@ function updateInventoryUI() {
         }
     } else {
         const tableEl = document.getElementById('inv-detail-table');
-        if (tableEl) tableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูลในช่วงที่เลือก (แสดงผลจากล่าสุดด้านบน)</th></tr></thead>`;
+        if (tableEl) tableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูล MTD ในช่วงที่เลือก</th></tr></thead>`;
         if(inventoryChartInstance) { inventoryChartInstance.data.labels = []; inventoryChartInstance.update(); }
     }
 }
 
+// ----------------------------------------------------
+// LOCATION ACCURACY (MTD Logic + Comparison Table Style)
+// ----------------------------------------------------
+function renderLocationAccuracy() {
+    const locTableEl = document.getElementById('loc-accuracy-table');
+    const locBoxEl = document.getElementById('loc-analysis-box');
+    if(!locTableEl || !locBoxEl || !globalData.inventory || Object.keys(globalData.inventory).length === 0) return;
+
+    const dpEndVal = document.getElementById('date-end').value;
+    const targetEndObj = new Date(dpEndVal);
+    let targetM = targetEndObj.getMonth();
+    let targetY = targetEndObj.getFullYear().toString().substring(2);
+    let mLabelReq = shortMonths[targetM] + "-" + targetY; // e.g., "Aug-26"
+    
+    let locStats = globalData.inventory[mLabelReq]?.loc_stats || {};
+
+    if (!locStats || locStats.total === 0) {
+        locTableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูลตรวจ Location ในเดือน ${mLabelReq}</th></tr></thead>`;
+        locBoxEl.innerHTML = `💡 ไม่มีข้อมูลสินค้าวางผิด Location ในเดือน ${mLabelReq}`;
+    } else {
+        let rawDetailsArr = [];
+        Object.keys(locStats.details || {}).forEach(bu => {
+            Object.keys(locStats.details[bu] || {}).forEach(tz => {
+                let d = locStats.details[bu][tz];
+                let parts = tz.split(" | ");
+                let lType = parts[0]; let zone = parts[1];
+                let acc = d.total > 0 ? ((d.total - d.wrong) / d.total) * 100 : 0;
+                rawDetailsArr.push({ bu: bu, type: lType, zone: zone, checked: d.total, wrong: d.wrong, acc: acc });
+            });
+        });
+
+        let filteredArr = rawDetailsArr.filter(item => {
+            let passBU = window.locFilters ? (window.locFilters.bu.includes('ALL') || window.locFilters.bu.includes(item.bu)) : true;
+            let passType = window.locFilters ? (window.locFilters.type.includes('ALL') || window.locFilters.type.includes(item.type)) : true;
+            let passZone = window.locFilters ? (window.locFilters.zone.includes('ALL') || window.locFilters.zone.includes(item.zone)) : true;
+            // ดักเพิ่มตัวกรองหลัก
+            let passMasterBU = window.selectedBUs.includes('ALL') || window.selectedBUs.includes(item.bu);
+            return passBU && passType && passZone && passMasterBU;
+        });
+
+        filteredArr.sort((a, b) => b.wrong - a.wrong);
+
+        let thead = `<thead><tr>
+            <th style="position:sticky; left:0; z-index:20;">BU</th>
+            <th class="text-center">Location Type</th>
+            <th class="text-center">Zone</th>
+            <th class="text-center">Locations Checked</th>
+            <th class="text-center">Wrong Location</th>
+            <th class="text-center">Accuracy %</th>
+        </tr></thead>`;
+
+        let tbody = "<tbody>";
+        let worstZone = null;
+
+        if (filteredArr.length === 0) {
+             tbody += `<tr><td colspan="6" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลตามเงื่อนไขที่กรอง</td></tr>`;
+        } else {
+            filteredArr.forEach((item, idx) => {
+                if (idx === 0 && item.wrong > 0) worstZone = item;
+                let accClr = item.acc >= 99 ? 'var(--brand-green)' : 'var(--brand-red)';
+                let accBg = item.acc >= 99 ? '#dcfce7' : '#fee2e2';
+                
+                tbody += `<tr>
+                    <td class="font-bold" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${item.bu}</td>
+                    <td class="text-center text-muted">${item.type}</td>
+                    <td class="text-center font-bold">${item.zone}</td>
+                    <td class="text-center">${fmtN(item.checked)}</td>
+                    <td class="text-center font-bold" style="color:${item.wrong>0?'var(--brand-red)':'inherit'};">${fmtN(item.wrong)}</td>
+                    <td class="text-center"><span style="background:${accBg}; color:${accClr}; padding:4px 10px; border-radius:4px; font-weight:700;">${item.acc.toFixed(2)}%</span></td>
+                </tr>`;
+            });
+        }
+        locTableEl.innerHTML = thead + tbody + "</tbody>";
+
+        let filteredChecked = filteredArr.reduce((s, i) => s + i.checked, 0);
+        let filteredWrong = filteredArr.reduce((s, i) => s + i.wrong, 0);
+        let filteredAcc = filteredChecked > 0 ? ((filteredChecked - filteredWrong) / filteredChecked) * 100 : 0;
+        
+        let analysisHtml = `<b>📊 วิเคราะห์ความแม่นยำ Location (เดือน ${mLabelReq}):</b> ภาพรวมความแม่นยำอยู่ที่ <b style="color:${filteredAcc>=99?'var(--brand-green)':'var(--brand-red)'};">${filteredAcc.toFixed(2)}%</b> (ตรวจ ${fmtN(filteredChecked)} จุด พบผิด ${fmtN(filteredWrong)} จุด)`;
+        if (worstZone) analysisHtml += `<br>🚨 <b>จุดเฝ้าระวัง:</b> BU: <b>${worstZone.bu}</b> โซน <b>${worstZone.zone}</b> พบผิด Location สูงสุด <b>${fmtN(worstZone.wrong)} จุด</b> แนะนำให้ตรวจสอบด่วน`;
+        
+        locBoxEl.innerHTML = analysisHtml;
+    }
+}
+
+// ----------------------------------------------------
+// TRANSPORT PERFORMANCE (MTD Logic)
+// ----------------------------------------------------
 function updateTransportUI() {
     let tbody = document.querySelector('#new-transport-table tbody');
     let dailyTbody = document.querySelector('#daily-transport-table tbody');
@@ -1730,20 +1874,18 @@ function updateTransportUI() {
         return;
     }
     
-    const dpStartVal = document.getElementById('date-start').value;
     const dpEndVal = document.getElementById('date-end').value;
-    const period = document.getElementById('global-period').value;
-    
-    const startTarget = new Date(dpStartVal).setHours(0, 0, 0, 0);
-    const endTarget = new Date(dpEndVal).setHours(23, 59, 59, 999);
+    const targetEndObj = new Date(dpEndVal);
+    const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
+    const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
     
     let validDates = Object.keys(globalData.transport).filter(k => {
-        let dTime = new Date(k).getTime(); return !isNaN(dTime) && dTime >= startTarget && dTime <= endTarget;
+        let dTime = new Date(k).getTime(); return !isNaN(dTime) && dTime >= targetStartMTD && dTime <= targetEnd;
     }).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
 
     if (validDates.length === 0) {
         document.getElementById('tp-kpi-total').innerText = "0"; document.getElementById('tp-kpi-success').innerText = "0"; document.getElementById('tp-kpi-sla').innerText = "0"; document.getElementById('tp-kpi-cost').innerText = "0";
-        document.getElementById('carrier-update-time').innerText = `ช่วงเวลาที่เลือกไม่มีข้อมูล`;
+        document.getElementById('carrier-update-time').innerText = `ช่วงเวลาที่เลือกไม่มีข้อมูล MTD`;
         if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่ง ในช่วงเวลาที่เลือก</td></tr>`;
         if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลรายละเอียด</td></tr>`;
         
@@ -1757,7 +1899,7 @@ function updateTransportUI() {
     
     validDates.forEach(dateKey => {
         let dObj = new Date(dateKey);
-        let pLabel = getPeriodLabel(dObj, period);
+        let pLabel = formatShortDate(dObj); // บังคับดูเป็นรายวันเลยให้เห็น Trend ของเดือน
         let dayData = globalData.transport[dateKey];
         
         aggData.total_orders += dayData.total_orders; aggData.success_orders += dayData.success_orders; aggData.sla_hit += dayData.sla_hit; aggData.total_cost += dayData.total_cost;
@@ -1771,8 +1913,8 @@ function updateTransportUI() {
         if (dayData.details) Object.values(dayData.details).forEach(d => groupedByPeriod[pLabel].details.push(d));
     });
     
-    let startDisp = getDisplayDate(new Date(startTarget)); let endDisp = getDisplayDate(new Date(endTarget));
-    document.getElementById('carrier-update-time').innerText = `ข้อมูล: ${startDisp} - ${endDisp}`;
+    let startDisp = getDisplayDate(new Date(targetStartMTD)); let endDisp = getDisplayDate(new Date(targetEnd));
+    document.getElementById('carrier-update-time').innerText = `ข้อมูล MTD: ${startDisp} - ${endDisp}`;
     document.getElementById('tp-kpi-total').innerText = fmtN(aggData.total_orders); document.getElementById('tp-kpi-success').innerText = fmtN(aggData.success_orders); document.getElementById('tp-kpi-sla').innerText = fmtN(aggData.sla_hit); document.getElementById('tp-kpi-cost').innerText = fmtN(aggData.total_cost);
 
     if(tbody) {
@@ -1826,33 +1968,19 @@ function updateTransportUI() {
             let diffCost = p.total_cost - prevP.cost;
 
             const fmtDiff = (v, isGoodPositive, isPct = false) => {
-                if (v === 0) {
-                    return `<td class="diff-col text-right"><span style="background:#f1f5f9; color:#64748b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">- 0</span></td>`;
-                }
-
+                if (v === 0) return `<td class="diff-col text-right"><span style="background:#f1f5f9; color:#64748b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">- 0</span></td>`;
                 let isGood = isGoodPositive ? (v > 0) : (v < 0);
                 let arrow = v > 0 ? '▲' : '▼';
                 let sign = v > 0 ? '+' : '-';
-                
                 let absVal = Math.abs(v);
                 let valStr = isPct ? absVal.toFixed(1) + '%' : fmtN(absVal);
-                
                 let bgClr = isGood ? '#dcfce7' : '#fee2e2';
                 let txtClr = isGood ? '#10B981' : '#EF4444';
-                
-                return `<td class="diff-col text-right">
-                    <span style="background:${bgClr}; color:${txtClr}; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">
-                        ${arrow} ${sign}${valStr}
-                    </span>
-                </td>`;
+                return `<td class="diff-col text-right"><span style="background:${bgClr}; color:${txtClr}; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">${arrow} ${sign}${valStr}</span></td>`;
             };
 
-            htmlOrders += fmtDiff(diffOrd, true); 
-            htmlVehicles += fmtDiff(diffVeh, false); 
-            htmlSucc += fmtDiff(diffSucc, true, true);
-            htmlSla += fmtDiff(diffSla, true, true);
-            htmlCost += fmtDiff(diffCost, false); 
-            htmlAccum += `<td class="diff-col"></td>`; 
+            htmlOrders += fmtDiff(diffOrd, true); htmlVehicles += fmtDiff(diffVeh, false); htmlSucc += fmtDiff(diffSucc, true, true);
+            htmlSla += fmtDiff(diffSla, true, true); htmlCost += fmtDiff(diffCost, false); htmlAccum += `<td class="diff-col"></td>`; 
         }
         prevP = { orders: p.total_orders, vehicles: vCount, succ: succPct, sla: slaPct, cost: p.total_cost };
     });
@@ -1987,100 +2115,9 @@ function updateTransportUI() {
 }
 document.getElementById('tp-metric-filter')?.addEventListener('change', updateTransportUI);
 
-function renderLocationAccuracy() {
-    const locTableEl = document.getElementById('loc-accuracy-table');
-    const locBoxEl = document.getElementById('loc-analysis-box');
-    if(!locTableEl || !locBoxEl || !globalData.inventory || Object.keys(globalData.inventory).length === 0) return;
-
-    const dpStartVal = document.getElementById('date-start').value;
-    const dpEndVal = document.getElementById('date-end').value;
-    const targetStart = new Date(dpStartVal).setHours(0, 0, 0, 0);
-    const targetEnd = new Date(dpEndVal).setHours(23, 59, 59, 999);
-    
-    let parsedData = [];
-    Object.keys(globalData.inventory).forEach(mLabel => {
-        let parts = mLabel.split('-');
-        if (parts.length === 2) {
-            let dObj = new Date(`${parts[0]} 1, 20${parts[1]}`);
-            parsedData.push({ label: mLabel, dateObj: dObj });
-        }
-    });
-    parsedData.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
-    let validData = parsedData.filter(i => i.dateObj.getTime() >= targetStart && i.dateObj.getTime() <= targetEnd);
-
-    if(validData.length === 0) return;
-
-    let currM = validData[validData.length - 1]; 
-    let mLabel = currM.label;
-    let locStats = globalData.inventory[mLabel]?.loc_stats || {};
-
-    if (!locStats || locStats.total === 0) {
-        locTableEl.innerHTML = `<tr><td class="text-center text-muted" style="padding:20px;">ไม่มีข้อมูลตรวจ Location ในเดือน ${mLabel}</td></tr>`;
-        locBoxEl.innerHTML = `💡 ไม่มีข้อมูลสินค้าวางผิด Location ในเดือน ${mLabel}`;
-    } else {
-        let rawDetailsArr = [];
-        Object.keys(locStats.details || {}).forEach(bu => {
-            Object.keys(locStats.details[bu] || {}).forEach(tz => {
-                let d = locStats.details[bu][tz];
-                let parts = tz.split(" | ");
-                let lType = parts[0]; let zone = parts[1];
-                let acc = d.total > 0 ? ((d.total - d.wrong) / d.total) * 100 : 0;
-                rawDetailsArr.push({ bu: bu, type: lType, zone: zone, checked: d.total, wrong: d.wrong, acc: acc });
-            });
-        });
-
-        let filteredArr = rawDetailsArr.filter(item => {
-            let passBU = window.locFilters.bu.includes('ALL') || window.locFilters.bu.includes(item.bu);
-            let passType = window.locFilters.type.includes('ALL') || window.locFilters.type.includes(item.type);
-            let passZone = window.locFilters.zone.includes('ALL') || window.locFilters.zone.includes(item.zone);
-            return passBU && passType && passZone;
-        });
-
-        filteredArr.sort((a, b) => b.wrong - a.wrong);
-
-        let thead = `<thead><tr>
-            <th>BU</th>
-            <th>Location Type</th>
-            <th>Zone</th>
-            <th class="text-center">Locations Checked</th>
-            <th class="text-center">Wrong Location</th>
-            <th class="text-center">Accuracy %</th>
-        </tr></thead>`;
-
-        let tbody = "<tbody>";
-        let worstZone = null;
-
-        if (filteredArr.length === 0) {
-             tbody += `<tr><td colspan="6" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลตามเงื่อนไขที่กรอง</td></tr>`;
-        } else {
-            filteredArr.forEach((item, idx) => {
-                if (idx === 0 && item.wrong > 0) worstZone = item;
-                let accClr = item.acc >= 99 ? 'var(--brand-green)' : 'var(--brand-red)';
-                let accBg = item.acc >= 99 ? '#dcfce7' : '#fee2e2';
-                
-                tbody += `<tr>
-                    <td class="font-bold">${item.bu}</td>
-                    <td class="text-muted">${item.type}</td>
-                    <td class="font-bold">${item.zone}</td>
-                    <td class="text-center">${fmtN(item.checked)}</td>
-                    <td class="text-center font-bold" style="color:${item.wrong>0?'var(--brand-red)':'inherit'};">${fmtN(item.wrong)}</td>
-                    <td class="text-center"><span style="background:${accBg}; color:${accClr}; padding:4px 10px; border-radius:4px; font-weight:700;">${item.acc.toFixed(2)}%</span></td>
-                </tr>`;
-            });
-        }
-        locTableEl.innerHTML = thead + tbody + "</tbody>";
-
-        let filteredChecked = filteredArr.reduce((s, i) => s + i.checked, 0);
-        let filteredWrong = filteredArr.reduce((s, i) => s + i.wrong, 0);
-        let filteredAcc = filteredChecked > 0 ? ((filteredChecked - filteredWrong) / filteredChecked) * 100 : 0;
-        
-        let analysisHtml = `<b>📊 วิเคราะห์ความแม่นยำ Location (เดือน ${mLabel}):</b> ภาพรวมความแม่นยำอยู่ที่ <b style="color:${filteredAcc>=99?'var(--brand-green)':'var(--brand-red)'};">${filteredAcc.toFixed(2)}%</b> (ตรวจ ${fmtN(filteredChecked)} จุด พบผิด ${fmtN(filteredWrong)} จุด)`;
-        if (worstZone) analysisHtml += `<br>🚨 <b>จุดเฝ้าระวัง:</b> BU: <b>${worstZone.bu}</b> โซน <b>${worstZone.zone}</b> พบผิด Location สูงสุด <b>${fmtN(worstZone.wrong)} จุด</b> แนะนำให้ตรวจสอบด่วน`;
-        
-        locBoxEl.innerHTML = analysisHtml;
-    }
-}
-
+// ----------------------------------------------------
+// PRODUCTIVITY (Overlay Chart & MTD Logic)
+// ----------------------------------------------------
 function renderProductivitySection() {
     try {
         let pUsers = globalData.productivity || {};
@@ -2183,18 +2220,8 @@ function renderProductivitySection() {
         };
 
         if (productivityChartInstance) {
-            let labels = [], dataActual = [], dataBackground = [], dataTarget = [], bgColorsActual = [], bgColorsBg = [], customPicks = [];
-            let maxUPH = 0; let maxTargetSlice = currentTarget;
+            let labels = [], dataActual = [], dataTarget = [];
 
-            chartSlice.forEach(g => {
-                let uph = 0;
-                if (selectedArea === 'ALL') { let nb = nonBulkTotals(g); uph = nb.hours > 0 ? Math.round(nb.picks / nb.hours) : 0; } 
-                else if (g.areas[selectedArea]) { uph = g.areas[selectedArea].hours > 0 ? Math.round(g.areas[selectedArea].picks / g.areas[selectedArea].hours) : 0; }
-                if (uph > maxUPH) maxUPH = uph;
-                let _gt = getTarget(selectedArea, groupDateStr(g)); if (_gt > maxTargetSlice) maxTargetSlice = _gt;
-            });
-            let barCeiling = Math.max(maxUPH, maxTargetSlice) + 30;
-            
             chartSlice.forEach(g => {
                 labels.push(g.label);
                 let uph = 0, picks = 0;
@@ -2203,16 +2230,28 @@ function renderProductivitySection() {
                 if (selectedArea === 'ALL') { let nb = nonBulkTotals(g); uph = nb.hours > 0 ? Math.round(nb.picks / nb.hours) : 0; picks = Math.round(nb.picks); } 
                 else if (g.areas[selectedArea]) { uph = g.areas[selectedArea].hours > 0 ? Math.round(g.areas[selectedArea].picks / g.areas[selectedArea].hours) : 0; picks = Math.round(g.areas[selectedArea].picks); }
 
-                dataActual.push(uph); dataBackground.push(barCeiling); dataTarget.push(gt); customPicks.push(picks);
-
-                if (uph >= gt) { bgColorsActual.push('#10B981'); bgColorsBg.push('rgba(16, 185, 129, 0.15)'); }
-                else { bgColorsActual.push('#EF4444'); bgColorsBg.push('rgba(239, 68, 68, 0.15)'); }
+                dataActual.push(uph); 
+                dataTarget.push(gt); 
             });
 
             productivityChartInstance.data.labels = labels;
-            if(productivityChartInstance.data.datasets[0]) { productivityChartInstance.data.datasets[0].data = dataBackground; productivityChartInstance.data.datasets[0].backgroundColor = bgColorsBg; }
-            if(productivityChartInstance.data.datasets[1]) { productivityChartInstance.data.datasets[1].data = dataActual; productivityChartInstance.data.datasets[1].backgroundColor = bgColorsActual; productivityChartInstance.data.datasets[1].customPicks = customPicks; }
-            if(productivityChartInstance.data.datasets[2]) { productivityChartInstance.data.datasets[2].data = dataTarget; }
+            // วาดแท่ง 2 ชั้นให้ทับกัน (Target สีเทา, Actual สีเขียว/แดง)
+            productivityChartInstance.data.datasets = [
+                {
+                    type: 'bar', label: 'Target', data: dataTarget,
+                    backgroundColor: 'rgba(226, 232, 240, 0.7)', // สีเทาอ่อน (เป็นพื้นหลัง)
+                    barPercentage: 0.6, categoryPercentage: 0.8
+                },
+                {
+                    type: 'bar', label: 'Actual UPH', data: dataActual,
+                    backgroundColor: (ctx) => {
+                        let actual = ctx.raw;
+                        let target = dataTarget[ctx.dataIndex];
+                        return actual >= target ? '#10B981' : '#EF4444'; // สีเขียวถ้าผ่าน สีแดงถ้าตก
+                    },
+                    barPercentage: 0.6, categoryPercentage: 0.8
+                }
+            ];
             productivityChartInstance.update();
         }
 
@@ -2243,7 +2282,7 @@ function renderProductivitySection() {
             });
 
             let html = `<thead><tr>
-                <th>Picking Zone</th><th class="text-center">Area</th><th class="text-center">Productivity (UPH)</th><th class="text-center">Gap</th><th class="text-center text-blue">Cost/Pick (฿)</th>
+                <th style="position:sticky; left:0; z-index:20;">Picking Zone</th><th class="text-center">Area</th><th class="text-center">Productivity (UPH)</th><th class="text-center">Gap</th><th class="text-center text-blue">Cost/Pick (฿)</th>
             </tr></thead><tbody>`;
 
             if(zoneNames.length === 0) { html += `<tr><td colspan="5" class="text-center text-muted">ไม่มีข้อมูล Zone ในช่วงที่เลือก</td></tr>`; } 
@@ -2255,7 +2294,7 @@ function renderProductivitySection() {
                     let gap = prod - trg; let cost = prod > 0 ? (hourlyRate / prod) : 0;
 
                     html += `<tr>
-                        <td class="font-bold text-dark">${z}</td>
+                        <td class="font-bold text-dark" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${z}</td>
                         <td class="text-center text-muted">${zd.area || '-'}</td>
                         <td class="text-center"><span style="background:${prod>=trg?'#dcfce7':'#fee2e2'}; color:${prod>=trg?'#166534':'#991b1b'}; padding:4px 10px; border-radius:4px; font-weight:700;">${prod}</span></td>
                         <td class="text-center font-bold" style="color:${gap>=0?'var(--brand-green)':'var(--brand-red)'}">${gap > 0 ? '+'+gap : gap}</td>
@@ -2275,7 +2314,7 @@ function renderProductivitySection() {
             });
 
             let html = `<thead><tr>
-                <th>Name (ID)</th><th class="text-center">Picks</th><th class="text-center">Hours</th><th class="text-center">UPH</th><th class="text-center text-blue">Cost/Pick (฿)</th>
+                <th style="position:sticky; left:0; z-index:20;">Name (ID)</th><th class="text-center">Picks</th><th class="text-center">Hours</th><th class="text-center">UPH</th><th class="text-center text-blue">Cost/Pick (฿)</th>
             </tr></thead><tbody>`;
             
             if(users.length === 0) { html += `<tr><td colspan="5" class="text-center text-muted">ไม่มีข้อมูลพนักงาน</td></tr>`; } 
@@ -2289,7 +2328,7 @@ function renderProductivitySection() {
                     let cost = uph > 0 ? (hourlyRate / uph) : 0;
 
                     html += `<tr style="${isBulk ? 'opacity:0.5' : ''}">
-                        <td><b class="text-dark">${fullName}</b><br><span class="text-xs text-muted">ID: ${u}</span></td>
+                        <td style="position:sticky; left:0; background:var(--bg-card); z-index:10;"><b class="text-dark">${fullName}</b><br><span class="text-xs text-muted">ID: ${u}</span></td>
                         <td class="text-center font-bold">${fmtN(Math.round(d.picks))}</td>
                         <td class="text-center text-muted">${d.hours.toFixed(2)}</td>
                         <td class="text-center font-bold" style="color:${uph >= userTrg ? 'var(--brand-green)' : 'var(--brand-red)'}">${isBulk ? '<span class="text-xs text-muted">Bulk/Error</span>' : uph}</td>
@@ -2299,11 +2338,10 @@ function renderProductivitySection() {
             }
             userTableEl.innerHTML = html + "</tbody>";
         }
-
-        const overallTableEl = document.getElementById('prod-overall-table');
+const overallTableEl = document.getElementById('prod-overall-table');
         if (overallTableEl) {
             let html = `<thead><tr>
-                <th>Date</th><th class="text-center">Active Pickers</th><th class="text-center">Total Picks</th><th class="text-center">Overall UPH</th><th class="text-center text-blue">Avg Cost/Pick (฿)</th>
+                <th style="position:sticky; left:0; z-index:20;">Date</th><th class="text-center">Active Pickers</th><th class="text-center">Total Picks</th><th class="text-center">Overall UPH</th><th class="text-center text-blue">Avg Cost/Pick (฿)</th>
             </tr></thead><tbody>`;
             
             sortedGroups.slice().reverse().forEach(item => {
@@ -2313,7 +2351,7 @@ function renderProductivitySection() {
                 let cost = uph > 0 ? (hourlyRateFor(_ds) / uph) : 0;
 
                 html += `<tr>
-                    <td class="font-bold">${item.label}</td>
+                    <td class="font-bold" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${item.label}</td>
                     <td class="text-center"><span class="badge-glass" style="background:#F1F5F9; color:#475569;">${item.activePickers.size} คน</span></td>
                     <td class="text-center font-bold">${fmtN(Math.round(nb.picks))}</td>
                     <td class="text-center font-bold" style="color:${uph >= trg ? 'var(--brand-green)' : 'var(--brand-red)'}">${uph}</td>
@@ -2418,4 +2456,5 @@ function generateExecutiveAlerts(targetTimestamp, activeWaveKey, waveLate, waveD
     }
 }
 
+// 🚀 เริ่มต้นระบบ
 initDashboard();
