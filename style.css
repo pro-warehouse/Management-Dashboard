@@ -17,6 +17,13 @@
     --brand-red: #ED1C24; 
     --brand-purple: #8B5CF6; 
     --brand-teal: #0D9488;
+
+    /* ✨ พื้นหลังแบบมีมิติ (Light Mode) - แสงสีเขียว/ฟ้าอ่อนๆ + ลายจุดจางๆ */
+    --bg-pattern: 
+        radial-gradient(circle at 0% 0%, rgba(140, 198, 63, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 100% 0%, rgba(0, 146, 69, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(2, 132, 199, 0.04) 0%, transparent 40%),
+        url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='1' fill='%23009245' fill-opacity='0.05'/%3E%3C/svg%3E");
 }
 
 [data-theme="dark"] { 
@@ -27,10 +34,26 @@
     --text-dark: #FFFFFF; 
     --border-color: #334155; 
     --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+
+    /* ✨ พื้นหลังแบบมีมิติ (Dark Mode) - ลดแสงลงให้สบายตา + ลายจุดสีขาวจางๆ */
+    --bg-pattern: 
+        radial-gradient(circle at 0% 0%, rgba(140, 198, 63, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 100% 0%, rgba(0, 146, 69, 0.02) 0%, transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(2, 132, 199, 0.03) 0%, transparent 40%),
+        url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='1' fill='%23ffffff' fill-opacity='0.02'/%3E%3C/svg%3E");
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color: var(--text-main); line-height: 1.5; overflow-x: hidden; }
+
+body { 
+    background-color: var(--bg-body); 
+    background-image: var(--bg-pattern); /* ดึงลวดลายมาใช้ */
+    background-attachment: fixed; /* ล็อกลายไว้ไม่ให้เลื่อนตาม Scroll */
+    font-family: 'Inter', sans-serif; 
+    color: var(--text-main); 
+    line-height: 1.5; 
+    overflow-x: hidden; 
+}
 
 /* Utilities */
 .m-0 { margin: 0 !important; } .mb-10 { margin-bottom: 10px; } .mb-20 { margin-bottom: 20px; } .mb-24 { margin-bottom: 24px; } .mb-30 { margin-bottom: 30px; } .mb-50 { margin-bottom: 50px; }
