@@ -1572,7 +1572,11 @@ function updateInventoryUI() {
         let parts = mLabel.split('-');
         if (parts.length === 2) {
             let dObj = new Date(`${parts[0]} 1, 20${parts[1]}`);
-            if(dObj.getTime() >= targetStart && dObj.getTime() <= targetEnd) {
+// เพิ่มตัวแปรหาวันสุดท้ายของเดือนนั้น
+let dObjEnd = new Date(dObj.getFullYear(), dObj.getMonth() + 1, 0, 23, 59, 59).getTime();
+
+// เช็กว่าช่วงเวลาของเดือนนั้น คาบเกี่ยวกับช่วงเวลาที่เลือกใน Filter หรือไม่
+if(dObjEnd >= targetStart && dObj.getTime() <= targetEnd) {
                 let monthGroup = globalData.inventory[mLabel] || {};
                 let sumOnhand = 0, sumDiff = 0, count = 0;
                 let buDataMap = monthGroup.bu_data || {};
@@ -1927,7 +1931,10 @@ function renderLocationAccuracy() {
         }
     });
     parsedData.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
-    let validData = parsedData.filter(i => i.dateObj.getTime() >= targetStart && i.dateObj.getTime() <= targetEnd);
+    let validData = parsedData.filter(i => {
+    let dObjEnd = new Date(i.dateObj.getFullYear(), i.dateObj.getMonth() + 1, 0, 23, 59, 59).getTime();
+    return dObjEnd >= targetStart && i.dateObj.getTime() <= targetEnd;
+});
 
     if(validData.length === 0) return;
 
