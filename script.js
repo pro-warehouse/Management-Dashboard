@@ -1255,12 +1255,16 @@ function updateWorkforceUI() {
         });
         
         let pLabels = Object.keys(pMap);
-        let datasets = affList.map((aff, i) => ({
-            label: aff,
-            data: pLabels.map(p => pMap[p][aff]),
-            backgroundColor: (ctx) => (!ctx.chart.chartArea) ? gradPalettes[i%6].s : getGradient(ctx.chart.ctx, ctx.chart.chartArea, gradPalettes[i%6].s, gradPalettes[i%6].e),
-            borderRadius: 4, stack: 'hc'
-        }));
+        let datasets = affList.map((aff) => {
+            // ดึงสีตามสังกัด (BU Color)
+            let colorObj = getBuColor(aff);
+            return {
+                label: aff,
+                data: pLabels.map(p => pMap[p][aff]),
+                backgroundColor: (ctx) => (!ctx.chart.chartArea) ? colorObj.s : getGradient(ctx.chart.ctx, ctx.chart.chartArea, colorObj.s, colorObj.e),
+                borderRadius: 4, stack: 'hc'
+            };
+        });
 
         if(workforceChartInstance) {
             workforceChartInstance.data.labels = pLabels;
@@ -1282,38 +1286,125 @@ function updateWorkforceUI() {
             if (affiliations.length === 0) {
                 matrixTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูล MATRIX ของวันที่เลือก</th></tr></thead>`;
             } else {
-                let headerHtml = `<thead><tr><th rowspan="2" style="position:sticky; left:0; z-index:16;">Role / หน้าที่</th>`;
-                affiliations.forEach(aff => { headerHtml += `<th colspan="${dynamicTeams.length + 1}" style="text-align:center;">${aff}</th>`; });
-                headerHtml += `<th rowspan="2" class="text-center">Grand Total</th><th rowspan="2" class="text-center">% Ratio</th></tr><tr>`;
-                affiliations.forEach(() => { dynamicTeams.forEach(t => { headerHtml += `<th class="text-center">${t}</th>`; }); headerHtml += `<th class="text-center">Total</th>`; });
-                headerHtml += `</tr></thead>`;
+                // คำนวณยอดคนไทย/ต่างชาติ ล่วงหน้า
+                let natData = { thai: 0, foreign: 0 };
+                Object.keys(d.nat_by_aff || {}).forEach(aff => {
+                    if (affiliations.includes(aff)) {
+                        natData.thai += d.nat_by_aff[aff].thai || 0;
+                        natData.foreign += d.nat_by_aff[aff].foreign || 0;
+                    }
+                });
 
+                // สร้างหัวตาราง (Thead) แก้ไขโครงสร้าง Colspan และเพิ่มช่องสัญชาติ
+                let headerHtml = `<thead>
+                    <tr>
+                        <th rowspan="2" style="position:sticky; left:0; top:0; z-index:20; background:var(--bg-card);">Role / หน้าที่</th>`;
+                
+                affiliations.forEach(aff => { 
+                    headerHtml += `<th colspan="${dynamicTeams.length + 1}" style="text-align:center; position:sticky; top:0; z-index:15; background:var(--bg-card);">${aff}</th>`; 
+                });
+                
+                headerHtml += `<th rowspan="2" class="text-center" style="position:sticky; top:0; z-index:15; background:var(--bg-card); border-left:2px solid var(--border-color);">Grand Total</th>
+                               <th colspan="2" class="text-center text-blue" style="position:sticky; top:0; z-index:15; background:var(--bg-card); border-left:2px solid var(--border-color);">สัญชาติ (Nationality)</th>
+                               <th rowspan="2" class="text-center" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">% Ratio</th>
+                    </tr>
+                    <tr>`;
+                
+                affiliations.forEach(() => { 
+                    dynamicTeams.forEach(t => { headerHtml += `<th class="text-center" style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">${t}</th>`; }); 
+                    headerHtml += `<th class="text-center" style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">Total</th>`; 
+                });
+                
+                headerHtml += `<th class="text-center text-muted" style="position:sticky; top:36px; z-index:15; background:var(--bg-card); border-left:2px solid var(--border-color);">🇹🇭 ไทย</th>
+                               <th class="text-center text-muted" style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">🌐 ต่างชาติ</th>
+                    </tr>
+                </thead>`;
+
+                // สร้างเนื้อหา (Tbody)
                 let bodyHtml = "<tbody>";
                 roles.forEach(role => {
-                    let roleGrandTotal = 0; let roleRowHtml = `<td style="position:sticky; left:0; z-index:5; font-weight:700; background:var(--bg-card);">${role}</td>`;
+                    let roleGrandTotal = 0; 
+                    let roleRowHtml = `<td style="position:sticky; left:0; z-index:10; font-weight:700; background:var(--bg-card);">${role}</td>`;
+                    
+                    // นับคนไทย/ต่างชาติ ตาม Role
+                    let roleThai = 0, roleForeign = 0;
+                    if(d.foreign_staff) {
+                        d.foreign_staff.forEach(staff => {
+                            if(staff.role === role && affiliations.includes(staff.aff)) roleForeign++;
+                        });
+                    }
+
                     affiliations.forEach(aff => {
                         let affRoleTotal = 0; let teamCells = "";
                         dynamicTeams.forEach(team => {
                             let count = d.matrix[aff]?.[role]?.[team] || 0;
-                            affRoleTotal += count; teamCells += `<td class="text-center">${count > 0 ? count : '-'}</td>`;
+                            affRoleTotal += count; 
+                            teamCells += `<td class="text-center">${count > 0 ? count : '-'}</td>`;
                         });
                         roleGrandTotal += affRoleTotal;
-                        roleRowHtml += teamCells + `<td class="text-center font-bold">${affRoleTotal > 0 ? affRoleTotal : '-'}</td>`;
+                        roleRowHtml += teamCells + `<td class="text-center font-bold" style="background:#F8FAFC;">${affRoleTotal > 0 ? affRoleTotal : '-'}</td>`;
                     });
+                    
+                    // คนไทย = Grand Total ลบด้วย ต่างชาติ
+                    roleThai = Math.max(0, roleGrandTotal - roleForeign);
+                    
                     let grandPct = opsTotal > 0 ? ((roleGrandTotal / opsTotal) * 100).toFixed(1) + "%" : "0%";
-                    bodyHtml += `<tr>${roleRowHtml}<td class="text-center font-bold">${roleGrandTotal > 0 ? roleGrandTotal : '-'}</td><td class="text-center text-muted">${roleGrandTotal > 0 ? grandPct : '-'}</td></tr>`;
+                    
+                    bodyHtml += `<tr>
+                        ${roleRowHtml}
+                        <td class="text-center font-bold" style="border-left:2px solid var(--border-color);">${roleGrandTotal > 0 ? roleGrandTotal : '-'}</td>
+                        <td class="text-center text-green font-bold" style="border-left:2px solid var(--border-color);">${roleThai > 0 ? roleThai : '-'}</td>
+                        <td class="text-center text-blue font-bold">${roleForeign > 0 ? roleForeign : '-'}</td>
+                        <td class="text-center text-muted">${roleGrandTotal > 0 ? grandPct : '-'}</td>
+                    </tr>`;
                 });
+                
+                // แถวสรุป (Grand Total Row) ล่างสุด
+                bodyHtml += `<tr style="background:#F1F5F9; font-weight:800;">
+                    <td class="text-right" style="position:sticky; left:0; z-index:10; background:#F1F5F9; border-top:2px solid var(--border-color);">OVERALL</td>`;
+                
+                affiliations.forEach(aff => {
+                    let totalAff = 0;
+                    dynamicTeams.forEach(team => {
+                        let teamSum = 0;
+                        roles.forEach(role => { teamSum += d.matrix[aff]?.[role]?.[team] || 0; });
+                        totalAff += teamSum;
+                        bodyHtml += `<td class="text-center" style="border-top:2px solid var(--border-color);">${teamSum > 0 ? teamSum : '-'}</td>`;
+                    });
+                    bodyHtml += `<td class="text-center text-dark" style="border-top:2px solid var(--border-color);">${totalAff > 0 ? totalAff : '-'}</td>`;
+                });
+
+                bodyHtml += `<td class="text-center text-dark" style="border-top:2px solid var(--border-color); border-left:2px solid var(--border-color);">${opsTotal > 0 ? opsTotal : '-'}</td>
+                             <td class="text-center text-green" style="border-top:2px solid var(--border-color); border-left:2px solid var(--border-color);">${natData.thai > 0 ? natData.thai : '-'}</td>
+                             <td class="text-center text-blue" style="border-top:2px solid var(--border-color);">${natData.foreign > 0 ? natData.foreign : '-'}</td>
+                             <td class="text-center text-muted" style="border-top:2px solid var(--border-color);">100%</td>
+                </tr>`;
+
                 matrixTable.innerHTML = headerHtml + bodyHtml + "</tbody>";
             }
         }
-
         const attBody = document.getElementById('daily-attendance-body');
         const attHead = document.getElementById('daily-attendance-head');
         if (attHead) {
-            let h = `<tr><th rowspan="2" style="position:sticky; left:0; z-index:15; min-width:120px;">DATE / DEPT.</th><th rowspan="2">TARGET</th><th rowspan="2">ACTUAL</th><th rowspan="2">ABSENT</th><th rowspan="2">RATE</th>`;
-            dynamicTeams.forEach(t => { h += `<th colspan="4" class="team-divider">Team ${t}</th>`; });
+            // ปรับแก้ z-index ให้หัวตารางชั้นที่ 1 และ 2 ลอยตัวได้อย่างถูกต้อง และไม่ทับซ้ายมือ
+            let h = `<tr>
+                <th rowspan="2" style="position:sticky; left:0; top:0; z-index:25; background:var(--bg-card); min-width:120px; box-shadow:inset -1px 0 0 var(--border-color);">DATE / DEPT.</th>
+                <th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">TARGET</th>
+                <th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">ACTUAL</th>
+                <th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">ABSENT</th>
+                <th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card); border-right:2px solid var(--border-color);">RATE</th>`;
+            
+            dynamicTeams.forEach(t => { 
+                h += `<th colspan="4" class="team-divider" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">Team ${t}</th>`; 
+            });
             h += `</tr><tr>`;
-            dynamicTeams.forEach(() => { h += `<th class="team-divider">TRG</th><th>ACT</th><th>ABS</th><th>%</th>`; });
+            
+            dynamicTeams.forEach(() => { 
+                h += `<th class="team-divider" style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">TRG</th>
+                      <th style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">ACT</th>
+                      <th style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">ABS</th>
+                      <th style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">%</th>`; 
+            });
             h += `</tr>`;
             attHead.innerHTML = h;
         }
