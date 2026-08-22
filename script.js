@@ -119,7 +119,8 @@ function generateTrendHtml(current, previous, isInverse = false, isPct = false) 
 // ------------------------------------------------------------
 // CHART.JS CONFIG
 // ------------------------------------------------------------
-Chart.defaults.font.family = "'Inter', sans-serif";
+// เปลี่ยนบรรทัดเดิมเป็นแบบนี้
+Chart.defaults.font.family = "'Inter', 'Prompt', sans-serif";
 Chart.defaults.color = '#64748B';
 Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
 Chart.defaults.plugins.tooltip.titleFont = { size: 12, family: 'Inter', weight: 'bold' };
@@ -596,6 +597,19 @@ function getEffectiveUphCost(dateStr) {
     
     if (cand.length > 0) return globalUphCost[cand[0]];
     return { trg_all: 150, trg_full: 180, trg_half: 120, trg_ea: 80, cost_salary: 400, cost_days: 26 };
+}
+
+// --- นำโค้ดนี้ไปวางต่อท้ายฟังก์ชัน getEffectiveUphCost ---
+function getTarget(area, dateStr) {
+    let eff = getEffectiveUphCost(dateStr);
+    if (!area || area === 'ALL' || area === 'N/A') return eff.trg_all || 150;
+    
+    let a = area.toString().toLowerCase();
+    if (a.includes('full')) return eff.trg_full || 180;
+    if (a.includes('half')) return eff.trg_half || 120;
+    if (a.includes('ea') || a.includes('piece')) return eff.trg_ea || 80;
+    
+    return eff.trg_all || 150;
 }
 
 async function saveTargets() {
