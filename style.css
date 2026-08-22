@@ -9,7 +9,7 @@
     --border-color: #E2E8F0;
     --shadow-card: 0 10px 25px -5px rgba(0, 138, 68, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
     
-    /* 🎨 โทนสีหลักจากโลโก้ PT */
+    /* โทนสีหลักจากโลโก้ PT */
     --brand-blue: #0284C7; 
     --brand-green: #009245; 
     --brand-light-green: #8CC63F; 
@@ -18,7 +18,7 @@
     --brand-purple: #8B5CF6; 
     --brand-teal: #0D9488;
 
-    /* ✨ พื้นหลังแบบมีมิติ (Light Mode) - แสงสีเขียว/ฟ้าอ่อนๆ + ลายจุดจางๆ */
+    /* พื้นหลังแบบมีมิติ (คงเอกลักษณ์เดิมไว้) */
     --bg-pattern: 
         radial-gradient(circle at 0% 0%, rgba(140, 198, 63, 0.08) 0%, transparent 40%),
         radial-gradient(circle at 100% 0%, rgba(0, 146, 69, 0.05) 0%, transparent 40%),
@@ -34,8 +34,6 @@
     --text-dark: #FFFFFF; 
     --border-color: #334155; 
     --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
-
-    /* ✨ พื้นหลังแบบมีมิติ (Dark Mode) - ลดแสงลงให้สบายตา + ลายจุดสีขาวจางๆ */
     --bg-pattern: 
         radial-gradient(circle at 0% 0%, rgba(140, 198, 63, 0.03) 0%, transparent 40%),
         radial-gradient(circle at 100% 0%, rgba(0, 146, 69, 0.02) 0%, transparent 40%),
@@ -49,10 +47,12 @@ body {
     background-color: var(--bg-body); 
     background-image: var(--bg-pattern); 
     background-attachment: fixed; 
+    /* ใช้ฟอนต์ Prompt ควบคู่กับ Inter เพื่อความเป็นทางการ */
     font-family: 'Inter', 'Prompt', sans-serif; 
     color: var(--text-main); 
     line-height: 1.5; 
     overflow-x: hidden; 
+    font-size: 0.85rem; /* ปรับขนาดเบสไลน์ให้อ่านง่าย */
 }
 
 /* Utilities */
@@ -65,32 +65,33 @@ body {
 
 /* Header & Filter */
 .top-header-wrap { position: sticky; top: 0; z-index: 100; }
-.top-nav { background: var(--bg-card); padding: 14px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+.top-nav { background: var(--bg-card); padding: 12px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
 .brand-container { display: flex; align-items: center; gap: 14px; }
-.app-logo { width: 44px; height: 44px; object-fit: contain; border-radius: 8px; }
-.app-title { font-size: 1.25rem; font-weight: 800; color: var(--text-dark); line-height: 1.2; letter-spacing: -0.5px; margin: 0;}
+.app-logo { width: 42px; height: 42px; object-fit: contain; border-radius: 8px; }
+.app-title { font-size: 1.2rem; font-weight: 800; color: var(--text-dark); line-height: 1.2; letter-spacing: -0.5px; margin: 0;}
 .app-subtitle { font-size: 0.75rem; color: var(--text-muted); margin: 0;}
 .nav-actions { display: flex; align-items: center; gap: 12px; }
 
 .sticky-filter { margin: 0; border-radius: 0; border-bottom: 1px solid var(--border-color); box-shadow: 0 4px 15px -3px rgba(0,0,0,0.05); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
 [data-theme="dark"] .sticky-filter { background: rgba(30, 41, 59, 0.95); }
-.filter-card { padding: 12px 40px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.filter-card { padding: 10px 40px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
 .filter-group { display: flex; flex-direction: column; gap: 4px; }
 .filter-label { font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 0;}
-.filter-control { border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark); padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; font-family: inherit; outline: none; transition: all 0.2s; height: 34px; }
+.filter-control { border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 500; font-family: inherit; outline: none; transition: all 0.2s; height: 32px; }
 .filter-control:focus, .filter-control:hover { border-color: var(--brand-green); box-shadow: 0 0 0 3px rgba(0, 146, 69, 0.15); } 
 .select-dropdown { display: flex; justify-content: space-between; align-items: center; cursor: pointer; min-width: 130px; }
 .dropdown-arrow { font-size: 9px; margin-left: 6px; color: var(--text-muted); }
 
-/* ปุ่มต่างๆ ไล่สี PT Green */
-.btn-primary { background: linear-gradient(135deg, var(--brand-light-green) 0%, var(--brand-green) 100%); color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; height: 34px; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(0, 146, 69, 0.2); }
+/* Buttons */
+.btn-primary { background: linear-gradient(135deg, var(--brand-light-green) 0%, var(--brand-green) 100%); color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.8rem; cursor: pointer; height: 32px; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(0, 146, 69, 0.2); }
 .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0, 146, 69, 0.3); }
-.btn-outline { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-dark); padding: 6px 14px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 34px; transition: all 0.2s; }
+.btn-outline { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-dark); padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 32px; transition: all 0.2s; }
 .btn-outline:hover { border-color: var(--brand-green); color: var(--brand-green); }
-.btn-theme-toggle { background: transparent; color: var(--text-dark); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; height: 34px; transition: all 0.2s;}
+.btn-theme-toggle { background: transparent; color: var(--text-dark); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.8rem; cursor: pointer; height: 32px; transition: all 0.2s;}
 .btn-theme-toggle:hover { border-color: var(--text-muted); }
+.nav-shortcuts button { height: 28px !important; padding: 2px 10px !important; font-size: 0.75rem !important; }
 
-.loader-pill { background: linear-gradient(135deg, #FEF3C7, #FDE68A); color: #D97706; padding: 8px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(217, 119, 6, 0.15); }
+.loader-pill { background: linear-gradient(135deg, #FEF3C7, #FDE68A); color: #D97706; padding: 6px 14px; border-radius: 30px; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(217, 119, 6, 0.15); }
 [data-theme="dark"] .loader-pill { background: linear-gradient(135deg, #78350F, #92400E); color: #FDE68A; }
 @keyframes fast-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 .spin-icon { animation: fast-spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; stroke-width: 3px; }
@@ -98,15 +99,13 @@ body {
 .dashboard-body { padding: 0 40px 40px 40px; max-width: 1440px; margin: 0 auto; }
 
 /* =========================================
-   MAIN KPI CARDS (แถวบนสุดเท่านั้น) 
+   1. MAIN KPI CARDS (แก้ตัวหนังสือตกบรรทัด)
 ========================================= */
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
-.wave-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 
 .kpi-box { padding: 18px; border-radius: 16px; color: white; display: flex; flex-direction: column; box-shadow: var(--shadow-card); min-height: 110px; position: relative; overflow: hidden; }
 .kpi-box::before { content: ""; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%); transform: skewX(-20deg); transition: 0.5s; }
 .kpi-box:hover::before { left: 150%; }
-.min-h-110 { min-height: 100px; }
 
 .card-purple { background: linear-gradient(135deg, #9333EA 0%, #6B21A8 100%); }
 .card-green  { background: linear-gradient(135deg, var(--brand-light-green) 0%, var(--brand-green) 100%); } 
@@ -116,69 +115,95 @@ body {
 .card-teal   { background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%); }
 
 .kpi-head { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.3px; }
-.kpi-main-val { font-size: 2rem; font-weight: 800; line-height: 1; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.kpi-main-val { font-size: 1.9rem; font-weight: 800; line-height: 1; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 .kpi-sub-row { width: 100%; display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.75rem; }
-.kpi-foot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 6px; }
-.kpi-foot-col { display: flex; flex-direction: column; margin-top: auto; gap: 2px; font-size: 0.7rem; font-weight: 500;}
-.kpi-trend-box { display: flex; align-items: center; gap: 4px; }
-.trend-badge, .badge-glass { padding: 3px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 700; }
-.trend-badge { background: rgba(255,255,255,0.25); box-shadow: 0 1px 2px rgba(0,0,0,0.05); } .badge-glass { background: rgba(0,0,0,0.15); }
-.trend-note, .kpi-timestamp { font-size: 0.65rem; font-weight: 500; opacity: 0.9; }
+
+/* FIX 1: จัดระเบียบกล่องล่างสุดของ KPI เพื่อไม่ให้ Trend เบียดหรือตกบรรทัด */
+.kpi-foot { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-top: auto; 
+    padding-top: 10px; 
+}
+.kpi-trend-box { 
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    white-space: nowrap; /* ห้ามตกบรรทัด */
+}
+.trend-badge { 
+    padding: 4px 8px; 
+    border-radius: 6px; 
+    font-size: 0.7rem; 
+    font-weight: 700; 
+    background: rgba(255,255,255,0.25); 
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    white-space: nowrap; /* ห้ามตกบรรทัด */
+}
+.badge-glass { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; background: rgba(0,0,0,0.15); }
+.trend-note, .kpi-timestamp { 
+    font-size: 0.65rem; 
+    font-weight: 500; 
+    opacity: 0.9; 
+    white-space: nowrap; 
+}
 
 /* =========================================
-   SECONDARY KPI BOXES (กล่องย่อยตามหัวข้อ) 
-   ปรับให้ซอฟต์ลง พรีเมียม ไม่แย่งซีนแถวบน
+   SECONDARY KPI BOXES 
 ========================================= */
+.wave-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 .wave-kpi-grid .kpi-box {
     background: var(--bg-card); 
     color: var(--text-dark); 
     border: 1px solid var(--border-color);
     box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    min-height: 90px;
 }
-
-.wave-kpi-grid .kpi-box::before { display: none; } /* ปิดเอฟเฟกต์แสงสะท้อน */
-.wave-kpi-grid .kpi-head { color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
-
-/* ดักการใช้สีขาวจากฝั่ง JS ให้แสดงเป็นสีเทาเข้มอ่านง่ายขึ้น */
+.wave-kpi-grid .kpi-box::before { display: none; }
+.wave-kpi-grid .kpi-head { color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;}
+.wave-kpi-grid .kpi-main-val { font-size: 1.6rem; color: var(--text-dark); text-shadow: none; margin-bottom: 8px;}
 .wave-kpi-grid .kpi-foot-col div, 
 .wave-kpi-grid .kpi-timestamp,
 .wave-kpi-grid .kpi-foot-col span { color: var(--text-muted) !important; text-shadow: none !important;}
-
-.wave-kpi-grid .trend-badge {
-    background: var(--bg-body) !important;
-    color: var(--text-dark) !important;
-    border: 1px solid var(--border-color);
-}
-
-/* เล่นขอบสีที่ด้านบน และให้ตัวเลขเป็นสีตามธีม */
-.wave-kpi-grid .card-purple { background: var(--bg-card); border-top: 4px solid #9333EA; }
-.wave-kpi-grid .card-purple .kpi-main-val { color: #9333EA; text-shadow: none;}
-
-.wave-kpi-grid .card-green { background: var(--bg-card); border-top: 4px solid var(--brand-green); }
-.wave-kpi-grid .card-green .kpi-main-val { color: var(--brand-green); text-shadow: none;}
-
-.wave-kpi-grid .card-blue { background: var(--bg-card); border-top: 4px solid var(--brand-blue); }
-.wave-kpi-grid .card-blue .kpi-main-val { color: var(--brand-blue); text-shadow: none;}
-
-.wave-kpi-grid .card-red { background: var(--bg-card); border-top: 4px solid var(--brand-red); }
-.wave-kpi-grid .card-red .kpi-main-val { color: var(--brand-red); text-shadow: none;}
-
-.wave-kpi-grid .card-orange { background: var(--bg-card); border-top: 4px solid var(--brand-yellow); }
-.wave-kpi-grid .card-orange .kpi-main-val { color: var(--brand-yellow); text-shadow: none;}
+.wave-kpi-grid .trend-badge { background: var(--bg-body) !important; color: var(--text-dark) !important; border: 1px solid var(--border-color); }
+.wave-kpi-grid .card-purple { border-top: 4px solid #9333EA; }
+.wave-kpi-grid .card-green { border-top: 4px solid var(--brand-green); }
+.wave-kpi-grid .card-blue { border-top: 4px solid var(--brand-blue); }
+.wave-kpi-grid .card-red { border-top: 4px solid var(--brand-red); }
+.wave-kpi-grid .card-orange { border-top: 4px solid var(--brand-yellow); }
 
 /* =========================================
-   CARDS & LAYOUTS
+   2. FIX HIERARCHY (แบ่งโซนแต่ละหัวข้อให้ชัดเจน)
 ========================================= */
+.section-title-wrap { 
+    background: rgba(255, 255, 255, 0.7); /* พื้นหลังกึ่งโปร่งแสง */
+    backdrop-filter: blur(10px);
+    padding: 12px 20px;
+    border-radius: 10px;
+    border-left: 6px solid var(--brand-blue); /* สร้างเส้นแบ่งหมวดหมู่ */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    border-top: 1px solid rgba(255,255,255,0.8);
+    border-right: 1px solid rgba(255,255,255,0.8);
+    border-bottom: 1px solid rgba(255,255,255,0.8);
+    margin-top: 40px; 
+    margin-bottom: 20px; 
+    display: flex; 
+    align-items: center; 
+    gap: 12px;
+}
+[data-theme="dark"] .section-title-wrap { background: rgba(30, 41, 59, 0.6); border-color: rgba(255,255,255,0.05); border-left-color: #38BDF8;}
+
+.section-heading { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); margin: 0; }
+.tag-source { background: var(--brand-blue); color: #FFF; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 700; margin-left: auto; }
+.tag-source.gray { background: #94A3B8; }
+
+/* CARDS */
 .card { background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-card); padding: 24px; transition: transform 0.2s, box-shadow 0.2s; border: 1px solid rgba(0,0,0,0.02); }
 .card:hover { box-shadow: 0 14px 28px rgba(0,0,0,0.05), 0 10px 10px rgba(0,0,0,0.02); transform: translateY(-2px); }
 [data-theme="dark"] .card { border: 1px solid rgba(255,255,255,0.05); }
 .panel-title { font-size: 0.95rem; font-weight: 700; color: var(--text-dark); margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px;}
 .card-head-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
-.section-title-wrap { margin-bottom: 16px; display: flex; align-items: baseline; gap: 8px; }
-.section-heading { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); margin: 0; }
-.tag-source { background: #F1F5F9; color: #475569; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 700; }
-[data-theme="dark"] .tag-source { background: #334155; color: #E2E8F0; }
-
 .grid-2-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; }
 .grid-3-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } 
 .chart-canvas-box { position: relative; width: 100%; height: 250px; }
@@ -187,10 +212,10 @@ body {
 .stock-summary-box { display: flex; align-items: center; justify-content: space-between; background: var(--bg-body); padding: 18px 24px; border-radius: 12px; border: 1px solid var(--border-color); }
 .stock-val-wrap { display: flex; flex-direction: column; }
 .stock-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
-.stock-price { font-size: 2.2rem; font-weight: 800; color: var(--text-dark); line-height: 1; letter-spacing: -1px; }
-.stock-change { font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-.stock-up { background: #fee2e2; color: var(--brand-red); } 
-.stock-down { background: #dcfce7; color: var(--brand-green); } 
+.stock-price { font-size: 2rem; font-weight: 800; color: var(--text-dark); line-height: 1; letter-spacing: -0.5px; }
+.stock-change { font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.stock-up { background: #dcfce7; color: var(--brand-green); } 
+.stock-down { background: #fee2e2; color: var(--brand-red); } 
 .stock-neutral { background: #f1f5f9; color: #64748b; }
 
 /* Stages */
@@ -214,34 +239,58 @@ body {
 .info-alert { padding: 12px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
 .alert-green { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; } .alert-red { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; } .alert-blue { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; } .alert-yellow { background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A; }
 
-/* Tables */
-.table-scroll-wrap { width: 100%; overflow-x: auto; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--border-color); }
+/* =========================================
+   3. FIX UPH SUMMARY BOX (จัดกล่อง UPH ใหม่ให้ดูเป็น Dashboard)
+========================================= */
+#prod-summary-box {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    padding: 16px 20px !important;
+    display: block !important; 
+    line-height: 1.8 !important;
+    font-size: 0.9rem !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03) !important;
+    border-left: 6px solid var(--brand-green) !important;
+}
+[data-theme="dark"] #prod-summary-box { background: #1E293B !important; border-color: #334155 !important; }
+#prod-summary-box.alert-red { border-left-color: var(--brand-red) !important; }
+
+/* จัดระเบียบตัวหนังสือด้านในที่ถูกยิงมาจาก JS */
+#prod-summary-box b.text-dark { font-size: 1.4rem !important; font-weight: 800; margin: 0 4px; }
+#prod-summary-box span.text-blue.text-lg { font-size: 1.4rem !important; font-weight: 800; }
+#prod-summary-box .text-muted.text-xs { display: block; margin-top: 4px; font-size: 0.8rem; }
+
+/* =========================================
+   TABLES (ปรับสเกลให้อ่านง่ายและน่าเชื่อถือ)
+========================================= */
+.table-scroll-wrap { width: 100%; overflow-x: auto; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--border-color); }
 .max-h-300 { max-height: 280px; overflow-y: auto; } .max-h-400 { max-height: 380px; overflow-y: auto; } .max-h-340 { max-height: 338px; overflow-y: auto; }
 
-/* ปรับความสวยงามของตารางให้อ่านง่าย ดูพรีเมียม (Font & Padding) */
 .data-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.85rem; text-align: left; white-space: nowrap; }
 .data-table th { 
     background: #F8FAFC; 
     color: var(--text-muted); 
     font-weight: 600; 
-    padding: 14px 18px; 
+    padding: 12px 16px; 
     border-bottom: 2px solid var(--border-color); 
     position: sticky; 
     top: 0; 
     z-index: 10; 
-    font-size: 0.8rem; 
-    letter-spacing: 0.3px; 
+    font-size: 0.75rem; 
+    letter-spacing: 0.5px; 
     text-transform: uppercase;
 }
 [data-theme="dark"] .data-table th { background: #0F172A; }
+
 .data-table td { 
-    padding: 14px 18px; 
+    padding: 12px 16px; 
     border-bottom: 1px solid var(--border-color); 
     color: var(--text-dark); 
     vertical-align: middle; 
 }
 .data-table tbody tr:hover td { background: var(--bg-body); }
-.data-table .summary-row td { background-color: #F8FAFC; border-top: 2px solid var(--border-color); }
+.data-table .summary-row td { background-color: #F8FAFC; border-top: 2px solid var(--border-color); font-weight: 700;}
 [data-theme="dark"] .data-table .summary-row td { background-color: #0F172A; }
 .excel-grid th, .excel-grid td { border-right: none; text-align: center; } 
 
@@ -265,9 +314,7 @@ body {
 @media (max-width: 1024px) { .grid-2-col { grid-template-columns: 1fr; } .wave-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 768px) { .top-nav { flex-direction: column; align-items: flex-start; gap: 12px; } .filter-card { justify-content: flex-start;} .grid-3-col { grid-template-columns: 1fr; } }
 
-/* =========================================
-   HORIZONTAL COMPARISON TABLE
-========================================= */
+/* HORIZONTAL COMPARISON TABLE */
 .comparison-table th, .comparison-table td { min-width: 110px; text-align: right; white-space: nowrap; font-size: 0.8rem; }
 .comparison-table th:first-child, .comparison-table td:first-child { 
     position: sticky; left: 0; background: var(--bg-card); z-index: 30; 
@@ -280,132 +327,20 @@ body {
 .diff-bad { color: var(--brand-red); font-weight: 700; } 
 .diff-neutral { color: var(--text-muted); font-weight: 500; }
 
-/* =========================================
-   1. แก้ปัญหาแถบแจ้งเตือน (Toast) ด้านล่าง ให้ลอยอยู่มุมขวาแบบพรีเมียม
-========================================= */
+/* TOAST POPUP */
 .toast-popup {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
+    position: fixed; bottom: 30px; right: 30px;
     background: linear-gradient(135deg, var(--brand-light-green) 0%, var(--brand-green) 100%);
-    color: white;
-    padding: 12px 28px;
-    border-radius: 50px;
-    font-weight: 600;
-    font-size: 0.85rem;
+    color: white; padding: 12px 28px; border-radius: 50px;
+    font-weight: 600; font-size: 0.85rem;
     box-shadow: 0 10px 25px -5px rgba(0, 146, 69, 0.4);
-    transform: translateY(100px);
-    opacity: 0;
+    transform: translateY(100px); opacity: 0;
     transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: auto !important;
-    min-width: 200px;
+    z-index: 9999; display: flex; align-items: center; justify-content: center; gap: 8px; width: auto !important; min-width: 200px;
 }
-.toast-popup.show {
-    transform: translateY(0);
-    opacity: 1;
-}
+.toast-popup.show { transform: translateY(0); opacity: 1; }
 
-/* =========================================
-   2. ย่อขนาดกล่อง 1-2-3 (PICK, QC, SHIPPED) ให้กะทัดรัดและซอฟต์ลง
-========================================= */
-.stage-panel { 
-    padding: 14px 18px !important; 
-    border-radius: 14px !important;
-}
-.stage-top { 
-    gap: 10px !important; 
-    margin-bottom: 10px !important; 
-}
-.stage-icon { 
-    width: 30px !important; 
-    height: 30px !important; 
-    border-radius: 8px !important; 
-    font-size: 1rem !important; 
-}
-.stage-label { 
-    font-size: 0.9rem !important; 
-}
-.stage-middle { 
-    margin-bottom: 8px !important; 
-}
-.stage-big-pct { 
-    font-size: 1.6rem !important; 
-}
-.stage-counts { 
-    font-size: 0.7rem !important; 
-    gap: 2px !important;
-}
-.stage-counts strong { 
-    font-size: 0.8rem !important; 
-}
-.progress-bar-bg { 
-    height: 6px !important; 
-    margin-bottom: 10px !important; 
-}
-.stage-status-msg { 
-    font-size: 0.75rem !important; 
-    padding: 6px 10px !important; 
-    border-radius: 6px !important;
-}
-
-/* =========================================
-   3. ปรับกล่อง Wave Operations ให้สวยแบบ Soft Modern (ลบขอบหนาๆ ทิ้ง)
-========================================= */
-.wave-kpi-grid .kpi-box {
-    border-radius: 14px !important;
-    padding: 16px 20px !important;
-    min-height: 90px !important; 
-    border-top: 1px solid var(--border-color) !important; 
-}
-.wave-kpi-grid .kpi-head { 
-    font-size: 0.75rem !important; 
-    margin-bottom: 6px !important; 
-}
-.wave-kpi-grid .kpi-main-val { 
-    font-size: 1.7rem !important; 
-    margin-bottom: 10px !important; 
-}
-
-/* ตกแต่งพื้นหลังให้ไล่สีอ่อนๆ จากด้านบนลงมา (Soft Gradient) แทนการใช้เส้นขอบ */
-.wave-kpi-grid .card-purple { 
-    background: linear-gradient(180deg, rgba(147, 51, 234, 0.05) 0%, var(--bg-card) 100%) !important; 
-    border: 1px solid rgba(147, 51, 234, 0.15) !important;
-}
-.wave-kpi-grid .card-green { 
-    background: linear-gradient(180deg, rgba(0, 146, 69, 0.05) 0%, var(--bg-card) 100%) !important; 
-    border: 1px solid rgba(0, 146, 69, 0.15) !important;
-}
-.wave-kpi-grid .card-red { 
-    background: linear-gradient(180deg, rgba(237, 28, 36, 0.05) 0%, var(--bg-card) 100%) !important; 
-    border: 1px solid rgba(237, 28, 36, 0.15) !important;
-}
-.wave-kpi-grid .card-orange { 
-    background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, var(--bg-card) 100%) !important; 
-    border: 1px solid rgba(245, 158, 11, 0.15) !important;
-}
-
-/* ปรับแต่ง Badge ด้านล่างของกล่องย่อยให้ดูมินิมอล */
-.wave-kpi-grid .trend-badge, 
-.wave-kpi-grid .kpi-foot-col span {
-    background: var(--bg-body) !important;
-    color: var(--text-main) !important;
-    border: 1px solid var(--border-color) !important;
-    padding: 4px 10px !important;
-    border-radius: 6px !important;
-    font-size: 0.7rem !important;
-    display: inline-block !important;
-    margin-bottom: 4px !important;
-    font-weight: 600 !important;
-}
-
-/* =========================================
-   4. MODAL POPUP (Capacity Setup)
-========================================= */
+/* MODALS */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
@@ -416,14 +351,12 @@ body {
 .modal-box {
     background: var(--bg-card); border-radius: 16px; width: 90%; max-width: 500px;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    transform: translateY(20px); transition: transform 0.3s ease;
-    overflow: hidden;
+    transform: translateY(20px); transition: transform 0.3s ease; overflow: hidden;
 }
 .modal-overlay.show .modal-box { transform: translateY(0); }
 .modal-header {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 16px 24px; border-bottom: 1px solid var(--border-color);
-    background: #F8FAFC;
+    padding: 16px 24px; border-bottom: 1px solid var(--border-color); background: #F8FAFC;
 }
 [data-theme="dark"] .modal-header { background: #0F172A; }
 .btn-close-modal { background: transparent; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-muted); transition: 0.2s;}
@@ -435,26 +368,15 @@ body {
 .excel-grid th { top: 0; z-index: 15; }
 .excel-grid th:first-child { z-index: 25; }
 
-/* =========================================
-   5. STOCK TREND BADGES (ปุ่มแบบหุ้น)
-========================================= */
+/* STOCK TREND BADGES */
 .trend-up { background: rgba(16, 185, 129, 0.25) !important; color: #A7F3D0 !important; border: 1px solid rgba(16, 185, 129, 0.4) !important; }
 .trend-down { background: rgba(239, 68, 68, 0.25) !important; color: #FECACA !important; border: 1px solid rgba(239, 68, 68, 0.4) !important; }
 .trend-neutral { background: rgba(255, 255, 255, 0.2) !important; color: #F8FAFC !important; border: 1px solid rgba(255, 255, 255, 0.3) !important; }
 
-/* ย่อตัวหนังสือใน KPI ให้ดูคลีนขึ้น ไม่รก */
-.kpi-main-val { font-size: 1.7rem !important; letter-spacing: -0.5px; }
-.kpi-head span { font-size: 0.8rem !important; text-transform: uppercase; letter-spacing: 0.5px;}
-.kpi-sub-row span { font-size: 0.7rem !important; }
-
-/* =========================================
-   6. CLEAN WORKFORCE MATRIX TABLE
-========================================= */
+/* CLEAN WORKFORCE MATRIX TABLE */
 #wf-matrix-table th { background: #F8FAFC; color: #475569; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; }
 [data-theme="dark"] #wf-matrix-table th { background: #0F172A; color: #CBD5E1; }
-/* สร้างเส้นแบ่งแยกแบรนด์ให้ชัดเจน */
 .matrix-border-left { border-left: 2px solid #CBD5E1 !important; }
 [data-theme="dark"] .matrix-border-left { border-left: 2px solid #334155 !important; }
-/* ไฮไลต์คอลัมน์ Total */
 .matrix-total-col { background: #F1F5F9 !important; font-weight: 800 !important; color: var(--text-dark) !important; }
 [data-theme="dark"] .matrix-total-col { background: #1E293B !important; }
