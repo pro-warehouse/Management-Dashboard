@@ -34,6 +34,7 @@
 
         <!-- Master Filter Bar -->
         <div class="filter-card sticky-filter">
+            <!-- (โค้ดตัวกรอง Date, View By, BU เดิมของคุณอยู่ตรงนี้) -->
             <div class="filter-group">
                 <label class="filter-label">DATE RANGE</label>
                 <div style="display: flex; gap: 8px; align-items: center;">
@@ -63,6 +64,19 @@
                     <button id="bu-apply-btn" class="btn-apply mt-10">Apply Filter</button>
                 </div>
             </div>
+
+            <!-- 👇👇 โค้ดปุ่มทางลัดที่เพิ่มเข้ามาใหม่ 👇👇 -->
+            <div class="nav-shortcuts" style="display: flex; gap: 6px; margin-left: auto; align-items: center; border-left: 2px solid var(--border-color); padding-left: 16px;">
+                <button onclick="scrollToSection('wave-title-1')" class="btn-outline" style="font-size: 0.7rem; padding: 4px 8px; height: 28px;">🌊 Wave</button>
+                <button onclick="scrollToSection('ffmTrendChart')" class="btn-outline" style="font-size: 0.7rem; padding: 4px 8px; height: 28px;">📦 FFM</button>
+                <button onclick="scrollToSection('workforceChart')" class="btn-outline" style="font-size: 0.7rem; padding: 4px 8px; height: 28px;">👥 Staff</button>
+                <button onclick="scrollToSection('ontimeChart2')" class="btn-outline" style="font-size: 0.7rem; padding: 4px 8px; height: 28px;">🚚 Trans</button>
+                <button onclick="scrollToSection('claimChart2')" class="btn-outline" style="font-size: 0.7rem; padding: 4px 8px; height: 28px;">⚠️ Claim</button>
+                <button onclick="scrollToSection('inventoryChart')" class="btn-outline" style="font-size: 0.7rem; padding: 4px 8px; height: 28px;">📊 Inv</button>
+                <button onclick="scrollToSection('productivityChart')" class="btn-outline" style="font-size: 0.7rem; padding: 4px 8px; height: 28px;">⚡ Prod</button>
+            </div>
+            <!-- 👆👆 จบโค้ดปุ่มทางลัด 👆👆 -->
+        </div>
         </div>
     </header>
 
