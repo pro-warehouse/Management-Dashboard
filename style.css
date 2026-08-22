@@ -458,3 +458,79 @@ body {
 /* ไฮไลต์คอลัมน์ Total */
 .matrix-total-col { background: #F1F5F9 !important; font-weight: 800 !important; color: var(--text-dark) !important; }
 [data-theme="dark"] .matrix-total-col { background: #1E293B !important; }
+/* =========================================
+   UI REFINEMENT (ลดขนาด ย่อสเกล ปรับให้คลีน)
+========================================= */
+body {
+    font-size: 0.85rem; /* ลดฟอนต์หลักลงให้หน้าตาดูผู้ดีขึ้น */
+}
+
+/* ปรับระยะกล่องให้เล็กลง */
+.card {
+    padding: 18px 20px !important;
+    border-radius: 12px !important;
+}
+
+/* ลดขนาดหัวข้อต่างๆ */
+.section-heading { font-size: 1.05rem !important; }
+.panel-title { font-size: 0.8rem !important; margin-bottom: 10px !important; }
+
+/* ย่อขนาดตารางให้กระชับและคลีนขึ้น */
+.data-table th {
+    padding: 10px 14px !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.5px !important;
+}
+.data-table td {
+    padding: 8px 14px !important;
+    font-size: 0.75rem !important;
+}
+
+/* ปรับกราฟไม่ให้แย่งพื้นที่ (สูงเกินไป) */
+.chart-canvas-box {
+    height: 210px !important; 
+}
+
+/* ปรับกล่องสรุปตัวเลข (Stock Ticker) */
+.stock-summary-box {
+    padding: 12px 18px !important;
+}
+.stock-price {
+    font-size: 1.6rem !important; /* ย่อจาก 2.2rem */
+}
+.stock-change {
+    padding: 4px 10px !important;
+    font-size: 0.75rem !important;
+}
+
+/* ย่อตัวเลขหน้าหลัก KPI บนสุด */
+.kpi-main-val {
+    font-size: 1.6rem !important;
+    margin-bottom: 8px !important;
+}
+.kpi-box {
+    padding: 14px 16px !important;
+    min-height: 90px !important;
+}
+
+/* ปรับ Filter Bar ให้กะทัดรัดขึ้น */
+.filter-card {
+    padding: 8px 40px !important;
+}
+.filter-control {
+    height: 30px !important;
+    font-size: 0.75rem !important;
+}
+
+/* ซ่อน Scrollbar ของตารางให้ดูเนี้ยบขึ้น แต่ยังไถดูได้ */
+.table-scroll-wrap::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.table-scroll-wrap::-webkit-scrollbar-thumb {
+    background-color: #CBD5E1;
+    border-radius: 4px;
+}
+[data-theme="dark"] .table-scroll-wrap::-webkit-scrollbar-thumb {
+    background-color: #475569;
+}
