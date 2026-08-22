@@ -2295,4 +2295,66 @@ function renderProductivitySection() {
     } catch (e) { console.error("Productivity Render Error:", e); }
 }
 
-document.addEventListener('DOMContentLoaded', () => { initDashboard(); });
+// ==========================================
+// 🌟 สั่งให้ Dashboard เริ่มทำงานตอนเปิดเว็บ 🌟
+// ==========================================
+// ตรวจสอบสถานะเบราว์เซอร์ ถ้ายกหน้าเว็บขึ้นมาแล้วให้ดึงข้อมูลทันที
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDashboard);
+} else {
+    initDashboard();
+}
+
+// ผูก Event ให้กับ Filter ทันทีที่โหลดเสร็จ
+setTimeout(() => {
+    ['loc-bu-filter', 'loc-type-filter', 'loc-zone-filter'].forEach(id => {
+        let el = document.getElementById(id);
+        if(el && !el.hasAttribute('data-bound')) { el.addEventListener('change', renderLocationAccuracy); el.setAttribute('data-bound', 'true'); }
+    });
+    ['prod-area-filter', 'prod-zone-filter'].forEach(id => {
+        let el = document.getElementById(id);
+        if(el && !el.hasAttribute('data-bound')) { el.addEventListener('change', renderProductivitySection); el.setAttribute('data-bound', 'true'); }
+    });
+}, 500);
+
+// ==========================================
+// ฟังก์ชันสำหรับระบบ Key Incidents Alerts
+// ==========================================
+function generateExecutiveAlerts(targetEnd, latestD, totalLate, maxOverallDelay, diffDays, worstBU) {
+    const alertBox = document.getElementById('smart-alerts-container');
+    if (!alertBox) return;
+    
+    let alertsHtml = "";
+    let hasAlert = false;
+
+    if (diffDays > 0) {
+        alertsHtml += `<div class="info-alert alert-yellow">⚠️ <b>Outdated Data:</b> ข้อมูลล่าสุดคือวันที่ ${latestD} (ล่าช้า ${diffDays} วัน)</div>`;
+        hasAlert = true;
+    }
+    if (totalLate > 0) {
+        alertsHtml += `<div class="info-alert alert-red">🚨 <b>SLA Breach:</b> พบออเดอร์หลุดเวลาการทำรอบ (Late Orders) จำนวน ${fmtN(totalLate)} บิล</div>`;
+        hasAlert = true;
+    }
+    if (maxOverallDelay > 0) {
+        alertsHtml += `<div class="info-alert alert-red">⏱️ <b>Process Delay:</b> พบความล่าช้าในกระบวนการทำงานสูงสุดที่ BU: ${worstBU} (${Math.floor(maxOverallDelay/60)}h ${maxOverallDelay % 60}m)</div>`;
+        hasAlert = true;
+    }
+    
+    if (!hasAlert) {
+        alertsHtml = `<div class="info-alert alert-green" style="justify-content: center;">✅ <b>All Systems Normal:</b> ข้อมูลปกติ ไม่พบความล่าช้าในรอบบิลปัจจุบัน</div>`;
+    }
+    
+    alertBox.innerHTML = alertsHtml;
+}
+
+// ==========================================
+// ฟังก์ชันสำหรับปุ่มทางลัด (Quick Navigation)
+// ==========================================
+function scrollToSection(elementId) {
+    const el = document.getElementById(elementId);
+    if (el) {
+        const container = el.closest('.card') || el.closest('section') || el;
+        const y = container.getBoundingClientRect().top + window.scrollY - 140; 
+        window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+}
