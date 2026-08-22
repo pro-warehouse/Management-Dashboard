@@ -6,14 +6,12 @@ let _loadProgress = 0;
 let _loadAnimFrame = null;
 
 // ==========================================
-// 🌟 1. SAFE DATE PARSER (ป้องกันบั๊ก Timezone)
+// 🌟 1. SAFE DATE PARSER
 // ==========================================
 function safeParseDate(str) {
     if (!str) return new Date();
     let d = new Date(str);
     if (!isNaN(d.getTime())) return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    
-    // Fallback สำหรับเบราว์เซอร์ที่แปลง Format เพี้ยน
     let clean = str.replace(/-/g, ' ').replace(/\s+/g, ' ');
     d = new Date(clean);
     if (!isNaN(d.getTime())) return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -119,7 +117,6 @@ function generateTrendHtml(current, previous, isInverse = false, isPct = false) 
 // ------------------------------------------------------------
 // CHART.JS CONFIG
 // ------------------------------------------------------------
-// เปลี่ยนบรรทัดเดิมเป็นแบบนี้
 Chart.defaults.font.family = "'Inter', 'Prompt', sans-serif";
 Chart.defaults.color = '#64748B';
 Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
@@ -211,11 +208,11 @@ let ontimeChartInstance = new Chart(document.getElementById('ontimeChart2'), {
     type: 'line', data: { labels: [], datasets: [] }, 
     options: { 
         responsive: true, maintainAspectRatio: false, 
-        layout: { padding: { top: 20 } },
-        plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, 
+        layout: { padding: { top: 35 } }, // FIX: เพิ่มพื้นที่ด้านบนกันกราฟชนตัวหนังสือ
+        plugins: { legend: { position: 'bottom', labels:{usePointStyle:true, boxWidth:8} } }, // FIX: ย้ายไปอยู่ด้านล่าง
         scales: { 
             x: { grid: { display: false } }, 
-            y: { border: { display: false }, grid: { borderDash: [4, 4] }, suggestedMin: 80, max: 100 } 
+            y: { border: { display: false }, grid: { borderDash: [4, 4] }, suggestedMin: 80, max: 105 } // FIX: เผื่อพื้นที่ให้เลข 100 ไม่ชนขอบ
         } 
     }, 
     plugins: [lineDataLabelPlugin]
@@ -240,7 +237,7 @@ let transportTrendChartInstance = new Chart(document.getElementById('transportTr
     type: 'bar', data: { labels: [], datasets: [] },
     options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } } },
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }, // ย้ายลงด้านล่าง
         scales: {
             x: { grid: { display: false } },
             y: { type: 'linear', position: 'left', min: 0, max: 105, title: { display: true, text: 'SLA (%)', color: '#3B82F6', font: {weight: 'bold'} }, grid: { borderDash: [4, 4] } },
@@ -599,7 +596,6 @@ function getEffectiveUphCost(dateStr) {
     return { trg_all: 150, trg_full: 180, trg_half: 120, trg_ea: 80, cost_salary: 400, cost_days: 26 };
 }
 
-// --- นำโค้ดนี้ไปวางต่อท้ายฟังก์ชัน getEffectiveUphCost ---
 function getTarget(area, dateStr) {
     let eff = getEffectiveUphCost(dateStr);
     if (!area || area === 'ALL' || area === 'N/A') return eff.trg_all || 150;
@@ -963,7 +959,6 @@ async function initFulfillmentRealtime() {
             document.getElementById('ffm-orders-update').innerText = `Updated: ${latestPLabel || '--'}`;
         }
 
-        // 🌟 แก้ไข: วนหาข้อมูล FFM Rate ของวันล่าสุดที่มีการส่งของจริงๆ (Ship > 0)
         let latestShipDateStr = null, prevShipDateStr = null;
         let revDates = [...validChartDates].reverse();
         for (let d of revDates) {
@@ -1239,7 +1234,6 @@ async function initFulfillmentRealtime() {
                 
                 generateExecutiveAlerts(targetEnd, latestD, totalLate, maxOverallDelay, diffDays, worstBU);
 
-                // --- กู้คืน WAVE PLAN SUMMARY ---
                 const waveSummaryTable = document.getElementById('wave-summary-table');
                 if (waveSummaryTable) {
                     if (validChartDates.length === 0 || allBUsArray.length === 0) {
@@ -1298,7 +1292,6 @@ function updateWorkforceUI() {
         return;
     }
     
-    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน safeParseDate ที่กันบัค Timezone แล้ว 🌟
     const targetStartObj = safeParseDate(document.getElementById('date-start').value);
     const targetEndObj = safeParseDate(document.getElementById('date-end').value);
     const targetStart = targetStartObj.setHours(0, 0, 0, 0);
@@ -1560,7 +1553,6 @@ function updateOnTimeUI() {
         return;
     }
     
-    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน safeParseDate ที่กันบัค Timezone แล้ว 🌟
     const targetEndObj = safeParseDate(document.getElementById('date-end').value);
     const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
@@ -1657,7 +1649,7 @@ function updateOnTimeUI() {
 }
 
 // ----------------------------------------------------
-// CLAIM COST (MTD Logic + Owner Table FIXED)
+// CLAIM COST (MTD Logic + Table Re-design)
 // ----------------------------------------------------
 function updateClaimUI() {
     const valEl = document.getElementById('claim-val');
@@ -1673,20 +1665,24 @@ function updateClaimUI() {
         return;
     }
 
-    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน safeParseDate ที่กันบัค Timezone แล้ว 🌟
     const targetEndObj = safeParseDate(document.getElementById('date-end').value);
     const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
     const targetMonth = targetEndObj.getMonth();
     const targetYear = targetEndObj.getFullYear();
+    const period = document.getElementById('global-period').value;
     
     let allDatesData = [];
     let tableRecords = []; 
+    let groupedByPeriod = {};
     
     Object.keys(globalData.claims).forEach(dKey => {
         let dObj = new Date(getStandardDate(dKey));
         if (!isNaN(dObj.getTime()) && dObj.getTime() <= targetEnd) { 
             let cTotalCost = 0; let cTotalQty = 0;
+            let pLabel = getPeriodLabel(dObj, period);
+            if (!groupedByPeriod[pLabel]) groupedByPeriod[pLabel] = { label: pLabel, time: dObj.getTime(), cost: 0, qty: 0 };
+
             let buDataMap = globalData.claims[dKey]?.bu_data || {};
             Object.keys(buDataMap).forEach(bu => {
                 if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
@@ -1695,13 +1691,17 @@ function updateClaimUI() {
                     let _qty = typeof buData === 'object' ? (buData.qty||0) : 0;
                     cTotalCost += _cost;
                     cTotalQty += _qty;
-                    // 🌟 FIX: ใช้ dKey แทน dStr เพื่อป้องกัน Error
+                    
                     if(dObj.getTime() >= targetStartMTD && (_cost > 0 || _qty > 0)) {
                         tableRecords.push({ date: formatShortDate(dKey), owner: bu, cost: _cost, qty: _qty, ts: dObj.getTime() });
                     }
                 }
             });
-            if(cTotalCost>0 || cTotalQty>0) allDatesData.push({ dateObj: dObj, cost: cTotalCost, qty: cTotalQty });
+            if(cTotalCost>0 || cTotalQty>0) {
+                allDatesData.push({ dateObj: dObj, cost: cTotalCost, qty: cTotalQty });
+                groupedByPeriod[pLabel].cost += cTotalCost;
+                groupedByPeriod[pLabel].qty += cTotalQty;
+            }
         }
     });
 
@@ -1743,19 +1743,95 @@ function updateClaimUI() {
             claimChart2Instance.update();
         }
 
+        // 🌟 FIX: ทำ Pivot Table ให้ Owner อยู่บนหัวตาราง 🌟
+        let ownersSet = new Set();
+        tableRecords.forEach(r => ownersSet.add(r.owner));
+        let owners = Array.from(ownersSet).sort();
+
+        let dateGroups = {};
+        tableRecords.forEach(r => {
+            if(!dateGroups[r.date]) dateGroups[r.date] = { totalCost: 0, totalQty: 0, owners: {} };
+            dateGroups[r.date].owners[r.owner] = { cost: r.cost, qty: r.qty };
+            dateGroups[r.date].totalCost += r.cost;
+            dateGroups[r.date].totalQty += r.qty;
+        });
+
         const tableEl = document.getElementById('claim-detail-table');
         if (tableEl) {
-            let thead = `<thead><tr><th style="position:sticky; top:0; left:0; z-index:20;">Date</th><th class="text-center">Owner</th><th class="text-center">มูลค่าเคลม (฿)</th><th class="text-center">จำนวนชิ้น</th></tr></thead>`;
-            let tbody = "<tbody>" + tableRecords.slice().reverse().map(p => {
-                return `<tr>
-                    <td style="position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${p.date}</td>
-                    <td class="text-center font-bold text-dark">${p.owner}</td>
-                    <td class="text-center text-red font-bold">${fmtN(parseFloat(p.cost.toFixed(2)))}</td>
-                    <td class="text-center">${fmtN(p.qty)}</td>
-                </tr>`;
+            let thead = `<thead><tr>
+                <th style="position:sticky; top:0; left:0; z-index:20;">Date</th>
+                <th class="text-center" style="border-right: 2px solid var(--border-color);">Total (Cost / Qty)</th>
+                ${owners.map(o => `<th class="text-center">${o}</th>`).join('')}
+            </tr></thead>`;
+
+            let tbody = "<tbody>" + Object.keys(dateGroups).reverse().map(date => {
+                let dGrp = dateGroups[date];
+                let rowHtml = `<tr>
+                    <td style="position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${date}</td>
+                    <td class="text-center" style="border-right: 2px solid var(--border-color);"><span class="text-red font-bold">${fmtN(parseFloat(dGrp.totalCost.toFixed(2)))}฿</span><br><span class="text-xs text-muted">${fmtN(dGrp.totalQty)} ชิ้น</span></td>`;
+
+                owners.forEach(o => {
+                    let oData = dGrp.owners[o];
+                    if (oData) {
+                        rowHtml += `<td class="text-center"><span class="text-red font-bold">${fmtN(parseFloat(oData.cost.toFixed(2)))}฿</span><br><span class="text-xs text-muted">${fmtN(oData.qty)} ชิ้น</span></td>`;
+                    } else {
+                        rowHtml += `<td class="text-center text-muted">-</td>`;
+                    }
+                });
+                rowHtml += `</tr>`;
+                return rowHtml;
             }).join('') + "</tbody>";
             tableEl.innerHTML = thead + tbody;
         }
+
+        // 🌟 FIX: เพิ่ม PERIOD COMPARISON ของ CLAIM 🌟
+        let chronPeriods = Object.values(groupedByPeriod).sort((a,b) => a.time - b.time);
+        let claimCompTable = document.getElementById('claim-comparison-table');
+        if(claimCompTable && chronPeriods.length > 0) {
+            let htmlHead = `<tr><th style="position:sticky; top:0; left:0; z-index:40; background:var(--bg-card);">วันที่ / Period</th>`;
+            let htmlCost = `<tr><td class="text-red font-bold">Claim Cost (฿)</td>`;
+            let htmlQty = `<tr><td class="text-dark font-bold">Claim Qty (ชิ้น)</td>`;
+            let htmlAccum = `<tr><td class="text-dark font-bold">Accumulate Cost (฿)</td>`;
+
+            let accumCost = 0; let prevP = null;
+
+            chronPeriods.forEach((p, idx) => {
+                accumCost += p.cost;
+                htmlHead += `<th style="position:sticky; top:0; z-index:30; background:var(--bg-card);">${p.label}</th>`;
+                htmlCost += `<td class="font-bold text-red">${fmtN(parseFloat(p.cost.toFixed(2)))}</td>`;
+                htmlQty += `<td class="font-bold">${fmtN(p.qty)}</td>`;
+                htmlAccum += `<td class="font-bold text-blue">${fmtN(parseFloat(accumCost.toFixed(2)))}</td>`;
+
+                if (idx > 0) {
+                    htmlHead += `<th class="diff-col text-muted" style="position:sticky; top:0; z-index:20;">เทียบก่อนหน้า</th>`;
+                    let diffCost = p.cost - prevP.cost;
+                    let diffQty = p.qty - prevP.qty;
+
+                    const fmtDiff = (v) => {
+                        if (v === 0) return `<td class="diff-col text-right"><span style="background:#f1f5f9; color:#64748b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">- 0</span></td>`;
+                        let isGood = (v < 0); // คลมน้อยลง = ดี (สีเขียว)
+                        let arrow = v > 0 ? '▲' : '▼';
+                        let absVal = Math.abs(v);
+                        let valStr = fmtN(parseFloat(absVal.toFixed(2)));
+                        let bgClr = isGood ? '#dcfce7' : '#fee2e2';
+                        let txtClr = isGood ? '#10B981' : '#EF4444';
+                        return `<td class="diff-col text-right"><span style="background:${bgClr}; color:${txtClr}; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">${arrow} ${v > 0 ? '+':'-'}${valStr}</span></td>`;
+                    };
+
+                    htmlCost += fmtDiff(diffCost);
+                    htmlQty += fmtDiff(diffQty);
+                    htmlAccum += `<td class="diff-col"></td>`;
+                }
+                prevP = { cost: p.cost, qty: p.qty };
+            });
+
+            htmlHead += `</tr>`; htmlCost += `</tr>`; htmlQty += `</tr>`; htmlAccum += `</tr>`;
+            let thead = claimCompTable.querySelector('thead');
+            let tbody = claimCompTable.querySelector('tbody');
+            if(thead) thead.innerHTML = htmlHead;
+            if(tbody) tbody.innerHTML = htmlCost + htmlQty + htmlAccum;
+        }
+
     } else {
         const tableEl = document.getElementById('claim-detail-table');
         if (tableEl) tableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูลเคลม MTD</th></tr></thead>`;
@@ -1778,7 +1854,6 @@ function updateInventoryUI() {
         return;
     }
 
-    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน safeParseDate ที่กันบัค Timezone แล้ว 🌟
     const targetEndObj = safeParseDate(document.getElementById('date-end').value);
     const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
@@ -1876,11 +1951,10 @@ function renderLocationAccuracy() {
     const locBoxEl = document.getElementById('loc-analysis-box');
     if(!locTableEl || !locBoxEl || !globalData.inventory || Object.keys(globalData.inventory).length === 0) return;
 
-    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน safeParseDate ที่กันบัค Timezone แล้ว 🌟
     const targetEndObj = safeParseDate(document.getElementById('date-end').value);
     let targetM = targetEndObj.getMonth();
     let targetY = targetEndObj.getFullYear().toString().substring(2);
-    let mLabelReq = shortMonths[targetM] + "-" + targetY; // e.g., "Aug-26"
+    let mLabelReq = shortMonths[targetM] + "-" + targetY;
     
     let locStats = globalData.inventory[mLabelReq]?.loc_stats || {};
 
@@ -1953,7 +2027,7 @@ function renderLocationAccuracy() {
 }
 
 // ----------------------------------------------------
-// TRANSPORT PERFORMANCE (FIX DATE RANGE BUG)
+// TRANSPORT PERFORMANCE 
 // ----------------------------------------------------
 function updateTransportUI() {
     let tbody = document.querySelector('#new-transport-table tbody');
@@ -1965,7 +2039,6 @@ function updateTransportUI() {
         return;
     }
     
-    // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน safeParseDate ที่กันบัค Timezone แล้ว 🌟
     const targetStartObj = safeParseDate(document.getElementById('date-start').value);
     const targetEndObj = safeParseDate(document.getElementById('date-end').value);
     const targetStart = targetStartObj.setHours(0, 0, 0, 0);
@@ -2064,12 +2137,12 @@ function updateTransportUI() {
                 if (v === 0) return `<td class="diff-col text-right"><span style="background:#f1f5f9; color:#64748b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">- 0</span></td>`;
                 let isGood = isGoodPositive ? (v > 0) : (v < 0);
                 let arrow = v > 0 ? '▲' : '▼';
-                let sign = v > 0 ? '+' : '-';
+                let sign = v > 0 ? '+' : '';
                 let absVal = Math.abs(v);
                 let valStr = isPct ? absVal.toFixed(1) + '%' : fmtN(absVal);
                 let bgClr = isGood ? '#dcfce7' : '#fee2e2';
                 let txtClr = isGood ? '#10B981' : '#EF4444';
-                return `<td class="diff-col text-right"><span style="background:${bgClr}; color:${txtClr}; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">${arrow} ${sign}${valStr}</span></td>`;
+                return `<td class="diff-col text-right"><span style="background:${bgClr}; color:${txtClr}; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">${arrow} ${v > 0 ? '+':'-'}${valStr}</span></td>`;
             };
 
             htmlOrders += fmtDiff(diffOrd, true); htmlVehicles += fmtDiff(diffVeh, false); htmlSucc += fmtDiff(diffSucc, true, true);
@@ -2110,11 +2183,13 @@ function updateTransportUI() {
             <td class="text-center font-bold text-red text-sm">${fmtN(p.total_cost)} ฿</td>
         </tr>`;
 
+        // 🌟 FIX: รวมประเภทรถของบริษัทเดียวกันให้เป็นบรรทัดเดียว 🌟
         let mergedDetails = {};
         p.details.forEach(d => {
-            let k = d.carrier + '|' + d.vType;
-            if(!mergedDetails[k]) mergedDetails[k] = { carrier: d.carrier, vType: d.vType, total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, plates: {} };
+            let k = d.carrier; 
+            if(!mergedDetails[k]) mergedDetails[k] = { carrier: d.carrier, vTypes: new Set(), total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, plates: {} };
             let md = mergedDetails[k];
+            if(d.vType && d.vType !== "ไม่ระบุ") md.vTypes.add(d.vType);
             md.total_orders += d.total_orders; md.success_orders += d.success_orders; md.sla_hit += d.sla_hit; md.total_cost += d.total_cost;
             Object.keys(d.plates).forEach(pl => md.plates[pl] = true);
         });
@@ -2124,9 +2199,11 @@ function updateTransportUI() {
             let dSucc = d.total_orders > 0 ? (d.success_orders / d.total_orders) * 100 : 0;
             let dSla = d.success_orders > 0 ? (d.sla_hit / d.success_orders) * 100 : 0;
             let bar = (pct, clr) => `<div style="display:flex; align-items:center; gap:8px;"><div class="modern-bar-bg" style="height:6px;"><div class="${clr}" style="width:${pct}%;"></div></div><span style="font-size:10px; font-weight:700; width:35px; text-align:right;">${pct.toFixed(1)}%</span></div>`;
+            let vTypeDisplay = d.vTypes.size > 0 ? Array.from(d.vTypes).join(', ') : '-';
+
             dailyHtml += `<tr>
                 <td class="text-muted" style="padding-left:20px;">${p.label}</td>
-                <td><b class="text-dark">${d.carrier}</b><br><span class="text-xs text-muted">${d.vType}</span></td>
+                <td><b class="text-dark">${d.carrier}</b><br><span class="text-xs text-muted">ประเภทรถ: ${vTypeDisplay}</span></td>
                 <td class="text-center font-bold text-purple">${vehCount}</td>
                 <td class="text-center font-bold">${fmtN(d.total_orders)}</td>
                 <td>${bar(dSucc, 'grad-fill-green')}</td>
@@ -2159,10 +2236,9 @@ function updateTransportUI() {
             datasets.push({
                 type: 'bar', label: 'SLA Adherence (%)', data: slaData,
                 backgroundColor: (ctx) => {
-                    if (!ctx.chart.chartArea) return '#10B981';
-                    return ctx.raw >= 98 ? getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#10B981', '#6EE7B7') : getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#EF4444', '#FCA5A5');
+                    return ctx.raw >= 98 ? '#10B981' : '#EF4444'; // FIX: สีแท่งกราฟแบบ Solid เพื่อความน่าเชื่อถือ
                 },
-                borderRadius: 6, borderSkipped: false, barThickness: 16, yAxisID: 'y', order: 3
+                borderRadius: 2, borderSkipped: false, barThickness: 16, yAxisID: 'y', order: 3
             });
         }
         if (tpMetric === 'BOTH' || tpMetric === 'COST') {
@@ -2196,10 +2272,11 @@ function updateTransportUI() {
         
         let slaStatus = latestSla >= 98 ? `<span class="text-green font-bold">🎯 SLA: ${latestSla.toFixed(1)}% (Pass)</span>` : `<span class="text-red font-bold">⚠️ SLA: ${latestSla.toFixed(1)}% (Fail)</span>`;
         
+        // 🌟 FIX: โชว์ Total Cost แบบ MTD 🌟
         trendSummaryBox.innerHTML = `
             <div class="stock-val-wrap">
-                <span class="stock-label">Total Cost (Latest)</span>
-                <span class="stock-price">฿ ${fmtN(latestCost)}</span>
+                <span class="stock-label">Total Cost (Period / MTD)</span>
+                <span class="stock-price">฿ ${fmtN(aggData.total_cost)}</span>
                 <div class="mt-10">${slaStatus}</div>
             </div>
             <div>${diffHtml}</div>
@@ -2225,7 +2302,6 @@ function renderProductivitySection() {
             return;
         }
 
-        // 🌟 ดึง Date ด้วยการใช้ฟังก์ชัน safeParseDate ที่กันบัค Timezone แล้ว 🌟
         const targetStartObj = safeParseDate(document.getElementById('date-start').value);
         const targetEndObj = safeParseDate(document.getElementById('date-end').value);
         const targetStart = targetStartObj.setHours(0, 0, 0, 0);
@@ -2374,7 +2450,7 @@ function renderProductivitySection() {
             let statusHtml = gap >= 0 ? `<span class="text-green font-bold">(สูงกว่าเป้า +${gap})</span>` : `<span class="text-red font-bold">(ต่ำกว่าเป้า ${Math.abs(gap)})</span>`;
             let costPerPick = uph > 0 ? (hourlyRate / uph) : 0;
             
-            summaryEl.innerHTML = `💡 <b>ภาพรวมล่าสุด (${latest.label}):</b> พื้นที่ ${selectedArea} ความเร็วเฉลี่ย <b class="text-dark" style="font-size:1.1em;">${uph} UPH</b> ${statusHtml} <br><span class="text-muted text-xs">(หยิบ ${fmtN(Math.round(pks))} รายการ / ${hrs.toFixed(1)} ชม.)</span> <span style="margin-left:15px; padding-left:15px; border-left:1px solid var(--border-color); color:var(--text-dark);">💰 <b>Cost per Pick: <span class="text-blue text-lg">${costPerPick.toFixed(2)} ฿</span></b></span>`;
+            summaryEl.innerHTML = `💡 ภาพรวมล่าสุด (${latest.label}): พื้นที่ ${selectedArea} ความเร็วเฉลี่ย <b class="text-dark">${uph} UPH</b> ${statusHtml} <br><span class="text-muted text-xs">(หยิบ ${fmtN(Math.round(pks))} รายการ / ${hrs.toFixed(1)} ชม.)</span> <span style="margin-left:15px; padding-left:15px; border-left:1px solid var(--border-color); color:var(--text-dark);">💰 Cost per Pick: <span class="text-blue text-lg">${costPerPick.toFixed(2)} ฿</span></span>`;
             summaryEl.className = uph >= currentTarget ? 'info-alert alert-green mb-20 mt-10' : 'info-alert alert-red mb-20 mt-10';
         }
 
@@ -2474,6 +2550,11 @@ function renderProductivitySection() {
 
     } catch (e) { console.error("Productivity Render Error:", e); }
 }
+
+// 🌟 เรียกใช้ Dashboard ครั้งแรก 🌟
+document.addEventListener('DOMContentLoaded', () => {
+    initDashboard();
+});
 // ==========================================
 // ฟังก์ชันสำหรับระบบ Key Incidents Alerts
 // ==========================================
@@ -2497,7 +2578,6 @@ function generateExecutiveAlerts(targetEnd, latestD, totalLate, maxOverallDelay,
         hasAlert = true;
     }
     
-    // ถ้าไม่มีปัญหาอะไรเลย
     if (!hasAlert) {
         alertsHtml = `<div class="info-alert alert-green" style="justify-content: center;">✅ <b>All Systems Normal:</b> ข้อมูลปกติ ไม่พบความล่าช้าในรอบบิลปัจจุบัน</div>`;
     }
@@ -2511,14 +2591,8 @@ function generateExecutiveAlerts(targetEnd, latestD, totalLate, maxOverallDelay,
 function scrollToSection(elementId) {
     const el = document.getElementById(elementId);
     if (el) {
-        // หา parent ที่เป็นกล่อง card หรือ section เพื่อเลื่อนให้พอดี ไม่โดน Header บัง
         const container = el.closest('.card') || el.closest('section') || el;
-        // หักลบ Header ที่ Fix ไว้ (ประมาณ 140px)
         const y = container.getBoundingClientRect().top + window.scrollY - 140; 
         window.scrollTo({ top: y, behavior: 'smooth' });
     }
 }
-// เพิ่มโค้ดนี้ไว้บรรทัดล่างสุดของ script.js
-document.addEventListener('DOMContentLoaded', () => {
-    initDashboard();
-});
