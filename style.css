@@ -1,15 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap');
 
 :root { 
-    --bg-body: #F4F6F8;
+    /* โทนสีพื้นฐานแบบ Enterprise */
+    --bg-body: #F1F5F9; /* สีเทาอ่อนเรียบหรูสไตล์ Corporate */
     --bg-card: #FFFFFF; 
     --text-main: #1E293B; 
     --text-muted: #64748B;
     --text-dark: #0F172A; 
     --border-color: #E2E8F0;
-    --shadow-card: 0 10px 25px -5px rgba(0, 138, 68, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    --shadow-card: 0 2px 4px -1px rgba(0, 0, 0, 0.04), 0 4px 6px -1px rgba(0, 0, 0, 0.02);
     
-    /* 🎨 โทนสีหลักจากโลโก้ PT */
+    /* โทนสีหลักจากโลโก้ PT */
     --brand-blue: #0284C7; 
     --brand-green: #009245; 
     --brand-light-green: #8CC63F; 
@@ -17,13 +18,6 @@
     --brand-red: #ED1C24; 
     --brand-purple: #8B5CF6; 
     --brand-teal: #0D9488;
-
-    /* ✨ พื้นหลังแบบมีมิติ (Light Mode) - แสงสีเขียว/ฟ้าอ่อนๆ + ลายจุดจางๆ */
-    --bg-pattern: 
-        radial-gradient(circle at 0% 0%, rgba(140, 198, 63, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 100% 0%, rgba(0, 146, 69, 0.05) 0%, transparent 40%),
-        radial-gradient(circle at 100% 100%, rgba(2, 132, 199, 0.04) 0%, transparent 40%),
-        url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='1' fill='%23009245' fill-opacity='0.05'/%3E%3C/svg%3E");
 }
 
 [data-theme="dark"] { 
@@ -33,26 +27,20 @@
     --text-muted: #94A3B8;
     --text-dark: #FFFFFF; 
     --border-color: #334155; 
-    --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
-
-    /* ✨ พื้นหลังแบบมีมิติ (Dark Mode) - ลดแสงลงให้สบายตา + ลายจุดสีขาวจางๆ */
-    --bg-pattern: 
-        radial-gradient(circle at 0% 0%, rgba(140, 198, 63, 0.03) 0%, transparent 40%),
-        radial-gradient(circle at 100% 0%, rgba(0, 146, 69, 0.02) 0%, transparent 40%),
-        radial-gradient(circle at 100% 100%, rgba(2, 132, 199, 0.03) 0%, transparent 40%),
-        url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='1' fill='%23ffffff' fill-opacity='0.02'/%3E%3C/svg%3E");
+    --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body { 
     background-color: var(--bg-body); 
-    background-image: var(--bg-pattern); 
-    background-attachment: fixed; 
+    /* ถอดลายจุดออก เพื่อความน่าเชื่อถือแบบ Corporate */
+    background-image: none; 
     font-family: 'Inter', 'Prompt', sans-serif; 
     color: var(--text-main); 
     line-height: 1.5; 
     overflow-x: hidden; 
+    font-size: 0.85rem;
 }
 
 /* Utilities */
@@ -65,32 +53,34 @@ body {
 
 /* Header & Filter */
 .top-header-wrap { position: sticky; top: 0; z-index: 100; }
-.top-nav { background: var(--bg-card); padding: 14px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+.top-nav { background: var(--bg-card); padding: 12px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
 .brand-container { display: flex; align-items: center; gap: 14px; }
-.app-logo { width: 44px; height: 44px; object-fit: contain; border-radius: 8px; }
-.app-title { font-size: 1.25rem; font-weight: 800; color: var(--text-dark); line-height: 1.2; letter-spacing: -0.5px; margin: 0;}
+.app-logo { width: 40px; height: 40px; object-fit: contain; border-radius: 8px; }
+.app-title { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); line-height: 1.2; letter-spacing: -0.2px; margin: 0;}
 .app-subtitle { font-size: 0.75rem; color: var(--text-muted); margin: 0;}
-.nav-actions { display: flex; align-items: center; gap: 12px; }
+.nav-actions { display: flex; align-items: center; gap: 10px; }
 
-.sticky-filter { margin: 0; border-radius: 0; border-bottom: 1px solid var(--border-color); box-shadow: 0 4px 15px -3px rgba(0,0,0,0.05); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-[data-theme="dark"] .sticky-filter { background: rgba(30, 41, 59, 0.95); }
-.filter-card { padding: 12px 40px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.sticky-filter { margin: 0; border-radius: 0; border-bottom: 1px solid var(--border-color); box-shadow: 0 4px 15px -3px rgba(0,0,0,0.05); background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); }
+[data-theme="dark"] .sticky-filter { background: rgba(30, 41, 59, 0.98); }
+.filter-card { padding: 10px 40px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
 .filter-group { display: flex; flex-direction: column; gap: 4px; }
 .filter-label { font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 0;}
-.filter-control { border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark); padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; font-family: inherit; outline: none; transition: all 0.2s; height: 34px; }
+.filter-control { border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 500; font-family: inherit; outline: none; transition: all 0.2s; height: 30px; }
 .filter-control:focus, .filter-control:hover { border-color: var(--brand-green); box-shadow: 0 0 0 3px rgba(0, 146, 69, 0.15); } 
 .select-dropdown { display: flex; justify-content: space-between; align-items: center; cursor: pointer; min-width: 130px; }
 .dropdown-arrow { font-size: 9px; margin-left: 6px; color: var(--text-muted); }
 
-/* ปุ่มต่างๆ ไล่สี PT Green */
-.btn-primary { background: linear-gradient(135deg, var(--brand-light-green) 0%, var(--brand-green) 100%); color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; height: 34px; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(0, 146, 69, 0.2); }
-.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0, 146, 69, 0.3); }
-.btn-outline { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-dark); padding: 6px 14px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 34px; transition: all 0.2s; }
+/* ปุ่มต่างๆ แบบ Compact & Professional */
+.btn-primary { background: linear-gradient(135deg, var(--brand-light-green) 0%, var(--brand-green) 100%); color: white; border: none; padding: 4px 14px; border-radius: 6px; font-weight: 600; font-size: 0.75rem; cursor: pointer; height: 30px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 146, 69, 0.15); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 146, 69, 0.2); }
+.btn-outline { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-dark); padding: 4px 14px; border-radius: 6px; font-weight: 600; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); height: 30px; transition: all 0.2s; }
 .btn-outline:hover { border-color: var(--brand-green); color: var(--brand-green); }
-.btn-theme-toggle { background: transparent; color: var(--text-dark); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; height: 34px; transition: all 0.2s;}
+.btn-theme-toggle { background: transparent; color: var(--text-dark); border: 1px solid var(--border-color); padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 0.75rem; cursor: pointer; height: 30px; transition: all 0.2s;}
 .btn-theme-toggle:hover { border-color: var(--text-muted); }
 
-.loader-pill { background: linear-gradient(135deg, #FEF3C7, #FDE68A); color: #D97706; padding: 8px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(217, 119, 6, 0.15); }
+.nav-shortcuts button { height: 26px !important; padding: 2px 8px !important; font-size: 0.7rem !important; }
+
+.loader-pill { background: linear-gradient(135deg, #FEF3C7, #FDE68A); color: #D97706; padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(217, 119, 6, 0.1); }
 [data-theme="dark"] .loader-pill { background: linear-gradient(135deg, #78350F, #92400E); color: #FDE68A; }
 @keyframes fast-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 .spin-icon { animation: fast-spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; stroke-width: 3px; }
@@ -98,13 +88,12 @@ body {
 .dashboard-body { padding: 0 40px 40px 40px; max-width: 1440px; margin: 0 auto; }
 
 /* =========================================
-   MAIN KPI CARDS (แถวบนสุดเท่านั้น) 
+   MAIN KPI CARDS (แถวบนสุด - แก้ไขการหดตัวของกล่อง)
 ========================================= */
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
-.wave-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 
-.kpi-box { padding: 18px; border-radius: 16px; color: white; display: flex; flex-direction: column; box-shadow: var(--shadow-card); min-height: 110px; position: relative; overflow: hidden; }
-.kpi-box::before { content: ""; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%); transform: skewX(-20deg); transition: 0.5s; }
+.kpi-box { padding: 18px; border-radius: 10px; color: white; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.06); min-height: 110px; position: relative; overflow: hidden; }
+.kpi-box::before { content: ""; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%); transform: skewX(-20deg); transition: 0.5s; }
 .kpi-box:hover::before { left: 150%; }
 .min-h-110 { min-height: 100px; }
 
@@ -115,297 +104,230 @@ body {
 .card-orange { background: linear-gradient(135deg, #F59E0B 0%, #B45309 100%); }
 .card-teal   { background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%); }
 
-.kpi-head { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.3px; }
-.kpi-main-val { font-size: 2rem; font-weight: 800; line-height: 1; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.kpi-sub-row { width: 100%; display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.75rem; }
-.kpi-foot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 6px; }
-.kpi-foot-col { display: flex; flex-direction: column; margin-top: auto; gap: 2px; font-size: 0.7rem; font-weight: 500;}
-.kpi-trend-box { display: flex; align-items: center; gap: 4px; }
-.trend-badge, .badge-glass { padding: 3px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 700; }
-.trend-badge { background: rgba(255,255,255,0.25); box-shadow: 0 1px 2px rgba(0,0,0,0.05); } .badge-glass { background: rgba(0,0,0,0.15); }
-.trend-note, .kpi-timestamp { font-size: 0.65rem; font-weight: 500; opacity: 0.9; }
+.kpi-head { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+.kpi-main-val { font-size: 1.8rem; font-weight: 800; line-height: 1; margin-bottom: 12px; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+.kpi-sub-row { width: 100%; display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.7rem; opacity: 0.95; }
+
+/* FIX: การจัดเรียงส่วนท้ายของกล่อง KPI (กันตัวหนังสือตกบรรทัด) */
+.kpi-foot { 
+    display: flex; 
+    flex-direction: row; 
+    justify-content: space-between; 
+    align-items: flex-end; 
+    margin-top: auto; 
+    padding-top: 10px; 
+    border-top: 1px solid rgba(255,255,255,0.15); /* เพิ่มเส้นคั่นบางๆ ให้ดูเนี๊ยบ */
+}
+.kpi-trend-box { 
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    flex-wrap: nowrap; /* ห้ามตกบรรทัดเด็ดขาด */
+}
+.trend-badge { 
+    padding: 3px 6px !important; 
+    border-radius: 4px; 
+    font-size: 0.7rem !important; 
+    font-weight: 700; 
+    background: rgba(255,255,255,0.25); 
+    white-space: nowrap !important; /* ล็อกความกว้าง */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); 
+}
+.trend-note { 
+    font-size: 0.65rem !important; 
+    font-weight: 600; 
+    opacity: 0.9; 
+    white-space: nowrap !important; /* ล็อกความกว้าง */
+}
+.kpi-timestamp { 
+    font-size: 0.65rem !important; 
+    font-weight: 600; 
+    opacity: 0.9; 
+    white-space: nowrap !important;
+    text-align: right;
+}
 
 /* =========================================
-   SECONDARY KPI BOXES (กล่องย่อยตามหัวข้อ) 
-   ปรับให้ซอฟต์ลง พรีเมียม ไม่แย่งซีนแถวบน
+   CARDS & LAYOUTS (Enterprise Clean)
 ========================================= */
-.wave-kpi-grid .kpi-box {
+.card { 
     background: var(--bg-card); 
-    color: var(--text-dark); 
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    border-radius: 10px; 
+    box-shadow: var(--shadow-card); 
+    padding: 20px; 
+    transition: transform 0.2s, box-shadow 0.2s; 
+    border: 1px solid var(--border-color); 
 }
+.card:hover { box-shadow: 0 8px 15px rgba(0,0,0,0.05); }
 
-.wave-kpi-grid .kpi-box::before { display: none; } /* ปิดเอฟเฟกต์แสงสะท้อน */
-.wave-kpi-grid .kpi-head { color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
-
-/* ดักการใช้สีขาวจากฝั่ง JS ให้แสดงเป็นสีเทาเข้มอ่านง่ายขึ้น */
-.wave-kpi-grid .kpi-foot-col div, 
-.wave-kpi-grid .kpi-timestamp,
-.wave-kpi-grid .kpi-foot-col span { color: var(--text-muted) !important; text-shadow: none !important;}
-
-.wave-kpi-grid .trend-badge {
-    background: var(--bg-body) !important;
-    color: var(--text-dark) !important;
+/* FIX: สร้าง Section Divider แยกโซนเนื้อหาให้ชัดเจน (เลื่อนลงมาแล้วไม่กลืนกัน) */
+.section-title-wrap { 
+    background: var(--bg-card);
+    padding: 12px 20px;
+    border-radius: 8px;
+    border-left: 5px solid var(--brand-blue); /* ขอบซ้ายบอกหมวดหมู่ */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     border: 1px solid var(--border-color);
+    margin-top: 40px; 
+    margin-bottom: 20px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between;
+    width: 100%;
 }
+[data-theme="dark"] .section-title-wrap { border-left-color: #38BDF8; }
 
-/* เล่นขอบสีที่ด้านบน และให้ตัวเลขเป็นสีตามธีม */
-.wave-kpi-grid .card-purple { background: var(--bg-card); border-top: 4px solid #9333EA; }
-.wave-kpi-grid .card-purple .kpi-main-val { color: #9333EA; text-shadow: none;}
-
-.wave-kpi-grid .card-green { background: var(--bg-card); border-top: 4px solid var(--brand-green); }
-.wave-kpi-grid .card-green .kpi-main-val { color: var(--brand-green); text-shadow: none;}
-
-.wave-kpi-grid .card-blue { background: var(--bg-card); border-top: 4px solid var(--brand-blue); }
-.wave-kpi-grid .card-blue .kpi-main-val { color: var(--brand-blue); text-shadow: none;}
-
-.wave-kpi-grid .card-red { background: var(--bg-card); border-top: 4px solid var(--brand-red); }
-.wave-kpi-grid .card-red .kpi-main-val { color: var(--brand-red); text-shadow: none;}
-
-.wave-kpi-grid .card-orange { background: var(--bg-card); border-top: 4px solid var(--brand-yellow); }
-.wave-kpi-grid .card-orange .kpi-main-val { color: var(--brand-yellow); text-shadow: none;}
-
-/* =========================================
-   CARDS & LAYOUTS
-========================================= */
-.card { background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-card); padding: 24px; transition: transform 0.2s, box-shadow 0.2s; border: 1px solid rgba(0,0,0,0.02); }
-.card:hover { box-shadow: 0 14px 28px rgba(0,0,0,0.05), 0 10px 10px rgba(0,0,0,0.02); transform: translateY(-2px); }
-[data-theme="dark"] .card { border: 1px solid rgba(255,255,255,0.05); }
-.panel-title { font-size: 0.95rem; font-weight: 700; color: var(--text-dark); margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px;}
-.card-head-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
-.section-title-wrap { margin-bottom: 16px; display: flex; align-items: baseline; gap: 8px; }
-.section-heading { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); margin: 0; }
-.tag-source { background: #F1F5F9; color: #475569; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 700; }
+.section-heading { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin: 0; }
+.panel-title { font-size: 0.85rem; font-weight: 700; color: var(--text-dark); margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px;}
+.card-head-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+.tag-source { background: #F1F5F9; color: #475569; padding: 3px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; margin-left: 10px;}
 [data-theme="dark"] .tag-source { background: #334155; color: #E2E8F0; }
 
-.grid-2-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; }
-.grid-3-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } 
-.chart-canvas-box { position: relative; width: 100%; height: 250px; }
+.grid-2-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; }
+.grid-3-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } 
+.chart-canvas-box { position: relative; width: 100%; height: 220px; } /* ปรับความสูงกราฟลงนิดหน่อยให้ดูกะทัดรัด */
 
-/* Stock Ticker */
-.stock-summary-box { display: flex; align-items: center; justify-content: space-between; background: var(--bg-body); padding: 18px 24px; border-radius: 12px; border: 1px solid var(--border-color); }
+/* Stock Ticker (ปรับใหม่ให้คลีนขึ้น) */
+.stock-summary-box { display: flex; align-items: center; justify-content: space-between; background: var(--bg-body); padding: 14px 20px; border-radius: 8px; border: 1px solid var(--border-color); }
 .stock-val-wrap { display: flex; flex-direction: column; }
-.stock-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
-.stock-price { font-size: 2.2rem; font-weight: 800; color: var(--text-dark); line-height: 1; letter-spacing: -1px; }
-.stock-change { font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-.stock-up { background: #fee2e2; color: var(--brand-red); } 
-.stock-down { background: #dcfce7; color: var(--brand-green); } 
-.stock-neutral { background: #f1f5f9; color: #64748b; }
+.stock-label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+.stock-price { font-size: 1.8rem; font-weight: 800; color: var(--text-dark); line-height: 1; letter-spacing: -0.5px; }
+.stock-change { font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.stock-up { background: #dcfce7; color: var(--brand-green); border: 1px solid #bbf7d0;} 
+.stock-down { background: #fee2e2; color: var(--brand-red); border: 1px solid #fecaca;} 
+.stock-neutral { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;}
 
 /* Stages */
-.stage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.stage-panel { padding: 20px; display: flex; flex-direction: column; }
-.stage-top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-.stage-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05);}
-.stage-label { font-size: 1rem; font-weight: 700; margin: 0; color: var(--text-dark); }
-.stage-middle { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
-.stage-big-pct { font-size: 2rem; font-weight: 800; line-height: 1; margin: 0; }
-.stage-counts { text-align: right; font-size: 0.75rem; font-weight: 500; color: var(--text-muted); display:flex; flex-direction:column; gap:4px;}
-.stage-counts strong { color: var(--text-dark); font-size: 0.85rem; font-weight: 700; margin-left: 6px; }
-.progress-bar-bg { height: 8px; background: var(--bg-body); border-radius: 4px; margin-bottom: 12px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); }
+.stage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.stage-panel { padding: 16px 20px; display: flex; flex-direction: column; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-card); box-shadow: var(--shadow-card); }
+.stage-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.stage-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
+.stage-label { font-size: 0.9rem; font-weight: 700; margin: 0; color: var(--text-dark); }
+.stage-middle { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; }
+.stage-big-pct { font-size: 1.8rem; font-weight: 800; line-height: 1; margin: 0; }
+.stage-counts { text-align: right; font-size: 0.7rem; font-weight: 500; color: var(--text-muted); display:flex; flex-direction:column; gap:2px;}
+.stage-counts strong { color: var(--text-dark); font-size: 0.8rem; font-weight: 700; margin-left: 6px; }
+.progress-bar-bg { height: 6px; background: var(--bg-body); border-radius: 4px; margin-bottom: 10px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); }
 .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-.stage-status-msg { font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; padding: 6px 10px; border-radius: 6px;}
+.stage-status-msg { font-size: 0.75rem; font-weight: 600; padding: 6px 10px; border-radius: 6px;}
 
 .bg-light-blue { background: #EFF6FF; } .bg-light-orange { background: #FFFBEB; } .bg-light-green { background: #ECFDF5; }
 [data-theme="dark"] .bg-light-blue { background: #1E3A8A; } [data-theme="dark"] .bg-light-orange { background: #78350F; } [data-theme="dark"] .bg-light-green { background: #064E3B; }
 
-/* Alerts */
-.info-alert { padding: 12px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
-.alert-green { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; } .alert-red { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; } .alert-blue { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; } .alert-yellow { background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A; }
+/* =========================================
+   ALERTS & SUMMARY BOXES (อัปเกรดความพรีเมียม)
+========================================= */
+.info-alert { 
+    padding: 12px 16px; 
+    border-radius: 8px; 
+    font-size: 0.8rem; 
+    font-weight: 600; 
+    margin-bottom: 12px; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+.alert-green { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; } 
+.alert-red { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; } 
+.alert-blue { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; } 
+.alert-yellow { background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A; }
 
-/* Tables */
-.table-scroll-wrap { width: 100%; overflow-x: auto; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--border-color); }
+/* FIX: กล่องสรุป UPH ให้ดูเป็นตาราง Metric สวยๆ แทนกล่องแจ้งเตือนธรรมดา */
+#prod-summary-box {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-left: 5px solid var(--brand-green) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03) !important;
+    padding: 16px 20px !important;
+    border-radius: 8px !important;
+    display: block !important; 
+    line-height: 1.8 !important;
+    font-size: 0.85rem !important;
+    color: #334155 !important;
+}
+[data-theme="dark"] #prod-summary-box { background: #1E293B !important; border-color: #334155 !important; color: #CBD5E1 !important;}
+#prod-summary-box.alert-red { border-left-color: var(--brand-red) !important; }
+
+/* Tables (Corporate Style) */
+.table-scroll-wrap { width: 100%; overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-color); }
+.table-scroll-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
+.table-scroll-wrap::-webkit-scrollbar-thumb { background-color: #CBD5E1; border-radius: 4px; }
+[data-theme="dark"] .table-scroll-wrap::-webkit-scrollbar-thumb { background-color: #475569; }
+
 .max-h-300 { max-height: 280px; overflow-y: auto; } .max-h-400 { max-height: 380px; overflow-y: auto; } .max-h-340 { max-height: 338px; overflow-y: auto; }
+.data-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.75rem; text-align: left; white-space: nowrap; }
 
-/* ปรับความสวยงามของตารางให้อ่านง่าย ดูพรีเมียม (Font & Padding) */
-.data-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.85rem; text-align: left; white-space: nowrap; }
 .data-table th { 
     background: #F8FAFC; 
-    color: var(--text-muted); 
+    color: #475569; 
     font-weight: 600; 
-    padding: 14px 18px; 
-    border-bottom: 2px solid var(--border-color); 
+    padding: 10px 14px; 
+    border-bottom: 2px solid #CBD5E1; 
     position: sticky; 
     top: 0; 
     z-index: 10; 
-    font-size: 0.8rem; 
+    font-size: 0.7rem; 
     letter-spacing: 0.3px; 
     text-transform: uppercase;
 }
-[data-theme="dark"] .data-table th { background: #0F172A; }
+[data-theme="dark"] .data-table th { background: #0F172A; border-bottom-color: #334155; color: #94A3B8; }
+
 .data-table td { 
-    padding: 14px 18px; 
+    padding: 10px 14px; 
     border-bottom: 1px solid var(--border-color); 
     color: var(--text-dark); 
     vertical-align: middle; 
 }
 .data-table tbody tr:hover td { background: var(--bg-body); }
-.data-table .summary-row td { background-color: #F8FAFC; border-top: 2px solid var(--border-color); }
-[data-theme="dark"] .data-table .summary-row td { background-color: #0F172A; }
+.data-table .summary-row td { background-color: #F1F5F9; border-top: 2px solid #CBD5E1; font-weight: 600; }
+[data-theme="dark"] .data-table .summary-row td { background-color: #0F172A; border-top-color: #334155;}
 .excel-grid th, .excel-grid td { border-right: none; text-align: center; } 
 
 /* Dropdowns & Modals */
-.dropdown-card { display: none; position: absolute; top: calc(100% + 8px); right: 0; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 999; padding: 10px; min-width: 180px; max-height: 260px; overflow-y: auto; }
-.dropdown-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 500; padding: 8px 12px; color: var(--text-dark); border-radius: 8px; margin: 0; transition: background 0.2s;}
+.dropdown-card { display: none; position: absolute; top: calc(100% + 8px); right: 0; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 999; padding: 10px; min-width: 180px; max-height: 260px; overflow-y: auto; }
+.dropdown-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 500; padding: 6px 10px; color: var(--text-dark); border-radius: 6px; margin: 0; transition: background 0.2s;}
 .dropdown-item:hover { background: var(--bg-body); color: var(--brand-green); }
 .dropdown-divider { height: 1px; background: var(--border-color); margin: 8px 0; }
 .checkbox-container { max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
-.btn-apply { background: linear-gradient(135deg, var(--brand-light-green) 0%, var(--brand-green) 100%); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; width: 100%; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0, 146, 69, 0.2);}
-.btn-apply:hover { transform: translateY(-1px); box-shadow: 0 6px 12px rgba(0, 146, 69, 0.3); }
+.btn-apply { background: linear-gradient(135deg, var(--brand-light-green) 0%, var(--brand-green) 100%); color: white; border: none; padding: 8px; border-radius: 6px; font-weight: 600; font-size: 0.8rem; width: 100%; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(0, 146, 69, 0.15);}
+.btn-apply:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 146, 69, 0.2); }
 
 /* Gradient Bars */
-.modern-bar-bg { background: #F1F5F9; border-radius: 12px; height: 10px; width: 100%; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.06); }
+.modern-bar-bg { background: #F1F5F9; border-radius: 10px; height: 8px; width: 100%; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.06); }
 [data-theme="dark"] .modern-bar-bg { background: #334155; }
-.grad-fill-green { background: linear-gradient(90deg, var(--brand-light-green) 0%, var(--brand-green) 100%); height: 100%; border-radius: 12px; }
-.grad-fill-blue { background: linear-gradient(90deg, #60A5FA 0%, #2563EB 100%); height: 100%; border-radius: 12px; }
-.grad-fill-red { background: linear-gradient(90deg, #F87171 0%, var(--brand-red) 100%); height: 100%; border-radius: 12px; }
-.grad-fill-orange { background: linear-gradient(90deg, #FCD34D 0%, #D97706 100%); height: 100%; border-radius: 12px; }
+.grad-fill-green { background: linear-gradient(90deg, var(--brand-light-green) 0%, var(--brand-green) 100%); height: 100%; border-radius: 10px; }
+.grad-fill-blue { background: linear-gradient(90deg, #60A5FA 0%, #2563EB 100%); height: 100%; border-radius: 10px; }
+.grad-fill-red { background: linear-gradient(90deg, #F87171 0%, var(--brand-red) 100%); height: 100%; border-radius: 10px; }
+.grad-fill-orange { background: linear-gradient(90deg, #FCD34D 0%, #D97706 100%); height: 100%; border-radius: 10px; }
 
-@media (max-width: 1024px) { .grid-2-col { grid-template-columns: 1fr; } .wave-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 768px) { .top-nav { flex-direction: column; align-items: flex-start; gap: 12px; } .filter-card { justify-content: flex-start;} .grid-3-col { grid-template-columns: 1fr; } }
-
-/* =========================================
-   HORIZONTAL COMPARISON TABLE
-========================================= */
-.comparison-table th, .comparison-table td { min-width: 110px; text-align: right; white-space: nowrap; font-size: 0.8rem; }
+/* HORIZONTAL COMPARISON TABLE */
+.comparison-table th, .comparison-table td { min-width: 110px; text-align: right; white-space: nowrap; font-size: 0.75rem; }
 .comparison-table th:first-child, .comparison-table td:first-child { 
     position: sticky; left: 0; background: var(--bg-card); z-index: 30; 
     text-align: left; font-weight: 700; border-right: 2px solid var(--border-color);
 }
 .comparison-table th { text-align: center; }
-.diff-col { background-color: #F8FAFC; font-size: 0.75rem; border-left: 1px dashed #CBD5E1; }
+.diff-col { background-color: #F8FAFC; font-size: 0.7rem; border-left: 1px dashed #CBD5E1; }
 [data-theme="dark"] .diff-col { background-color: #0F172A; border-left: 1px dashed #334155; }
 .diff-good { color: var(--brand-green); font-weight: 700; } 
 .diff-bad { color: var(--brand-red); font-weight: 700; } 
 .diff-neutral { color: var(--text-muted); font-weight: 500; }
 
-/* =========================================
-   1. แก้ปัญหาแถบแจ้งเตือน (Toast) ด้านล่าง ให้ลอยอยู่มุมขวาแบบพรีเมียม
-========================================= */
+/* TOAST POPUP */
 .toast-popup {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
+    position: fixed; bottom: 30px; right: 30px;
     background: linear-gradient(135deg, var(--brand-light-green) 0%, var(--brand-green) 100%);
-    color: white;
-    padding: 12px 28px;
-    border-radius: 50px;
-    font-weight: 600;
-    font-size: 0.85rem;
-    box-shadow: 0 10px 25px -5px rgba(0, 146, 69, 0.4);
-    transform: translateY(100px);
-    opacity: 0;
+    color: white; padding: 10px 24px; border-radius: 30px;
+    font-weight: 600; font-size: 0.8rem;
+    box-shadow: 0 4px 15px rgba(0, 146, 69, 0.3);
+    transform: translateY(100px); opacity: 0;
     transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: auto !important;
-    min-width: 200px;
+    z-index: 9999; display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 200px;
 }
-.toast-popup.show {
-    transform: translateY(0);
-    opacity: 1;
-}
+.toast-popup.show { transform: translateY(0); opacity: 1; }
 
-/* =========================================
-   2. ย่อขนาดกล่อง 1-2-3 (PICK, QC, SHIPPED) ให้กะทัดรัดและซอฟต์ลง
-========================================= */
-.stage-panel { 
-    padding: 14px 18px !important; 
-    border-radius: 14px !important;
-}
-.stage-top { 
-    gap: 10px !important; 
-    margin-bottom: 10px !important; 
-}
-.stage-icon { 
-    width: 30px !important; 
-    height: 30px !important; 
-    border-radius: 8px !important; 
-    font-size: 1rem !important; 
-}
-.stage-label { 
-    font-size: 0.9rem !important; 
-}
-.stage-middle { 
-    margin-bottom: 8px !important; 
-}
-.stage-big-pct { 
-    font-size: 1.6rem !important; 
-}
-.stage-counts { 
-    font-size: 0.7rem !important; 
-    gap: 2px !important;
-}
-.stage-counts strong { 
-    font-size: 0.8rem !important; 
-}
-.progress-bar-bg { 
-    height: 6px !important; 
-    margin-bottom: 10px !important; 
-}
-.stage-status-msg { 
-    font-size: 0.75rem !important; 
-    padding: 6px 10px !important; 
-    border-radius: 6px !important;
-}
-
-/* =========================================
-   3. ปรับกล่อง Wave Operations ให้สวยแบบ Soft Modern (ลบขอบหนาๆ ทิ้ง)
-========================================= */
-.wave-kpi-grid .kpi-box {
-    border-radius: 14px !important;
-    padding: 16px 20px !important;
-    min-height: 90px !important; 
-    border-top: 1px solid var(--border-color) !important; 
-}
-.wave-kpi-grid .kpi-head { 
-    font-size: 0.75rem !important; 
-    margin-bottom: 6px !important; 
-}
-.wave-kpi-grid .kpi-main-val { 
-    font-size: 1.7rem !important; 
-    margin-bottom: 10px !important; 
-}
-
-/* ตกแต่งพื้นหลังให้ไล่สีอ่อนๆ จากด้านบนลงมา (Soft Gradient) แทนการใช้เส้นขอบ */
-.wave-kpi-grid .card-purple { 
-    background: linear-gradient(180deg, rgba(147, 51, 234, 0.05) 0%, var(--bg-card) 100%) !important; 
-    border: 1px solid rgba(147, 51, 234, 0.15) !important;
-}
-.wave-kpi-grid .card-green { 
-    background: linear-gradient(180deg, rgba(0, 146, 69, 0.05) 0%, var(--bg-card) 100%) !important; 
-    border: 1px solid rgba(0, 146, 69, 0.15) !important;
-}
-.wave-kpi-grid .card-red { 
-    background: linear-gradient(180deg, rgba(237, 28, 36, 0.05) 0%, var(--bg-card) 100%) !important; 
-    border: 1px solid rgba(237, 28, 36, 0.15) !important;
-}
-.wave-kpi-grid .card-orange { 
-    background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, var(--bg-card) 100%) !important; 
-    border: 1px solid rgba(245, 158, 11, 0.15) !important;
-}
-
-/* ปรับแต่ง Badge ด้านล่างของกล่องย่อยให้ดูมินิมอล */
-.wave-kpi-grid .trend-badge, 
-.wave-kpi-grid .kpi-foot-col span {
-    background: var(--bg-body) !important;
-    color: var(--text-main) !important;
-    border: 1px solid var(--border-color) !important;
-    padding: 4px 10px !important;
-    border-radius: 6px !important;
-    font-size: 0.7rem !important;
-    display: inline-block !important;
-    margin-bottom: 4px !important;
-    font-weight: 600 !important;
-}
-
-/* =========================================
-   4. MODAL POPUP (Capacity Setup)
-========================================= */
+/* MODALS */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
@@ -414,209 +336,74 @@ body {
 }
 .modal-overlay.show { opacity: 1; }
 .modal-box {
-    background: var(--bg-card); border-radius: 16px; width: 90%; max-width: 500px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    transform: translateY(20px); transition: transform 0.3s ease;
-    overflow: hidden;
+    background: var(--bg-card); border-radius: 12px; width: 90%; max-width: 500px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    transform: translateY(20px); transition: transform 0.3s ease; overflow: hidden;
 }
 .modal-overlay.show .modal-box { transform: translateY(0); }
 .modal-header {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 16px 24px; border-bottom: 1px solid var(--border-color);
-    background: #F8FAFC;
+    padding: 14px 20px; border-bottom: 1px solid var(--border-color); background: #F8FAFC;
 }
 [data-theme="dark"] .modal-header { background: #0F172A; }
 .btn-close-modal { background: transparent; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-muted); transition: 0.2s;}
 .btn-close-modal:hover { color: var(--brand-red); transform: scale(1.1);}
-.modal-body { padding: 24px; }
+.modal-body { padding: 20px; }
 
 /* Fix z-index issue for Attendance & Matrix Tables */
 .excel-grid td:first-child { position: sticky; left: 0; background: var(--bg-card); z-index: 10; box-shadow: inset -1px 0 0 var(--border-color); }
 .excel-grid th { top: 0; z-index: 15; }
 .excel-grid th:first-child { z-index: 25; }
 
-/* =========================================
-   5. STOCK TREND BADGES (ปุ่มแบบหุ้น)
-========================================= */
-.trend-up { background: rgba(16, 185, 129, 0.25) !important; color: #A7F3D0 !important; border: 1px solid rgba(16, 185, 129, 0.4) !important; }
-.trend-down { background: rgba(239, 68, 68, 0.25) !important; color: #FECACA !important; border: 1px solid rgba(239, 68, 68, 0.4) !important; }
-.trend-neutral { background: rgba(255, 255, 255, 0.2) !important; color: #F8FAFC !important; border: 1px solid rgba(255, 255, 255, 0.3) !important; }
+/* STOCK TREND BADGES */
+.trend-up { background: rgba(16, 185, 129, 0.15) !important; color: #10B981 !important; border: 1px solid rgba(16, 185, 129, 0.3) !important; }
+.trend-down { background: rgba(239, 68, 68, 0.15) !important; color: #EF4444 !important; border: 1px solid rgba(239, 68, 68, 0.3) !important; }
+.trend-neutral { background: rgba(100, 116, 139, 0.1) !important; color: #64748B !important; border: 1px solid rgba(100, 116, 139, 0.2) !important; }
 
-/* ย่อตัวหนังสือใน KPI ให้ดูคลีนขึ้น ไม่รก */
-.kpi-main-val { font-size: 1.7rem !important; letter-spacing: -0.5px; }
-.kpi-head span { font-size: 0.8rem !important; text-transform: uppercase; letter-spacing: 0.5px;}
-.kpi-sub-row span { font-size: 0.7rem !important; }
-
-/* =========================================
-   6. CLEAN WORKFORCE MATRIX TABLE
-========================================= */
-#wf-matrix-table th { background: #F8FAFC; color: #475569; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; }
+/* CLEAN WORKFORCE MATRIX TABLE */
+#wf-matrix-table th { background: #F8FAFC; color: #475569; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; }
 [data-theme="dark"] #wf-matrix-table th { background: #0F172A; color: #CBD5E1; }
-/* สร้างเส้นแบ่งแยกแบรนด์ให้ชัดเจน */
 .matrix-border-left { border-left: 2px solid #CBD5E1 !important; }
 [data-theme="dark"] .matrix-border-left { border-left: 2px solid #334155 !important; }
-/* ไฮไลต์คอลัมน์ Total */
-.matrix-total-col { background: #F1F5F9 !important; font-weight: 800 !important; color: var(--text-dark) !important; }
+.matrix-total-col { background: #F1F5F9 !important; font-weight: 700 !important; color: var(--text-dark) !important; }
 [data-theme="dark"] .matrix-total-col { background: #1E293B !important; }
+
 /* =========================================
-   UI REFINEMENT (ลดขนาด ย่อสเกล ปรับให้คลีน)
+   SECONDARY KPI BOXES (ปรับลดความเข้มของสีลง)
 ========================================= */
-body {
-    font-size: 0.85rem; /* ลดฟอนต์หลักลงให้หน้าตาดูผู้ดีขึ้น */
-}
-
-/* ปรับระยะกล่องให้เล็กลง */
-.card {
-    padding: 18px 20px !important;
-    border-radius: 12px !important;
-}
-
-/* ลดขนาดหัวข้อต่างๆ */
-.section-heading { font-size: 1.05rem !important; }
-.panel-title { font-size: 0.8rem !important; margin-bottom: 10px !important; }
-
-/* ย่อขนาดตารางให้กระชับและคลีนขึ้น */
-.data-table th {
-    padding: 10px 14px !important;
-    font-size: 0.75rem !important;
-    letter-spacing: 0.5px !important;
-}
-.data-table td {
-    padding: 8px 14px !important;
-    font-size: 0.75rem !important;
-}
-
-/* ปรับกราฟไม่ให้แย่งพื้นที่ (สูงเกินไป) */
-.chart-canvas-box {
-    height: 210px !important; 
-}
-
-/* ปรับกล่องสรุปตัวเลข (Stock Ticker) */
-.stock-summary-box {
-    padding: 12px 18px !important;
-}
-.stock-price {
-    font-size: 1.6rem !important; /* ย่อจาก 2.2rem */
-}
-.stock-change {
-    padding: 4px 10px !important;
-    font-size: 0.75rem !important;
-}
-
-/* ย่อตัวเลขหน้าหลัก KPI บนสุด */
-.kpi-main-val {
-    font-size: 1.6rem !important;
-    margin-bottom: 8px !important;
-}
-.kpi-box {
+.wave-kpi-grid .kpi-box {
+    background: var(--bg-card); 
+    color: var(--text-dark); 
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    min-height: 85px !important;
     padding: 14px 16px !important;
-    min-height: 90px !important;
+    border-radius: 8px !important;
 }
-
-/* ปรับ Filter Bar ให้กะทัดรัดขึ้น */
-.filter-card {
-    padding: 8px 40px !important;
-}
-.filter-control {
-    height: 30px !important;
-    font-size: 0.75rem !important;
-}
-
-/* ซ่อน Scrollbar ของตารางให้ดูเนี้ยบขึ้น แต่ยังไถดูได้ */
-.table-scroll-wrap::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-.table-scroll-wrap::-webkit-scrollbar-thumb {
-    background-color: #CBD5E1;
-    border-radius: 4px;
-}
-[data-theme="dark"] .table-scroll-wrap::-webkit-scrollbar-thumb {
-    background-color: #475569;
-}
-
-/* =========================================
-   ENTERPRISE & EXECUTIVE THEME (Corporate Look)
-   วางโค้ดส่วนนี้ไว้ "บรรทัดล่างสุด" ของ style.css
-========================================= */
-
-/* 1. เคลียร์พื้นหลังลายจุดออก ใช้สีพื้นเรียบหรูสไตล์ Corporate */
-body {
-    background-image: none !important;
-    background-color: #F1F5F9 !important;
-}
-[data-theme="dark"] body {
-    background-image: none !important;
-    background-color: #0F172A !important;
-}
-
-/* 2. ปรับความโค้งมนให้คมและเหลี่ยมขึ้น (ดูเป็นผู้ใหญ่และมั่นคง) */
-.card, .modal-box, .dropdown-card {
-    border-radius: 6px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03) !important;
-    border: 1px solid #E2E8F0 !important;
-}
-.kpi-box, .stage-panel {
-    border-radius: 6px !important;
-}
-.btn-primary, .btn-outline, .btn-theme-toggle, .filter-control, .trend-badge, .badge-glass, .tag-source {
-    border-radius: 4px !important;
-}
-
-/* 3. ปรับกล่อง KPI ด้านบนสุด ยกเลิกสีรุ้งฉูดฉาด เปลี่ยนเป็นสไตล์ Minimalist */
-.kpi-box {
-    background: var(--bg-card) !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+.wave-kpi-grid .kpi-box::before { display: none; }
+.wave-kpi-grid .kpi-head { color: var(--text-muted); font-weight: 700; font-size: 0.7rem !important; margin-bottom: 6px !important; }
+.wave-kpi-grid .kpi-main-val { font-size: 1.5rem !important; margin-bottom: 8px !important; text-shadow: none !important;}
+.wave-kpi-grid .kpi-foot-col div, 
+.wave-kpi-grid .kpi-timestamp,
+.wave-kpi-grid .kpi-foot-col span { color: var(--text-muted) !important; text-shadow: none !important;}
+.wave-kpi-grid .trend-badge {
+    background: var(--bg-body) !important;
+    color: var(--text-main) !important;
     border: 1px solid var(--border-color) !important;
-}
-.kpi-box::before { 
-    display: none !important; /* ปิดเอฟเฟกต์แสงสะท้อน */
-} 
-
-.kpi-head { color: var(--text-muted) !important; font-size: 0.75rem !important; letter-spacing: 0px !important;}
-.kpi-main-val { font-size: 1.6rem !important; text-shadow: none !important; color: var(--text-dark) !important; margin-bottom: 8px !important;}
-.kpi-sub-row span, .kpi-timestamp, .kpi-foot-col div, .kpi-foot-col span { color: var(--text-muted) !important; text-shadow: none !important;}
-
-/* ใช้เส้นขอบซ้าย (Left Border Accent) เพื่อบอกความหมายของสี แทนการถมสีทั้งกล่อง */
-.card-purple { border-left: 4px solid #7C3AED !important; }
-.card-green  { border-left: 4px solid var(--brand-green) !important; } 
-.card-blue   { border-left: 4px solid var(--brand-blue) !important; }
-.card-red    { border-left: 4px solid var(--brand-red) !important; } 
-.card-orange { border-left: 4px solid var(--brand-yellow) !important; }
-.card-teal   { border-left: 4px solid var(--brand-teal) !important; }
-.kpi-box .trend-badge { background: var(--bg-body) !important; color: var(--text-dark) !important; border: 1px solid var(--border-color) !important;}
-
-/* 4. ปรับหัวข้อแต่ละ Section ให้มีความหนักแน่น แบบระบบ Enterprise */
-.section-title-wrap {
-    border-bottom: 2px solid var(--border-color);
-    padding-bottom: 8px;
-    margin-bottom: 20px !important;
-    display: flex;
-    width: 100%;
-}
-.section-heading { font-weight: 700 !important; font-size: 1.05rem !important; }
-.panel-title { font-weight: 600 !important; font-size: 0.85rem !important; color: #334155 !important; margin-bottom: 12px !important; }
-
-/* 5. ปรับตาราง (Data Grid) ให้อ่านง่าย ข้อมูลกระชับแบบระบบ ERP */
-.data-table th {
-    background-color: #F8FAFC !important;
-    border-bottom: 2px solid #CBD5E1 !important;
-    font-weight: 600 !important;
-    color: #475569 !important;
-    text-transform: uppercase;
-    font-size: 0.7rem !important;
-    padding: 8px 12px !important;
-}
-.data-table td {
-    padding: 8px 12px !important;
-    font-size: 0.75rem !important;
+    padding: 2px 8px !important;
 }
 
-/* 6. ย่อปุ่มและ Input ต่างๆ ให้กะทัดรัด (Compact Mode) */
-.filter-card { padding: 12px 24px !important; }
-.filter-control, .btn-primary, .btn-outline, .btn-theme-toggle {
-    height: 30px !important;
-    font-size: 0.75rem !important;
-    padding: 4px 10px !important;
-}
-.nav-shortcuts button { height: 26px !important; padding: 2px 8px !important; }
+/* เล่นขอบสีเส้นบางๆ ด้านบน แทนการเทสีทั้งหมด */
+.wave-kpi-grid .card-purple { border-top: 3px solid #9333EA; }
+.wave-kpi-grid .card-purple .kpi-main-val { color: #9333EA; }
+.wave-kpi-grid .card-green { border-top: 3px solid var(--brand-green); }
+.wave-kpi-grid .card-green .kpi-main-val { color: var(--brand-green); }
+.wave-kpi-grid .card-blue { border-top: 3px solid var(--brand-blue); }
+.wave-kpi-grid .card-blue .kpi-main-val { color: var(--brand-blue); }
+.wave-kpi-grid .card-red { border-top: 3px solid var(--brand-red); }
+.wave-kpi-grid .card-red .kpi-main-val { color: var(--brand-red); }
+.wave-kpi-grid .card-orange { border-top: 3px solid var(--brand-yellow); }
+.wave-kpi-grid .card-orange .kpi-main-val { color: var(--brand-yellow); }
+
+@media (max-width: 1024px) { .grid-2-col { grid-template-columns: 1fr; } .wave-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .top-nav { flex-direction: column; align-items: flex-start; gap: 12px; } .filter-card { justify-content: flex-start;} .grid-3-col { grid-template-columns: 1fr; } }
