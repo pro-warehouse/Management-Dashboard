@@ -34,7 +34,6 @@
 
         <!-- Master Filter Bar -->
         <div class="filter-card sticky-filter">
-            <!-- (โค้ดตัวกรอง Date, View By, BU เดิมของคุณอยู่ตรงนี้) -->
             <div class="filter-group">
                 <label class="filter-label">DATE RANGE</label>
                 <div style="display: flex; gap: 8px; align-items: center;">
@@ -65,23 +64,19 @@
                 </div>
             </div>
 
-            <!-- 👇👇 โค้ดปุ่มทางลัดที่เพิ่มเข้ามาใหม่ 👇👇 -->
             <div class="nav-shortcuts" style="display: flex; gap: 6px; margin-left: auto; align-items: center; border-left: 2px solid var(--border-color); padding-left: 16px;">
-                <button onclick="scrollToSection('wave-title-1')" class="btn-outline" style="font-size: 0.7rem; padding: 4px 8px; height: 28px;">🌊 Wave</button>
-                <button onclick="scrollToSection('ffmTrendChart')" class="btn-outline" style="font-size: 0.7rem; padding: 4px 8px; height: 28px;">📦 FFM</button>
-                <button onclick="scrollToSection('workforceChart')" class="btn-outline" style="font-size: 0.7rem; padding: 4px 8px; height: 28px;">👥 Staff</button>
-                <button onclick="scrollToSection('ontimeChart2')" class="btn-outline" style="font-size: 0.7rem; padding: 4px 8px; height: 28px;">🚚 Trans</button>
-                <button onclick="scrollToSection('claimChart2')" class="btn-outline" style="font-size: 0.7rem; padding: 4px 8px; height: 28px;">⚠️ Claim</button>
-                <button onclick="scrollToSection('inventoryChart')" class="btn-outline" style="font-size: 0.7rem; padding: 4px 8px; height: 28px;">📊 Inv</button>
-                <button onclick="scrollToSection('productivityChart')" class="btn-outline" style="font-size: 0.7rem; padding: 4px 8px; height: 28px;">⚡ Prod</button>
+                <button onclick="scrollToSection('wave-title-1')" class="btn-outline">🌊 Wave</button>
+                <button onclick="scrollToSection('ffmTrendChart')" class="btn-outline">📦 FFM</button>
+                <button onclick="scrollToSection('workforceChart')" class="btn-outline">👥 Staff</button>
+                <button onclick="scrollToSection('ontimeChart2')" class="btn-outline">🚚 Trans</button>
+                <button onclick="scrollToSection('claimChart2')" class="btn-outline">⚠️ Claim</button>
+                <button onclick="scrollToSection('inventoryChart')" class="btn-outline">📊 Inv</button>
+                <button onclick="scrollToSection('productivityChart')" class="btn-outline">⚡ Prod</button>
             </div>
-            <!-- 👆👆 จบโค้ดปุ่มทางลัด 👆👆 -->
-        </div>
         </div>
     </header>
 
     <main class="dashboard-body mt-20">
-        <!-- แถบอธิบายการแสดงผลเบื้องต้น -->
         <div class="mb-20" style="background: #E0F2FE; color: #1E3A8A; padding: 12px 20px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; display: flex; justify-content: space-between; align-items: center; border: 1px solid #BFDBFE;">
             <div style="display:flex; align-items:center; gap:8px;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
@@ -239,10 +234,8 @@
             <div class="card">
                 <div class="card-head-bar">
                     <h3 class="panel-title m-0">VOLUME UTILIZATION</h3>
-                    <!-- เปลี่ยน onclick เป็นฟังก์ชันเรียก Popup -->
                     <button onclick="openCapacityModal()" class="btn-outline" style="padding: 4px 8px; font-size: 0.75rem; height: auto;">⚙️ Set</button>
                 </div>
-                <!-- ลบ cap-setup-panel ออกไป -->
                 <div class="table-scroll-wrap max-h-300 mt-10">
                     <table class="data-table" id="utilization-table">
                         <thead><tr><th>OWNER</th><th class="text-right">VOLUME</th><th style="width:35%;">UTIL %</th><th class="text-center">STATUS</th></tr></thead>
@@ -398,8 +391,8 @@
                     <thead>
                         <tr>
                             <th style="position:sticky; top:0; left:0; z-index:20;">วันที่/รอบ</th>
-                            <th style="position:sticky; top:0; z-index:15;">บริษัท/รถ</th>
-                            <th class="text-center" style="position:sticky; top:0; z-index:15;">คัน</th>
+                            <th style="position:sticky; top:0; z-index:15;">บริษัทขนส่ง (และประเภทรถ)</th>
+                            <th class="text-center" style="position:sticky; top:0; z-index:15;">จำนวนรถ</th>
                             <th class="text-center" style="position:sticky; top:0; z-index:15;">Orders</th>
                             <th style="width:15%; position:sticky; top:0; z-index:15;">Succ.%</th>
                             <th style="width:15%; position:sticky; top:0; z-index:15;">SLA Adherence</th>
@@ -422,12 +415,25 @@
                 <div class="chart-canvas-box"><canvas id="claimChart2"></canvas></div>
             </div>
             <div class="card" style="overflow: hidden;">
-                <h3 class="panel-title">CLAIM RECORD</h3>
+                <h3 class="panel-title">CLAIM RECORD (BY OWNER)</h3>
                 <div class="table-scroll-wrap max-h-300 mt-10">
                     <table class="data-table" id="claim-detail-table">
                         <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
                     </table>
                 </div>
+            </div>
+        </section>
+        
+        <!-- NEW: Comparison Table for Claims -->
+        <section class="card mb-30" style="overflow: hidden;">
+            <div class="card-head-bar">
+                <h3 class="panel-title m-0">CLAIM PERIOD COMPARISON (เปรียบเทียบข้อมูลเคลมย้อนหลัง)</h3>
+            </div>
+            <div class="table-scroll-wrap mt-10" id="claim-comparison-scroll-container" style="padding-bottom: 8px;">
+                <table class="data-table comparison-table" id="claim-comparison-table">
+                    <thead><tr><th class="text-center text-muted">Loading Comparison Data...</th></tr></thead>
+                    <tbody id="claim-tc-body"></tbody>
+                </table>
             </div>
         </section>
 
@@ -517,7 +523,8 @@
     </main>
 
     <div id="custom-toast" class="toast-popup"><span id="toast-message">Ready!</span></div>
-    <!-- 🌟 Modal Popup สำหรับตั้งค่า Volume Utilization 🌟 -->
+    
+    <!-- Modal Popups -->
     <div id="capacity-modal" class="modal-overlay" style="display: none;">
         <div class="modal-box">
             <div class="modal-header">
@@ -529,16 +536,14 @@
                     <label class="text-sm font-bold text-muted">เลือกวันที่:</label>
                     <input type="date" id="cap-target-date" class="filter-control" style="height: 34px; font-size: 0.85rem;" onchange="fetchAndRenderCapInputs()">
                 </div>
-                <!-- จุดแสดงกล่องกรอกข้อมูล -->
                 <div id="cap-inputs-container" style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;"></div>
-                
                 <div style="text-align: right;">
                     <button onclick="saveDailyCapacity()" class="btn-primary" style="padding: 8px 24px;">💾 บันทึกข้อมูล (Save)</button>
                 </div>
             </div>
         </div>
     </div>
-    <!-- 🌟 Modal Popup สำหรับตั้งค่า UPH & Cost 🌟 -->
+    
     <div id="uph-modal" class="modal-overlay" style="display: none;">
         <div class="modal-box">
             <div class="modal-header">
