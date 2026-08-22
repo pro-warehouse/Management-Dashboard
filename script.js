@@ -5,9 +5,6 @@ let _toastTimer = null;
 let _loadProgress = 0; 
 let _loadAnimFrame = null;
 
-// ==========================================
-// 🌟 1. SAFE DATE PARSER
-// ==========================================
 function safeParseDate(str) {
     if (!str) return new Date();
     let d = new Date(str);
@@ -30,11 +27,7 @@ function showToast(message, type = 'success', duration = 3000) {
     if (duration > 0) _toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
 }
 
-// ------------------------------------------------------------
-// GLOBAL HELPERS & COLOR MAPPING
-// ------------------------------------------------------------
 const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
 const getStandardDate = (rawDate) => {
     if (!rawDate) return "";
     let str = String(rawDate).trim();
@@ -43,19 +36,15 @@ const getStandardDate = (rawDate) => {
     if (!isNaN(dObj.getTime())) return `${dObj.getFullYear()}-${String(dObj.getMonth()+1).padStart(2,'0')}-${String(dObj.getDate()).padStart(2,'0')}`;
     return str;
 };
-
 const formatShortDate = (dStr) => {
     if (!dStr) return ""; let dObj = new Date(dStr);
     return isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
 };
-
 const getDisplayDate = (dStr) => {
      if (!dStr) return ""; let dObj = new Date(dStr);
      return isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]} ${dObj.getFullYear()}`;
 };
-
 const fmtN = (v) => (v || 0).toLocaleString();
-
 const formatK = (num) => {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return Math.round(num / 1000) + 'K';
@@ -63,15 +52,9 @@ const formatK = (num) => {
 };
 
 const buColorMap = {
-    'DM02': { s: '#8CC63F', e: '#009245' }, 
-    'DP02': { s: '#F59E0B', e: '#B45309' }, 
-    'DG02': { s: '#38BDF8', e: '#0284C7' }, 
-    '1715': { s: '#F87171', e: '#DC2626' }, 
-    '1115': { s: '#F87171', e: '#DC2626' }, 
-    'DCWN': { s: '#2DD4BF', e: '#0D9488' }, 
-    'DS02': { s: '#A78BFA', e: '#7C3AED' }, 
-    'PTG': { s: '#8CC63F', e: '#009245' },  
-    '40HRS': { s: '#94A3B8', e: '#64748B' }, 
+    'DM02': { s: '#8CC63F', e: '#009245' }, 'DP02': { s: '#F59E0B', e: '#B45309' }, 'DG02': { s: '#38BDF8', e: '#0284C7' }, 
+    '1715': { s: '#F87171', e: '#DC2626' }, '1115': { s: '#F87171', e: '#DC2626' }, 'DCWN': { s: '#2DD4BF', e: '#0D9488' }, 
+    'DS02': { s: '#A78BFA', e: '#7C3AED' }, 'PTG': { s: '#8CC63F', e: '#009245' }, '40HRS': { s: '#94A3B8', e: '#64748B' }, 
     'MAN POWER': { s: '#38BDF8', e: '#0284C7' } 
 };
 const defaultColor = { s: '#94A3B8', e: '#64748B' };
@@ -108,10 +91,9 @@ function generateTrendHtml(current, previous, isInverse = false, isPct = false) 
     let isGood = isInverse ? diff < 0 : diff > 0;
     let arrow = diff > 0 ? '▲' : '▼';
     let sign = diff > 0 ? '+' : '';
-    let valStr = isPct ? `${sign}${diff.toFixed(2)}%` : `${sign}${diffPct.toFixed(1)}%`;
+    let valStr = isPct ? `${sign}${diff.toFixed(1)}%` : `${sign}${diffPct.toFixed(1)}%`;
 
-    if (isGood) return `<span class="trend-badge trend-up">${arrow} ${valStr}</span> <span class="trend-note">vs Prev</span>`;
-    return `<span class="trend-badge trend-down">${arrow} ${valStr}</span> <span class="trend-note">vs Prev</span>`;
+    return `<span class="trend-badge ${isGood?'trend-up':'trend-down'}">${arrow} ${valStr}</span> <span class="trend-note">vs Prev</span>`;
 }
 
 // ------------------------------------------------------------
@@ -120,12 +102,12 @@ function generateTrendHtml(current, previous, isInverse = false, isPct = false) 
 Chart.defaults.font.family = "'Inter', 'Prompt', sans-serif";
 Chart.defaults.color = '#64748B';
 Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
-Chart.defaults.plugins.tooltip.titleFont = { size: 12, family: 'Inter', weight: 'bold' };
-Chart.defaults.plugins.tooltip.padding = 10;
-Chart.defaults.plugins.tooltip.cornerRadius = 6;
+Chart.defaults.plugins.tooltip.titleFont = { size: 11, family: 'Inter', weight: 'bold' };
+Chart.defaults.plugins.tooltip.padding = 8;
+Chart.defaults.plugins.tooltip.cornerRadius = 4;
 Chart.defaults.elements.bar.borderWidth = 0; 
 Chart.defaults.elements.line.tension = 0.4; 
-Chart.defaults.elements.point.radius = 4;
+Chart.defaults.elements.point.radius = 3;
 
 const dataLabelPlugin = {
     id: 'dataLabelPlugin',
@@ -165,10 +147,10 @@ const dataLabelPlugin = {
             chart.data.labels.forEach((_, index) => {
                 if (totals[index] > 0 && xCoords[index] && topY[index]) {
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
-                    ctx.font = 'bold 10px Inter'; 
+                    ctx.font = 'bold 9px Inter'; 
                     ctx.textAlign = 'center'; 
                     ctx.textBaseline = 'bottom';
-                    ctx.fillText(formatK(Math.round(totals[index])), xCoords[index], topY[index] - 6);
+                    ctx.fillText(formatK(Math.round(totals[index])), xCoords[index], topY[index] - 4);
                 }
             });
         }
@@ -187,10 +169,9 @@ const lineDataLabelPlugin = {
                 const data = dataset.data[index];
                 if(data !== null && data !== undefined && data !== 0 && data !== "0.00"){
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
-                    ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; 
-                    ctx.textBaseline = i % 2 === 0 ? 'bottom' : 'top'; 
-                    let yOffset = i % 2 === 0 ? -8 : 8;
-                    ctx.fillText(Number(data).toFixed(1) + '%', point.x, point.y + yOffset);
+                    ctx.font = 'bold 9px Inter'; ctx.textAlign = 'center'; 
+                    ctx.textBaseline = 'bottom'; 
+                    ctx.fillText(Number(data).toFixed(1) + '%', point.x, point.y - 12); // ดันตัวเลขขึ้นไม่ให้ทับเส้น
                 }
             });
         });
@@ -208,18 +189,18 @@ let ontimeChartInstance = new Chart(document.getElementById('ontimeChart2'), {
     type: 'line', data: { labels: [], datasets: [] }, 
     options: { 
         responsive: true, maintainAspectRatio: false, 
-        layout: { padding: { top: 35 } }, // FIX: เพิ่มพื้นที่ด้านบนกันกราฟชนตัวหนังสือ
-        plugins: { legend: { position: 'bottom', labels:{usePointStyle:true, boxWidth:8} } }, // FIX: ย้ายไปอยู่ด้านล่าง
+        layout: { padding: { top: 25 } }, 
+        plugins: { legend: { position: 'bottom', labels:{usePointStyle:true, boxWidth:8} } }, 
         scales: { 
             x: { grid: { display: false } }, 
-            y: { border: { display: false }, grid: { borderDash: [4, 4] }, suggestedMin: 80, max: 105 } // FIX: เผื่อพื้นที่ให้เลข 100 ไม่ชนขอบ
+            y: { border: { display: false }, grid: { borderDash: [4, 4] }, suggestedMin: 80, max: 115 } // ขยายเพดานไม่ให้กราฟชนขอบบน
         } 
     }, 
     plugins: [lineDataLabelPlugin]
 });
 
 let claimChart2Instance = new Chart(document.getElementById('claimChart2'), { type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#F59E0B', borderRadius: 4, yAxisID: 'y' }, { label: 'จำนวนชิ้น', data: [], type: 'line', yAxisID: 'y1', pointRadius: 4, borderWidth: 2, borderColor: '#3B82F6', backgroundColor: '#3B82F6' } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: {grid:{display:false}}, y: {position: 'left', grace: '15%', border:{display:false}, grid: { borderDash: [4, 4] }}, y1: {position: 'right', display:false} } }, plugins: [dataLabelPlugin] });
-let inventoryChartInstance = new Chart(document.getElementById('inventoryChart'), { type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { borderDash: [4, 4] }, grace: '5%' } } }, plugins: [lineDataLabelPlugin]});
+let inventoryChartInstance = new Chart(document.getElementById('inventoryChart'), { type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], fill: true }] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 20 } }, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { borderDash: [4, 4] }, suggestedMin: 90, max: 105 } } }, plugins: [lineDataLabelPlugin]});
 let productivityChartInstance = new Chart(document.getElementById('productivityChart'), { 
     type: 'bar', 
     data: { labels: [], datasets: [] }, 
@@ -237,11 +218,11 @@ let transportTrendChartInstance = new Chart(document.getElementById('transportTr
     type: 'bar', data: { labels: [], datasets: [] },
     options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }, // ย้ายลงด้านล่าง
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } },
         scales: {
             x: { grid: { display: false } },
-            y: { type: 'linear', position: 'left', min: 0, max: 105, title: { display: true, text: 'SLA (%)', color: '#3B82F6', font: {weight: 'bold'} }, grid: { borderDash: [4, 4] } },
-            y1: { type: 'linear', position: 'right', title: { display: true, text: 'Cost (฿)', color: '#8B5CF6', font: {weight: 'bold'} }, grid: { display: false }, beginAtZero: true }
+            y: { type: 'linear', position: 'left', min: 0, max: 105, title: { display: true, text: 'SLA (%)', color: '#3B82F6', font: {weight: 'bold', size: 10} }, grid: { borderDash: [4, 4] } },
+            y1: { type: 'linear', position: 'right', title: { display: true, text: 'Cost (฿)', color: '#8B5CF6', font: {weight: 'bold', size: 10} }, grid: { display: false }, beginAtZero: true }
         }
     },
     plugins: [dataLabelPlugin]
@@ -289,8 +270,6 @@ setInterval(() => { initDashboard(); }, 15 * 60 * 1000);
 document.getElementById('theme-toggle')?.addEventListener('click', () => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    document.getElementById('theme-toggle').innerText = isDark ? '🌙 Dark Mode' : '☀️ Light Mode';
-    Chart.defaults.color = isDark ? '#94A3B8' : '#64748B';
     Object.values(Chart.instances).forEach(chart => chart.update());
 });
 
@@ -298,35 +277,20 @@ document.addEventListener('click', (e) => {
     let buBtn = document.getElementById('bu-multi-select');
     let buMenu = document.getElementById('bu-dropdown-menu');
     if (buBtn && buMenu && !buBtn.contains(e.target) && !buMenu.contains(e.target)) buMenu.style.display = 'none';
-
-    let otBtn = document.getElementById('ontime-line-ms');
-    let otMenu = document.getElementById('ontime-line-menu');
-    if (otBtn && otMenu && !otBtn.contains(e.target) && !otMenu.contains(e.target)) otMenu.style.display = 'none';
 });
 
-document.getElementById('ontime-line-ms')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    let menu = document.getElementById('ontime-line-menu');
-    document.querySelectorAll('.dropdown-card').forEach(m => { if (m !== menu) m.style.display = 'none'; });
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-});
-
-document.getElementById('btn-apply-ot-line')?.addEventListener('click', () => {
-    document.getElementById('ontime-line-menu').style.display = 'none';
-    let selected = [];
-    if (document.getElementById('cb-ot-overall').checked) selected.push('ภาพรวม');
-    if (document.getElementById('cb-ot-ptglg').checked) selected.push('PTGLG');
-    if (document.getElementById('cb-ot-hub').checked) selected.push('HUB');
-    
-    if (selected.length === 0) {
-        document.getElementById('cb-ot-overall').checked = true;
-        selected.push('ภาพรวม');
-    }
-    document.getElementById('ontime-line-text').innerText = selected.length > 1 ? `${selected.length} Selected` : selected[0];
-    updateOnTimeUI();
-});
-
+document.getElementById('ontime-line-ms')?.addEventListener('change', updateOnTimeUI);
 document.getElementById('tp-metric-filter')?.addEventListener('change', updateTransportUI);
+
+// Event Listeners for Filters Location & UPH
+['loc-bu-filter', 'loc-type-filter', 'loc-zone-filter'].forEach(id => {
+    let el = document.getElementById(id);
+    if(el && !el.hasAttribute('data-bound')) { el.addEventListener('change', renderLocationAccuracy); el.setAttribute('data-bound', 'true'); }
+});
+['prod-area-filter', 'prod-zone-filter'].forEach(id => {
+    let el = document.getElementById(id);
+    if(el && !el.hasAttribute('data-bound')) { el.addEventListener('change', renderProductivitySection); el.setAttribute('data-bound', 'true'); }
+});
 
 function cleanDataBeforeLoad() {
     ['fulfillment', 'wave_ops', 'claims', 'inventory', 'inventory_daily', 'transport'].forEach(module => {
@@ -382,7 +346,6 @@ function populateGlobalBUFilters() {
     
     let sortedBUs = Array.from(buSet).sort();
     const cbList = document.getElementById('bu-checkbox-list');
-    const invOwnerList = document.getElementById('inv-owner-filter');
     
     if (cbList && cbList.innerHTML === '') {
         sortedBUs.forEach(bu => {
@@ -390,10 +353,7 @@ function populateGlobalBUFilters() {
             label.className = 'dropdown-item';
             label.innerHTML = `<input type="checkbox" class="bu-item-cb" value="${bu}" checked> ${bu}`;
             cbList.appendChild(label);
-            if (invOwnerList) invOwnerList.appendChild(new Option(bu, bu));
         });
-
-        if (invOwnerList) invOwnerList.addEventListener('change', () => { updateInventoryUI(); renderLocationAccuracy(); });
 
         document.getElementById('bu-select-all').addEventListener('change', (e) => {
             document.querySelectorAll('.bu-item-cb').forEach(cb => cb.checked = e.target.checked);
@@ -499,7 +459,7 @@ function closeCapacityModal() {
 async function fetchAndRenderCapInputs() {
     const targetDate = document.getElementById('cap-target-date').value;
     const container = document.getElementById('cap-inputs-container');
-    container.innerHTML = '<span class="text-sm text-muted">⏳ กำลังดึงข้อมูล...</span>';
+    container.innerHTML = '<span class="text-xs text-muted">⏳ กำลังดึงข้อมูล...</span>';
     try {
         const capResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", { 
             method: 'POST', headers: { 'Content-Type': 'application/json' }, 
@@ -518,9 +478,9 @@ async function fetchAndRenderCapInputs() {
     allBUs.forEach(bu => {
         let currentCap = globalCapacities[targetDate]?.[bu] || DEFAULT_CAPACITY;
         container.innerHTML += `
-        <div style="display:flex; flex-direction:column; gap:4px;">
+        <div style="display:flex; flex-direction:column; gap:2px;">
             <label class="text-xs text-muted font-bold">${bu}</label>
-            <input type="number" id="cap-input-${bu}" value="${currentCap}" data-bu="${bu}" class="filter-control" style="width:75px; text-align:center;">
+            <input type="number" id="cap-input-${bu}" value="${currentCap}" data-bu="${bu}" class="filter-control" style="width:70px; text-align:center;">
         </div>`;
     });
 }
@@ -640,7 +600,7 @@ async function saveTargets() {
     } catch (err) {
         showToast('❌ บันทึกไม่สำเร็จ: ' + err.message, 'error');
     } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = orig || '💾 บันทึกข้อมูลไปยัง Sheet'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = orig || '💾 บันทึกข้อมูล'; }
     }
 }
 
@@ -709,7 +669,6 @@ async function initFulfillmentRealtime() {
             }
         }
         
-        // 🌟 ดึงข้อมูล UPH Cost 🌟
         const uphResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fn: 'apiGetUphCost', args: [startDateCap, dpEndVal] }) 
@@ -1078,11 +1037,11 @@ async function initFulfillmentRealtime() {
                                 <div class="modern-bar-bg">
                                     <div class="${statusObj.barClass}" style="width:${barWidth}%;"></div>
                                 </div>
-                                <span style="font-size:11px; font-weight:700; width:45px; text-align:right; color:var(--text-dark);">${utilDisp}%</span>
+                                <span style="font-size:10px; font-weight:700; width:40px; text-align:right; color:var(--text-dark);">${utilDisp}%</span>
                             </div>
                         </td>
                         <td class="text-center">
-                            <span style="padding:4px 10px; border-radius:6px; font-size:10px; font-weight:700; display:inline-block; width:80px; background:${statusObj.bg}; color:${statusObj.color};">${statusObj.text}</span>
+                            <span style="padding:2px 8px; border-radius:4px; font-size:9px; font-weight:700; display:inline-block; width:70px; background:${statusObj.bg}; color:${statusObj.color};">${statusObj.text}</span>
                         </td>
                     </tr>`;
                 });
@@ -1158,12 +1117,12 @@ async function initFulfillmentRealtime() {
                     if (info3) {
                         if (totalLate > 0) {
                             if (isApiSuccess && (latePick + lateLoad) > 0) {
-                                info3.innerHTML = `<span class="trend-badge">หลุด SLA: Pick ${fmtN(latePick)} | Load ${fmtN(lateLoad)}</span>`;
+                                info3.innerHTML = `<span class="trend-badge" style="background:#fee2e2; color:#b91c1c;">หลุด SLA: Pick ${fmtN(latePick)} | Load ${fmtN(lateLoad)}</span>`;
                             } else {
-                                info3.innerHTML = `<span class="trend-badge">หลุด SLA: ${fmtN(totalLate)} บิล</span>`;
+                                info3.innerHTML = `<span class="trend-badge" style="background:#fee2e2; color:#b91c1c;">หลุด SLA: ${fmtN(totalLate)} บิล</span>`;
                             }
                         } else {
-                            info3.innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.15);">On-time ทุกบิล</span>`;
+                            info3.innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">On-time ทุกบิล</span>`;
                         }
                     }
                 }
@@ -1177,18 +1136,22 @@ async function initFulfillmentRealtime() {
                         if (maxLoadDelay > 0) { lStr = `Delay ${formatTime(maxLoadDelay)}`; overallMainText = formatTime(maxOverallDelay); }
                         else if (!isNaN(lEarly) && lEarly !== null) { lStr = `Early ${formatTime(lEarly)}`; }
                         
-                        document.getElementById('wave-active-info-4').innerHTML = `<span style="font-size:0.75rem; color:rgba(255,255,255,0.9);">Pick: ${pStr} &bull; Load: ${lStr}</span>`;
+                        document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">Pick: ${pStr} &bull; Load: ${lStr}</span>`;
                     } else {
                         if (aDelay > 0) {
                             overallMainText = formatTime(aDelay);
-                            document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge">ดีเลย์ช้าสุด: ${worstBU}</span>`;
+                            document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge" style="background:#fef3c7; color:#b45309;">ดีเลย์ช้าสุด: ${worstBU}</span>`;
                         } else {
-                            document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.15);">เวลาปกติ</span>`;
+                            document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">เวลาปกติ</span>`;
                         }
                     }
                     if (maxOverallDelay > 0) overallMainText = formatTime(maxOverallDelay);
                     document.getElementById('wave-delay').innerText = overallMainText;
                 }
+
+                // 🌟 FIX: ล้างคำว่ากำลังตรวจสอบของกล่องที่ 1 และ 2 ออก 🌟
+                if (document.getElementById('wave-active-info-1')) document.getElementById('wave-active-info-1').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">สรุปข้อมูลล่าสุด</span>`;
+                if (document.getElementById('wave-active-info-2')) document.getElementById('wave-active-info-2').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">อัปเดตเรียบร้อย</span>`;
 
                 if (document.getElementById('stage-pick-pct')) {
                     let fTotal = dailyTotal > 0 ? dailyTotal : (parseInt(waveStats.total_orders) || 0);
@@ -1266,7 +1229,7 @@ async function initFulfillmentRealtime() {
                             let pct = dayTot > 0 ? Math.min(100, (dayComp / dayTot) * 100).toFixed(2) : 0;
                             let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
                             let pctColor = pct >= 100 ? '#10B981' : (pct > 0 ? '#F59E0B' : '#EF4444');
-                            tr += `<td class="text-center"><span style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600;">${pct}%</span></td></tr>`;
+                            tr += `<td class="text-center"><span style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:600;">${pct}%</span></td></tr>`;
                             tbody += tr;
                         });
                         waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
@@ -1415,12 +1378,12 @@ function updateWorkforceUI() {
                     </tr><tr>`;
                 
                 affiliations.forEach(() => { 
-                    dynamicTeams.forEach((t, idx) => { let bClass = idx === 0 ? 'matrix-border-left' : ''; headerHtml += `<th class="text-center ${bClass}" style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">${t}</th>`; }); 
-                    headerHtml += `<th class="text-center matrix-total-col" style="position:sticky; top:36px; z-index:15;">Total</th>`; 
+                    dynamicTeams.forEach((t, idx) => { let bClass = idx === 0 ? 'matrix-border-left' : ''; headerHtml += `<th class="text-center ${bClass}" style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">${t}</th>`; }); 
+                    headerHtml += `<th class="text-center matrix-total-col" style="position:sticky; top:32px; z-index:15;">Total</th>`; 
                 });
                 
-                headerHtml += `<th class="text-center text-muted matrix-border-left" style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">🇹🇭 ไทย</th>
-                               <th class="text-center text-muted" style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">🌐 ต่างชาติ</th>
+                headerHtml += `<th class="text-center text-muted matrix-border-left" style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">🇹🇭 ไทย</th>
+                               <th class="text-center text-muted" style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">🌐 ต่างชาติ</th>
                     </tr></thead>`;
 
                 let bodyHtml = "<tbody>";
@@ -1470,7 +1433,7 @@ function updateWorkforceUI() {
                     let affTot = colSums[`${aff}_Total`] || 0;
                     footerHtml += `<td class="text-center matrix-total-col" style="border-top:2px solid var(--border-color);">${affTot > 0 ? affTot : '-'}</td>`;
                 });
-                footerHtml += `<td class="text-center matrix-border-left matrix-total-col" style="font-size:1rem; color:var(--brand-blue) !important; border-top:2px solid var(--border-color);">${grandTotalAll > 0 ? grandTotalAll : '-'}</td>
+                footerHtml += `<td class="text-center matrix-border-left matrix-total-col" style="font-size:0.9rem; color:var(--brand-blue) !important; border-top:2px solid var(--border-color);">${grandTotalAll > 0 ? grandTotalAll : '-'}</td>
                              <td class="text-center text-green matrix-border-left" style="font-weight:800; border-top:2px solid var(--border-color);">${natData.thai > 0 ? natData.thai : '-'}</td>
                              <td class="text-center text-blue" style="font-weight:800; border-top:2px solid var(--border-color);">${natData.foreign > 0 ? natData.foreign : '-'}</td>
                              <td class="text-center text-muted matrix-border-left" style="border-top:2px solid var(--border-color);">100%</td>
@@ -1492,10 +1455,10 @@ function updateWorkforceUI() {
             dynamicTeams.forEach(t => { h += `<th colspan="4" class="team-divider" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">Team ${t}</th>`; });
             h += `</tr><tr>`;
             dynamicTeams.forEach(() => { 
-                h += `<th class="team-divider" style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">TRG</th>
-                      <th style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">ACT</th>
-                      <th style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">ABS</th>
-                      <th style="position:sticky; top:36px; z-index:15; background:var(--bg-card);">%</th>`; 
+                h += `<th class="team-divider" style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">TRG</th>
+                      <th style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">ACT</th>
+                      <th style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">ABS</th>
+                      <th style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">%</th>`; 
             });
             h += `</tr>`;
             attHead.innerHTML = h;
@@ -1595,28 +1558,23 @@ function updateOnTimeUI() {
         if(ontimeChartInstance) {
             ontimeChartInstance.data.labels = pLabels;
             let newDatasets = [];
-            let showOverall = document.getElementById('cb-ot-overall')?.checked;
-            let showPTGLG = document.getElementById('cb-ot-ptglg')?.checked;
-            let showHUB = document.getElementById('cb-ot-hub')?.checked;
-            if(!showOverall && !showPTGLG && !showHUB) showOverall = true;
+            let selType = document.getElementById('ontime-line-ms')?.value || 'OVERALL';
 
-            if(showOverall) {
+            if(selType === 'OVERALL') {
                 newDatasets.push({
                     label: 'ภาพรวม (Overall)', data: plotData, borderColor: '#10B981', 
                     backgroundColor: (ctx) => (!ctx.chart.chartArea) ? 'rgba(16, 185, 129, 0.4)' : getGradient(ctx.chart.ctx, ctx.chart.chartArea, 'rgba(16, 185, 129, 0.4)', 'rgba(16, 185, 129, 0.01)'),
-                    borderWidth: 3, fill: true, tension: 0.4, pointRadius: 4, isOverall: true
+                    borderWidth: 2, fill: true, tension: 0.4, pointRadius: 4, isOverall: true
                 });
-            }
-            if(showPTGLG) {
+            } else if(selType === 'PTGLG') {
                 newDatasets.push({
                     label: 'PTGLG', data: ptglgData, borderColor: '#3B82F6', backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 2, fill: false, tension: 0.4, pointRadius: 4, borderDash: [5, 5]
+                    borderWidth: 2, fill: false, tension: 0.4, pointRadius: 4
                 });
-            }
-            if(showHUB) {
+            } else if(selType === 'HUB') {
                 newDatasets.push({
                     label: 'HUB', data: hubData, borderColor: '#F59E0B', backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                    borderWidth: 2, fill: false, tension: 0.4, pointRadius: 4, borderDash: [5, 5]
+                    borderWidth: 2, fill: false, tension: 0.4, pointRadius: 4
                 });
             }
             ontimeChartInstance.data.datasets = newDatasets;
@@ -1808,14 +1766,14 @@ function updateClaimUI() {
                     let diffQty = p.qty - prevP.qty;
 
                     const fmtDiff = (v) => {
-                        if (v === 0) return `<td class="diff-col text-right"><span style="background:#f1f5f9; color:#64748b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">- 0</span></td>`;
+                        if (v === 0) return `<td class="diff-col text-right"><span style="background:#f1f5f9; color:#64748b; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 0.65rem; display: inline-block;">- 0</span></td>`;
                         let isGood = (v < 0); // คลมน้อยลง = ดี (สีเขียว)
                         let arrow = v > 0 ? '▲' : '▼';
                         let absVal = Math.abs(v);
                         let valStr = fmtN(parseFloat(absVal.toFixed(2)));
                         let bgClr = isGood ? '#dcfce7' : '#fee2e2';
                         let txtClr = isGood ? '#10B981' : '#EF4444';
-                        return `<td class="diff-col text-right"><span style="background:${bgClr}; color:${txtClr}; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">${arrow} ${v > 0 ? '+':'-'}${valStr}</span></td>`;
+                        return `<td class="diff-col text-right"><span style="background:${bgClr}; color:${txtClr}; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 0.65rem; display: inline-block;">${arrow} ${v > 0 ? '+':'-'}${valStr}</span></td>`;
                     };
 
                     htmlCost += fmtDiff(diffCost);
@@ -1847,17 +1805,21 @@ function updateInventoryUI() {
     const updEl = document.getElementById('inv-update');
     let invSummary = document.getElementById('inv-summary-box');
 
+    // 🌟 FIX: ป้องกัน Error ถ้าข้อมูลเป็นว่างเปล่า ให้เคลียร์ตารางเลย 🌟
     if (!globalData.inventory_daily || Object.keys(globalData.inventory_daily).length === 0) {
         if(valEl) valEl.innerText = "-";
         if(updEl) updEl.innerText = "Updated: --";
-        if(invSummary) invSummary.innerHTML = "💡 ไม่มีข้อมูล Inventory Accuracy";
+        if(invSummary) { invSummary.innerHTML = "💡 ไม่มีข้อมูล Inventory Accuracy"; invSummary.className = 'info-alert alert-yellow mt-10'; }
+        
+        const invTbl = document.getElementById('inv-detail-table');
+        if (invTbl) invTbl.innerHTML = '<thead><tr><th class="text-center text-muted">ไม่มีข้อมูลในช่วงที่เลือก</th></tr></thead>';
+        if (inventoryChartInstance) { inventoryChartInstance.data.labels = []; inventoryChartInstance.update(); }
         return;
     }
 
     const targetEndObj = safeParseDate(document.getElementById('date-end').value);
     const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
-    const ownerFilter = document.getElementById('inv-owner-filter')?.value || 'ALL';
     
     let allData = [];
     Object.keys(globalData.inventory_daily).forEach(dKey => {
@@ -1867,7 +1829,7 @@ function updateInventoryUI() {
             let sumOnhand = 0, sumDiff = 0, count = 0;
             let buDataMap = dayGroup.bu_data || {};
             Object.keys(buDataMap).forEach(bu => {
-                if ((window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) && (ownerFilter === 'ALL' || ownerFilter === bu)) {
+                if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
                     sumOnhand += buDataMap[bu].onhand || 0; 
                     sumDiff += buDataMap[bu].diff || 0;     
                     count += buDataMap[bu].count || 0; 
@@ -1898,12 +1860,12 @@ function updateInventoryUI() {
 
         if (invSummary) {
             invSummary.innerHTML = `💡 <b>ความแม่นยำสต็อกล่าสุด (${latestAvailable.dateStr}):</b> อยู่ที่ <b>${latestAvailable.pct !== null ? latestAvailable.pct.toFixed(2) : 0}%</b> (สะสม YTD: ${latestAvailable.accumPct !== null ? latestAvailable.accumPct.toFixed(2) : 0}%)`;
-            invSummary.className = latestAvailable.pct >= 99 ? 'info-alert alert-green mt-10 text-sm' : 'info-alert alert-red mt-10 text-sm';
+            invSummary.className = latestAvailable.pct >= 99 ? 'info-alert alert-green mt-10' : 'info-alert alert-red mt-10';
         }
     } else {
         if(valEl) valEl.innerText = "-";
         if(updEl) updEl.innerText = "Updated: --";
-        if (invSummary) { invSummary.innerHTML = "💡 ไม่มีข้อมูล Inventory Accuracy"; invSummary.className = 'info-alert alert-yellow mt-10 text-sm'; }
+        if (invSummary) { invSummary.innerHTML = "💡 ไม่มีข้อมูล Inventory Accuracy MTD"; invSummary.className = 'info-alert alert-yellow mt-10'; }
     }
 
     if (mtdData.length > 0) {
@@ -1917,7 +1879,7 @@ function updateInventoryUI() {
                     if(!context.chart.chartArea) return 'rgba(6, 182, 212, 0.4)';
                     return getGradient(context.chart.ctx, context.chart.chartArea, 'rgba(6, 182, 212, 0.4)', 'rgba(6, 182, 212, 0.01)');
                 },
-                borderWidth: 3, fill: true, tension: 0.4, pointRadius: 4
+                borderWidth: 2, fill: true, tension: 0.4, pointRadius: 4
             };
             inventoryChartInstance.update();
         }
@@ -1944,7 +1906,7 @@ function updateInventoryUI() {
 }
 
 // ----------------------------------------------------
-// LOCATION ACCURACY (MTD Logic + Comparison Table Style)
+// LOCATION ACCURACY (MTD Logic + Filter by Select)
 // ----------------------------------------------------
 function renderLocationAccuracy() {
     const locTableEl = document.getElementById('loc-accuracy-table');
@@ -1963,22 +1925,41 @@ function renderLocationAccuracy() {
         locBoxEl.innerHTML = `💡 ไม่มีข้อมูลสินค้าวางผิด Location ในเดือน ${mLabelReq}`;
     } else {
         let rawDetailsArr = [];
+        let typeSet = new Set();
+        let zoneSet = new Set();
+        let buSet = new Set();
+
         Object.keys(locStats.details || {}).forEach(bu => {
+            buSet.add(bu);
             Object.keys(locStats.details[bu] || {}).forEach(tz => {
                 let d = locStats.details[bu][tz];
                 let parts = tz.split(" | ");
                 let lType = parts[0]; let zone = parts[1];
+                typeSet.add(lType); zoneSet.add(zone);
                 let acc = d.total > 0 ? ((d.total - d.wrong) / d.total) * 100 : 0;
                 rawDetailsArr.push({ bu: bu, type: lType, zone: zone, checked: d.total, wrong: d.wrong, acc: acc });
             });
         });
 
+        // Populate Dropdowns dynamically if they are empty
+        let buFilter = document.getElementById('loc-bu-filter');
+        let typeFilter = document.getElementById('loc-type-filter');
+        let zoneFilter = document.getElementById('loc-zone-filter');
+        
+        if (buFilter && buFilter.options.length <= 1) { Array.from(buSet).sort().forEach(b => buFilter.appendChild(new Option(b, b))); }
+        if (typeFilter && typeFilter.options.length <= 1) { Array.from(typeSet).sort().forEach(t => typeFilter.appendChild(new Option(t, t))); }
+        if (zoneFilter && zoneFilter.options.length <= 1) { Array.from(zoneSet).sort().forEach(z => zoneFilter.appendChild(new Option(z, z))); }
+
+        let selBu = buFilter ? buFilter.value : 'ALL';
+        let selType = typeFilter ? typeFilter.value : 'ALL';
+        let selZone = zoneFilter ? zoneFilter.value : 'ALL';
+
         let filteredArr = rawDetailsArr.filter(item => {
-            let passBU = window.locFilters ? (window.locFilters.bu.includes('ALL') || window.locFilters.bu.includes(item.bu)) : true;
-            let passType = window.locFilters ? (window.locFilters.type.includes('ALL') || window.locFilters.type.includes(item.type)) : true;
-            let passZone = window.locFilters ? (window.locFilters.zone.includes('ALL') || window.locFilters.zone.includes(item.zone)) : true;
             let passMasterBU = window.selectedBUs.includes('ALL') || window.selectedBUs.includes(item.bu);
-            return passBU && passType && passZone && passMasterBU;
+            let passBU = (selBu === 'ALL' || selBu === item.bu);
+            let passType = (selType === 'ALL' || selType === item.type);
+            let passZone = (selZone === 'ALL' || selZone === item.zone);
+            return passMasterBU && passBU && passType && passZone;
         });
 
         filteredArr.sort((a, b) => b.wrong - a.wrong);
@@ -2009,7 +1990,7 @@ function renderLocationAccuracy() {
                     <td class="text-center font-bold">${item.zone}</td>
                     <td class="text-center">${fmtN(item.checked)}</td>
                     <td class="text-center font-bold" style="color:${item.wrong>0?'var(--brand-red)':'inherit'};">${fmtN(item.wrong)}</td>
-                    <td class="text-center"><span style="background:${accBg}; color:${accClr}; padding:4px 10px; border-radius:4px; font-weight:700;">${item.acc.toFixed(2)}%</span></td>
+                    <td class="text-center"><span style="background:${accBg}; color:${accClr}; padding:2px 8px; border-radius:4px; font-weight:700;">${item.acc.toFixed(2)}%</span></td>
                 </tr>`;
             });
         }
@@ -2019,268 +2000,10 @@ function renderLocationAccuracy() {
         let filteredWrong = filteredArr.reduce((s, i) => s + i.wrong, 0);
         let filteredAcc = filteredChecked > 0 ? ((filteredChecked - filteredWrong) / filteredChecked) * 100 : 0;
         
-        let analysisHtml = `<b>📊 วิเคราะห์ความแม่นยำ Location (เดือน ${mLabelReq}):</b> ภาพรวมความแม่นยำอยู่ที่ <b style="color:${filteredAcc>=99?'var(--brand-green)':'var(--brand-red)'};">${filteredAcc.toFixed(2)}%</b> (ตรวจ ${fmtN(filteredChecked)} จุด พบผิด ${fmtN(filteredWrong)} จุด)`;
-        if (worstZone) analysisHtml += `<br>🚨 <b>จุดเฝ้าระวัง:</b> BU: <b>${worstZone.bu}</b> โซน <b>${worstZone.zone}</b> พบผิด Location สูงสุด <b>${fmtN(worstZone.wrong)} จุด</b> แนะนำให้ตรวจสอบด่วน`;
+        let analysisHtml = `<b>📊 วิเคราะห์ Location (${mLabelReq}):</b> ภาพรวม <b style="color:${filteredAcc>=99?'var(--brand-green)':'var(--brand-red)'};">${filteredAcc.toFixed(2)}%</b> (ตรวจ ${fmtN(filteredChecked)} พบผิด ${fmtN(filteredWrong)} จุด)`;
+        if (worstZone) analysisHtml += `<br>🚨 <b>ระวัง:</b> BU <b>${worstZone.bu}</b> โซน <b>${worstZone.zone}</b> พบผิด Location สูงสุด <b>${fmtN(worstZone.wrong)} จุด</b>`;
         
         locBoxEl.innerHTML = analysisHtml;
-    }
-}
-
-// ----------------------------------------------------
-// TRANSPORT PERFORMANCE 
-// ----------------------------------------------------
-function updateTransportUI() {
-    let tbody = document.querySelector('#new-transport-table tbody');
-    let dailyTbody = document.querySelector('#daily-transport-table tbody');
-    
-    if (!globalData.transport || Object.keys(globalData.transport).length === 0) {
-        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">กำลังรอข้อมูลขนส่งเข้าระบบ...</td></tr>`;
-        if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">กำลังรอข้อมูลขนส่งเข้าระบบ...</td></tr>`;
-        return;
-    }
-    
-    const targetStartObj = safeParseDate(document.getElementById('date-start').value);
-    const targetEndObj = safeParseDate(document.getElementById('date-end').value);
-    const targetStart = targetStartObj.setHours(0, 0, 0, 0);
-    const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
-    const period = document.getElementById('global-period').value;
-    
-    let validDates = Object.keys(globalData.transport).filter(k => {
-        let dTime = safeParseDate(k).getTime(); return !isNaN(dTime) && dTime >= targetStart && dTime <= targetEnd;
-    }).sort((a,b) => safeParseDate(b).getTime() - safeParseDate(a).getTime());
-
-    if (validDates.length === 0) {
-        document.getElementById('tp-kpi-total').innerText = "0"; document.getElementById('tp-kpi-success').innerText = "0"; document.getElementById('tp-kpi-sla').innerText = "0"; document.getElementById('tp-kpi-cost').innerText = "0";
-        document.getElementById('carrier-update-time').innerText = `ช่วงเวลาที่เลือกไม่มีข้อมูล`;
-        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่ง ในช่วงเวลาที่เลือก</td></tr>`;
-        if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลรายละเอียด</td></tr>`;
-        
-        let tcTable = document.getElementById('transport-comparison-table');
-        if(tcTable) tcTable.querySelector('tbody').innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลเปรียบเทียบย้อนหลัง</td></tr>`;
-        return;
-    }
-
-    let aggData = { total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, carriers: {} };
-    let groupedByPeriod = {};
-    
-    validDates.forEach(dateKey => {
-        let dObj = safeParseDate(dateKey);
-        let pLabel = getPeriodLabel(dObj, period);
-        let dayData = globalData.transport[dateKey];
-        
-        aggData.total_orders += dayData.total_orders; aggData.success_orders += dayData.success_orders; aggData.sla_hit += dayData.sla_hit; aggData.total_cost += dayData.total_cost;
-        Object.keys(dayData.carriers || {}).forEach(cName => {
-            if (!aggData.carriers[cName]) aggData.carriers[cName] = { total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0 };
-            aggData.carriers[cName].total_orders += dayData.carriers[cName].total_orders; aggData.carriers[cName].success_orders += dayData.carriers[cName].success_orders; aggData.carriers[cName].sla_hit += dayData.carriers[cName].sla_hit; aggData.carriers[cName].total_cost += dayData.carriers[cName].total_cost;
-        });
-
-        if (!groupedByPeriod[pLabel]) groupedByPeriod[pLabel] = { label: pLabel, time: dObj.getTime(), total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, details: [] };
-        groupedByPeriod[pLabel].total_orders += dayData.total_orders; groupedByPeriod[pLabel].success_orders += dayData.success_orders; groupedByPeriod[pLabel].sla_hit += dayData.sla_hit; groupedByPeriod[pLabel].total_cost += dayData.total_cost;
-        if (dayData.details) Object.values(dayData.details).forEach(d => groupedByPeriod[pLabel].details.push(d));
-    });
-    
-    let startDisp = getDisplayDate(new Date(targetStart)); let endDisp = getDisplayDate(new Date(targetEnd));
-    document.getElementById('carrier-update-time').innerText = `ข้อมูล: ${startDisp} - ${endDisp}`;
-    document.getElementById('tp-kpi-total').innerText = fmtN(aggData.total_orders); document.getElementById('tp-kpi-success').innerText = fmtN(aggData.success_orders); document.getElementById('tp-kpi-sla').innerText = fmtN(aggData.sla_hit); document.getElementById('tp-kpi-cost').innerText = fmtN(aggData.total_cost);
-
-    if(tbody) {
-        let html = "";
-        let carriers = Object.keys(aggData.carriers).sort((a,b) => aggData.carriers[b].total_orders - aggData.carriers[a].total_orders);
-        carriers.forEach(c => {
-            let cd = aggData.carriers[c];
-            let succPct = cd.total_orders > 0 ? (cd.success_orders / cd.total_orders) * 100 : 0; let slaPct = cd.success_orders > 0 ? (cd.sla_hit / cd.success_orders) * 100 : 0;
-            let bar = (pct, clr) => `<div style="display:flex; align-items:center; gap:8px;"><div class="modern-bar-bg" style="height:6px;"><div class="${clr}" style="width:${pct}%;"></div></div><span style="font-size:10px; font-weight:700; width:35px; text-align:right;">${pct.toFixed(1)}%</span></div>`;
-            html += `<tr><td style="font-weight:700;">${c}</td><td class="text-center font-bold">${fmtN(cd.total_orders)}</td><td>${bar(succPct, 'grad-fill-green')}</td><td>${bar(slaPct, 'grad-fill-blue')}</td><td class="text-center text-red font-bold">${fmtN(cd.total_cost)}</td></tr>`;
-        });
-        tbody.innerHTML = html;
-    }
-
-    let chronPeriods = Object.values(groupedByPeriod).sort((a,b) => a.time - b.time); 
-    let htmlHead = `<tr><th style="position:sticky; top:0; left:0; z-index:40; background:var(--bg-card);">วันที่ / Period</th>`;
-    let htmlOrders = `<tr><td class="text-dark font-bold">Orders</td>`;
-    let htmlVehicles = `<tr><td class="text-dark font-bold">จำนวนรถ</td>`;
-    let htmlSucc = `<tr><td class="text-dark font-bold">Succ.%</td>`;
-    let htmlSla = `<tr><td class="text-dark font-bold">SLA Adherence %</td>`;
-    let htmlCost = `<tr><td class="text-dark font-bold">Cost (฿)</td>`;
-    let htmlAccum = `<tr><td class="text-dark font-bold">Accumulate Cost (฿)</td>`;
-
-    let accumCost = 0;
-    let prevP = null;
-
-    chronPeriods.forEach((p, idx) => {
-        let uniquePlates = new Set();
-        p.details.forEach(d => { Object.keys(d.plates).forEach(pl => uniquePlates.add(pl)); });
-        let vCount = uniquePlates.size;
-
-        let succPct = p.total_orders > 0 ? (p.success_orders / p.total_orders * 100) : 0;
-        let slaPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders * 100) : 0;
-        accumCost += p.total_cost; 
-
-        htmlHead += `<th style="position:sticky; top:0; z-index:30; background:var(--bg-card);">${p.label}</th>`;
-        htmlOrders += `<td class="font-bold text-dark">${fmtN(p.total_orders)}</td>`;
-        htmlVehicles += `<td>${fmtN(vCount)}</td>`;
-        htmlSucc += `<td>${succPct.toFixed(1)}%</td>`;
-        htmlSla += `<td>${slaPct.toFixed(1)}%</td>`;
-        htmlCost += `<td class="text-red font-bold">${fmtN(p.total_cost)}</td>`;
-        htmlAccum += `<td class="font-bold text-blue">${fmtN(accumCost)}</td>`;
-
-        if (idx > 0) {
-            htmlHead += `<th class="diff-col text-muted" style="position:sticky; top:0; z-index:20;">เทียบก่อนหน้า</th>`;
-            
-            let diffOrd = p.total_orders - prevP.orders;
-            let diffVeh = vCount - prevP.vehicles;
-            let diffSucc = succPct - prevP.succ;
-            let diffSla = slaPct - prevP.sla;
-            let diffCost = p.total_cost - prevP.cost;
-
-            const fmtDiff = (v, isGoodPositive, isPct = false) => {
-                if (v === 0) return `<td class="diff-col text-right"><span style="background:#f1f5f9; color:#64748b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">- 0</span></td>`;
-                let isGood = isGoodPositive ? (v > 0) : (v < 0);
-                let arrow = v > 0 ? '▲' : '▼';
-                let sign = v > 0 ? '+' : '';
-                let absVal = Math.abs(v);
-                let valStr = isPct ? absVal.toFixed(1) + '%' : fmtN(absVal);
-                let bgClr = isGood ? '#dcfce7' : '#fee2e2';
-                let txtClr = isGood ? '#10B981' : '#EF4444';
-                return `<td class="diff-col text-right"><span style="background:${bgClr}; color:${txtClr}; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-block;">${arrow} ${v > 0 ? '+':'-'}${valStr}</span></td>`;
-            };
-
-            htmlOrders += fmtDiff(diffOrd, true); htmlVehicles += fmtDiff(diffVeh, false); htmlSucc += fmtDiff(diffSucc, true, true);
-            htmlSla += fmtDiff(diffSla, true, true); htmlCost += fmtDiff(diffCost, false); htmlAccum += `<td class="diff-col"></td>`; 
-        }
-        prevP = { orders: p.total_orders, vehicles: vCount, succ: succPct, sla: slaPct, cost: p.total_cost };
-    });
-
-    htmlHead += `</tr>`; htmlOrders += `</tr>`; htmlVehicles += `</tr>`; 
-    htmlSucc += `</tr>`; htmlSla += `</tr>`; htmlCost += `</tr>`; htmlAccum += `</tr>`;
-
-    let tcTable = document.getElementById('transport-comparison-table');
-    if(tcTable) {
-        let thead = tcTable.querySelector('thead');
-        let tbody = tcTable.querySelector('tbody');
-        if(thead) thead.innerHTML = htmlHead;
-        if(tbody) tbody.innerHTML = htmlOrders + htmlVehicles + htmlSucc + htmlSla + htmlCost + htmlAccum;
-    }
-
-    setTimeout(() => {
-        let scroller = document.getElementById('comparison-scroll-container');
-        if(scroller) scroller.scrollLeft = scroller.scrollWidth;
-    }, 400);
-
-    let dailyHtml = "";
-    let sortedPeriods = Object.values(groupedByPeriod).sort((a,b) => b.time - a.time);
-    
-    sortedPeriods.forEach(p => {
-        let succPct = p.total_orders > 0 ? (p.success_orders / p.total_orders * 100).toFixed(1) : 0;
-        let slaPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders * 100).toFixed(1) : 0;
-
-        dailyHtml += `<tr class="summary-row">
-            <td colspan="2" class="font-bold text-dark text-sm">📅 ${p.label} - SUMMARY</td>
-            <td class="text-center font-bold text-sm">-</td>
-            <td class="text-center font-bold text-sm">${fmtN(p.total_orders)}</td>
-            <td><span class="text-green font-bold text-sm">${succPct}%</span></td>
-            <td><span class="text-blue font-bold text-sm">${slaPct}%</span></td>
-            <td class="text-center font-bold text-red text-sm">${fmtN(p.total_cost)} ฿</td>
-        </tr>`;
-
-        // 🌟 FIX: รวมประเภทรถของบริษัทเดียวกันให้เป็นบรรทัดเดียว 🌟
-        let mergedDetails = {};
-        p.details.forEach(d => {
-            let k = d.carrier; 
-            if(!mergedDetails[k]) mergedDetails[k] = { carrier: d.carrier, vTypes: new Set(), total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, plates: {} };
-            let md = mergedDetails[k];
-            if(d.vType && d.vType !== "ไม่ระบุ") md.vTypes.add(d.vType);
-            md.total_orders += d.total_orders; md.success_orders += d.success_orders; md.sla_hit += d.sla_hit; md.total_cost += d.total_cost;
-            Object.keys(d.plates).forEach(pl => md.plates[pl] = true);
-        });
-
-        Object.values(mergedDetails).sort((a,b) => b.total_orders - a.total_orders).forEach(d => {
-            let vehCount = Object.keys(d.plates).length;
-            let dSucc = d.total_orders > 0 ? (d.success_orders / d.total_orders) * 100 : 0;
-            let dSla = d.success_orders > 0 ? (d.sla_hit / d.success_orders) * 100 : 0;
-            let bar = (pct, clr) => `<div style="display:flex; align-items:center; gap:8px;"><div class="modern-bar-bg" style="height:6px;"><div class="${clr}" style="width:${pct}%;"></div></div><span style="font-size:10px; font-weight:700; width:35px; text-align:right;">${pct.toFixed(1)}%</span></div>`;
-            let vTypeDisplay = d.vTypes.size > 0 ? Array.from(d.vTypes).join(', ') : '-';
-
-            dailyHtml += `<tr>
-                <td class="text-muted" style="padding-left:20px;">${p.label}</td>
-                <td><b class="text-dark">${d.carrier}</b><br><span class="text-xs text-muted">ประเภทรถ: ${vTypeDisplay}</span></td>
-                <td class="text-center font-bold text-purple">${vehCount}</td>
-                <td class="text-center font-bold">${fmtN(d.total_orders)}</td>
-                <td>${bar(dSucc, 'grad-fill-green')}</td>
-                <td>${bar(dSla, 'grad-fill-blue')}</td>
-                <td class="text-center text-red font-bold">${fmtN(d.total_cost)}</td>
-            </tr>`;
-        });
-    });
-    if(dailyTbody) dailyTbody.innerHTML = dailyHtml;
-
-    let chartLabels = []; let costData = []; let slaData = []; let targetData = [];
-    let chartPeriods = [...sortedPeriods].reverse(); 
-    
-    chartPeriods.forEach(p => {
-        chartLabels.push(p.label);
-        costData.push(p.total_cost);
-        let sPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders) * 100 : 0;
-        slaData.push(parseFloat(sPct.toFixed(2)));
-        targetData.push(98); 
-    });
-
-    if (typeof transportTrendChartInstance !== 'undefined' && transportTrendChartInstance) {
-        let tpMetric = document.getElementById('tp-metric-filter')?.value || 'BOTH';
-        let datasets = [];
-
-        if (tpMetric === 'BOTH' || tpMetric === 'SLA') {
-            datasets.push({
-                type: 'line', label: 'SLA Target (98%)', data: targetData, borderColor: '#F59E0B', borderDash: [5, 5], borderWidth: 2, pointRadius: 0, yAxisID: 'y', fill: false, order: 1
-            });
-            datasets.push({
-                type: 'bar', label: 'SLA Adherence (%)', data: slaData,
-                backgroundColor: (ctx) => {
-                    return ctx.raw >= 98 ? '#10B981' : '#EF4444'; // FIX: สีแท่งกราฟแบบ Solid เพื่อความน่าเชื่อถือ
-                },
-                borderRadius: 2, borderSkipped: false, barThickness: 16, yAxisID: 'y', order: 3
-            });
-        }
-        if (tpMetric === 'BOTH' || tpMetric === 'COST') {
-            datasets.push({
-                type: 'line', label: 'Cost (฿)', data: costData,
-                borderColor: '#8B5CF6', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderWidth: 3, pointRadius: 5, tension: 0.4, yAxisID: 'y1', fill: true, order: 2
-            });
-        }
-
-        transportTrendChartInstance.data.labels = chartLabels;
-        transportTrendChartInstance.data.datasets = datasets;
-        transportTrendChartInstance.options.scales.y.display = (tpMetric === 'BOTH' || tpMetric === 'SLA');
-        transportTrendChartInstance.options.scales.y1.display = (tpMetric === 'BOTH' || tpMetric === 'COST');
-        transportTrendChartInstance.update();
-    }
-
-    let trendSummaryBox = document.getElementById('tp-trend-summary');
-    if (trendSummaryBox && chartPeriods.length > 0) {
-        let latestCost = costData[costData.length - 1] || 0;
-        let prevCost = costData.length > 1 ? costData[costData.length - 2] : 0;
-        let latestSla = slaData[slaData.length - 1] || 0;
-        
-        let diff = latestCost - prevCost;
-        let diffPct = prevCost > 0 ? (diff / prevCost) * 100 : 0;
-        let diffHtml = "";
-        
-        if (chartPeriods.length === 1 || prevCost === 0) diffHtml = `<div class="stock-change stock-neutral">- 0.00%</div>`;
-        else if (diff > 0) diffHtml = `<div class="stock-change stock-up">▲ +${fmtN(diff)} ฿ (+${diffPct.toFixed(1)}%)</div>`;
-        else if (diff < 0) diffHtml = `<div class="stock-change stock-down">▼ ${fmtN(Math.abs(diff))} ฿ (${diffPct.toFixed(1)}%)</div>`;
-        else diffHtml = `<div class="stock-change stock-neutral">- 0.00%</div>`;
-        
-        let slaStatus = latestSla >= 98 ? `<span class="text-green font-bold">🎯 SLA: ${latestSla.toFixed(1)}% (Pass)</span>` : `<span class="text-red font-bold">⚠️ SLA: ${latestSla.toFixed(1)}% (Fail)</span>`;
-        
-        // 🌟 FIX: โชว์ Total Cost แบบ MTD 🌟
-        trendSummaryBox.innerHTML = `
-            <div class="stock-val-wrap">
-                <span class="stock-label">Total Cost (Period / MTD)</span>
-                <span class="stock-price">฿ ${fmtN(aggData.total_cost)}</span>
-                <div class="mt-10">${slaStatus}</div>
-            </div>
-            <div>${diffHtml}</div>
-        `;
     }
 }
 
@@ -2295,7 +2018,7 @@ function renderProductivitySection() {
         let uMap = globalData.prod_users_map || {};
 
         if (Object.keys(pUsers).length === 0) {
-            let msg = `<tr><td colspan="100%" class="text-center text-muted" style="padding:30px;">ไม่มีข้อมูล Productivity ในระบบ</td></tr>`;
+            let msg = `<tr><td colspan="100%" class="text-center text-muted" style="padding:20px;">ไม่มีข้อมูล Productivity</td></tr>`;
             if(document.getElementById('prod-area-table')) document.getElementById('prod-area-table').innerHTML = msg;
             if(document.getElementById('prod-user-table')) document.getElementById('prod-user-table').innerHTML = msg;
             if(document.getElementById('prod-overall-table')) document.getElementById('prod-overall-table').innerHTML = msg;
@@ -2308,16 +2031,14 @@ function renderProductivitySection() {
         const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
         
         let areaFilterEl = document.getElementById('prod-area-filter');
+        let zoneFilterEl = document.getElementById('prod-zone-filter');
         let selectedArea = areaFilterEl ? areaFilterEl.value : 'ALL';
+        let selectedZone = zoneFilterEl ? zoneFilterEl.value : 'ALL';
         let period = document.getElementById('global-period').value;
-
-        if (areaFilterEl && !areaFilterEl.hasAttribute('data-bound')) {
-            areaFilterEl.addEventListener('change', renderProductivitySection);
-            areaFilterEl.setAttribute('data-bound', 'true');
-        }
 
         let grouped = {};
         let allAreasList = new Set();
+        let allZonesList = new Set();
         let activeDates = new Set([...Object.keys(pUsers), ...Object.keys(pAreas), ...Object.keys(pZones)]);
 
         let validDates = Array.from(activeDates)
@@ -2329,13 +2050,13 @@ function renderProductivitySection() {
             .sort((a,b) => a.time - b.time);
 
         if(validDates.length === 0) {
-            let msg = `<tr><td colspan="100%" class="text-center text-muted" style="padding:30px;">ไม่มีข้อมูลในช่วงเวลาที่เลือก</td></tr>`;
+            let msg = `<tr><td colspan="100%" class="text-center text-muted" style="padding:20px;">ไม่มีข้อมูลในช่วงเวลาที่เลือก</td></tr>`;
             if(document.getElementById('prod-area-table')) document.getElementById('prod-area-table').innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูล</th></tr></thead><tbody>${msg}</tbody>`;
             if(document.getElementById('prod-user-table')) document.getElementById('prod-user-table').innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูล</th></tr></thead><tbody>${msg}</tbody>`;
             if(document.getElementById('prod-overall-table')) document.getElementById('prod-overall-table').innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูล</th></tr></thead><tbody>${msg}</tbody>`;
             if(productivityChartInstance) { productivityChartInstance.data.labels = []; productivityChartInstance.update(); }
             const summaryEl = document.getElementById('prod-summary-box');
-            if(summaryEl) { summaryEl.innerHTML = '💡 ไม่มีข้อมูลในช่วงเวลาที่เลือก'; summaryEl.className = 'info-alert alert-yellow mb-20 mt-10'; }
+            if(summaryEl) { summaryEl.innerHTML = '💡 ไม่มีข้อมูลในช่วงเวลาที่เลือก'; summaryEl.className = 'info-alert alert-yellow mb-10 mt-10'; }
             return;
         }
 
@@ -2347,6 +2068,7 @@ function renderProductivitySection() {
 
             if (pZones[dKey]) {
                 Object.keys(pZones[dKey]?.zones || {}).forEach(zName => {
+                    if(zName && zName !== "N/A" && zName !== "") allZonesList.add(zName);
                     let z = pZones[dKey].zones[zName];
                     if (!grouped[groupKey].zones[zName]) grouped[groupKey].zones[zName] = { sumProd: 0, cnt: 0, area: z.area || 'N/A' };
                     grouped[groupKey].zones[zName].sumProd += (z.sumProd || 0);
@@ -2383,9 +2105,9 @@ function renderProductivitySection() {
             }
         });
 
-        if (areaFilterEl && areaFilterEl.options.length <= 1) {
-            Array.from(allAreasList).sort().forEach(a => areaFilterEl.appendChild(new Option(a, a)));
-        }
+        // Populate Dropdowns
+        if (areaFilterEl && areaFilterEl.options.length <= 1) { Array.from(allAreasList).sort().forEach(a => areaFilterEl.appendChild(new Option(a, a))); }
+        if (zoneFilterEl && zoneFilterEl.options.length <= 1) { Array.from(allZonesList).sort().forEach(z => zoneFilterEl.appendChild(new Option(z, z))); }
 
         let sortedGroups = Object.values(grouped).sort((a,b) => a.time - b.time);
         let chartSlice = sortedGroups;
@@ -2410,8 +2132,13 @@ function renderProductivitySection() {
                 let uph = 0;
                 let gt = getTarget(selectedArea, groupDateStr(g)); 
 
-                if (selectedArea === 'ALL') { let nb = nonBulkTotals(g); uph = nb.hours > 0 ? Math.round(nb.picks / nb.hours) : 0; } 
-                else if (g.areas[selectedArea]) { uph = g.areas[selectedArea].hours > 0 ? Math.round(g.areas[selectedArea].picks / g.areas[selectedArea].hours) : 0; }
+                if (selectedZone !== 'ALL' && g.zones[selectedZone]) {
+                    uph = g.zones[selectedZone].cnt > 0 ? Math.round(g.zones[selectedZone].sumProd / g.zones[selectedZone].cnt) : 0;
+                } else if (selectedArea !== 'ALL' && g.areas[selectedArea]) { 
+                    uph = g.areas[selectedArea].hours > 0 ? Math.round(g.areas[selectedArea].picks / g.areas[selectedArea].hours) : 0; 
+                } else {
+                    let nb = nonBulkTotals(g); uph = nb.hours > 0 ? Math.round(nb.picks / nb.hours) : 0;
+                }
 
                 dataActual.push(uph); 
                 dataTarget.push(gt); 
@@ -2422,7 +2149,7 @@ function renderProductivitySection() {
                 {
                     type: 'bar', label: 'Target', data: dataTarget,
                     backgroundColor: 'rgba(226, 232, 240, 0.8)',
-                    barPercentage: 0.6, categoryPercentage: 0.8
+                    barPercentage: 0.5, categoryPercentage: 0.8
                 },
                 {
                     type: 'bar', label: 'Actual UPH', data: dataActual,
@@ -2431,7 +2158,7 @@ function renderProductivitySection() {
                         let target = dataTarget[ctx.dataIndex];
                         return actual >= target ? '#10B981' : '#EF4444'; 
                     },
-                    barPercentage: 0.6, categoryPercentage: 0.8
+                    barPercentage: 0.5, categoryPercentage: 0.8
                 }
             ];
             productivityChartInstance.update();
@@ -2443,21 +2170,33 @@ function renderProductivitySection() {
         const summaryEl = document.getElementById('prod-summary-box');
         if (summaryEl) {
             let uph = 0, pks = 0, hrs = 0;
-            if (selectedArea === 'ALL') { let nb = nonBulkTotals(latest); uph = nb.hours > 0 ? Math.round(nb.picks / nb.hours) : 0; pks = nb.picks; hrs = nb.hours; } 
-            else if (latest.areas[selectedArea]) { uph = latest.areas[selectedArea].hours > 0 ? Math.round(latest.areas[selectedArea].picks / latest.areas[selectedArea].hours) : 0; pks = latest.areas[selectedArea].picks; hrs = latest.areas[selectedArea].hours; }
+            if (selectedZone !== 'ALL' && latest.zones[selectedZone]) {
+                uph = latest.zones[selectedZone].cnt > 0 ? Math.round(latest.zones[selectedZone].sumProd / latest.zones[selectedZone].cnt) : 0;
+                pks = 0; hrs = 0; // ไม่มีข้อมูลชั่วโมงรายโซน
+            } else if (selectedArea !== 'ALL' && latest.areas[selectedArea]) { 
+                uph = latest.areas[selectedArea].hours > 0 ? Math.round(latest.areas[selectedArea].picks / latest.areas[selectedArea].hours) : 0; 
+                pks = latest.areas[selectedArea].picks; hrs = latest.areas[selectedArea].hours; 
+            } else {
+                let nb = nonBulkTotals(latest); uph = nb.hours > 0 ? Math.round(nb.picks / nb.hours) : 0; pks = nb.picks; hrs = nb.hours;
+            }
             
             let gap = uph - currentTarget;
             let statusHtml = gap >= 0 ? `<span class="text-green font-bold">(สูงกว่าเป้า +${gap})</span>` : `<span class="text-red font-bold">(ต่ำกว่าเป้า ${Math.abs(gap)})</span>`;
             let costPerPick = uph > 0 ? (hourlyRate / uph) : 0;
+            let displayFilter = selectedZone !== 'ALL' ? `Zone: ${selectedZone}` : (selectedArea !== 'ALL' ? `Area: ${selectedArea}` : `ภาพรวม ALL`);
             
-            summaryEl.innerHTML = `💡 ภาพรวมล่าสุด (${latest.label}): พื้นที่ ${selectedArea} ความเร็วเฉลี่ย <b class="text-dark">${uph} UPH</b> ${statusHtml} <br><span class="text-muted text-xs">(หยิบ ${fmtN(Math.round(pks))} รายการ / ${hrs.toFixed(1)} ชม.)</span> <span style="margin-left:15px; padding-left:15px; border-left:1px solid var(--border-color); color:var(--text-dark);">💰 Cost per Pick: <span class="text-blue text-lg">${costPerPick.toFixed(2)} ฿</span></span>`;
-            summaryEl.className = uph >= currentTarget ? 'info-alert alert-green mb-20 mt-10' : 'info-alert alert-red mb-20 mt-10';
+            summaryEl.innerHTML = `💡 ภาพรวม (${latest.label}): ${displayFilter} <b class="text-dark">${uph} UPH</b> ${statusHtml} <br><span class="text-muted text-xs">(หยิบ ${fmtN(Math.round(pks))} รายการ / ${hrs.toFixed(1)} ชม.)</span> <span style="margin-left:15px; padding-left:15px; border-left:1px solid var(--border-color); color:var(--text-dark);">💰 Cost per Pick: <span class="text-blue text-lg">${costPerPick.toFixed(2)} ฿</span></span>`;
+            summaryEl.className = uph >= currentTarget ? 'info-alert alert-green mb-10 mt-10' : 'info-alert alert-red mb-10 mt-10';
         }
 
         const areaTableEl = document.getElementById('prod-area-table');
         if (areaTableEl) {
             let zoneObj = latest.zones || {};
-            let zoneNames = Object.keys(zoneObj).sort((a, b) => {
+            let zoneNames = Object.keys(zoneObj).filter(z => {
+                if (selectedZone !== 'ALL' && z !== selectedZone) return false;
+                if (selectedArea !== 'ALL' && zoneObj[z].area !== selectedArea) return false;
+                return true;
+            }).sort((a, b) => {
                 let pa = zoneObj[a].cnt > 0 ? zoneObj[a].sumProd / zoneObj[a].cnt : 0;
                 let pb = zoneObj[b].cnt > 0 ? zoneObj[b].sumProd / zoneObj[b].cnt : 0;
                 return pb - pa;
@@ -2482,7 +2221,7 @@ function renderProductivitySection() {
                     html += `<tr>
                         <td class="font-bold text-dark" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${z}</td>
                         <td class="text-center text-muted">${zd.area || '-'}</td>
-                        <td class="text-center"><span style="background:${prod>=trg?'#dcfce7':'#fee2e2'}; color:${prod>=trg?'#166534':'#991b1b'}; padding:4px 10px; border-radius:4px; font-weight:700;">${prod}</span></td>
+                        <td class="text-center"><span style="background:${prod>=trg?'#dcfce7':'#fee2e2'}; color:${prod>=trg?'#166534':'#991b1b'}; padding:2px 8px; border-radius:4px; font-weight:700;">${prod}</span></td>
                         <td class="text-center font-bold" style="color:${gap>=0?'var(--brand-green)':'var(--brand-red)'}">${gap > 0 ? '+'+gap : gap}</td>
                         <td class="text-center font-bold text-blue">${cost.toFixed(2)}</td>
                     </tr>`;
@@ -2493,7 +2232,12 @@ function renderProductivitySection() {
 
         const userTableEl = document.getElementById('prod-user-table');
         if (userTableEl) {
-            let users = Object.keys(latest.users || {}).sort((a, b) => {
+            let users = Object.keys(latest.users || {}).filter(u => {
+                let d = latest.users[u];
+                if (selectedZone !== 'ALL' && d.zone !== selectedZone) return false;
+                if (selectedArea !== 'ALL' && d.area !== selectedArea) return false;
+                return true;
+            }).sort((a, b) => {
                 let uphA = latest.users[a].hours > 0 ? latest.users[a].picks / latest.users[a].hours : 0;
                 let uphB = latest.users[b].hours > 0 ? latest.users[b].picks / latest.users[b].hours : 0;
                 return uphB - uphA;
@@ -2503,7 +2247,7 @@ function renderProductivitySection() {
                 <th style="position:sticky; left:0; z-index:20;">Name (ID)</th><th class="text-center">Picks</th><th class="text-center">Hours</th><th class="text-center">UPH</th><th class="text-center text-blue">Cost/Pick (฿)</th>
             </tr></thead><tbody>`;
             
-            if(users.length === 0) { html += `<tr><td colspan="5" class="text-center text-muted">ไม่มีข้อมูลพนักงาน</td></tr>`; } 
+            if(users.length === 0) { html += `<tr><td colspan="5" class="text-center text-muted">ไม่มีข้อมูลพนักงานตามเงื่อนไข</td></tr>`; } 
             else {
                 users.forEach(u => {
                     let d = latest.users[u];
@@ -2551,48 +2295,4 @@ function renderProductivitySection() {
     } catch (e) { console.error("Productivity Render Error:", e); }
 }
 
-// 🌟 เรียกใช้ Dashboard ครั้งแรก 🌟
-document.addEventListener('DOMContentLoaded', () => {
-    initDashboard();
-});
-// ==========================================
-// ฟังก์ชันสำหรับระบบ Key Incidents Alerts
-// ==========================================
-function generateExecutiveAlerts(targetEnd, latestD, totalLate, maxOverallDelay, diffDays, worstBU) {
-    const alertBox = document.getElementById('smart-alerts-container');
-    if (!alertBox) return;
-    
-    let alertsHtml = "";
-    let hasAlert = false;
-
-    if (diffDays > 0) {
-        alertsHtml += `<div class="info-alert alert-yellow">⚠️ <b>Outdated Data:</b> ข้อมูลล่าสุดคือวันที่ ${latestD} (ล่าช้า ${diffDays} วัน)</div>`;
-        hasAlert = true;
-    }
-    if (totalLate > 0) {
-        alertsHtml += `<div class="info-alert alert-red">🚨 <b>SLA Breach:</b> พบออเดอร์หลุดเวลาการทำรอบ (Late Orders) จำนวน ${fmtN(totalLate)} บิล</div>`;
-        hasAlert = true;
-    }
-    if (maxOverallDelay > 0) {
-        alertsHtml += `<div class="info-alert alert-red">⏱️ <b>Process Delay:</b> พบความล่าช้าในกระบวนการทำงานสูงสุดที่ BU: ${worstBU} (${Math.floor(maxOverallDelay/60)}h ${maxOverallDelay % 60}m)</div>`;
-        hasAlert = true;
-    }
-    
-    if (!hasAlert) {
-        alertsHtml = `<div class="info-alert alert-green" style="justify-content: center;">✅ <b>All Systems Normal:</b> ข้อมูลปกติ ไม่พบความล่าช้าในรอบบิลปัจจุบัน</div>`;
-    }
-    
-    alertBox.innerHTML = alertsHtml;
-}
-
-// ==========================================
-// ฟังก์ชันสำหรับปุ่มทางลัด (Quick Navigation)
-// ==========================================
-function scrollToSection(elementId) {
-    const el = document.getElementById(elementId);
-    if (el) {
-        const container = el.closest('.card') || el.closest('section') || el;
-        const y = container.getBoundingClientRect().top + window.scrollY - 140; 
-        window.scrollTo({ top: y, behavior: 'smooth' });
-    }
-}
+document.addEventListener('DOMContentLoaded', () => { initDashboard(); });
