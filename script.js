@@ -2474,6 +2474,50 @@ function renderProductivitySection() {
 
     } catch (e) { console.error("Productivity Render Error:", e); }
 }
+// ==========================================
+// ฟังก์ชันสำหรับระบบ Key Incidents Alerts
+// ==========================================
+function generateExecutiveAlerts(targetEnd, latestD, totalLate, maxOverallDelay, diffDays, worstBU) {
+    const alertBox = document.getElementById('smart-alerts-container');
+    if (!alertBox) return;
+    
+    let alertsHtml = "";
+    let hasAlert = false;
+
+    if (diffDays > 0) {
+        alertsHtml += `<div class="info-alert alert-yellow">⚠️ <b>Outdated Data:</b> ข้อมูลล่าสุดคือวันที่ ${latestD} (ล่าช้า ${diffDays} วัน)</div>`;
+        hasAlert = true;
+    }
+    if (totalLate > 0) {
+        alertsHtml += `<div class="info-alert alert-red">🚨 <b>SLA Breach:</b> พบออเดอร์หลุดเวลาการทำรอบ (Late Orders) จำนวน ${fmtN(totalLate)} บิล</div>`;
+        hasAlert = true;
+    }
+    if (maxOverallDelay > 0) {
+        alertsHtml += `<div class="info-alert alert-red">⏱️ <b>Process Delay:</b> พบความล่าช้าในกระบวนการทำงานสูงสุดที่ BU: ${worstBU} (${Math.floor(maxOverallDelay/60)}h ${maxOverallDelay % 60}m)</div>`;
+        hasAlert = true;
+    }
+    
+    // ถ้าไม่มีปัญหาอะไรเลย
+    if (!hasAlert) {
+        alertsHtml = `<div class="info-alert alert-green" style="justify-content: center;">✅ <b>All Systems Normal:</b> ข้อมูลปกติ ไม่พบความล่าช้าในรอบบิลปัจจุบัน</div>`;
+    }
+    
+    alertBox.innerHTML = alertsHtml;
+}
+
+// ==========================================
+// ฟังก์ชันสำหรับปุ่มทางลัด (Quick Navigation)
+// ==========================================
+function scrollToSection(elementId) {
+    const el = document.getElementById(elementId);
+    if (el) {
+        // หา parent ที่เป็นกล่อง card หรือ section เพื่อเลื่อนให้พอดี ไม่โดน Header บัง
+        const container = el.closest('.card') || el.closest('section') || el;
+        // หักลบ Header ที่ Fix ไว้ (ประมาณ 140px)
+        const y = container.getBoundingClientRect().top + window.scrollY - 140; 
+        window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+}
 // เพิ่มโค้ดนี้ไว้บรรทัดล่างสุดของ script.js
 document.addEventListener('DOMContentLoaded', () => {
     initDashboard();
