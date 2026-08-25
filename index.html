@@ -429,30 +429,40 @@
             </div>
         </section>
 
-        <section class="card mb-30" style="overflow:visible;">
-            <div class="card" style="overflow: hidden;">
-                <h3 class="panel-title">LOCATION ACCURACY & ANALYSIS</h3>
-                
-                <!-- 🌟 โซน Filter แบบ Checkbox (รองรับเลือกหลายรายการ) 🌟 -->
-                <div style="background:var(--bg-body); padding:12px; border-radius:6px; margin-top:10px; margin-bottom:10px; font-size:0.85rem; border:1px solid var(--border-color);">
-                    <div style="display:flex; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
-                        <span class="font-bold text-dark" style="width:50px;">BU:</span>
-                        <span id="loc-bu-checkboxes" style="display:flex; flex-wrap:wrap; gap:10px;"></span>
+        <!-- 🌟 แก้ไข: ยุบ Card ซ้อน Card ให้เหลืออันเดียว และปรับ overflow เป็น visible เพื่อให้ Dropdown ไม่โดนตัด 🌟 -->
+        <section class="card mb-30" style="overflow: visible;">
+            <h3 class="panel-title">LOCATION ACCURACY & ANALYSIS</h3>
+            
+            <!-- 🌟 โซน Filter แบบ Dropdown (ซ่อน Checkbox ไว้ข้างใน) 🌟 -->
+            <div style="display:flex; gap:12px; margin-top:10px; margin-bottom:12px;">
+                <div style="position: relative;">
+                    <div class="filter-control select-dropdown" style="width: 140px; background:var(--bg-body);" onclick="toggleLocFilter('loc-bu-menu')">
+                        <span id="loc-bu-text" style="font-weight:600; font-size:0.75rem;">BU: All</span>
+                        <span class="dropdown-arrow">▼</span>
                     </div>
-                    <div style="display:flex; align-items:center; flex-wrap:wrap;">
-                        <span class="font-bold text-dark" style="width:50px;">Zone:</span>
-                        <span id="loc-zone-checkboxes" style="display:flex; flex-wrap:wrap; gap:10px;"></span>
+                    <div id="loc-bu-menu" class="dropdown-card" style="position:absolute; top:100%; left:0; width: 160px; z-index: 100;">
+                        <div id="loc-bu-checkboxes" class="checkbox-container"></div>
                     </div>
                 </div>
 
-                <div id="loc-analysis-box" class="info-alert mt-10">💡 กำลังวิเคราะห์...</div>
-                
-                <!-- 🌟 ล็อคความสูงและใส่ Scrollbar 🌟 -->
-                <div class="table-scroll-wrap mt-10" style="max-height: 220px;">
-                    <table class="data-table" id="loc-accuracy-table">
-                        <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
-                    </table>
+                <div style="position: relative;">
+                    <div class="filter-control select-dropdown" style="width: 150px; background:var(--bg-body);" onclick="toggleLocFilter('loc-zone-menu')">
+                        <span id="loc-zone-text" style="font-weight:600; font-size:0.75rem;">Zone: All</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div id="loc-zone-menu" class="dropdown-card" style="position:absolute; top:100%; left:0; width: 260px; z-index: 100;">
+                        <div id="loc-zone-checkboxes" class="checkbox-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;"></div>
+                    </div>
                 </div>
+            </div>
+
+            <div id="loc-analysis-box" class="info-alert mt-10">💡 กำลังวิเคราะห์...</div>
+            
+            <!-- 🌟 ล็อคความสูงและใส่ Scrollbar 🌟 -->
+            <div class="table-scroll-wrap mt-10" style="max-height: 220px;">
+                <table class="data-table" id="loc-accuracy-table">
+                    <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
+                </table>
             </div>
         </section>
 
