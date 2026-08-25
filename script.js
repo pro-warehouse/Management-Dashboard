@@ -1291,7 +1291,7 @@ function updateTransportUI() {
         carriers.forEach(c => {
             let cd = aggData.carriers[c];
             let succPct = cd.total_orders > 0 ? (cd.success_orders / cd.total_orders) * 100 : 0; let slaPct = cd.success_orders > 0 ? (cd.sla_hit / cd.success_orders) * 100 : 0;
-            let bar = (pct, clr) => `<div style="display:flex; align-items:center; gap:8px;"><div class="modern-bar-bg" style="height:6px;"><div class="${clr}" style="width:${pct}%;"></div></div><span style="font-size:10px; font-weight:700; width:35px; text-align:right;">${pct.toFixed(1)}%</span></div>`;
+            let bar = (pct, clr) => `<div style="display:flex; align-items:center; gap:8px;"><div class="modern-bar-bg" style="height:6px; flex-grow:1;"><div class="${clr}" style="width:${pct}%;"></div></div><span style="font-size:10px; font-weight:700; width:35px; text-align:right;">${pct.toFixed(1)}%</span></div>`;
             html += `<tr><td style="font-weight:600;">${c}</td><td class="text-center font-bold">${fmtN(cd.total_orders)}</td><td>${bar(succPct, 'grad-fill-green')}</td><td>${bar(slaPct, 'grad-fill-blue')}</td><td class="text-center text-red font-bold">${fmtN(cd.total_cost)}</td></tr>`;
         });
         tbody.innerHTML = html;
@@ -1306,8 +1306,7 @@ function updateTransportUI() {
     let htmlCost = `<tr><td class="text-dark font-bold">Cost (฿)</td>`;
     let htmlAccum = `<tr><td class="text-dark font-bold">Accumulate Cost (฿)</td>`;
 
-    let accumCost = 0;
-    let prevP = null;
+    let accumCost = 0; let prevP = null;
 
     chronPeriods.forEach((p, idx) => {
         let uniquePlates = new Set();
@@ -1328,21 +1327,15 @@ function updateTransportUI() {
 
         if (idx > 0) {
             htmlHead += `<th class="diff-col text-muted" style="position:sticky; top:0; z-index:20;">เทียบก่อนหน้า</th>`;
-            
-            let diffOrd = p.total_orders - prevP.orders;
-            let diffVeh = vCount - prevP.vehicles;
-            let diffSucc = succPct - prevP.succ;
-            let diffSla = slaPct - prevP.sla;
-            let diffCost = p.total_cost - prevP.cost;
+            let diffOrd = p.total_orders - prevP.orders; let diffVeh = vCount - prevP.vehicles;
+            let diffSucc = succPct - prevP.succ; let diffSla = slaPct - prevP.sla; let diffCost = p.total_cost - prevP.cost;
 
             const fmtDiff = (v, isGoodPositive, isPct = false) => {
                 if (v === 0) return `<td class="diff-col text-right"><span style="background:#f1f5f9; color:#64748b; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 0.65rem; display: inline-block;">- 0</span></td>`;
                 let isGood = isGoodPositive ? (v > 0) : (v < 0);
-                let arrow = v > 0 ? '▲' : '▼';
-                let absVal = Math.abs(v);
+                let arrow = v > 0 ? '▲' : '▼'; let absVal = Math.abs(v);
                 let valStr = isPct ? absVal.toFixed(1) + '%' : fmtN(absVal);
-                let bgClr = isGood ? '#dcfce7' : '#fee2e2';
-                let txtClr = isGood ? '#10B981' : '#EF4444';
+                let bgClr = isGood ? '#dcfce7' : '#fee2e2'; let txtClr = isGood ? '#10B981' : '#EF4444';
                 return `<td class="diff-col text-right"><span style="background:${bgClr}; color:${txtClr}; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 0.65rem; display: inline-block;">${arrow} ${v > 0 ? '+':'-'}${valStr}</span></td>`;
             };
 
@@ -1352,15 +1345,12 @@ function updateTransportUI() {
         prevP = { orders: p.total_orders, vehicles: vCount, succ: succPct, sla: slaPct, cost: p.total_cost };
     });
 
-    htmlHead += `</tr>`; htmlOrders += `</tr>`; htmlVehicles += `</tr>`; 
-    htmlSucc += `</tr>`; htmlSla += `</tr>`; htmlCost += `</tr>`; htmlAccum += `</tr>`;
+    htmlHead += `</tr>`; htmlOrders += `</tr>`; htmlVehicles += `</tr>`; htmlSucc += `</tr>`; htmlSla += `</tr>`; htmlCost += `</tr>`; htmlAccum += `</tr>`;
 
     let tcTable = document.getElementById('transport-comparison-table');
     if(tcTable) {
-        let thead = tcTable.querySelector('thead');
-        let tbody = tcTable.querySelector('tbody');
-        if(thead) thead.innerHTML = htmlHead;
-        if(tbody) tbody.innerHTML = htmlOrders + htmlVehicles + htmlSucc + htmlSla + htmlCost + htmlAccum;
+        let thead = tcTable.querySelector('thead'); let tbody = tcTable.querySelector('tbody');
+        if(thead) thead.innerHTML = htmlHead; if(tbody) tbody.innerHTML = htmlOrders + htmlVehicles + htmlSucc + htmlSla + htmlCost + htmlAccum;
     }
 
     setTimeout(() => {
@@ -1368,6 +1358,44 @@ function updateTransportUI() {
         if(scroller) scroller.scrollLeft = scroller.scrollWidth;
     }, 400);
 
+    // 🌟 1. ค้นหาประเภทรถ (Vehicle Types) ทั้งหมดที่มีในระบบเพื่อสร้างหัวตารางแนวนอน 🌟
+    let allVTypes = new Set();
+    validDates.forEach(dateKey => {
+        let dayData = globalData.transport[dateKey];
+        if (dayData.details) {
+            Object.values(dayData.details).forEach(d => {
+                let vt = (d.vType && d.vType.trim() !== "" && d.vType !== "ไม่ระบุ") ? d.vType.trim() : "ทั่วไป";
+                allVTypes.add(vt);
+            });
+        }
+    });
+    let vTypeArray = Array.from(allVTypes).sort();
+    if (vTypeArray.length === 0) vTypeArray = ['ทั่วไป'];
+
+    // 🌟 2. อัปเดตหัวตาราง (Thead) ให้มีคอลัมน์ประเภทรออัตโนมัติ 🌟
+    const dailyTable = document.getElementById('daily-transport-table');
+    if (dailyTable) {
+        let theadHtml = `<tr>
+            <th style="position:sticky; top:0; left:0; z-index:20;">วันที่/รอบ</th>
+            <th style="position:sticky; top:0; z-index:15;">บริษัทขนส่ง</th>`;
+        vTypeArray.forEach(vt => {
+            theadHtml += `<th class="text-center text-purple" style="position:sticky; top:0; z-index:15;">${vt}</th>`;
+        });
+        theadHtml += `<th class="text-center" style="position:sticky; top:0; z-index:15;">Total รถ</th>
+            <th class="text-center" style="position:sticky; top:0; z-index:15;">Orders</th>
+            <th style="width:12%; position:sticky; top:0; z-index:15;">Succ.%</th>
+            <th style="width:12%; position:sticky; top:0; z-index:15;">SLA Adherence</th>
+            <th class="text-center" style="position:sticky; top:0; z-index:15;">Cost (฿)</th>
+        </tr>`;
+        let theadEl = dailyTable.querySelector('thead');
+        if(theadEl) {
+            theadEl.innerHTML = theadHtml;
+        } else {
+            dailyTable.innerHTML = `<thead>${theadHtml}</thead><tbody></tbody>`;
+        }
+    }
+
+    // 🌟 3. สร้างข้อมูลใส่ตาราง 🌟
     let dailyHtml = "";
     let sortedPeriods = Object.values(groupedByPeriod).sort((a,b) => b.time - a.time);
     
@@ -1375,8 +1403,11 @@ function updateTransportUI() {
         let succPct = p.total_orders > 0 ? (p.success_orders / p.total_orders * 100).toFixed(1) : 0;
         let slaPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders * 100).toFixed(1) : 0;
 
+        // แถว Summary
         dailyHtml += `<tr class="summary-row">
-            <td colspan="2" class="font-bold text-dark text-sm">📅 ${p.label} - SUMMARY</td>
+            <td colspan="2" class="font-bold text-dark text-sm">📅 ${p.label} - SUMMARY</td>`;
+        vTypeArray.forEach(() => { dailyHtml += `<td class="text-center font-bold text-sm text-muted">-</td>`; });
+        dailyHtml += `
             <td class="text-center font-bold text-sm">-</td>
             <td class="text-center font-bold text-sm">${fmtN(p.total_orders)}</td>
             <td><span class="text-green font-bold text-sm">${succPct}%</span></td>
@@ -1387,24 +1418,38 @@ function updateTransportUI() {
         let mergedDetails = {};
         p.details.forEach(d => {
             let k = d.carrier; 
-            if(!mergedDetails[k]) mergedDetails[k] = { carrier: d.carrier, vTypes: new Set(), total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, plates: {} };
+            if(!mergedDetails[k]) {
+                mergedDetails[k] = { carrier: d.carrier, total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, plates: new Set(), vTypeCounts: {} };
+            }
             let md = mergedDetails[k];
-            if(d.vType && d.vType !== "ไม่ระบุ") md.vTypes.add(d.vType);
+            let vt = (d.vType && d.vType.trim() !== "" && d.vType !== "ไม่ระบุ") ? d.vType.trim() : "ทั่วไป";
+            
+            if (!md.vTypeCounts[vt]) md.vTypeCounts[vt] = new Set();
+            Object.keys(d.plates || {}).forEach(pl => {
+                md.plates.add(pl);
+                md.vTypeCounts[vt].add(pl);
+            });
             md.total_orders += d.total_orders; md.success_orders += d.success_orders; md.sla_hit += d.sla_hit; md.total_cost += d.total_cost;
-            Object.keys(d.plates).forEach(pl => md.plates[pl] = true);
         });
 
         Object.values(mergedDetails).sort((a,b) => b.total_orders - a.total_orders).forEach(d => {
-            let vehCount = Object.keys(d.plates).length;
+            let vehCount = d.plates.size;
             let dSucc = d.total_orders > 0 ? (d.success_orders / d.total_orders) * 100 : 0;
             let dSla = d.success_orders > 0 ? (d.sla_hit / d.success_orders) * 100 : 0;
-            let bar = (pct, clr) => `<div style="display:flex; align-items:center; gap:8px;"><div class="modern-bar-bg" style="height:6px;"><div class="${clr}" style="width:${pct}%;"></div></div><span style="font-size:10px; font-weight:700; width:35px; text-align:right;">${pct.toFixed(1)}%</span></div>`;
-            let vTypeDisplay = d.vTypes.size > 0 ? Array.from(d.vTypes).join(', ') : '-';
+            let bar = (pct, clr) => `<div style="display:flex; align-items:center; gap:8px;"><div class="modern-bar-bg" style="height:6px; flex-grow:1;"><div class="${clr}" style="width:${pct}%;"></div></div><span style="font-size:10px; font-weight:700; width:35px; text-align:right;">${pct.toFixed(1)}%</span></div>`;
 
             dailyHtml += `<tr>
                 <td class="text-muted" style="padding-left:20px;">${p.label}</td>
-                <td><b class="text-dark">${d.carrier}</b><br><span class="text-xs text-muted">ประเภทรถ: ${vTypeDisplay}</span></td>
-                <td class="text-center font-bold text-purple">${vehCount}</td>
+                <td><b class="text-dark">${d.carrier}</b></td>`;
+                
+            // วนลูปใส่คอลัมน์จำนวนรถตามประเภท
+            vTypeArray.forEach(vt => {
+                let cnt = d.vTypeCounts[vt] ? d.vTypeCounts[vt].size : 0;
+                dailyHtml += `<td class="text-center font-bold ${cnt>0 ? 'text-purple' : 'text-muted'}">${cnt>0 ? cnt : '-'}</td>`;
+            });
+
+            dailyHtml += `
+                <td class="text-center font-bold text-dark">${vehCount}</td>
                 <td class="text-center font-bold">${fmtN(d.total_orders)}</td>
                 <td>${bar(dSucc, 'grad-fill-green')}</td>
                 <td>${bar(dSla, 'grad-fill-blue')}</td>
@@ -1440,7 +1485,8 @@ function updateTransportUI() {
                 },
                 borderRadius: 4, 
                 borderSkipped: false, 
-                maxBarThickness: 45, /* ปลดล็อคขนาดตายตัว ให้กราฟยืดหยุ่นตามจำนวนวันที่เลือก (สูงสุด 45px) */
+                barPercentage: 0.6, /* เพิ่มความกว้างแท่งกราฟให้ยืดหยุ่น */
+                categoryPercentage: 0.8,
                 yAxisID: 'y', order: 3
             });
         }
@@ -1449,12 +1495,12 @@ function updateTransportUI() {
                 type: 'line', label: 'Cost (฿)', data: costData,
                 borderColor: '#8B5CF6', 
                 backgroundColor: '#8B5CF6', 
-                borderWidth: 2, /* ลดความหนาของเส้นลงให้ดูเพรียวขึ้น */
-                pointRadius: 3, /* ลดขนาดจุดวงกลม */
+                borderWidth: 2, 
+                pointRadius: 4, 
                 pointHoverRadius: 6,
                 tension: 0.4, 
                 yAxisID: 'y1', 
-                fill: false, /* ปิดการเทสีพื้นหลังสีม่วงทึบๆ เพื่อไม่ให้แย่งซีนแท่งกราฟ */
+                fill: false, /* 🌟 ปิดการเทสีพื้นหลังสีม่วงทึบ 100% 🌟 */
                 order: 2
             });
         }
