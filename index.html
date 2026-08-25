@@ -430,19 +430,29 @@
         </section>
 
         <section class="card mb-30" style="overflow:visible;">
-            <div class="card-head-bar">
-                <h3 class="panel-title m-0">LOCATION ACCURACY & ANALYSIS</h3>
-                <div style="display: flex; gap: 8px; flex-wrap:wrap;">
-                    <select id="loc-bu-filter" class="filter-control" style="width:110px;"><option value="ALL">BU: All</option></select>
-                    <select id="loc-type-filter" class="filter-control" style="width:110px;"><option value="ALL">Type: All</option></select>
-                    <select id="loc-zone-filter" class="filter-control" style="width:110px;"><option value="ALL">Zone: All</option></select>
+            <div class="card" style="overflow: hidden;">
+                <h3 class="panel-title">LOCATION ACCURACY & ANALYSIS</h3>
+                
+                <!-- 🌟 โซน Filter แบบ Checkbox (รองรับเลือกหลายรายการ) 🌟 -->
+                <div style="background:var(--bg-body); padding:12px; border-radius:6px; margin-top:10px; margin-bottom:10px; font-size:0.85rem; border:1px solid var(--border-color);">
+                    <div style="display:flex; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+                        <span class="font-bold text-dark" style="width:50px;">BU:</span>
+                        <span id="loc-bu-checkboxes" style="display:flex; flex-wrap:wrap; gap:10px;"></span>
+                    </div>
+                    <div style="display:flex; align-items:center; flex-wrap:wrap;">
+                        <span class="font-bold text-dark" style="width:50px;">Zone:</span>
+                        <span id="loc-zone-checkboxes" style="display:flex; flex-wrap:wrap; gap:10px;"></span>
+                    </div>
                 </div>
-            </div>
-            <div id="loc-analysis-box" class="info-alert alert-blue mb-10 mt-10">💡 กำลังวิเคราะห์ข้อมูล Location...</div>
-            <div class="table-scroll-wrap max-h-260">
-                <table class="data-table" id="loc-accuracy-table">
-                    <thead><tr><th class="text-center text-muted">Loading Location Data...</th></tr></thead>
-                </table>
+
+                <div id="loc-analysis-box" class="info-alert mt-10">💡 กำลังวิเคราะห์...</div>
+                
+                <!-- 🌟 ล็อคความสูงและใส่ Scrollbar 🌟 -->
+                <div class="table-scroll-wrap mt-10" style="max-height: 220px;">
+                    <table class="data-table" id="loc-accuracy-table">
+                        <thead><tr><th class="text-center text-muted">Loading Data...</th></tr></thead>
+                    </table>
+                </div>
             </div>
         </section>
 
