@@ -229,8 +229,8 @@ function initCharts() {
     
     let ctx8 = document.getElementById('transportTrendChart');
     if(ctx8) transportTrendChartInstance = new Chart(ctx8, { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }, scales: { x: { grid: { display: false } }, y: { type: 'linear', position: 'left', min: 0, max: 105, title: { display: true, text: 'SLA (%)', color: '#3B82F6', font: {weight: 'bold', size: 10} }, grid: { borderDash: [4, 4] } }, y1: { type: 'linear', position: 'right', title: { display: true, text: 'Cost (฿)', color: '#8B5CF6', font: {weight: 'bold', size: 10} }, grid: { display: false }, beginAtZero: true } } }, plugins: [dataLabelPlugin] });
-}
-// 🌟 Plugin พิเศษสำหรับเขียนตัวเลขไว้บนจุดของเส้นกราฟ Total Loss 🌟
+
+    // 🌟 Plugin พิเศษสำหรับเขียนตัวเลขไว้บนจุดของเส้นกราฟ Total Loss 🌟
     const lossLabelPlugin = {
         id: 'lossLabelPlugin',
         afterDatasetsDraw(chart) {
@@ -241,7 +241,7 @@ function initCharts() {
                 const meta = chart.getDatasetMeta(i);
                 meta.data.forEach((point, index) => {
                     const data = dataset.data[index];
-                    if (data !== null && data !== undefined && data !== 0) {
+                    if (data && data > 0) {
                         ctx.fillStyle = '#7F7F7F';
                         ctx.font = 'bold 10px Inter'; 
                         ctx.textAlign = 'center'; 
@@ -269,6 +269,7 @@ function initCharts() {
             plugins: [lossLabelPlugin] // โหลด Plugin เข้าไปในกราฟนี้
         });
     }
+} // <--- จบฟังก์ชัน initCharts() ตรงนี้ครับ
 
 // ==========================================
 // DATA FETCHING & PROCESSING 
@@ -2525,7 +2526,6 @@ function renderInventoryLossUI() {
     const tableEl = document.getElementById('inventory-loss-table');
     if (!tableEl) return;
 
-    // ดึงข้อมูลจริงจาก Backend (Code.gs)
     const lossData = globalData.inventory_loss || [];
 
     if (lossData.length === 0) {
@@ -2550,7 +2550,6 @@ function renderInventoryLossUI() {
         { key: 'stat_mo', title: 'สถานะประจำเดือน', type: 'badge' }
     ];
 
-    // 🌟 1. วาดหัวตารางให้พรีเมียม (สีน้ำเงินเข้มแบบใน Google Sheet)
     let theadHtml = `<tr>
         <th style="position:sticky; top:0; left:0; z-index:30; background:#1F4E78; color:white; min-width:180px; border-right: 1px solid rgba(255,255,255,0.2);">Category</th>
         <th class="text-center" style="position:sticky; top:0; left:180px; z-index:30; background:#1F4E78; color:white; border-right: 2px solid var(--border-color); min-width:60px;">Unit</th>`;
@@ -2561,7 +2560,6 @@ function renderInventoryLossUI() {
     });
     theadHtml += `</tr>`;
 
-    // 🌟 2. วาดข้อมูลแถวให้ดูเนี้ยบขึ้น
     let tbodyHtml = '';
     const formatNumber = (val) => val === null || val === 0 ? '0.00' : val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     
@@ -2581,7 +2579,7 @@ function renderInventoryLossUI() {
                 if(val === 'Over Target') displayVal = `<div style="background:#DC2626; color:white; text-align:center; padding:4px 0; width:100%; font-weight:700;">Over Target</div>`;
                 else if(val === 'Within limits') displayVal = `<div style="background:#16A34A; color:white; text-align:center; padding:4px 0; width:100%; font-weight:700;">Within limits</div>`;
                 else displayVal = '-';
-                cellStyle = 'padding:0; vertical-align:middle;'; // ให้ป้ายสีเต็มกล่อง
+                cellStyle = 'padding:0; vertical-align:middle;'; 
             }
 
             tbodyHtml += `<td style="${cellStyle}">${displayVal}</td>`;
@@ -2607,11 +2605,13 @@ function renderInventoryLossUI() {
 
     tableEl.innerHTML = `<thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody>`;
 
-    // 🌟 3. อัปเดตกล่องสรุปยอด
+    // 🌟 3. อัปเดตกล่องสรุปยอด YTD และ MoM
     const summaryBox = document.getElementById('inv-loss-summary-box');
     if (summaryBox && lossData.length > 0) {
-        let latest = lossData[lossData.length - 1]; 
-        let prev = lossData.length > 1 ? lossData[lossData.length - 2] : null;
+        // หาเดือนล่าสุดที่มีข้อมูลจริงๆ (ยอด loss_mo ไม่เป็น 0)
+        let activeData = lossData.filter(d => d.loss_mo > 0 || d.ship_mo > 0);
+        let latest = activeData.length > 0 ? activeData[activeData.length - 1] : lossData[lossData.length - 1];
+        let prev = activeData.length > 1 ? activeData[activeData.length - 2] : null;
         
         let lossYTD = formatNumber(latest.loss_ytd);
         let lossMo = formatNumber(latest.loss_mo);
@@ -2622,16 +2622,18 @@ function renderInventoryLossUI() {
         let momText = "";
         if (prev && prev.loss_mo !== null && latest.loss_mo !== null) {
             let diff = latest.loss_mo - prev.loss_mo;
-            let arrow = diff > 0 ? '▲' : '▼';
-            let color = diff <= 0 ? 'var(--brand-green)' : 'var(--brand-red)'; 
-            momText = ` <span style="margin-left:8px; padding-left:8px; border-left:1px solid var(--border-color); color:var(--text-dark);">เทียบเดือนก่อน (MoM): <span style="color:${color}; font-weight:700;">${arrow} ${formatNumber(Math.abs(diff))} ฿</span></span>`;
+            if (diff !== 0) {
+                let arrow = diff > 0 ? '▲เพิ่มขึ้น' : '▼ลดลง';
+                let color = diff <= 0 ? 'var(--brand-green)' : 'var(--brand-red)'; 
+                momText = ` <span style="margin-left:12px; padding-left:12px; border-left:1px solid var(--border-color); color:var(--text-dark);">เทียบเดือนก่อน: <span style="color:${color}; font-weight:700;">${arrow} ${formatNumber(Math.abs(diff))} ฿</span></span>`;
+            }
         }
 
-        summaryBox.innerHTML = `💡 <b>อัปเดตยอดสูญเสียล่าสุด (${latest.month}):</b> ยอดสูญเสียสะสม (YTD) รวม <b>${lossYTD} ฿</b> ${statusBadge} | เฉพาะเดือนนี้ <b>${lossMo} ฿</b>${momText}`;
+        summaryBox.innerHTML = `💡 <b>ยอดสูญเสียล่าสุด (${latest.month}):</b> สะสมรวมตั้งแต่ต้นปี (YTD) <b>${lossYTD} ฿</b> ${statusBadge} | เฉพาะเดือนนี้ <b>${lossMo} ฿</b>${momText}`;
         summaryBox.className = latest.stat_ytd === 'Over Target' ? 'info-alert alert-red mt-10' : 'info-alert alert-green mt-10';
     }
 
-    // 🌟 4. อัปเดตกราฟ (ปรับสีพาสเทลตาม Google Sheet เป๊ะๆ)
+    // 🌟 4. อัปเดตกราฟ (ปรับสีพาสเทลตามภาพ Google Sheet)
     if (inventoryLossChartInstance) {
         inventoryLossChartInstance.data.labels = lossData.map(d => d.month);
         inventoryLossChartInstance.data.datasets = [
@@ -2673,7 +2675,6 @@ function renderInventoryLossUI() {
         inventoryLossChartInstance.update();
     }
 }
-
 // ----------------------------------------------------
 // PRODUCTIVITY (Overlay Chart + Area Table with Picker Count)
 // ----------------------------------------------------
