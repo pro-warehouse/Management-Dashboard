@@ -2282,7 +2282,187 @@ function updateInventoryUI() {
     }
 }
 
+// ----------------------------------------------------
+// LOCATION ACCURACY (Pivot Table แนวนอน + Dropdown Checkboxes)
+// ----------------------------------------------------
 function renderLocationAccuracy() {
+    const locTableEl = document.getElementById('loc-accuracy-table');
+    const locBoxEl = document.getElementById('loc-analysis-box');
+    if(!locTableEl || !locBoxEl || !globalData.inventory || Object.keys(globalData.inventory).length === 0) return;
+
+    const targetEndObj = safeParseDate(document.getElementById('date-end').value);
+    let targetM = targetEndObj.getMonth();
+    let targetY = targetEndObj.getFullYear().toString().substring(2);
+    let mLabelReq = shortMonths[targetM] + "-" + targetY;
+    
+    let locStats = globalData.inventory[mLabelReq]?.loc_stats || {};
+
+    if (!locStats || locStats.total === 0) {
+        locTableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูลตรวจ Location ในเดือน ${mLabelReq}</th></tr></thead>`;
+        locBoxEl.innerHTML = `💡 ไม่มีข้อมูลสินค้าวางผิด Location ในเดือน ${mLabelReq}`;
+        return;
+    }
+
+    let rawDetailsArr = [];
+    let typeSet = new Set();
+    let zoneSet = new Set();
+    let buSet = new Set();
+
+    Object.keys(locStats.details || {}).forEach(bu => {
+        buSet.add(bu);
+        Object.keys(locStats.details[bu] || {}).forEach(tz => {
+            let d = locStats.details[bu][tz];
+            let parts = tz.split(" | ");
+            let lType = parts[0]; let zone = parts[1];
+            typeSet.add(lType); zoneSet.add(zone);
+            let acc = d.total > 0 ? ((d.total - d.wrong) / d.total) * 100 : 0;
+            rawDetailsArr.push({ bu: bu, type: lType, zone: zone, checked: d.total, wrong: d.wrong, acc: acc });
+        });
+    });
+
+    // --- 🌟 ระบบสร้าง Dropdown Checkboxes อัตโนมัติ 🌟 ---
+    const createDropdownCheckboxes = (containerId, textId, dataSet, prefix, labelPrefix) => {
+        let container = document.getElementById(containerId);
+        if (!container) return;
+        if (container.innerHTML === "") {
+            let html = `<label class="dropdown-item"><input type="checkbox" id="${prefix}-all" checked> <span class="font-bold text-dark">All</span></label><div class="dropdown-divider"></div>`;
+            Array.from(dataSet).sort().forEach(val => {
+                html += `<label class="dropdown-item"><input type="checkbox" class="${prefix}-cb" value="${val}" checked> ${val}</label>`;
+            });
+            container.innerHTML = html;
+
+            const updateText = () => {
+                let checked = document.querySelectorAll(`.${prefix}-cb:checked`);
+                let textEl = document.getElementById(textId);
+                if (checked.length === dataSet.size) textEl.innerText = `${labelPrefix}: All`;
+                else if (checked.length === 0) textEl.innerText = `${labelPrefix}: None`;
+                else if (checked.length <= 2) textEl.innerText = `${labelPrefix}: ` + Array.from(checked).map(c=>c.value).join(', ');
+                else textEl.innerText = `${labelPrefix}: ${checked.length} Selected`;
+            };
+
+            document.getElementById(`${prefix}-all`).addEventListener('change', (e) => {
+                document.querySelectorAll(`.${prefix}-cb`).forEach(cb => cb.checked = e.target.checked);
+                updateText();
+                renderLocationAccuracy();
+            });
+            document.querySelectorAll(`.${prefix}-cb`).forEach(cb => {
+                cb.addEventListener('change', () => {
+                    let allChecked = document.querySelectorAll(`.${prefix}-cb:checked`).length === dataSet.size;
+                    document.getElementById(`${prefix}-all`).checked = allChecked;
+                    updateText();
+                    renderLocationAccuracy();
+                });
+            });
+        }
+    };
+
+    createDropdownCheckboxes('loc-bu-checkboxes', 'loc-bu-text', buSet, 'loc-bu', 'BU');
+    createDropdownCheckboxes('loc-zone-checkboxes', 'loc-zone-text', zoneSet, 'loc-zone', 'Zone');
+
+    if (!window.locMenuSetupDone) {
+        window.toggleLocFilter = function(menuId) {
+            let menu = document.getElementById(menuId);
+            let isShowing = menu.style.display === 'block';
+            document.getElementById('loc-bu-menu').style.display = 'none';
+            document.getElementById('loc-zone-menu').style.display = 'none';
+            if (!isShowing) menu.style.display = 'block';
+        };
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('#loc-bu-menu') && !event.target.closest('#loc-bu-text') && !event.target.closest('.select-dropdown')) {
+                let m1 = document.getElementById('loc-bu-menu'); if(m1) m1.style.display = 'none';
+            }
+            if (!event.target.closest('#loc-zone-menu') && !event.target.closest('#loc-zone-text') && !event.target.closest('.select-dropdown')) {
+                let m2 = document.getElementById('loc-zone-menu'); if(m2) m2.style.display = 'none';
+            }
+        });
+        window.locMenuSetupDone = true;
+    }
+
+    let selectedBUs = Array.from(document.querySelectorAll('.loc-bu-cb:checked')).map(cb => cb.value);
+    let selectedZones = Array.from(document.querySelectorAll('.loc-zone-cb:checked')).map(cb => cb.value);
+
+    if (selectedBUs.length === 0 && !document.getElementById('loc-bu-checkboxes')?.innerHTML) selectedBUs = Array.from(buSet);
+    if (selectedZones.length === 0 && !document.getElementById('loc-zone-checkboxes')?.innerHTML) selectedZones = Array.from(zoneSet);
+
+    let filteredArr = rawDetailsArr.filter(item => {
+        let passMasterBU = window.selectedBUs.includes('ALL') || window.selectedBUs.includes(item.bu);
+        return passMasterBU && selectedBUs.includes(item.bu) && selectedZones.includes(item.zone);
+    });
+
+    let typeList = Array.from(typeSet).sort();
+    let groupedByBuZone = {};
+    
+    filteredArr.forEach(d => {
+        let key = `${d.bu}_${d.zone}`;
+        if (!groupedByBuZone[key]) {
+            groupedByBuZone[key] = { bu: d.bu, zone: d.zone, types: {}, totalChecked: 0, totalWrong: 0 };
+        }
+        groupedByBuZone[key].types[d.type] = d;
+        groupedByBuZone[key].totalChecked += d.checked;
+        groupedByBuZone[key].totalWrong += d.wrong;
+    });
+
+    let sortedGroups = Object.values(groupedByBuZone).sort((a, b) => b.totalWrong - a.totalWrong);
+
+    let thead = `<thead><tr>
+        <th style="position:sticky; top:0; left:0; z-index:20; min-width:60px;">BU</th>
+        <th class="text-center" style="position:sticky; top:0; left:60px; z-index:20; border-right: 2px solid var(--border-color);">Zone</th>
+        ${typeList.map(t => `<th class="text-center" style="position:sticky; top:0; z-index:15;">${t}</th>`).join('')}
+        <th class="text-center" style="position:sticky; top:0; z-index:15; border-left: 2px solid var(--border-color);">Total Accuracy</th>
+    </tr></thead>`;
+
+    let tbody = "<tbody>";
+    let worstZone = null;
+
+    const formatCell = (d) => {
+        if (!d) return `<span class="text-muted">-</span>`;
+        let accColor = d.acc >= 99 ? 'var(--brand-green)' : 'var(--brand-red)';
+        let wrongText = d.wrong > 0 ? `<span style="color:var(--brand-red); font-weight:700;">ผิด ${fmtN(d.wrong)}</span>` : `<span class="text-muted">ผิด 0</span>`;
+        return `<div style="white-space:nowrap;">
+            <span style="color:${accColor}; font-weight:700;">${d.acc.toFixed(1)}%</span><br>
+            <span class="text-xs">${wrongText} <span class="text-muted">/${fmtN(d.checked)}</span></span>
+        </div>`;
+    };
+
+    if (sortedGroups.length === 0) {
+        tbody += `<tr><td colspan="${typeList.length + 3}" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลตามเงื่อนไขที่กรอง</td></tr>`;
+    } else {
+        sortedGroups.forEach((item, idx) => {
+            if (idx === 0 && item.totalWrong > 0) worstZone = item;
+            
+            let totalAcc = item.totalChecked > 0 ? ((item.totalChecked - item.totalWrong) / item.totalChecked) * 100 : 0;
+            let accBg = totalAcc >= 99 ? '#dcfce7' : '#fee2e2';
+            let accClr = totalAcc >= 99 ? '#166534' : '#991b1b';
+
+            let rowHtml = `<tr>
+                <td class="font-bold text-dark" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${item.bu}</td>
+                <td class="text-center font-bold text-dark" style="position:sticky; left:60px; background:var(--bg-card); z-index:10; border-right: 2px solid var(--border-color);">${item.zone}</td>`;
+            
+            typeList.forEach(t => {
+                rowHtml += `<td class="text-center" style="background:rgba(0,0,0,0.01);">${formatCell(item.types[t])}</td>`;
+            });
+
+            let totalWrongText = item.totalWrong > 0 ? `<span style="color:var(--brand-red); font-weight:700;">ผิด ${fmtN(item.totalWrong)}</span>` : `ผิด 0`;
+            
+            rowHtml += `<td class="text-center" style="border-left: 2px solid var(--border-color); background:rgba(0,0,0,0.02);">
+                    <div style="background:${accBg}; color:${accClr}; padding:2px 8px; border-radius:4px; font-weight:700; display:inline-block; min-width:60px;">${totalAcc.toFixed(1)}%</div><br>
+                    <span class="text-xs" style="margin-top:4px; display:inline-block;">${totalWrongText} <span class="text-muted">/${fmtN(item.totalChecked)}</span></span>
+                </td>
+            </tr>`;
+            tbody += rowHtml;
+        });
+    }
+    locTableEl.innerHTML = thead + tbody + "</tbody>";
+
+    let filteredChecked = sortedGroups.reduce((s, i) => s + i.totalChecked, 0);
+    let filteredWrong = sortedGroups.reduce((s, i) => s + i.totalWrong, 0);
+    let filteredAcc = filteredChecked > 0 ? ((filteredChecked - filteredWrong) / filteredChecked) * 100 : 0;
+    
+    let analysisHtml = `<b>📊 วิเคราะห์ Location (${mLabelReq}):</b> ภาพรวม <b style="color:${filteredAcc>=99?'var(--brand-green)':'var(--brand-red)'};">${filteredAcc.toFixed(2)}%</b> (ตรวจ ${fmtN(filteredChecked)} พบผิด ${fmtN(filteredWrong)} จุด)`;
+    if (worstZone) analysisHtml += `<br>🚨 <b>ระวัง:</b> BU <b>${worstZone.bu}</b> โซน <b>${worstZone.zone}</b> พบผิด Location สูงสุด <b>${fmtN(worstZone.totalWrong)} จุด</b>`;
+    
+    locBoxEl.innerHTML = analysisHtml;
+}
 
 // ----------------------------------------------------
 // PRODUCTIVITY (Overlay Chart + Area Table)
