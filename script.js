@@ -2671,7 +2671,6 @@ function renderProductivitySection() {
                 return true;
             }).sort((a, b) => a.localeCompare(b));
 
-            // 🌟 [แก้ใหม่]: เพิ่มคอลัมน์ Pickers (คน) 🌟
             let html = `<thead><tr>
                 <th style="position:sticky; left:0; z-index:20; background:var(--bg-card); width:20%;">Picking Zone</th>
                 <th class="text-center" style="width:15%;">Area</th>
@@ -2689,13 +2688,22 @@ function renderProductivitySection() {
                     let trg = getTarget(zd.area, latestDateStr);
                     let gap = prod - trg; let cost = prod > 0 ? (hourlyRate / prod) : 0;
 
-                    // 🌟 นับจำนวนพนักงานที่หยิบในโซนนี้ 🌟
-                    let zonePickersCount = Object.keys(latest.users || {}).filter(u => latest.users[u].zone === z).length;
+                    // 🌟 อัปเกรดสูตรนับคน: ฉลาดขึ้น ไม่สนพิมพ์เล็ก/ใหญ่ หรือเว้นวรรค 🌟
+                    let zonePickersCount = Object.keys(latest.users || {}).filter(u => {
+                        let uZone = latest.users[u].zone;
+                        if (!uZone) return false;
+                        
+                        // แปลงเป็นตัวพิมพ์ใหญ่และตัดเว้นวรรคทิ้งทั้งคู่ แล้วค่อยเทียบกัน
+                        let cleanUserZone = String(uZone).trim().toUpperCase();
+                        let cleanTargetZone = String(z).trim().toUpperCase();
+                        
+                        return cleanUserZone.includes(cleanTargetZone) || cleanTargetZone.includes(cleanUserZone);
+                    }).length;
 
                     html += `<tr>
                         <td class="font-bold text-dark" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${z}</td>
                         <td class="text-center text-muted">${zd.area || '-'}</td>
-                        <td class="text-center"><span class="badge-glass" style="background:#F1F5F9; color:#475569; font-weight:700;">${zonePickersCount > 0 ? zonePickersCount + ' คน' : '-'}</span></td>
+                        <td class="text-center"><span class="badge-glass" style="background:#F1F5F9; color:#475569; font-weight:700;">${zonePickersCount} คน</span></td>
                         <td class="text-center"><span style="background:${prod>=trg?'#dcfce7':'#fee2e2'}; color:${prod>=trg?'#166534':'#991b1b'}; padding:2px 8px; border-radius:4px; font-weight:700;">${prod}</span></td>
                         <td class="text-center font-bold" style="color:${gap>=0?'var(--brand-green)':'var(--brand-red)'}">${gap > 0 ? '+'+gap : gap}</td>
                         <td class="text-center font-bold text-blue">${cost.toFixed(2)}</td>
