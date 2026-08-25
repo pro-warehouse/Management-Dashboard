@@ -1220,6 +1220,269 @@ async function initFulfillmentRealtime() {
 }
 
 // ----------------------------------------------------
+// TRANSPORT PERFORMANCE 
+// ----------------------------------------------------
+function updateTransportUI() {
+    let tbody = document.querySelector('#new-transport-table tbody');
+    let dailyTbody = document.querySelector('#daily-transport-table tbody');
+    
+    if (!globalData.transport || Object.keys(globalData.transport).length === 0) {
+        document.getElementById('tp-kpi-total').innerText = "0"; 
+        document.getElementById('tp-kpi-success').innerText = "0"; 
+        document.getElementById('tp-kpi-sla').innerText = "0"; 
+        document.getElementById('tp-kpi-cost').innerText = "0";
+        document.getElementById('tp-trend-summary').innerHTML = '<span class="text-muted text-sm">ไม่มีข้อมูล Transport ในช่วงที่เลือก</span>';
+        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">กำลังรอข้อมูลขนส่งเข้าระบบ...</td></tr>`;
+        if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">กำลังรอข้อมูลขนส่งเข้าระบบ...</td></tr>`;
+        let tcTable = document.getElementById('transport-comparison-table');
+        if(tcTable) tcTable.querySelector('tbody').innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลเปรียบเทียบย้อนหลัง</td></tr>`;
+        if (transportTrendChartInstance) { transportTrendChartInstance.data.labels = []; transportTrendChartInstance.update(); }
+        return;
+    }
+    
+    const targetStartObj = safeParseDate(document.getElementById('date-start').value);
+    const targetEndObj = safeParseDate(document.getElementById('date-end').value);
+    const targetStart = targetStartObj.setHours(0, 0, 0, 0);
+    const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
+    const period = document.getElementById('global-period').value;
+    
+    let validDates = Object.keys(globalData.transport).filter(k => {
+        let dTime = safeParseDate(k).getTime(); return !isNaN(dTime) && dTime >= targetStart && dTime <= targetEnd;
+    }).sort((a,b) => safeParseDate(b).getTime() - safeParseDate(a).getTime());
+
+    if (validDates.length === 0) {
+        document.getElementById('tp-kpi-total').innerText = "0"; document.getElementById('tp-kpi-success').innerText = "0"; document.getElementById('tp-kpi-sla').innerText = "0"; document.getElementById('tp-kpi-cost').innerText = "0";
+        document.getElementById('carrier-update-time').innerText = `ช่วงเวลาที่เลือกไม่มีข้อมูล`;
+        document.getElementById('tp-trend-summary').innerHTML = '<span class="text-muted text-sm">ไม่มีข้อมูล Transport ในช่วงที่เลือก</span>';
+        if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลขนส่ง ในช่วงเวลาที่เลือก</td></tr>`;
+        if(dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลรายละเอียด</td></tr>`;
+        let tcTable = document.getElementById('transport-comparison-table');
+        if(tcTable) tcTable.querySelector('tbody').innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลเปรียบเทียบย้อนหลัง</td></tr>`;
+        if (transportTrendChartInstance) { transportTrendChartInstance.data.labels = []; transportTrendChartInstance.update(); }
+        return;
+    }
+
+    let aggData = { total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, carriers: {} };
+    let groupedByPeriod = {};
+    
+    validDates.forEach(dateKey => {
+        let dObj = safeParseDate(dateKey);
+        let pLabel = getPeriodLabel(dObj, period);
+        let dayData = globalData.transport[dateKey];
+        
+        aggData.total_orders += dayData.total_orders; aggData.success_orders += dayData.success_orders; aggData.sla_hit += dayData.sla_hit; aggData.total_cost += dayData.total_cost;
+        Object.keys(dayData.carriers || {}).forEach(cName => {
+            if (!aggData.carriers[cName]) aggData.carriers[cName] = { total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0 };
+            aggData.carriers[cName].total_orders += dayData.carriers[cName].total_orders; aggData.carriers[cName].success_orders += dayData.carriers[cName].success_orders; aggData.carriers[cName].sla_hit += dayData.carriers[cName].sla_hit; aggData.carriers[cName].total_cost += dayData.carriers[cName].total_cost;
+        });
+
+        if (!groupedByPeriod[pLabel]) groupedByPeriod[pLabel] = { label: pLabel, time: dObj.getTime(), total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, details: [] };
+        groupedByPeriod[pLabel].total_orders += dayData.total_orders; groupedByPeriod[pLabel].success_orders += dayData.success_orders; groupedByPeriod[pLabel].sla_hit += dayData.sla_hit; groupedByPeriod[pLabel].total_cost += dayData.total_cost;
+        if (dayData.details) Object.values(dayData.details).forEach(d => groupedByPeriod[pLabel].details.push(d));
+    });
+    
+    let startDisp = getDisplayDate(new Date(targetStart)); let endDisp = getDisplayDate(new Date(targetEnd));
+    document.getElementById('carrier-update-time').innerText = `ข้อมูล: ${startDisp} - ${endDisp}`;
+    document.getElementById('tp-kpi-total').innerText = fmtN(aggData.total_orders); document.getElementById('tp-kpi-success').innerText = fmtN(aggData.success_orders); document.getElementById('tp-kpi-sla').innerText = fmtN(aggData.sla_hit); document.getElementById('tp-kpi-cost').innerText = fmtN(aggData.total_cost);
+
+    if(tbody) {
+        let html = "";
+        let carriers = Object.keys(aggData.carriers).sort((a,b) => aggData.carriers[b].total_orders - aggData.carriers[a].total_orders);
+        carriers.forEach(c => {
+            let cd = aggData.carriers[c];
+            let succPct = cd.total_orders > 0 ? (cd.success_orders / cd.total_orders) * 100 : 0; let slaPct = cd.success_orders > 0 ? (cd.sla_hit / cd.success_orders) * 100 : 0;
+            let bar = (pct, clr) => `<div style="display:flex; align-items:center; gap:8px;"><div class="modern-bar-bg" style="height:6px;"><div class="${clr}" style="width:${pct}%;"></div></div><span style="font-size:10px; font-weight:700; width:35px; text-align:right;">${pct.toFixed(1)}%</span></div>`;
+            html += `<tr><td style="font-weight:600;">${c}</td><td class="text-center font-bold">${fmtN(cd.total_orders)}</td><td>${bar(succPct, 'grad-fill-green')}</td><td>${bar(slaPct, 'grad-fill-blue')}</td><td class="text-center text-red font-bold">${fmtN(cd.total_cost)}</td></tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    let chronPeriods = Object.values(groupedByPeriod).sort((a,b) => a.time - b.time); 
+    let htmlHead = `<tr><th style="position:sticky; top:0; left:0; z-index:40; background:var(--bg-card);">วันที่ / Period</th>`;
+    let htmlOrders = `<tr><td class="text-dark font-bold">Orders</td>`;
+    let htmlVehicles = `<tr><td class="text-dark font-bold">จำนวนรถ</td>`;
+    let htmlSucc = `<tr><td class="text-dark font-bold">Succ.%</td>`;
+    let htmlSla = `<tr><td class="text-dark font-bold">SLA Adherence %</td>`;
+    let htmlCost = `<tr><td class="text-dark font-bold">Cost (฿)</td>`;
+    let htmlAccum = `<tr><td class="text-dark font-bold">Accumulate Cost (฿)</td>`;
+
+    let accumCost = 0;
+    let prevP = null;
+
+    chronPeriods.forEach((p, idx) => {
+        let uniquePlates = new Set();
+        p.details.forEach(d => { Object.keys(d.plates).forEach(pl => uniquePlates.add(pl)); });
+        let vCount = uniquePlates.size;
+
+        let succPct = p.total_orders > 0 ? (p.success_orders / p.total_orders * 100) : 0;
+        let slaPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders * 100) : 0;
+        accumCost += p.total_cost; 
+
+        htmlHead += `<th style="position:sticky; top:0; z-index:30; background:var(--bg-card);">${p.label}</th>`;
+        htmlOrders += `<td class="font-bold text-dark">${fmtN(p.total_orders)}</td>`;
+        htmlVehicles += `<td>${fmtN(vCount)}</td>`;
+        htmlSucc += `<td>${succPct.toFixed(1)}%</td>`;
+        htmlSla += `<td>${slaPct.toFixed(1)}%</td>`;
+        htmlCost += `<td class="text-red font-bold">${fmtN(p.total_cost)}</td>`;
+        htmlAccum += `<td class="font-bold text-blue">${fmtN(accumCost)}</td>`;
+
+        if (idx > 0) {
+            htmlHead += `<th class="diff-col text-muted" style="position:sticky; top:0; z-index:20;">เทียบก่อนหน้า</th>`;
+            
+            let diffOrd = p.total_orders - prevP.orders;
+            let diffVeh = vCount - prevP.vehicles;
+            let diffSucc = succPct - prevP.succ;
+            let diffSla = slaPct - prevP.sla;
+            let diffCost = p.total_cost - prevP.cost;
+
+            const fmtDiff = (v, isGoodPositive, isPct = false) => {
+                if (v === 0) return `<td class="diff-col text-right"><span style="background:#f1f5f9; color:#64748b; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 0.65rem; display: inline-block;">- 0</span></td>`;
+                let isGood = isGoodPositive ? (v > 0) : (v < 0);
+                let arrow = v > 0 ? '▲' : '▼';
+                let absVal = Math.abs(v);
+                let valStr = isPct ? absVal.toFixed(1) + '%' : fmtN(absVal);
+                let bgClr = isGood ? '#dcfce7' : '#fee2e2';
+                let txtClr = isGood ? '#10B981' : '#EF4444';
+                return `<td class="diff-col text-right"><span style="background:${bgClr}; color:${txtClr}; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 0.65rem; display: inline-block;">${arrow} ${v > 0 ? '+':'-'}${valStr}</span></td>`;
+            };
+
+            htmlOrders += fmtDiff(diffOrd, true); htmlVehicles += fmtDiff(diffVeh, false); htmlSucc += fmtDiff(diffSucc, true, true);
+            htmlSla += fmtDiff(diffSla, true, true); htmlCost += fmtDiff(diffCost, false); htmlAccum += `<td class="diff-col"></td>`; 
+        }
+        prevP = { orders: p.total_orders, vehicles: vCount, succ: succPct, sla: slaPct, cost: p.total_cost };
+    });
+
+    htmlHead += `</tr>`; htmlOrders += `</tr>`; htmlVehicles += `</tr>`; 
+    htmlSucc += `</tr>`; htmlSla += `</tr>`; htmlCost += `</tr>`; htmlAccum += `</tr>`;
+
+    let tcTable = document.getElementById('transport-comparison-table');
+    if(tcTable) {
+        let thead = tcTable.querySelector('thead');
+        let tbody = tcTable.querySelector('tbody');
+        if(thead) thead.innerHTML = htmlHead;
+        if(tbody) tbody.innerHTML = htmlOrders + htmlVehicles + htmlSucc + htmlSla + htmlCost + htmlAccum;
+    }
+
+    setTimeout(() => {
+        let scroller = document.getElementById('comparison-scroll-container');
+        if(scroller) scroller.scrollLeft = scroller.scrollWidth;
+    }, 400);
+
+    let dailyHtml = "";
+    let sortedPeriods = Object.values(groupedByPeriod).sort((a,b) => b.time - a.time);
+    
+    sortedPeriods.forEach(p => {
+        let succPct = p.total_orders > 0 ? (p.success_orders / p.total_orders * 100).toFixed(1) : 0;
+        let slaPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders * 100).toFixed(1) : 0;
+
+        dailyHtml += `<tr class="summary-row">
+            <td colspan="2" class="font-bold text-dark text-sm">📅 ${p.label} - SUMMARY</td>
+            <td class="text-center font-bold text-sm">-</td>
+            <td class="text-center font-bold text-sm">${fmtN(p.total_orders)}</td>
+            <td><span class="text-green font-bold text-sm">${succPct}%</span></td>
+            <td><span class="text-blue font-bold text-sm">${slaPct}%</span></td>
+            <td class="text-center font-bold text-red text-sm">${fmtN(p.total_cost)} ฿</td>
+        </tr>`;
+
+        let mergedDetails = {};
+        p.details.forEach(d => {
+            let k = d.carrier; 
+            if(!mergedDetails[k]) mergedDetails[k] = { carrier: d.carrier, vTypes: new Set(), total_orders: 0, success_orders: 0, sla_hit: 0, total_cost: 0, plates: {} };
+            let md = mergedDetails[k];
+            if(d.vType && d.vType !== "ไม่ระบุ") md.vTypes.add(d.vType);
+            md.total_orders += d.total_orders; md.success_orders += d.success_orders; md.sla_hit += d.sla_hit; md.total_cost += d.total_cost;
+            Object.keys(d.plates).forEach(pl => md.plates[pl] = true);
+        });
+
+        Object.values(mergedDetails).sort((a,b) => b.total_orders - a.total_orders).forEach(d => {
+            let vehCount = Object.keys(d.plates).length;
+            let dSucc = d.total_orders > 0 ? (d.success_orders / d.total_orders) * 100 : 0;
+            let dSla = d.success_orders > 0 ? (d.sla_hit / d.success_orders) * 100 : 0;
+            let bar = (pct, clr) => `<div style="display:flex; align-items:center; gap:8px;"><div class="modern-bar-bg" style="height:6px;"><div class="${clr}" style="width:${pct}%;"></div></div><span style="font-size:10px; font-weight:700; width:35px; text-align:right;">${pct.toFixed(1)}%</span></div>`;
+            let vTypeDisplay = d.vTypes.size > 0 ? Array.from(d.vTypes).join(', ') : '-';
+
+            dailyHtml += `<tr>
+                <td class="text-muted" style="padding-left:20px;">${p.label}</td>
+                <td><b class="text-dark">${d.carrier}</b><br><span class="text-xs text-muted">ประเภทรถ: ${vTypeDisplay}</span></td>
+                <td class="text-center font-bold text-purple">${vehCount}</td>
+                <td class="text-center font-bold">${fmtN(d.total_orders)}</td>
+                <td>${bar(dSucc, 'grad-fill-green')}</td>
+                <td>${bar(dSla, 'grad-fill-blue')}</td>
+                <td class="text-center text-red font-bold">${fmtN(d.total_cost)}</td>
+            </tr>`;
+        });
+    });
+    if(dailyTbody) dailyTbody.innerHTML = dailyHtml;
+
+    let chartLabels = []; let costData = []; let slaData = []; let targetData = [];
+    let chartPeriods = [...sortedPeriods].reverse(); 
+    
+    chartPeriods.forEach(p => {
+        chartLabels.push(p.label);
+        costData.push(p.total_cost);
+        let sPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders) * 100 : 0;
+        slaData.push(parseFloat(sPct.toFixed(2)));
+        targetData.push(98); 
+    });
+
+    if (typeof transportTrendChartInstance !== 'undefined' && transportTrendChartInstance) {
+        let tpMetric = document.getElementById('tp-metric-filter')?.value || 'BOTH';
+        let datasets = [];
+
+        if (tpMetric === 'BOTH' || tpMetric === 'SLA') {
+            datasets.push({
+                type: 'line', label: 'SLA Target (98%)', data: targetData, borderColor: '#F59E0B', borderDash: [5, 5], borderWidth: 2, pointRadius: 0, yAxisID: 'y', fill: false, order: 1
+            });
+            datasets.push({
+                type: 'bar', label: 'SLA Adherence (%)', data: slaData,
+                backgroundColor: (ctx) => {
+                    return ctx.raw >= 98 ? '#10B981' : '#EF4444';
+                },
+                borderRadius: 2, borderSkipped: false, barThickness: 16, yAxisID: 'y', order: 3
+            });
+        }
+        if (tpMetric === 'BOTH' || tpMetric === 'COST') {
+            datasets.push({
+                type: 'line', label: 'Cost (฿)', data: costData,
+                borderColor: '#8B5CF6', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderWidth: 3, pointRadius: 5, tension: 0.4, yAxisID: 'y1', fill: true, order: 2
+            });
+        }
+
+        transportTrendChartInstance.data.labels = chartLabels;
+        transportTrendChartInstance.data.datasets = datasets;
+        transportTrendChartInstance.options.scales.y.display = (tpMetric === 'BOTH' || tpMetric === 'SLA');
+        transportTrendChartInstance.options.scales.y1.display = (tpMetric === 'BOTH' || tpMetric === 'COST');
+        transportTrendChartInstance.update();
+    }
+
+    let trendSummaryBox = document.getElementById('tp-trend-summary');
+    if (trendSummaryBox && chartPeriods.length > 0) {
+        let latestCost = costData[costData.length - 1] || 0;
+        let prevCost = costData.length > 1 ? costData[costData.length - 2] : 0;
+        let latestSla = slaData[slaData.length - 1] || 0;
+        
+        let diff = latestCost - prevCost;
+        let diffPct = prevCost > 0 ? (diff / prevCost) * 100 : 0;
+        let diffHtml = "";
+        
+        if (chartPeriods.length === 1 || prevCost === 0) diffHtml = `<div class="stock-change stock-neutral">- 0.00%</div>`;
+        else if (diff > 0) diffHtml = `<div class="stock-change stock-up">▲ +${fmtN(diff)} ฿ (+${diffPct.toFixed(1)}%)</div>`;
+        else if (diff < 0) diffHtml = `<div class="stock-change stock-down">▼ ${fmtN(Math.abs(diff))} ฿ (${diffPct.toFixed(1)}%)</div>`;
+        else diffHtml = `<div class="stock-change stock-neutral">- 0.00%</div>`;
+        
+        let slaStatus = latestSla >= 98 ? `<span class="text-green font-bold">🎯 SLA: ${latestSla.toFixed(1)}% (Pass)</span>` : `<span class="text-red font-bold">⚠️ SLA: ${latestSla.toFixed(1)}% (Fail)</span>`;
+        
+        trendSummaryBox.innerHTML = `
+            <div class="stock-val-wrap">
+                <span class="stock-label">Total Cost (Period / MTD)</span>
+                <span class="stock-price">฿ ${fmtN(aggData.total_cost)}</span>
+                <div class="mt-10">${slaStatus}</div>
+            </div>
+            <div>${diffHtml}</div>
+        `;
+    }
+}
+// ----------------------------------------------------
 // WORKFORCE 
 // ----------------------------------------------------
 function updateWorkforceUI() {
