@@ -2589,7 +2589,32 @@ function renderInventoryLossUI() {
 
     tableEl.innerHTML = `<thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody>`;
 
-    // อัปเดตกราฟ (Combo Chart)
+    // 🌟 1. อัปเดตกล่องสรุปยอดสูญเสียรวม (YTD) ปัจจุบัน 🌟
+    const summaryBox = document.getElementById('inv-loss-summary-box');
+    if (summaryBox && lossData.length > 0) {
+        let latest = lossData[lossData.length - 1]; // ดึงเดือนล่าสุด
+        let prev = lossData.length > 1 ? lossData[lossData.length - 2] : null;
+        
+        let lossYTD = formatNumber(latest.loss_ytd);
+        let lossMo = formatNumber(latest.loss_mo);
+        let statusBadge = latest.stat_ytd === 'Over Target' 
+            ? `<span style="background:#FEE2E2; color:#991B1B; padding:2px 8px; border-radius:4px; font-weight:700;">Over Target</span>` 
+            : `<span style="background:#DCFCE7; color:#166534; padding:2px 8px; border-radius:4px; font-weight:700;">Within limits</span>`;
+
+        let momText = "";
+        if (prev && prev.loss_mo !== null && latest.loss_mo !== null) {
+            let diff = latest.loss_mo - prev.loss_mo;
+            let arrow = diff > 0 ? '▲' : '▼';
+            // ถ้ายอด Loss ลดลง (ติดลบ) คือเรื่องดี ให้เป็นสีเขียว
+            let color = diff <= 0 ? 'var(--brand-green)' : 'var(--brand-red)'; 
+            momText = ` <span style="margin-left:8px; padding-left:8px; border-left:1px solid var(--border-color); color:var(--text-dark);">เทียบเดือนก่อน (MoM): <span style="color:${color}; font-weight:700;">${arrow} ${formatNumber(Math.abs(diff))} ฿</span></span>`;
+        }
+
+        summaryBox.innerHTML = `💡 <b>อัปเดตยอดสูญเสียล่าสุด (${latest.month}):</b> ยอดสูญเสียสะสม (YTD) รวม <b>${lossYTD} ฿</b> ${statusBadge} | เฉพาะเดือนนี้ <b>${lossMo} ฿</b>${momText}`;
+        summaryBox.className = latest.stat_ytd === 'Over Target' ? 'info-alert alert-red mt-10' : 'info-alert alert-green mt-10';
+    }
+
+    // 🌟 2. อัปเดตกราฟ (ปรับสีให้กลมกลืนกับธีมเว็บ) 🌟
     if (inventoryLossChartInstance) {
         inventoryLossChartInstance.data.labels = lossData.map(d => d.month);
         inventoryLossChartInstance.data.datasets = [
@@ -2597,12 +2622,12 @@ function renderInventoryLossUI() {
                 type: 'line',
                 label: 'Total Loss (THB)',
                 data: lossData.map(d => d.loss_mo),
-                borderColor: '#9CA3AF',
-                backgroundColor: '#9CA3AF',
+                borderColor: '#475569', // สีเทาเข้ม ให้ดูสุขุม
+                backgroundColor: '#475569',
                 borderWidth: 2,
                 borderDash: [5, 5],
                 pointRadius: 5,
-                pointBackgroundColor: '#6B7280',
+                pointBackgroundColor: '#1E293B',
                 fill: false,
                 order: 1
             },
@@ -2610,21 +2635,21 @@ function renderInventoryLossUI() {
                 type: 'bar',
                 label: 'สินค้าหมดอายุ (Expired)',
                 data: lossData.map(d => d.exp),
-                backgroundColor: '#E46C66', 
+                backgroundColor: '#EF4444', // สีแดง (ตรงกับ var(--brand-red))
                 order: 2
             },
             {
                 type: 'bar',
                 label: 'สินค้าสูญหาย (Lost)',
                 data: lossData.map(d => d.lost),
-                backgroundColor: '#9DBEF1', 
+                backgroundColor: '#3B82F6', // สีฟ้าสว่าง (กลืนกับโครงเว็บ)
                 order: 3
             },
             {
                 type: 'bar',
                 label: 'สินค้าชำรุด (Damaged)',
                 data: lossData.map(d => d.dmg),
-                backgroundColor: '#A7D08C',
+                backgroundColor: '#F59E0B', // สีเหลืองอมส้ม (ตรงกับ var(--brand-yellow))
                 order: 4
             }
         ];
