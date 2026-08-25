@@ -2293,7 +2293,7 @@ function updateInventoryUI() {
 }
 
 // ----------------------------------------------------
-// LOCATION ACCURACY (Pivot Table แนวนอน + Dropdown Checkboxes)
+// LOCATION ACCURACY (Pivot Table แนวนอน + เรียง BU & Zone A-Z)
 // ----------------------------------------------------
 function renderLocationAccuracy() {
     const locTableEl = document.getElementById('loc-accuracy-table');
@@ -2412,7 +2412,12 @@ function renderLocationAccuracy() {
         groupedByBuZone[key].totalWrong += d.wrong;
     });
 
-    let sortedGroups = Object.values(groupedByBuZone).sort((a, b) => b.totalWrong - a.totalWrong);
+    // 🌟 [แก้ใหม่]: เรียงตาม BU ก่อน (A-Z) ถ้า BU เดียวกัน ให้เรียงตาม Zone (A-Z) 🌟
+    let sortedGroups = Object.values(groupedByBuZone).sort((a, b) => {
+        let buComp = a.bu.localeCompare(b.bu);
+        if (buComp !== 0) return buComp;
+        return a.zone.localeCompare(b.zone);
+    });
 
     let thead = `<thead><tr>
         <th style="position:sticky; top:0; left:0; z-index:20; min-width:60px;">BU</th>
@@ -2437,9 +2442,11 @@ function renderLocationAccuracy() {
     if (sortedGroups.length === 0) {
         tbody += `<tr><td colspan="${typeList.length + 3}" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลตามเงื่อนไขที่กรอง</td></tr>`;
     } else {
-        sortedGroups.forEach((item, idx) => {
-            if (idx === 0 && item.totalWrong > 0) worstZone = item;
-            
+        // หาโซนที่ผิดเยอะสุดสำหรับแสดงกล่อง Alert
+        let worstGroup = [...sortedGroups].sort((a, b) => b.totalWrong - a.totalWrong)[0];
+        if (worstGroup && worstGroup.totalWrong > 0) worstZone = worstGroup;
+
+        sortedGroups.forEach((item) => {
             let totalAcc = item.totalChecked > 0 ? ((item.totalChecked - item.totalWrong) / item.totalChecked) * 100 : 0;
             let accBg = totalAcc >= 99 ? '#dcfce7' : '#fee2e2';
             let accClr = totalAcc >= 99 ? '#166534' : '#991b1b';
@@ -2475,7 +2482,7 @@ function renderLocationAccuracy() {
 }
 
 // ----------------------------------------------------
-// PRODUCTIVITY (Overlay Chart + Area Table)
+// PRODUCTIVITY (Overlay Chart + Area Table with Picker Count)
 // ----------------------------------------------------
 function renderProductivitySection() {
     try {
@@ -2662,20 +2669,19 @@ function renderProductivitySection() {
                 if (selectedZone !== 'ALL' && z !== selectedZone) return false;
                 if (selectedArea !== 'ALL' && zoneObj[z].area !== selectedArea) return false;
                 return true;
-            }).sort((a, b) => {
-                // 🌟 เปลี่ยนมาเรียงตามชื่อตัวอักษร A-Z (จากน้อยไปมาก) แทนผลงาน 🌟
-                return a.localeCompare(b);
-            });
+            }).sort((a, b) => a.localeCompare(b));
 
+            // 🌟 [แก้ใหม่]: เพิ่มคอลัมน์ Pickers (คน) 🌟
             let html = `<thead><tr>
                 <th style="position:sticky; left:0; z-index:20; background:var(--bg-card); width:20%;">Picking Zone</th>
-                <th class="text-center" style="width:20%;">Area</th>
-                <th class="text-center" style="width:20%;">Productivity (UPH)</th>
-                <th class="text-center" style="width:20%;">Gap</th>
-                <th class="text-center text-blue" style="width:20%;">Cost/Pick (฿)</th>
+                <th class="text-center" style="width:15%;">Area</th>
+                <th class="text-center" style="width:15%;">Pickers</th>
+                <th class="text-center" style="width:18%;">Productivity (UPH)</th>
+                <th class="text-center" style="width:14%;">Gap</th>
+                <th class="text-center text-blue" style="width:18%;">Cost/Pick (฿)</th>
             </tr></thead><tbody>`;
 
-            if(zoneNames.length === 0) { html += `<tr><td colspan="5" class="text-center text-muted">ไม่มีข้อมูล Zone ในช่วงที่เลือก</td></tr>`; } 
+            if(zoneNames.length === 0) { html += `<tr><td colspan="6" class="text-center text-muted">ไม่มีข้อมูล Zone ในช่วงที่เลือก</td></tr>`; } 
             else {
                 zoneNames.forEach(z => {
                     let zd = zoneObj[z];
@@ -2683,9 +2689,13 @@ function renderProductivitySection() {
                     let trg = getTarget(zd.area, latestDateStr);
                     let gap = prod - trg; let cost = prod > 0 ? (hourlyRate / prod) : 0;
 
+                    // 🌟 นับจำนวนพนักงานที่หยิบในโซนนี้ 🌟
+                    let zonePickersCount = Object.keys(latest.users || {}).filter(u => latest.users[u].zone === z).length;
+
                     html += `<tr>
                         <td class="font-bold text-dark" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${z}</td>
                         <td class="text-center text-muted">${zd.area || '-'}</td>
+                        <td class="text-center"><span class="badge-glass" style="background:#F1F5F9; color:#475569; font-weight:700;">${zonePickersCount > 0 ? zonePickersCount + ' คน' : '-'}</span></td>
                         <td class="text-center"><span style="background:${prod>=trg?'#dcfce7':'#fee2e2'}; color:${prod>=trg?'#166534':'#991b1b'}; padding:2px 8px; border-radius:4px; font-weight:700;">${prod}</span></td>
                         <td class="text-center font-bold" style="color:${gap>=0?'var(--brand-green)':'var(--brand-red)'}">${gap > 0 ? '+'+gap : gap}</td>
                         <td class="text-center font-bold text-blue">${cost.toFixed(2)}</td>
@@ -2759,7 +2769,6 @@ function renderProductivitySection() {
 
     } catch (e) { console.error("Productivity Render Error:", e); }
 }
-
 // ==========================================
 // BOOTLOADER (ป้องกันการแครชก่อนโหลดเสร็จ)
 // ==========================================
