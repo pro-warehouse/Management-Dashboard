@@ -198,6 +198,7 @@ let workforceChartInstance = null;
 let ontimeChartInstance = null;
 let claimChart2Instance = null;
 let inventoryChartInstance = null;
+let inventoryLossChartInstance = null;
 let productivityChartInstance = null;
 let transportTrendChartInstance = null;
 
@@ -229,6 +230,21 @@ function initCharts() {
     let ctx8 = document.getElementById('transportTrendChart');
     if(ctx8) transportTrendChartInstance = new Chart(ctx8, { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }, scales: { x: { grid: { display: false } }, y: { type: 'linear', position: 'left', min: 0, max: 105, title: { display: true, text: 'SLA (%)', color: '#3B82F6', font: {weight: 'bold', size: 10} }, grid: { borderDash: [4, 4] } }, y1: { type: 'linear', position: 'right', title: { display: true, text: 'Cost (฿)', color: '#8B5CF6', font: {weight: 'bold', size: 10} }, grid: { display: false }, beginAtZero: true } } }, plugins: [dataLabelPlugin] });
 }
+let ctxLoss = document.getElementById('inventoryLossChart');
+    if(ctxLoss) {
+        inventoryLossChartInstance = new Chart(ctxLoss, {
+            type: 'bar',
+            data: { labels: [], datasets: [] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } } },
+                scales: {
+                    x: { stacked: true, grid: { display: false } },
+                    y: { stacked: true, beginAtZero: true, border: { display: false }, grid: { borderDash: [4, 4] } }
+                }
+            }
+        });
+    }
 
 
 // ==========================================
@@ -416,6 +432,7 @@ function refreshAllSections() {
     try { updateClaimUI(); } catch(e) {}
     try { updateInventoryUI(); } catch(e) {}
     try { renderLocationAccuracy(); } catch(e) {}
+    try { renderInventoryLossUI(); } catch(e) {} // 🌟 เพิ่มตรงนี้ครับ
     try { renderProductivitySection(); } catch(e) {}
 }
 
@@ -2479,6 +2496,141 @@ function renderLocationAccuracy() {
     if (worstZone) analysisHtml += `<br>🚨 <b>ระวัง:</b> BU <b>${worstZone.bu}</b> โซน <b>${worstZone.zone}</b> พบผิด Location สูงสุด <b>${fmtN(worstZone.totalWrong)} จุด</b>`;
     
     locBoxEl.innerHTML = analysisHtml;
+}
+// ----------------------------------------------------
+// INVENTORY LOSS & SHRINKAGE (ตาราง Transpose + กราฟผสม)
+// ----------------------------------------------------
+function renderInventoryLossUI() {
+    const tableEl = document.getElementById('inventory-loss-table');
+    if (!tableEl) return;
+
+    // ข้อมูลจำลองตามที่คุณแนบมา
+    const lossData = [
+        { month: 'Dec-2025', ship_ytd: 0, ship_mo: 0, loss_ytd: 4711409.16, loss_mo: 4711409.16, dmg: 80515.13, lost: 4440037.88, exp: 190856.15, trg: 0, diff: 0, pct_ytd: null, stat_ytd: '', pct_mo: null, stat_mo: '' },
+        { month: 'Jan-2026', ship_ytd: 325290672.97, ship_mo: 325290672.97, loss_ytd: 258450.57, loss_mo: 258450.57, dmg: 68047.77, lost: 0, exp: 190402.80, trg: 162645.34, diff: -95805.23, pct_ytd: 0.08, stat_ytd: 'Over Target', pct_mo: 0.08, stat_mo: 'Over Target' },
+        { month: 'Feb-2026', ship_ytd: 624080912.25, ship_mo: 298790239.28, loss_ytd: 513801.57, loss_mo: 255351.00, dmg: 121242.43, lost: 204915.65, exp: 187643.49, trg: 312040.46, diff: -201761.11, pct_ytd: 0.08, stat_ytd: 'Over Target', pct_mo: 0.09, stat_mo: 'Over Target' },
+        { month: 'Mar-2026', ship_ytd: 985381536.66, ship_mo: 361300624.41, loss_ytd: 604019.89, loss_mo: 90218.32, dmg: 117491.91, lost: 267524.14, exp: 219003.84, trg: 330045.43, diff: -273974.46, pct_ytd: 0.06, stat_ytd: 'Over Target', pct_mo: 0.02, stat_mo: 'Within limits' },
+        { month: 'Apr-2026', ship_ytd: 1324003015.30, ship_mo: 338621478.64, loss_ytd: 610176.21, loss_mo: 6156.32, dmg: 124519.73, lost: 288876.45, exp: 196780.03, trg: 349961.05, diff: -260215.16, pct_ytd: 0.046, stat_ytd: 'Within limits', pct_mo: 0.00, stat_mo: 'Within limits' },
+        { month: 'May-2026', ship_ytd: 1657380252.92, ship_mo: 333377237.62, loss_ytd: 776725.91, loss_mo: 166549.70, dmg: 133715.84, lost: 453795.48, exp: 189214.59, trg: 335999.36, diff: -440726.55, pct_ytd: 0.047, stat_ytd: 'Within limits', pct_mo: 0.05, stat_mo: 'Within limits' },
+        { month: 'Jun-2026', ship_ytd: 1966844161.00, ship_mo: 309463908.08, loss_ytd: 817462.01, loss_mo: 40736.10, dmg: 107115.32, lost: 516582.62, exp: 193764.07, trg: 321420.57, diff: -496041.44, pct_ytd: 0.042, stat_ytd: 'Within limits', pct_mo: 0.01, stat_mo: 'Within limits' },
+        { month: 'Jul-2026', ship_ytd: 2301035230.00, ship_mo: 334191069.00, loss_ytd: 876054.91, loss_mo: 58592.90, dmg: 104692.49, lost: 572551.15, exp: 198811.27, trg: 321827.49, diff: -554227.42, pct_ytd: 0.038, stat_ytd: 'Within limits', pct_mo: 0.02, stat_mo: 'Within limits' }
+    ];
+
+    const rowsConfig = [
+        { key: 'ship_ytd', title: 'ยอดจัดส่งสะสม (YTD)', type: 'num' },
+        { key: 'ship_mo', title: 'ยอดจัดส่งรายเดือน', type: 'num', showMoM: true },
+        { key: 'loss_ytd', title: 'ยอดสูญเสียสะสมรวม (YTD)', type: 'num' },
+        { key: 'loss_mo', title: 'ยอดสูญเสียรายเดือน', type: 'num', showMoM: true },
+        { key: 'dmg', title: 'สินค้าชำรุด (Damaged)', type: 'num', showMoM: true },
+        { key: 'lost', title: 'สินค้าสูญหาย (Lost)', type: 'num', showMoM: true },
+        { key: 'exp', title: 'สินค้าหมดอายุ (Expired)', type: 'num', showMoM: true },
+        { key: 'trg', title: 'เกณฑ์เป้าหมาย (0.05%)', type: 'num', showMoM: true },
+        { key: 'diff', title: 'ส่วนต่างเทียบเป้าหมาย', type: 'num' },
+        { key: 'pct_ytd', title: '% สูญเสียสะสม (YTD)', type: 'pct' },
+        { key: 'stat_ytd', title: 'สถานะภาพรวม (YTD)', type: 'badge' },
+        { key: 'pct_mo', title: '% สูญเสียรายเดือน', type: 'pct' },
+        { key: 'stat_mo', title: 'สถานะประจำเดือน', type: 'badge' }
+    ];
+
+    // วาดหัวตาราง (Thead)
+    let theadHtml = `<tr>
+        <th style="position:sticky; top:0; left:0; z-index:30; background:#F8FAFC; min-width:180px;">Category</th>
+        <th class="text-center" style="position:sticky; top:0; left:180px; z-index:30; background:#F8FAFC; border-right: 2px solid var(--border-color);">Unit</th>`;
+    
+    lossData.forEach((d, idx) => {
+        theadHtml += `<th class="text-center" style="position:sticky; top:0; z-index:20;">${d.month}</th>`;
+        if (idx > 0) theadHtml += `<th class="text-center text-muted" style="position:sticky; top:0; z-index:20; background:rgba(0,0,0,0.02);">MoM Var.</th>`;
+    });
+    theadHtml += `</tr>`;
+
+    // วาดข้อมูลแถว (Tbody)
+    let tbodyHtml = '';
+    const formatNumber = (val) => val === null || val === 0 ? '0.00' : val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    
+    rowsConfig.forEach(r => {
+        tbodyHtml += `<tr>
+            <td class="font-bold text-dark" style="position:sticky; left:0; background:var(--bg-card); z-index:15;">${r.title}</td>
+            <td class="text-center text-muted" style="position:sticky; left:180px; background:var(--bg-card); z-index:15; border-right: 2px solid var(--border-color);">${r.type === 'pct' ? '%' : (r.type === 'badge' ? '-' : 'THB')}</td>`;
+        
+        lossData.forEach((d, idx) => {
+            let val = d[r.key];
+            let displayVal = val;
+            let cellStyle = '';
+            
+            if (r.type === 'num') { displayVal = formatNumber(val); cellStyle = 'text-right font-bold'; }
+            else if (r.type === 'pct') { displayVal = val !== null ? val.toFixed(3) + '%' : '-'; cellStyle = 'text-center font-bold'; }
+            else if (r.type === 'badge') {
+                if(val === 'Over Target') displayVal = `<span style="background:#DC2626; color:white; padding:2px 8px; border-radius:4px; font-weight:700;">Over Target</span>`;
+                else if(val === 'Within limits') displayVal = `<span style="background:#16A34A; color:white; padding:2px 8px; border-radius:4px; font-weight:700;">Within limits</span>`;
+                else displayVal = '-';
+                cellStyle = 'text-center';
+            }
+
+            tbodyHtml += `<td class="${cellStyle}">${displayVal}</td>`;
+
+            // คอลัมน์ MoM
+            if (idx > 0) {
+                let prevVal = lossData[idx - 1][r.key];
+                let momHtml = `<span class="text-muted">-</span>`;
+                if (r.showMoM && prevVal !== null && val !== null) {
+                    let diff = val - prevVal;
+                    if (diff !== 0) {
+                        let isGood = diff < 0; 
+                        if (r.key === 'trg' || r.key === 'ship_mo') isGood = diff > 0;
+                        let color = isGood ? 'var(--brand-green)' : 'var(--brand-red)';
+                        let arrow = diff > 0 ? '▲' : '▼';
+                        momHtml = `<span style="color:${color}; font-weight:700; font-size:0.7rem;">${arrow} ${formatNumber(Math.abs(diff))}</span>`;
+                    }
+                }
+                tbodyHtml += `<td class="text-right" style="background:rgba(0,0,0,0.02);">${momHtml}</td>`;
+            }
+        });
+        tbodyHtml += `</tr>`;
+    });
+
+    tableEl.innerHTML = `<thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody>`;
+
+    // อัปเดตกราฟ (Combo Chart)
+    if (inventoryLossChartInstance) {
+        inventoryLossChartInstance.data.labels = lossData.map(d => d.month);
+        inventoryLossChartInstance.data.datasets = [
+            {
+                type: 'line',
+                label: 'Total Loss (THB)',
+                data: lossData.map(d => d.loss_mo),
+                borderColor: '#9CA3AF',
+                backgroundColor: '#9CA3AF',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 5,
+                pointBackgroundColor: '#6B7280',
+                fill: false,
+                order: 1
+            },
+            {
+                type: 'bar',
+                label: 'สินค้าหมดอายุ (Expired)',
+                data: lossData.map(d => d.exp),
+                backgroundColor: '#E46C66', 
+                order: 2
+            },
+            {
+                type: 'bar',
+                label: 'สินค้าสูญหาย (Lost)',
+                data: lossData.map(d => d.lost),
+                backgroundColor: '#9DBEF1', 
+                order: 3
+            },
+            {
+                type: 'bar',
+                label: 'สินค้าชำรุด (Damaged)',
+                data: lossData.map(d => d.dmg),
+                backgroundColor: '#A7D08C',
+                order: 4
+            }
+        ];
+        inventoryLossChartInstance.update();
+    }
 }
 
 // ----------------------------------------------------
