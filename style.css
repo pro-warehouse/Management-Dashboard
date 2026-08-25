@@ -372,3 +372,31 @@ body {
 [data-theme="dark"] .matrix-border-left { border-left: 2px solid #334155 !important; }
 .matrix-total-col { background: #F8FAFC !important; font-weight: 700 !important; color: var(--text-dark) !important; }
 [data-theme="dark"] .matrix-total-col { background: #1E293B !important; }
+
+/* =========================================
+   FIX: ปรับสี Trend Badge ในกล่อง KPI ให้อ่านชัดเจน ไม่กลืนกับพื้นหลัง
+========================================= */
+.kpi-box .trend-up {
+    background-color: #FFFFFF !important;
+    color: #059669 !important; /* ใช้สีเขียวเข้มขึ้นเพื่อให้อ่านง่ายบนพื้นขาว */
+    border: none !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15) !important;
+}
+
+.kpi-box .trend-down {
+    background-color: #FFFFFF !important;
+    color: #DC2626 !important; /* สีแดงเข้ม */
+    border: none !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15) !important;
+}
+
+.kpi-box .trend-neutral {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+}
+
+/* เพิ่มระยะห่างป้องกันคำว่า vs Prev เบียดกับคำว่า Updated */
+.kpi-box .trend-note {
+    margin-right: 12px !important;
+}
