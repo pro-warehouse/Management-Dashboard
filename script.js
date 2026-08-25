@@ -2089,7 +2089,50 @@ function updateClaimUI() {
     } else {
         const tableEl = document.getElementById('claim-detail-table');
         if (tableEl) tableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูลเคลม MTD</th></tr></thead>`;
-        if(claimChart2Instance) { claimChart2Instance.data.labels = []; claimChart2Instance.update(); }
+        if(claimChart2Instance) {
+            claimChart2Instance.data.labels = pLabels;
+            claimChart2Instance.data.datasets = [
+                {
+                    type: 'bar',
+                    label: 'มูลค่าเคลม (฿)',
+                    data: mtdData.map(p => parseFloat(p.cost.toFixed(2))),
+                    backgroundColor: (ctx) => (!ctx.chart.chartArea) ? '#F59E0B' : getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#F59E0B', '#D97706'),
+                    borderRadius: 4,
+                    borderSkipped: false,
+                    maxBarThickness: 45, /* 🌟 ล็อคขนาดแท่งไม่ให้อ้วนเกินไปเมื่อมีข้อมูลน้อยวัน */
+                    yAxisID: 'y',
+                    order: 2
+                },
+                {
+                    type: 'line',
+                    label: 'จำนวนชิ้น (Qty)',
+                    data: mtdData.map(p => p.qty),
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    tension: 0.4, /* 🌟 ทำให้เส้นโค้งสวยงาม สมูท ไม่หักศอก */
+                    fill: true, /* 🌟 เทสีใต้เส้นบางๆ ให้ดูมีมิติ */
+                    yAxisID: 'y1',
+                    order: 1
+                }
+            ];
+
+            /* 🌟 เปิดแสดงแกน Y แยกฝั่งซ้าย(เงิน) ขวา(ชิ้น) ให้ชัดเจนขึ้น 🌟 */
+            claimChart2Instance.options.scales.y = {
+                type: 'linear', position: 'left',
+                title: { display: true, text: 'มูลค่า (฿)', color: '#D97706', font: {weight: 'bold', size: 10} },
+                grid: { borderDash: [4, 4] }, beginAtZero: true, grace: '10%'
+            };
+            claimChart2Instance.options.scales.y1 = {
+                type: 'linear', position: 'right',
+                title: { display: true, text: 'จำนวนชิ้น', color: '#3B82F6', font: {weight: 'bold', size: 10} },
+                grid: { display: false }, beginAtZero: true, grace: '10%'
+            };
+
+            claimChart2Instance.update();
+        }
     }
 }
 
