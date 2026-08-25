@@ -2672,12 +2672,11 @@ function renderProductivitySection() {
             }).sort((a, b) => a.localeCompare(b));
 
             let html = `<thead><tr>
-                <th style="position:sticky; left:0; z-index:20; background:var(--bg-card); width:20%;">Picking Zone</th>
-                <th class="text-center" style="width:15%;">Area</th>
-                <th class="text-center" style="width:15%;">Pickers</th>
-                <th class="text-center" style="width:18%;">Productivity (UPH)</th>
-                <th class="text-center" style="width:14%;">Gap</th>
-                <th class="text-center text-blue" style="width:18%;">Cost/Pick (฿)</th>
+                <th style="position:sticky; left:0; z-index:20; background:var(--bg-card); width:25%;">Picking Zone</th>
+                <th class="text-center" style="width:20%;">Area</th>
+                <th class="text-center" style="width:20%;">Productivity (UPH)</th>
+                <th class="text-center" style="width:15%;">Gap</th>
+                <th class="text-center text-blue" style="width:20%;">Cost/Pick (฿)</th>
             </tr></thead><tbody>`;
 
             if(zoneNames.length === 0) { html += `<tr><td colspan="6" class="text-center text-muted">ไม่มีข้อมูล Zone ในช่วงที่เลือก</td></tr>`; } 
@@ -2713,7 +2712,6 @@ let zonePickersCount = Object.keys(latest.users || {}).filter(u => {
                     html += `<tr>
                         <td class="font-bold text-dark" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${z}</td>
                         <td class="text-center text-muted">${zd.area || '-'}</td>
-                        <td class="text-center"><span class="badge-glass" style="background:#F1F5F9; color:#475569; font-weight:700;">${zonePickersCount} คน</span></td>
                         <td class="text-center"><span style="background:${prod>=trg?'#dcfce7':'#fee2e2'}; color:${prod>=trg?'#166534':'#991b1b'}; padding:2px 8px; border-radius:4px; font-weight:700;">${prod}</span></td>
                         <td class="text-center font-bold" style="color:${gap>=0?'var(--brand-green)':'var(--brand-red)'}">${gap > 0 ? '+'+gap : gap}</td>
                         <td class="text-center font-bold text-blue">${cost.toFixed(2)}</td>
