@@ -2015,20 +2015,29 @@ function updateClaimUI() {
         if (tableEl) {
             let thead = `<thead><tr>
                 <th style="position:sticky; top:0; left:0; z-index:20;">Date</th>
-                <th class="text-center" style="border-right: 2px solid var(--border-color);">Total (Cost / Qty)</th>
+                <th class="text-center" style="border-right: 2px solid var(--border-color);">Total (฿ / ชิ้น)</th>
                 ${owners.map(o => `<th class="text-center">${o}</th>`).join('')}
             </tr></thead>`;
+
+            // 🌟 ฟังก์ชันจัดรูปแบบข้อมูลแบบ Executive (ไม่ตกบรรทัด และไม่แดงถ้ายอดเป็น 0) 🌟
+            const formatClaimCell = (c, q) => {
+                if (!c && !q) return '<span class="text-muted">-</span>';
+                let costColor = c > 0 ? 'var(--brand-red)' : 'var(--text-muted)';
+                let cText = `<span style="color:${costColor}; font-weight:700;">฿ ${c > 0 ? fmtN(parseFloat(c.toFixed(2))) : '0'}</span>`;
+                let qText = q > 0 ? `<span class="text-muted" style="font-size:0.65rem; margin-left:4px;">(${fmtN(q)} ชิ้น)</span>` : ``;
+                return `<div style="white-space:nowrap;">${cText}${qText}</div>`;
+            };
 
             let tbody = "<tbody>" + Object.keys(dateGroups).reverse().map(date => {
                 let dGrp = dateGroups[date];
                 let rowHtml = `<tr>
                     <td style="position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${date}</td>
-                    <td class="text-center" style="border-right: 2px solid var(--border-color);"><span class="text-red font-bold">${fmtN(parseFloat(dGrp.totalCost.toFixed(2)))}฿</span><br><span class="text-xs text-muted">${fmtN(dGrp.totalQty)} ชิ้น</span></td>`;
+                    <td class="text-center" style="border-right: 2px solid var(--border-color); background:rgba(0,0,0,0.02);">${formatClaimCell(dGrp.totalCost, dGrp.totalQty)}</td>`;
 
                 owners.forEach(o => {
                     let oData = dGrp.owners[o];
                     if (oData) {
-                        rowHtml += `<td class="text-center"><span class="text-red font-bold">${fmtN(parseFloat(oData.cost.toFixed(2)))}฿</span><br><span class="text-xs text-muted">${fmtN(oData.qty)} ชิ้น</span></td>`;
+                        rowHtml += `<td class="text-center">${formatClaimCell(oData.cost, oData.qty)}</td>`;
                     } else {
                         rowHtml += `<td class="text-center text-muted">-</td>`;
                     }
