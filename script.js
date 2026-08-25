@@ -251,9 +251,7 @@ let ctxLoss = document.getElementById('inventoryLossChart');
 // DATA FETCHING & PROCESSING 
 // ==========================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxB0bNU1P9qrG_6aHoeiKyHMXT0_k76VlL0aq1I9xxHVpPDQK9qcd3FJMip4Jk9o6RY/exec';
-let globalData = { workforce:{}, fulfillment:{}, wave_ops:{}, ontime:{}, ontime_hub:{}, ontime_by_aff:{}, claims:{}, inventory:{}, inventory_daily:{}, transport:{}, productivity:{}, prod_area:{}, prod_zone:{}, prod_users_map:{} };
-window.selectedBUs = ['ALL'];
-
+let globalData = { workforce:{}, fulfillment:{}, wave_ops:{}, ontime:{}, ontime_hub:{}, ontime_by_aff:{}, claims:{}, inventory:{}, inventory_daily:{}, transport:{}, productivity:{}, prod_area:{}, prod_zone:{}, prod_users_map:{}, inventory_loss:[] };
 const standardizeBU = (bu) => {
     let b = (bu || '').toString().trim().toUpperCase();
     if (b.includes('MART')) return 'DM02';
@@ -2504,17 +2502,18 @@ function renderInventoryLossUI() {
     const tableEl = document.getElementById('inventory-loss-table');
     if (!tableEl) return;
 
-    // ข้อมูลจำลองตามที่คุณแนบมา
-    const lossData = [
-        { month: 'Dec-2025', ship_ytd: 0, ship_mo: 0, loss_ytd: 4711409.16, loss_mo: 4711409.16, dmg: 80515.13, lost: 4440037.88, exp: 190856.15, trg: 0, diff: 0, pct_ytd: null, stat_ytd: '', pct_mo: null, stat_mo: '' },
-        { month: 'Jan-2026', ship_ytd: 325290672.97, ship_mo: 325290672.97, loss_ytd: 258450.57, loss_mo: 258450.57, dmg: 68047.77, lost: 0, exp: 190402.80, trg: 162645.34, diff: -95805.23, pct_ytd: 0.08, stat_ytd: 'Over Target', pct_mo: 0.08, stat_mo: 'Over Target' },
-        { month: 'Feb-2026', ship_ytd: 624080912.25, ship_mo: 298790239.28, loss_ytd: 513801.57, loss_mo: 255351.00, dmg: 121242.43, lost: 204915.65, exp: 187643.49, trg: 312040.46, diff: -201761.11, pct_ytd: 0.08, stat_ytd: 'Over Target', pct_mo: 0.09, stat_mo: 'Over Target' },
-        { month: 'Mar-2026', ship_ytd: 985381536.66, ship_mo: 361300624.41, loss_ytd: 604019.89, loss_mo: 90218.32, dmg: 117491.91, lost: 267524.14, exp: 219003.84, trg: 330045.43, diff: -273974.46, pct_ytd: 0.06, stat_ytd: 'Over Target', pct_mo: 0.02, stat_mo: 'Within limits' },
-        { month: 'Apr-2026', ship_ytd: 1324003015.30, ship_mo: 338621478.64, loss_ytd: 610176.21, loss_mo: 6156.32, dmg: 124519.73, lost: 288876.45, exp: 196780.03, trg: 349961.05, diff: -260215.16, pct_ytd: 0.046, stat_ytd: 'Within limits', pct_mo: 0.00, stat_mo: 'Within limits' },
-        { month: 'May-2026', ship_ytd: 1657380252.92, ship_mo: 333377237.62, loss_ytd: 776725.91, loss_mo: 166549.70, dmg: 133715.84, lost: 453795.48, exp: 189214.59, trg: 335999.36, diff: -440726.55, pct_ytd: 0.047, stat_ytd: 'Within limits', pct_mo: 0.05, stat_mo: 'Within limits' },
-        { month: 'Jun-2026', ship_ytd: 1966844161.00, ship_mo: 309463908.08, loss_ytd: 817462.01, loss_mo: 40736.10, dmg: 107115.32, lost: 516582.62, exp: 193764.07, trg: 321420.57, diff: -496041.44, pct_ytd: 0.042, stat_ytd: 'Within limits', pct_mo: 0.01, stat_mo: 'Within limits' },
-        { month: 'Jul-2026', ship_ytd: 2301035230.00, ship_mo: 334191069.00, loss_ytd: 876054.91, loss_mo: 58592.90, dmg: 104692.49, lost: 572551.15, exp: 198811.27, trg: 321827.49, diff: -554227.42, pct_ytd: 0.038, stat_ytd: 'Within limits', pct_mo: 0.02, stat_mo: 'Within limits' }
-    ];
+    // ดึงข้อมูลจริงจาก Backend (Code.gs)
+    const lossData = globalData.inventory_loss || [];
+
+    // ถ้ายังไม่มีข้อมูล ให้ขึ้นแจ้งเตือนและหยุดทำงาน
+    if (lossData.length === 0) {
+        tableEl.innerHTML = `<thead><tr><th class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูล Inventory Loss</th></tr></thead>`;
+        if (inventoryLossChartInstance) { 
+            inventoryLossChartInstance.data.labels = []; 
+            inventoryLossChartInstance.update(); 
+        }
+        return;
+    }
 
     const rowsConfig = [
         { key: 'ship_ytd', title: 'ยอดจัดส่งสะสม (YTD)', type: 'num' },
