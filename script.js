@@ -115,23 +115,33 @@ Chart.defaults.elements.point.radius = 3;
 const dataLabelPlugin = {
     id: 'dataLabelPlugin',
     afterDatasetsDraw(chart) {
-        if(chart.config.type !== 'bar' || chart.canvas.id === 'productivityChart') return;
+        if(chart.config.type !== 'bar') return;
         const { ctx } = chart;
         chart.data.datasets.forEach((dataset, i) => {
             if (dataset.type === 'line' || !chart.isDatasetVisible(i) || dataset.stack) return;
+            
+            // 🌟 ข้ามไม่เขียนป้ายกำกับให้แท่ง Target (index 0) ของกราฟ UPH (เขียนแค่ Actual) 🌟
+            if (chart.canvas.id === 'productivityChart' && i === 0) return;
+
             const meta = chart.getDatasetMeta(i);
             meta.data.forEach((bar, index) => {
                 const data = dataset.data[index];
-                if(data > 0 && bar.height > 20){
+                if(data > 0 && bar.height > 15){
                     ctx.fillStyle = '#FFFFFF';
                     ctx.font = 'bold 9px Inter'; 
                     ctx.textAlign = 'center'; 
                     ctx.textBaseline = 'middle';
-                    let val = (chart.canvas.id.includes('claim')) ? formatK(data) : (data%1!==0 ? data.toFixed(1)+'%' : formatK(data));
+                    
+                    let val = formatK(data);
+                    if (chart.canvas.id.includes('claim')) val = formatK(data);
+                    else if (chart.canvas.id === 'productivityChart') val = fmtN(data);
+                    else if (data % 1 !== 0) val = data.toFixed(1) + '%';
+                    
                     ctx.fillText(val, bar.x, bar.y + (bar.height / 2));
                 }
             });
         });
+        
         if (chart.canvas.id === 'ffmTrendChart' || chart.canvas.id === 'workforceChart') {
             let totals = []; let xCoords = []; let topY = [];
             chart.data.datasets.forEach((dataset, i) => {
@@ -2653,9 +2663,8 @@ function renderProductivitySection() {
                 if (selectedArea !== 'ALL' && zoneObj[z].area !== selectedArea) return false;
                 return true;
             }).sort((a, b) => {
-                let pa = zoneObj[a].cnt > 0 ? zoneObj[a].sumProd / zoneObj[a].cnt : 0;
-                let pb = zoneObj[b].cnt > 0 ? zoneObj[b].sumProd / zoneObj[b].cnt : 0;
-                return pb - pa;
+                // 🌟 เปลี่ยนมาเรียงตามชื่อตัวอักษร A-Z (จากน้อยไปมาก) แทนผลงาน 🌟
+                return a.localeCompare(b);
             });
 
             let html = `<thead><tr>
