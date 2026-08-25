@@ -1438,13 +1438,24 @@ function updateTransportUI() {
                 backgroundColor: (ctx) => {
                     return ctx.raw >= 98 ? '#10B981' : '#EF4444';
                 },
-                borderRadius: 2, borderSkipped: false, barThickness: 16, yAxisID: 'y', order: 3
+                borderRadius: 4, 
+                borderSkipped: false, 
+                maxBarThickness: 45, /* ปลดล็อคขนาดตายตัว ให้กราฟยืดหยุ่นตามจำนวนวันที่เลือก (สูงสุด 45px) */
+                yAxisID: 'y', order: 3
             });
         }
         if (tpMetric === 'BOTH' || tpMetric === 'COST') {
             datasets.push({
                 type: 'line', label: 'Cost (฿)', data: costData,
-                borderColor: '#8B5CF6', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderWidth: 3, pointRadius: 5, tension: 0.4, yAxisID: 'y1', fill: true, order: 2
+                borderColor: '#8B5CF6', 
+                backgroundColor: '#8B5CF6', 
+                borderWidth: 2, /* ลดความหนาของเส้นลงให้ดูเพรียวขึ้น */
+                pointRadius: 3, /* ลดขนาดจุดวงกลม */
+                pointHoverRadius: 6,
+                tension: 0.4, 
+                yAxisID: 'y1', 
+                fill: false, /* ปิดการเทสีพื้นหลังสีม่วงทึบๆ เพื่อไม่ให้แย่งซีนแท่งกราฟ */
+                order: 2
             });
         }
 
