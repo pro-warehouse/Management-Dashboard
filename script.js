@@ -2147,12 +2147,13 @@ function updateClaimUI() {
 }
 
 // ----------------------------------------------------
-// INVENTORY ACCURACY (MTD Logic + Filter)
+// INVENTORY ACCURACY (MTD Logic + Filter by Location Type)
 // ----------------------------------------------------
 function updateInventoryUI() {
     const valEl = document.getElementById('inv-val');
     const updEl = document.getElementById('inv-update');
     let invSummary = document.getElementById('inv-summary-box');
+    let typeFilterEl = document.getElementById('inv-type-filter'); // ตัวดึงฟิลเตอร์ Location Type
 
     if (!globalData.inventory_daily || Object.keys(globalData.inventory_daily).length === 0) {
         if(valEl) valEl.innerText = "-";
@@ -2169,22 +2170,54 @@ function updateInventoryUI() {
     const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
     const targetStartMTD = new Date(targetEndObj.getFullYear(), targetEndObj.getMonth(), 1).setHours(0, 0, 0, 0);
     
+    let selectedType = typeFilterEl ? typeFilterEl.value : 'ALL';
+    let allTypesSet = new Set();
+    
+    // 🌟 สำรวจหา Location Type ทั้งหมดจากข้อมูลที่มี เพื่อสร้าง Dropdown 🌟
+    Object.keys(globalData.inventory_daily).forEach(dKey => {
+        let dayGroup = globalData.inventory_daily[dKey] || {};
+        if (dayGroup.loc_data) {
+            Object.keys(dayGroup.loc_data).forEach(t => allTypesSet.add(t));
+        }
+    });
+
+    // 🌟 สร้าง Options ลงใน Dropdown แบบไดนามิก 🌟
+    if (typeFilterEl && typeFilterEl.options.length <= 1 && allTypesSet.size > 0) {
+        Array.from(allTypesSet).sort().forEach(t => typeFilterEl.appendChild(new Option(t, t)));
+    }
+
     let allData = [];
     Object.keys(globalData.inventory_daily).forEach(dKey => {
         let dObj = new Date(getStandardDate(dKey));
         if(dObj.getTime() <= targetEnd) { 
             let dayGroup = globalData.inventory_daily[dKey] || {};
             let sumOnhand = 0, sumDiff = 0, count = 0;
-            let buDataMap = dayGroup.bu_data || {};
-            Object.keys(buDataMap).forEach(bu => {
-                if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
-                    sumOnhand += buDataMap[bu].onhand || 0; 
-                    sumDiff += buDataMap[bu].diff || 0;     
-                    count += buDataMap[bu].count || 0; 
-                }
-            });
+            
+            // 🌟 ตรวจสอบว่ามีข้อมูลแยกราย Type (loc_data) หรือไม่ 🌟
+            if (dayGroup.loc_data && Object.keys(dayGroup.loc_data).length > 0) {
+                Object.keys(dayGroup.loc_data).forEach(type => {
+                    if (selectedType === 'ALL' || selectedType === type) {
+                        sumOnhand += dayGroup.loc_data[type].onhand || 0;
+                        sumDiff += dayGroup.loc_data[type].diff || 0;
+                        count += dayGroup.loc_data[type].count || 0;
+                    }
+                });
+            } else {
+                // 🌟 Fallback ไปใช้ข้อมูลรวมระดับ BU เหมือนเดิม (กรณี Backend ส่งมาเป็นก้อน)
+                let buDataMap = dayGroup.bu_data || {};
+                Object.keys(buDataMap).forEach(bu => {
+                    if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
+                        sumOnhand += buDataMap[bu].onhand || 0; 
+                        sumDiff += buDataMap[bu].diff || 0;     
+                        count += buDataMap[bu].count || 0; 
+                    }
+                });
+            }
+            
             let pct = count > 0 ? (sumOnhand > 0 ? Math.max(0, (1 - (sumDiff/sumOnhand))*100) : 0) : null;
-            allData.push({ dateStr: formatShortDate(dObj), dateObj: dObj, pct: pct, sumOnhand: sumOnhand, sumDiff: sumDiff });
+            if (count > 0 || sumOnhand > 0) { // เก็บเฉพาะวันที่มีข้อมูล
+                allData.push({ dateStr: formatShortDate(dObj), dateObj: dObj, pct: pct, sumOnhand: sumOnhand, sumDiff: sumDiff });
+            }
         }
     });
 
@@ -2207,13 +2240,14 @@ function updateInventoryUI() {
         if (accumText) accumText.innerText = `YTD Accumulate: ${latestAvailable.accumPct !== null ? latestAvailable.accumPct.toFixed(2) : 0}%`;
 
         if (invSummary) {
-            invSummary.innerHTML = `💡 <b>ความแม่นยำสต็อกล่าสุด (${latestAvailable.dateStr}):</b> อยู่ที่ <b>${latestAvailable.pct !== null ? latestAvailable.pct.toFixed(2) : 0}%</b> (สะสม YTD: ${latestAvailable.accumPct !== null ? latestAvailable.accumPct.toFixed(2) : 0}%)`;
+            let typeText = selectedType !== 'ALL' ? ` (Type: ${selectedType})` : '';
+            invSummary.innerHTML = `💡 <b>ความแม่นยำสต็อกล่าสุด${typeText} (${latestAvailable.dateStr}):</b> อยู่ที่ <b>${latestAvailable.pct !== null ? latestAvailable.pct.toFixed(2) : 0}%</b> (สะสม YTD: ${latestAvailable.accumPct !== null ? latestAvailable.accumPct.toFixed(2) : 0}%)`;
             invSummary.className = latestAvailable.pct >= 99 ? 'info-alert alert-green mt-10' : 'info-alert alert-red mt-10';
         }
     } else {
         if(valEl) valEl.innerText = "-";
         if(updEl) updEl.innerText = "Updated: --";
-        if (invSummary) { invSummary.innerHTML = "💡 ไม่มีข้อมูล Inventory Accuracy MTD"; invSummary.className = 'info-alert alert-yellow mt-10'; }
+        if (invSummary) { invSummary.innerHTML = "💡 ไม่มีข้อมูล Inventory Accuracy MTD ตามเงื่อนไขที่เลือก"; invSummary.className = 'info-alert alert-yellow mt-10'; }
     }
 
     if (mtdData.length > 0) {
