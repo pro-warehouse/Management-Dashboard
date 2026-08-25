@@ -400,3 +400,20 @@ body {
 .kpi-box .trend-note {
     margin-right: 12px !important;
 }
+.kpi-box .trend-up {
+    background-color: #FFFFFF !important;
+    color: #059669 !important;
+    border: none !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15) !important;
+}
+.kpi-box .trend-down {
+    background-color: #FFFFFF !important;
+    color: #DC2626 !important;
+    border: none !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15) !important;
+}
+.kpi-box .trend-neutral {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+}
