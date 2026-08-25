@@ -406,6 +406,31 @@
         <div class="section-title-wrap">
             <h2 class="section-heading">5. Inventory Accuracy Details</h2>
         </div>
+
+        <!-- 🌟 ส่วนที่เพิ่มใหม่: INVENTORY LOSS & SHRINKAGE 🌟 -->
+        <section class="card mb-30" style="overflow: hidden;">
+            <div class="card-head-bar">
+                <h3 class="panel-title m-0">INVENTORY LOSS & SHRINKAGE (สรุปยอดสูญเสีย)</h3>
+            </div>
+            
+            <!-- กราฟ -->
+            <div class="chart-canvas-box mt-10" style="height: 300px;">
+                <canvas id="inventoryLossChart"></canvas>
+            </div>
+            
+            <!-- ตารางเปรียบเทียบ (Transpose) -->
+            <div class="table-scroll-wrap mt-20" style="max-height: 450px;">
+                <table class="data-table comparison-table" id="inventory-loss-table">
+                    <thead>
+                        <tr><th class="text-center text-muted">กำลังโหลดข้อมูลสูญเสีย...</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+        <!-- 🌟 จบส่วนที่เพิ่มใหม่ 🌟 -->
+
+        <!-- ของเดิม: section class="grid-2-col mb-20" จะอยู่ต่อจากตรงนี้... -->
         <section class="grid-2-col mb-20">
             <div class="card">
                 <!-- 🌟 แก้ไขบรรทัดนี้: เติม flex และ Dropdown เข้าไป 🌟 -->
