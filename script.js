@@ -5,6 +5,9 @@ let _toastTimer = null;
 let _loadProgress = 0; 
 let _loadAnimFrame = null;
 
+// ==========================================
+// 🌟 1. SAFE DATE PARSER & HELPERS
+// ==========================================
 function safeParseDate(str) {
     if (!str) return new Date();
     let d = new Date(str);
@@ -97,7 +100,7 @@ function generateTrendHtml(current, previous, isInverse = false, isPct = false) 
 }
 
 // ------------------------------------------------------------
-// CHART.JS CONFIG
+// CHART.JS PLUGINS
 // ------------------------------------------------------------
 Chart.defaults.font.family = "'Inter', 'Prompt', sans-serif";
 Chart.defaults.color = '#64748B';
@@ -114,7 +117,6 @@ const dataLabelPlugin = {
     afterDatasetsDraw(chart) {
         if(chart.config.type !== 'bar' || chart.canvas.id === 'productivityChart') return;
         const { ctx } = chart;
-        
         chart.data.datasets.forEach((dataset, i) => {
             if (dataset.type === 'line' || !chart.isDatasetVisible(i) || dataset.stack) return;
             const meta = chart.getDatasetMeta(i);
@@ -130,7 +132,6 @@ const dataLabelPlugin = {
                 }
             });
         });
-        
         if (chart.canvas.id === 'ffmTrendChart' || chart.canvas.id === 'workforceChart') {
             let totals = []; let xCoords = []; let topY = [];
             chart.data.datasets.forEach((dataset, i) => {
@@ -171,7 +172,7 @@ const lineDataLabelPlugin = {
                     ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#1E293B';
                     ctx.font = 'bold 9px Inter'; ctx.textAlign = 'center'; 
                     ctx.textBaseline = 'bottom'; 
-                    ctx.fillText(Number(data).toFixed(1) + '%', point.x, point.y - 12); // ดันตัวเลขขึ้นไม่ให้ทับเส้น
+                    ctx.fillText(Number(data).toFixed(1) + '%', point.x, point.y - 12);
                 }
             });
         });
@@ -179,54 +180,46 @@ const lineDataLabelPlugin = {
 };
 
 // ==========================================
-// INITIALIZE CHART INSTANCES
+// 🌟 2. SECURE CHART INITIALIZATION 🌟
 // ==========================================
-let ffmTrendChartInstance = new Chart(document.getElementById('ffmTrendChart'), { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grid: { borderDash: [4, 4] }, grace: '15%' } } }, plugins: [dataLabelPlugin] });
-let ffmVolumeChartInstance = new Chart(document.getElementById('ffmVolumeChart'), { type: 'doughnut', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels:{usePointStyle:true, boxWidth:8} } } } });
-let workforceChartInstance = new Chart(document.getElementById('workforceChart'), { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grid: { borderDash: [4, 4] }, grace: '15%' } } }, plugins: [dataLabelPlugin] });
+let ffmTrendChartInstance = null;
+let ffmVolumeChartInstance = null;
+let workforceChartInstance = null;
+let ontimeChartInstance = null;
+let claimChart2Instance = null;
+let inventoryChartInstance = null;
+let productivityChartInstance = null;
+let transportTrendChartInstance = null;
 
-let ontimeChartInstance = new Chart(document.getElementById('ontimeChart2'), { 
-    type: 'line', data: { labels: [], datasets: [] }, 
-    options: { 
-        responsive: true, maintainAspectRatio: false, 
-        layout: { padding: { top: 25 } }, 
-        plugins: { legend: { position: 'bottom', labels:{usePointStyle:true, boxWidth:8} } }, 
-        scales: { 
-            x: { grid: { display: false } }, 
-            y: { border: { display: false }, grid: { borderDash: [4, 4] }, suggestedMin: 80, max: 115 } // ขยายเพดานไม่ให้กราฟชนขอบบน
-        } 
-    }, 
-    plugins: [lineDataLabelPlugin]
-});
+// ฟังก์ชันนี้จะทำงานก็ต่อเมื่อ DOM โหลดเสร็จแล้วเท่านั้น ป้องกันการแครช
+function initCharts() {
+    if (ffmTrendChartInstance) return; // สร้างครั้งเดียวพอ
 
-let claimChart2Instance = new Chart(document.getElementById('claimChart2'), { type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#F59E0B', borderRadius: 4, yAxisID: 'y' }, { label: 'จำนวนชิ้น', data: [], type: 'line', yAxisID: 'y1', pointRadius: 4, borderWidth: 2, borderColor: '#3B82F6', backgroundColor: '#3B82F6' } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: {grid:{display:false}}, y: {position: 'left', grace: '15%', border:{display:false}, grid: { borderDash: [4, 4] }}, y1: {position: 'right', display:false} } }, plugins: [dataLabelPlugin] });
-let inventoryChartInstance = new Chart(document.getElementById('inventoryChart'), { type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], fill: true }] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 20 } }, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { borderDash: [4, 4] }, suggestedMin: 90, max: 105 } } }, plugins: [lineDataLabelPlugin]});
-let productivityChartInstance = new Chart(document.getElementById('productivityChart'), { 
-    type: 'bar', 
-    data: { labels: [], datasets: [] }, 
-    options: { 
-        responsive: true, maintainAspectRatio: false, 
-        plugins: { legend: { position: 'top' } }, 
-        scales: { 
-            x: { stacked: true, grid: { display: false } }, 
-            y: { stacked: false, border: { display: false }, grace: '15%', grid: { borderDash: [4, 4] } } 
-        } 
-    } 
-});
+    let ctx1 = document.getElementById('ffmTrendChart');
+    if(ctx1) ffmTrendChartInstance = new Chart(ctx1, { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grid: { borderDash: [4, 4] }, grace: '15%' } } }, plugins: [dataLabelPlugin] });
+    
+    let ctx2 = document.getElementById('ffmVolumeChart');
+    if(ctx2) ffmVolumeChartInstance = new Chart(ctx2, { type: 'doughnut', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels:{usePointStyle:true, boxWidth:8} } } } });
+    
+    let ctx3 = document.getElementById('workforceChart');
+    if(ctx3) workforceChartInstance = new Chart(ctx3, { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grid: { borderDash: [4, 4] }, grace: '15%' } } }, plugins: [dataLabelPlugin] });
+    
+    let ctx4 = document.getElementById('ontimeChart2');
+    if(ctx4) ontimeChartInstance = new Chart(ctx4, { type: 'line', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 25 } }, plugins: { legend: { position: 'bottom', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { borderDash: [4, 4] }, suggestedMin: 80, max: 115 } } }, plugins: [lineDataLabelPlugin] });
+    
+    let ctx5 = document.getElementById('claimChart2');
+    if(ctx5) claimChart2Instance = new Chart(ctx5, { type: 'bar', data: { labels: [], datasets: [ { label: 'มูลค่าเคลม (฿)', data: [], backgroundColor: '#F59E0B', borderRadius: 4, yAxisID: 'y' }, { label: 'จำนวนชิ้น', data: [], type: 'line', yAxisID: 'y1', pointRadius: 4, borderWidth: 2, borderColor: '#3B82F6', backgroundColor: '#3B82F6' } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: {grid:{display:false}}, y: {position: 'left', grace: '15%', border:{display:false}, grid: { borderDash: [4, 4] }}, y1: {position: 'right', display:false} } }, plugins: [dataLabelPlugin] });
+    
+    let ctx6 = document.getElementById('inventoryChart');
+    if(ctx6) inventoryChartInstance = new Chart(ctx6, { type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy %', data: [], fill: true }] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 20 } }, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { borderDash: [4, 4] }, suggestedMin: 90, max: 105 } } }, plugins: [lineDataLabelPlugin]});
+    
+    let ctx7 = document.getElementById('productivityChart');
+    if(ctx7) productivityChartInstance = new Chart(ctx7, { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: false, border: { display: false }, grace: '15%', grid: { borderDash: [4, 4] } } } } });
+    
+    let ctx8 = document.getElementById('transportTrendChart');
+    if(ctx8) transportTrendChartInstance = new Chart(ctx8, { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }, scales: { x: { grid: { display: false } }, y: { type: 'linear', position: 'left', min: 0, max: 105, title: { display: true, text: 'SLA (%)', color: '#3B82F6', font: {weight: 'bold', size: 10} }, grid: { borderDash: [4, 4] } }, y1: { type: 'linear', position: 'right', title: { display: true, text: 'Cost (฿)', color: '#8B5CF6', font: {weight: 'bold', size: 10} }, grid: { display: false }, beginAtZero: true } } }, plugins: [dataLabelPlugin] });
+}
 
-let transportTrendChartInstance = new Chart(document.getElementById('transportTrendChart'), {
-    type: 'bar', data: { labels: [], datasets: [] },
-    options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } },
-        scales: {
-            x: { grid: { display: false } },
-            y: { type: 'linear', position: 'left', min: 0, max: 105, title: { display: true, text: 'SLA (%)', color: '#3B82F6', font: {weight: 'bold', size: 10} }, grid: { borderDash: [4, 4] } },
-            y1: { type: 'linear', position: 'right', title: { display: true, text: 'Cost (฿)', color: '#8B5CF6', font: {weight: 'bold', size: 10} }, grid: { display: false }, beginAtZero: true }
-        }
-    },
-    plugins: [dataLabelPlugin]
-});
 
 // ==========================================
 // DATA FETCHING & PROCESSING 
@@ -266,31 +259,6 @@ function updateLoaderPct(targetPct, durationMs) {
 }
 
 setInterval(() => { initDashboard(); }, 15 * 60 * 1000); 
-
-document.getElementById('theme-toggle')?.addEventListener('click', () => {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    Object.values(Chart.instances).forEach(chart => chart.update());
-});
-
-document.addEventListener('click', (e) => {
-    let buBtn = document.getElementById('bu-multi-select');
-    let buMenu = document.getElementById('bu-dropdown-menu');
-    if (buBtn && buMenu && !buBtn.contains(e.target) && !buMenu.contains(e.target)) buMenu.style.display = 'none';
-});
-
-document.getElementById('ontime-line-ms')?.addEventListener('change', updateOnTimeUI);
-document.getElementById('tp-metric-filter')?.addEventListener('change', updateTransportUI);
-
-// Event Listeners for Filters Location & UPH
-['loc-bu-filter', 'loc-type-filter', 'loc-zone-filter'].forEach(id => {
-    let el = document.getElementById(id);
-    if(el && !el.hasAttribute('data-bound')) { el.addEventListener('change', renderLocationAccuracy); el.setAttribute('data-bound', 'true'); }
-});
-['prod-area-filter', 'prod-zone-filter'].forEach(id => {
-    let el = document.getElementById(id);
-    if(el && !el.hasAttribute('data-bound')) { el.addEventListener('change', renderProductivitySection); el.setAttribute('data-bound', 'true'); }
-});
 
 function cleanDataBeforeLoad() {
     ['fulfillment', 'wave_ops', 'claims', 'inventory', 'inventory_daily', 'transport'].forEach(module => {
@@ -376,6 +344,8 @@ function populateGlobalBUFilters() {
 }
 
 async function initDashboard() {
+    initCharts(); // 🌟 บังคับสร้าง Chart ทันที ป้องกันการแครช
+    
     const loader = document.getElementById('global-loader');
     if (loader) loader.style.display = 'flex';
     
@@ -1149,7 +1119,6 @@ async function initFulfillmentRealtime() {
                     document.getElementById('wave-delay').innerText = overallMainText;
                 }
 
-                // 🌟 FIX: ล้างคำว่ากำลังตรวจสอบของกล่องที่ 1 และ 2 ออก 🌟
                 if (document.getElementById('wave-active-info-1')) document.getElementById('wave-active-info-1').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">สรุปข้อมูลล่าสุด</span>`;
                 if (document.getElementById('wave-active-info-2')) document.getElementById('wave-active-info-2').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">อัปเดตเรียบร้อย</span>`;
 
@@ -1701,7 +1670,6 @@ function updateClaimUI() {
             claimChart2Instance.update();
         }
 
-        // 🌟 FIX: ทำ Pivot Table ให้ Owner อยู่บนหัวตาราง 🌟
         let ownersSet = new Set();
         tableRecords.forEach(r => ownersSet.add(r.owner));
         let owners = Array.from(ownersSet).sort();
@@ -1742,7 +1710,6 @@ function updateClaimUI() {
             tableEl.innerHTML = thead + tbody;
         }
 
-        // 🌟 FIX: เพิ่ม PERIOD COMPARISON ของ CLAIM 🌟
         let chronPeriods = Object.values(groupedByPeriod).sort((a,b) => a.time - b.time);
         let claimCompTable = document.getElementById('claim-comparison-table');
         if(claimCompTable && chronPeriods.length > 0) {
@@ -1767,7 +1734,7 @@ function updateClaimUI() {
 
                     const fmtDiff = (v) => {
                         if (v === 0) return `<td class="diff-col text-right"><span style="background:#f1f5f9; color:#64748b; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 0.65rem; display: inline-block;">- 0</span></td>`;
-                        let isGood = (v < 0); // คลมน้อยลง = ดี (สีเขียว)
+                        let isGood = (v < 0); 
                         let arrow = v > 0 ? '▲' : '▼';
                         let absVal = Math.abs(v);
                         let valStr = fmtN(parseFloat(absVal.toFixed(2)));
@@ -1805,7 +1772,6 @@ function updateInventoryUI() {
     const updEl = document.getElementById('inv-update');
     let invSummary = document.getElementById('inv-summary-box');
 
-    // 🌟 FIX: ป้องกัน Error ถ้าข้อมูลเป็นว่างเปล่า ให้เคลียร์ตารางเลย 🌟
     if (!globalData.inventory_daily || Object.keys(globalData.inventory_daily).length === 0) {
         if(valEl) valEl.innerText = "-";
         if(updEl) updEl.innerText = "Updated: --";
@@ -1941,7 +1907,6 @@ function renderLocationAccuracy() {
             });
         });
 
-        // Populate Dropdowns dynamically if they are empty
         let buFilter = document.getElementById('loc-bu-filter');
         let typeFilter = document.getElementById('loc-type-filter');
         let zoneFilter = document.getElementById('loc-zone-filter');
@@ -2105,7 +2070,6 @@ function renderProductivitySection() {
             }
         });
 
-        // Populate Dropdowns
         if (areaFilterEl && areaFilterEl.options.length <= 1) { Array.from(allAreasList).sort().forEach(a => areaFilterEl.appendChild(new Option(a, a))); }
         if (zoneFilterEl && zoneFilterEl.options.length <= 1) { Array.from(allZonesList).sort().forEach(z => zoneFilterEl.appendChild(new Option(z, z))); }
 
@@ -2172,7 +2136,7 @@ function renderProductivitySection() {
             let uph = 0, pks = 0, hrs = 0;
             if (selectedZone !== 'ALL' && latest.zones[selectedZone]) {
                 uph = latest.zones[selectedZone].cnt > 0 ? Math.round(latest.zones[selectedZone].sumProd / latest.zones[selectedZone].cnt) : 0;
-                pks = 0; hrs = 0; // ไม่มีข้อมูลชั่วโมงรายโซน
+                pks = 0; hrs = 0; 
             } else if (selectedArea !== 'ALL' && latest.areas[selectedArea]) { 
                 uph = latest.areas[selectedArea].hours > 0 ? Math.round(latest.areas[selectedArea].picks / latest.areas[selectedArea].hours) : 0; 
                 pks = latest.areas[selectedArea].picks; hrs = latest.areas[selectedArea].hours; 
@@ -2296,30 +2260,14 @@ function renderProductivitySection() {
 }
 
 // ==========================================
-// 🌟 สั่งให้ Dashboard เริ่มทำงานตอนเปิดเว็บ 🌟
+// BOOTLOADER (ป้องกันการแครชก่อนโหลดเสร็จ)
 // ==========================================
-// ตรวจสอบสถานะเบราว์เซอร์ ถ้ายกหน้าเว็บขึ้นมาแล้วให้ดึงข้อมูลทันที
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initDashboard);
 } else {
     initDashboard();
 }
 
-// ผูก Event ให้กับ Filter ทันทีที่โหลดเสร็จ
-setTimeout(() => {
-    ['loc-bu-filter', 'loc-type-filter', 'loc-zone-filter'].forEach(id => {
-        let el = document.getElementById(id);
-        if(el && !el.hasAttribute('data-bound')) { el.addEventListener('change', renderLocationAccuracy); el.setAttribute('data-bound', 'true'); }
-    });
-    ['prod-area-filter', 'prod-zone-filter'].forEach(id => {
-        let el = document.getElementById(id);
-        if(el && !el.hasAttribute('data-bound')) { el.addEventListener('change', renderProductivitySection); el.setAttribute('data-bound', 'true'); }
-    });
-}, 500);
-
-// ==========================================
-// ฟังก์ชันสำหรับระบบ Key Incidents Alerts
-// ==========================================
 function generateExecutiveAlerts(targetEnd, latestD, totalLate, maxOverallDelay, diffDays, worstBU) {
     const alertBox = document.getElementById('smart-alerts-container');
     if (!alertBox) return;
@@ -2347,9 +2295,6 @@ function generateExecutiveAlerts(targetEnd, latestD, totalLate, maxOverallDelay,
     alertBox.innerHTML = alertsHtml;
 }
 
-// ==========================================
-// ฟังก์ชันสำหรับปุ่มทางลัด (Quick Navigation)
-// ==========================================
 function scrollToSection(elementId) {
     const el = document.getElementById(elementId);
     if (el) {
