@@ -408,7 +408,13 @@
         </div>
         <section class="grid-2-col mb-20">
             <div class="card">
-                <div class="card-head-bar"><h3 class="panel-title m-0">INVENTORY ACCURACY TREND</h3></div>
+                <!-- 🌟 แก้ไขบรรทัดนี้: เติม flex และ Dropdown เข้าไป 🌟 -->
+                <div class="card-head-bar" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 class="panel-title m-0">INVENTORY ACCURACY TREND</h3>
+                    <select id="inv-type-filter" class="filter-control" style="width: 160px; font-size: 0.85rem; padding: 4px;" onchange="updateInventoryUI()">
+                        <option value="ALL">All Location Types</option>
+                    </select>
+                </div>
                 <div id="inv-summary-box" class="info-alert alert-green mt-10">💡 กำลังสรุปข้อมูล...</div>
                 <div class="chart-canvas-box"><canvas id="inventoryChart"></canvas></div>
             </div>
