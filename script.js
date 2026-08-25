@@ -2013,33 +2013,34 @@ function updateClaimUI() {
 
         const tableEl = document.getElementById('claim-detail-table');
         if (tableEl) {
+            // 🌟 1. สร้างหัวตารางแยกช่อง Cost และ Qty ชัดเจน 🌟
             let thead = `<thead><tr>
-                <th style="position:sticky; top:0; left:0; z-index:20;">Date</th>
-                <th class="text-center" style="border-right: 2px solid var(--border-color);">Total (฿ / ชิ้น)</th>
-                ${owners.map(o => `<th class="text-center">${o}</th>`).join('')}
+                <th style="position:sticky; top:0; left:0; z-index:20; border-right: 2px solid var(--border-color); min-width: 80px;">Date</th>
+                <th class="text-right" style="position:sticky; top:0; z-index:15;">Total Cost (฿)</th>
+                <th class="text-center" style="border-right: 2px solid var(--border-color); position:sticky; top:0; z-index:15;">Total Qty</th>
+                ${owners.map(o => `<th class="text-right" style="position:sticky; top:0; z-index:15;">${o} Cost (฿)</th><th class="text-center" style="border-right: 1px solid var(--border-color); position:sticky; top:0; z-index:15;">${o} Qty</th>`).join('')}
             </tr></thead>`;
 
-            // 🌟 ฟังก์ชันจัดรูปแบบข้อมูลแบบ Executive (ไม่ตกบรรทัด และไม่แดงถ้ายอดเป็น 0) 🌟
-            const formatClaimCell = (c, q) => {
-                if (!c && !q) return '<span class="text-muted">-</span>';
-                let costColor = c > 0 ? 'var(--brand-red)' : 'var(--text-muted)';
-                let cText = `<span style="color:${costColor}; font-weight:700;">฿ ${c > 0 ? fmtN(parseFloat(c.toFixed(2))) : '0'}</span>`;
-                let qText = q > 0 ? `<span class="text-muted" style="font-size:0.65rem; margin-left:4px;">(${fmtN(q)} ชิ้น)</span>` : ``;
-                return `<div style="white-space:nowrap;">${cText}${qText}</div>`;
-            };
+            // 🌟 2. กำหนดสีตัวอักษรเป็นสีดำ (text-dark) และกรณีไม่มีข้อมูลให้ขีดทิ้ง (text-muted) 🌟
+            const formatCost = (val) => val > 0 ? `<span class="font-bold text-dark">${fmtN(parseFloat(val.toFixed(2)))}</span>` : `<span class="text-muted">-</span>`;
+            const formatQty = (val) => val > 0 ? `<span class="font-bold text-dark">${fmtN(val)}</span>` : `<span class="text-muted">-</span>`;
 
             let tbody = "<tbody>" + Object.keys(dateGroups).reverse().map(date => {
                 let dGrp = dateGroups[date];
+                
                 let rowHtml = `<tr>
-                    <td style="position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${date}</td>
-                    <td class="text-center" style="border-right: 2px solid var(--border-color); background:rgba(0,0,0,0.02);">${formatClaimCell(dGrp.totalCost, dGrp.totalQty)}</td>`;
+                    <td style="position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600; border-right: 2px solid var(--border-color);">${date}</td>
+                    <td class="text-right" style="background:rgba(0,0,0,0.02);">${formatCost(dGrp.totalCost)}</td>
+                    <td class="text-center" style="border-right: 2px solid var(--border-color); background:rgba(0,0,0,0.02);">${formatQty(dGrp.totalQty)}</td>`;
 
                 owners.forEach(o => {
                     let oData = dGrp.owners[o];
                     if (oData) {
-                        rowHtml += `<td class="text-center">${formatClaimCell(oData.cost, oData.qty)}</td>`;
+                        rowHtml += `<td class="text-right">${formatCost(oData.cost)}</td>
+                                    <td class="text-center" style="border-right: 1px solid var(--border-color);">${formatQty(oData.qty)}</td>`;
                     } else {
-                        rowHtml += `<td class="text-center text-muted">-</td>`;
+                        rowHtml += `<td class="text-right text-muted">-</td>
+                                    <td class="text-center text-muted" style="border-right: 1px solid var(--border-color);">-</td>`;
                     }
                 });
                 rowHtml += `</tr>`;
