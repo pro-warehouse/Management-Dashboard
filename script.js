@@ -732,7 +732,10 @@ async function initFulfillmentRealtime() {
         if (validChartDates.length === 0) {
             htmlTable += `<tr><td colspan="14" class="text-center text-muted">ไม่มีข้อมูลในช่วงที่เลือก</td></tr>`;
         } else {
-            [...validChartDates].reverse().forEach(dateStr => {
+            // 🌟 1. บังคับเรียง "วันที่" จากใหม่ไปเก่า (มากไปน้อย) เด็ดขาด 🌟
+            let tableDatesDesc = [...validChartDates].sort((a, b) => safeParseDate(b).getTime() - safeParseDate(a).getTime());
+
+            tableDatesDesc.forEach(dateStr => {
                 let parts = dateStr.split('-');
                 let displayDate = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr;
                 
@@ -741,7 +744,13 @@ async function initFulfillmentRealtime() {
                 let fData = unifiedDatesMap[dateStr].ffm || {};
                 
                 let allBUsInDay = new Set([...Object.keys(bqData), ...Object.keys(wData), ...Object.keys(fData)]);
-                let sortedOwners = Array.from(allBUsInDay).filter(o => o !== 'UNKNOWN' && o !== '').sort();
+                
+                // 🌟 2. บังคับเรียง "BU" ตามยอดออเดอร์ (มากไปน้อย) 🌟
+                let sortedOwners = Array.from(allBUsInDay).filter(o => o !== 'UNKNOWN' && o !== '').sort((a, b) => {
+                    let ordA = getBestOrderData(bqData[a], wData[a], fData[a]).tot;
+                    let ordB = getBestOrderData(bqData[b], wData[b], fData[b]).tot;
+                    return ordB - ordA;
+                });
 
                 let dayReq = 0, dayAlloc = 0, dayShip = 0, dayOrdTotal = 0, dayOrdFull = 0, dayActShort = 0, dayPu = 0, dayPlt = 0;
 
@@ -1174,7 +1183,7 @@ async function initFulfillmentRealtime() {
                         let thead = `<thead><tr><th class="text-center" style="position:sticky; left:0; z-index:20;">Planned Date</th>${allBUsArray.map(bu => `<th class="text-center">${bu}</th>`).join('')}<th class="text-center">Total (เสร็จ/ทั้งหมด)</th><th class="text-center">% Completed</th></tr></thead>`;
                         let tbody = "<tbody>";
                         
-                        [...validChartDates].reverse().forEach(dStr => {
+                        [...validChartDates].sort((a,b) => safeParseDate(b).getTime() - safeParseDate(a).getTime()).forEach(dStr => {
                             let dObj = safeParseDate(dStr);
                             let dispDate = isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
                             
