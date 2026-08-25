@@ -1905,7 +1905,7 @@ function updateOnTimeUI() {
 }
 
 // ----------------------------------------------------
-// CLAIM COST (MTD Logic + Table Re-design)
+// CLAIM COST (MTD Logic + Table Re-design + Dual Axis Chart)
 // ----------------------------------------------------
 function updateClaimUI() {
     const valEl = document.getElementById('claim-val');
@@ -1918,6 +1918,9 @@ function updateClaimUI() {
         if(valEl) valEl.innerText = "0";
         if(accumText) accumText.innerText = "YTD Accumulate: 0 ฿";
         if(claimSummary) { claimSummary.innerHTML = "💡 ไม่มียอดเคลม (0 บาท)"; claimSummary.className = 'info-alert alert-green'; }
+        if(claimChart2Instance) { claimChart2Instance.data.labels = []; claimChart2Instance.update(); }
+        const tableEl = document.getElementById('claim-detail-table');
+        if (tableEl) tableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูลเคลม</th></tr></thead>`;
         return;
     }
 
@@ -1991,11 +1994,48 @@ function updateClaimUI() {
 
     if (mtdData.length > 0) {
         let pLabels = mtdData.map(i => formatShortDate(i.dateObj));
+        
+        // 🌟 สร้างกราฟ CLAIM อัปเดตใหม่ 🌟
         if(claimChart2Instance) {
             claimChart2Instance.data.labels = pLabels;
-            claimChart2Instance.data.datasets[0].data = mtdData.map(p => parseFloat(p.cost.toFixed(2)));
-            claimChart2Instance.data.datasets[1].data = mtdData.map(p => p.qty);
-            claimChart2Instance.data.datasets[0].backgroundColor = (ctx) => (!ctx.chart.chartArea) ? '#F59E0B' : getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#F59E0B', '#D97706');
+            claimChart2Instance.data.datasets = [
+                {
+                    type: 'bar',
+                    label: 'มูลค่าเคลม (฿)',
+                    data: mtdData.map(p => parseFloat(p.cost.toFixed(2))),
+                    backgroundColor: (ctx) => (!ctx.chart.chartArea) ? '#F59E0B' : getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#F59E0B', '#D97706'),
+                    borderRadius: 4,
+                    borderSkipped: false,
+                    maxBarThickness: 45,
+                    yAxisID: 'y',
+                    order: 2
+                },
+                {
+                    type: 'line',
+                    label: 'จำนวนชิ้น (Qty)',
+                    data: mtdData.map(p => p.qty),
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y1',
+                    order: 1
+                }
+            ];
+
+            claimChart2Instance.options.scales.y = {
+                type: 'linear', position: 'left',
+                title: { display: true, text: 'มูลค่า (฿)', color: '#D97706', font: {weight: 'bold', size: 10} },
+                grid: { borderDash: [4, 4] }, beginAtZero: true, grace: '10%'
+            };
+            claimChart2Instance.options.scales.y1 = {
+                type: 'linear', position: 'right',
+                title: { display: true, text: 'จำนวนชิ้น', color: '#3B82F6', font: {weight: 'bold', size: 10} },
+                grid: { display: false }, beginAtZero: true, grace: '10%'
+            };
             claimChart2Instance.update();
         }
 
@@ -2013,7 +2053,6 @@ function updateClaimUI() {
 
         const tableEl = document.getElementById('claim-detail-table');
         if (tableEl) {
-            // 🌟 1. สร้างหัวตารางแยกช่อง Cost และ Qty ชัดเจน 🌟
             let thead = `<thead><tr>
                 <th style="position:sticky; top:0; left:0; z-index:20; border-right: 2px solid var(--border-color); min-width: 80px;">Date</th>
                 <th class="text-right" style="position:sticky; top:0; z-index:15;">Total Cost (฿)</th>
@@ -2021,7 +2060,6 @@ function updateClaimUI() {
                 ${owners.map(o => `<th class="text-right" style="position:sticky; top:0; z-index:15;">${o} Cost (฿)</th><th class="text-center" style="border-right: 1px solid var(--border-color); position:sticky; top:0; z-index:15;">${o} Qty</th>`).join('')}
             </tr></thead>`;
 
-            // 🌟 2. กำหนดสีตัวอักษรเป็นสีดำ (text-dark) และกรณีไม่มีข้อมูลให้ขีดทิ้ง (text-muted) 🌟
             const formatCost = (val) => val > 0 ? `<span class="font-bold text-dark">${fmtN(parseFloat(val.toFixed(2)))}</span>` : `<span class="text-muted">-</span>`;
             const formatQty = (val) => val > 0 ? `<span class="font-bold text-dark">${fmtN(val)}</span>` : `<span class="text-muted">-</span>`;
 
@@ -2099,50 +2137,7 @@ function updateClaimUI() {
     } else {
         const tableEl = document.getElementById('claim-detail-table');
         if (tableEl) tableEl.innerHTML = `<thead><tr><th class="text-center text-muted">ไม่มีข้อมูลเคลม MTD</th></tr></thead>`;
-        if(claimChart2Instance) {
-            claimChart2Instance.data.labels = pLabels;
-            claimChart2Instance.data.datasets = [
-                {
-                    type: 'bar',
-                    label: 'มูลค่าเคลม (฿)',
-                    data: mtdData.map(p => parseFloat(p.cost.toFixed(2))),
-                    backgroundColor: (ctx) => (!ctx.chart.chartArea) ? '#F59E0B' : getGradient(ctx.chart.ctx, ctx.chart.chartArea, '#F59E0B', '#D97706'),
-                    borderRadius: 4,
-                    borderSkipped: false,
-                    maxBarThickness: 45, /* 🌟 ล็อคขนาดแท่งไม่ให้อ้วนเกินไปเมื่อมีข้อมูลน้อยวัน */
-                    yAxisID: 'y',
-                    order: 2
-                },
-                {
-                    type: 'line',
-                    label: 'จำนวนชิ้น (Qty)',
-                    data: mtdData.map(p => p.qty),
-                    borderColor: '#3B82F6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    tension: 0.4, /* 🌟 ทำให้เส้นโค้งสวยงาม สมูท ไม่หักศอก */
-                    fill: true, /* 🌟 เทสีใต้เส้นบางๆ ให้ดูมีมิติ */
-                    yAxisID: 'y1',
-                    order: 1
-                }
-            ];
-
-            /* 🌟 เปิดแสดงแกน Y แยกฝั่งซ้าย(เงิน) ขวา(ชิ้น) ให้ชัดเจนขึ้น 🌟 */
-            claimChart2Instance.options.scales.y = {
-                type: 'linear', position: 'left',
-                title: { display: true, text: 'มูลค่า (฿)', color: '#D97706', font: {weight: 'bold', size: 10} },
-                grid: { borderDash: [4, 4] }, beginAtZero: true, grace: '10%'
-            };
-            claimChart2Instance.options.scales.y1 = {
-                type: 'linear', position: 'right',
-                title: { display: true, text: 'จำนวนชิ้น', color: '#3B82F6', font: {weight: 'bold', size: 10} },
-                grid: { display: false }, beginAtZero: true, grace: '10%'
-            };
-
-            claimChart2Instance.update();
-        }
+        if(claimChart2Instance) { claimChart2Instance.data.labels = []; claimChart2Instance.update(); }
     }
 }
 
@@ -2445,7 +2440,6 @@ function renderLocationAccuracy() {
     if (worstZone) analysisHtml += `<br>🚨 <b>ระวัง:</b> BU <b>${worstZone.bu}</b> โซน <b>${worstZone.zone}</b> พบผิด Location สูงสุด <b>${fmtN(worstZone.totalWrong)} จุด</b>`;
     
     locBoxEl.innerHTML = analysisHtml;
-}
 }
 
 // ----------------------------------------------------
