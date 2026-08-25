@@ -2688,17 +2688,27 @@ function renderProductivitySection() {
                     let trg = getTarget(zd.area, latestDateStr);
                     let gap = prod - trg; let cost = prod > 0 ? (hourlyRate / prod) : 0;
 
-                    // 🌟 อัปเกรดสูตรนับคน: ฉลาดขึ้น ไม่สนพิมพ์เล็ก/ใหญ่ หรือเว้นวรรค 🌟
-                    let zonePickersCount = Object.keys(latest.users || {}).filter(u => {
-                        let uZone = latest.users[u].zone;
-                        if (!uZone) return false;
-                        
-                        // แปลงเป็นตัวพิมพ์ใหญ่และตัดเว้นวรรคทิ้งทั้งคู่ แล้วค่อยเทียบกัน
-                        let cleanUserZone = String(uZone).trim().toUpperCase();
-                        let cleanTargetZone = String(z).trim().toUpperCase();
-                        
-                        return cleanUserZone.includes(cleanTargetZone) || cleanTargetZone.includes(cleanUserZone);
-                    }).length;
+                    // 🌟 อัปเกรดสูตรนับคน: ให้รองรับกรณีที่ไม่มี Zone แต่มี Area แทน พร้อมใส่ Log ไว้เช็ค
+let zonePickersCount = Object.keys(latest.users || {}).filter(u => {
+    let uZone = latest.users[u].zone;
+    
+    // สำรอง: ถ้า API ไม่ส่ง Zone มา ให้ลองใช้ Area แทน
+    if (!uZone || uZone === "") {
+        uZone = latest.users[u].area; 
+    }
+    
+    // ถ้ายังไม่มีข้อมูลอีก ให้ข้ามการนับคนนี้ไป
+    if (!uZone || uZone === "N/A") return false;
+
+    // แปลงเป็นตัวพิมพ์ใหญ่และตัดเว้นวรรคทิ้งทั้งคู่
+    let cleanUserZone = String(uZone).trim().toUpperCase();
+    let cleanTargetZone = String(z).trim().toUpperCase();
+
+    // ปลดคอมเมนต์บรรทัดด้านล่างนี้ เพื่อดูว่าระบบเทียบคำว่าอะไรกับอะไร (ดูใน Console)
+    // console.log(`Checking User: ${u} | UserZone: ${cleanUserZone} <--> TargetZone: ${cleanTargetZone}`);
+
+    return cleanUserZone.includes(cleanTargetZone) || cleanTargetZone.includes(cleanUserZone);
+}).length;
 
                     html += `<tr>
                         <td class="font-bold text-dark" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${z}</td>
