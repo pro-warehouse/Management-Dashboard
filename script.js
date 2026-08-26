@@ -430,13 +430,13 @@ async function initDashboard() {
                 globalData = result.data;
                 
                 if (Object.keys(globalData.workforce || {}).length === 0) {
-                    alert("🚨 [Apps Script] เชื่อมต่อสำเร็จ แต่ 'ข้อมูลว่างเปล่า (Empty)'\n\nสาเหตุที่เป็นไปได้:\n1. ลืมกด Deploy > New Version ใน Apps Script\n2. ตัวเลข Cache ใน Code.gs ยังเป็นตัวเก่า\n3. โค้ด Apps Script ดึง Google Sheet ไม่ได้");
+                    console.warn("⚠️ [Apps Script] เชื่อมต่อสำเร็จ แต่ 'ข้อมูลว่างเปล่า (Empty)'");
                 }
                 
                 cleanDataBeforeLoad();
                 populateGlobalBUFilters();
             } else {
-                alert(`⚠️ แจ้งเตือน: ดึงข้อมูลสำเร็จ แต่หลังบ้าน (Apps Script) แจ้ง Error!\n\nโปรดเช็คที่ Apps Script`);
+                console.error(`⚠️ แจ้งเตือน: ดึงข้อมูลสำเร็จ แต่หลังบ้าน (Apps Script) แจ้ง Error!\n\nโปรดเช็คที่ Apps Script`);
             }
         } catch (parseErr) {
             console.error("Not JSON format. Server returned HTML instead:", textData);
@@ -918,7 +918,7 @@ async function initFulfillmentRealtime() {
                     chartDataMap[dateStr].buOrd[bu] = ordTotal;
                 });
             });
-        }
+        } // <--- จุดที่เพิ่มวงเล็บปีกกาแก้ Syntax Error
 
         let ffmTbl = document.getElementById('ffm-detail-table');
         if (ffmTbl) {
@@ -1308,7 +1308,10 @@ async function initFulfillmentRealtime() {
                 if (document.getElementById('smart-alerts-container')) document.getElementById('smart-alerts-container').innerHTML = `<div class="info-alert alert-yellow" style="justify-content: center;">💡 ไม่มีข้อมูลเหตุการณ์ในช่วงวันที่เลือก</div>`;
                 if (document.getElementById('ffm-detail-table')) document.getElementById('ffm-detail-table').innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูล Fulfillment ในช่วงที่เลือก</th></tr></thead>`;
             }
-    } catch (err) {}
+
+    } catch (err) {
+        console.error("Fulfillment Data Processing Error:", err);
+    }
 }
 
 // ----------------------------------------------------
