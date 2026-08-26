@@ -1602,15 +1602,12 @@ function updateWorkforceUI() {
         if(updEl) updEl.innerText = "Updated: --";
         if(trendBox) trendBox.innerHTML = `<span class="trend-badge trend-neutral">-</span>`;
         
-        // 🌟 เพิ่มคำสั่งลบคำว่า Loading ออก ถ้าไม่มีข้อมูลส่งมา 🌟
+        // 🌟 ล้างคำว่า Loading ออก เมื่อไม่มีข้อมูลส่งมา 🌟
         const matrixTable = document.getElementById('wf-matrix-table');
         if (matrixTable) matrixTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูล Workforce (โปรดตรวจสอบสิทธิ์ชีตพนักงาน)</th></tr></thead>`;
         
         const attBody = document.getElementById('daily-attendance-body');
         if (attBody) attBody.innerHTML = `<tr><td colspan="100%" class="text-center text-muted">ไม่มีข้อมูล Attendance</td></tr>`;
-        
-        const attHead = document.getElementById('daily-attendance-head');
-        if (attHead) attHead.innerHTML = `<tr><th class="text-center text-muted">No Data</th></tr>`;
         
         if(workforceChartInstance) { workforceChartInstance.data.labels = []; workforceChartInstance.update(); }
         return;
@@ -1684,7 +1681,7 @@ function updateWorkforceUI() {
             let pLabel = getPeriodLabel(safeParseDate(dStr), period);
             if(!pMap[pLabel]) pMap[pLabel] = { req:0, alloc:0, ship:0, ordTotal:0, ordFull:0, buReq:{} };
             
-            // 🌟 แก้บัก: ป้องกัน Error ทำให้หน้าเว็บพัง หากบางวันถูกกรองทิ้ง 🌟
+            // 🌟 แก้บัก: ป้องกันหน้าเว็บพัง หากไม่มีข้อมูลออเดอร์ในบางวัน 🌟
             let dData = chartDataMap[dStr] || { req:0, alloc:0, ship:0, ordTotal:0, ordFull:0, buShip: {}, buReq: {}, buOrd: {} };
             
             pMap[pLabel].req += dData.req || 0;
@@ -1693,7 +1690,9 @@ function updateWorkforceUI() {
             pMap[pLabel].ordTotal += dData.ordTotal || 0;
             pMap[pLabel].ordFull += dData.ordFull || 0;
 
-            chartBUsArray.forEach(bu => pMap[pLabel].buReq[bu] = (pMap[pLabel].buReq[bu]||0) + (dData.buReq?.[bu] || 0));
+            chartBUsArray.forEach(bu => {
+                pMap[pLabel].buReq[bu] = (pMap[pLabel].buReq[bu] || 0) + (dData.buReq ? (dData.buReq[bu] || 0) : 0);
+            });
         });
         
         let pLabels = Object.keys(pMap);
