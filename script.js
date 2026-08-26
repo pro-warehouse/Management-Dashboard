@@ -422,30 +422,33 @@ async function initDashboard() {
         const response = await fetch(`${GAS_URL}?section=all`);
         updateLoaderPct(65, 800);
         
-        if (response.ok) {
-            const result = await response.json();
-            if (result.status === "success") {
-                globalData = result.data;
-                cleanDataBeforeLoad();
-                populateGlobalBUFilters();
+        // 🌟 ติดตั้งตัวฟ้อง Error อย่างละเอียด 🌟
+        if (!response.ok) {
+            alert(`⚠️ ดึงข้อมูลล้มเหลว!\nApps Script ส่งรหัส Error: ${response.status}\n\nวิธีแก้: ตรวจสอบว่าลิงก์ GAS_URL ถูกต้อง หรือมีการล็อกสิทธิ์การเข้าถึงใน Google Sheet หรือไม่`);
+        } else {
+            const textData = await response.text();
+            try {
+                const result = JSON.parse(textData);
+                if (result.status === "success") {
+                    globalData = result.data;
+                    cleanDataBeforeLoad();
+                    populateGlobalBUFilters();
+                } else {
+                    alert(`⚠️ ดึงข้อมูลสำเร็จ แต่ Backend แจ้ง Error:\n\n` + JSON.stringify(result));
+                }
+            } catch (parseErr) {
+                alert(`⚠️ ข้อมูลที่ส่งมาไม่ใช่ JSON! (มักเกิดจากการเผลอกด New Deployment หรือไฟล์ Sheet ขาดสิทธิ์การเข้าถึง)\n\nข้อความที่ระบบส่งมา:\n` + textData.substring(0, 150));
             }
         }
-    } catch (e) { console.error("GAS Load Error:", e); }
+    } catch (e) { 
+        alert(`⚠️ เชื่อมต่อ Apps Script ไม่ได้เลย!\n\nสาเหตุ: ` + e.message + `\n\nวิธีแก้: เช็คว่าลิงก์ GAS_URL ในไฟล์ script.js ตรงกับลิงก์ที่ Deploy ล่าสุดหรือไม่`); 
+    }
 
     updateLoaderPct(85, 600);
-    // 🌟 ดักจับ Error ไม่ให้ FFM/Wave พัง แล้วลามไปทำให้กล่องอื่นตายตาม 🌟
-    try {
-        await initFulfillmentRealtime();
-    } catch (e) {
-        console.error("FFM Logic Error:", e);
-    }
+    try { await initFulfillmentRealtime(); } catch (e) { console.error(e); }
     
     updateLoaderPct(95, 300);
-    try {
-        refreshAllSections();
-    } catch (e) {
-        console.error("Refresh Sections Error:", e);
-    }
+    try { refreshAllSections(); } catch (e) { console.error(e); }
     
     updateLoaderPct(100, 200);
     setTimeout(() => { 
