@@ -1129,185 +1129,177 @@ async function initFulfillmentRealtime() {
                 diffDays = Math.floor((todayD - workDMid) / (1000 * 60 * 60 * 24)); 
             }
 
+            let waveStats = { total_orders: 0, late_pick_orders: 0, late_load_orders: 0, max_pick_delay_mins: 0, max_load_delay_mins: 0, min_pick_early_mins: null, min_load_early_mins: null, picked_orders: 0, shipped_orders: 0 };
+            try {
+                let queryDate = latestD ? safeParseDate(latestD).toISOString().split('T')[0] : "";
+                const waveResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fn: 'apiGetWaveMonitoring', args: [queryDate, queryDate] })
+                });
+                if (waveResp.ok) {
+                    const waveJson = await waveResp.json();
+                    if (waveJson.success && waveJson.data && waveJson.data.length > 0) {
+                        waveStats = waveJson.data[0];
+                    }
+                }
+            } catch (err) {}
+
+            let isApiSuccess = (parseInt(waveStats.total_orders) > 0);
+            let latePick = isApiSuccess ? (parseInt(waveStats.late_pick_orders) || 0) : 0;
+            let lateLoad = isApiSuccess ? (parseInt(waveStats.late_load_orders) || 0) : aLate;
+            let totalLate = Math.max(latePick + lateLoad, (aLate || 0));
+            let maxPickDelay = isApiSuccess ? (parseInt(waveStats.max_pick_delay_mins) || 0) : 0;
+            let maxLoadDelay = isApiSuccess ? (parseInt(waveStats.max_load_delay_mins) || 0) : (aDelay > 0 ? aDelay : 0);
+            let maxOverallDelay = Math.max(maxPickDelay, maxLoadDelay, (aDelay || 0));
+            let pEarly = isApiSuccess ? parseInt(waveStats.min_pick_early_mins) : null;
+            let lEarly = isApiSuccess ? parseInt(waveStats.min_load_early_mins) : null;
+            const formatTime = (mins) => `${Math.floor(mins/60)}h ${mins%60}m`;
+
             if (document.getElementById('wave-total')) {
                 document.getElementById('wave-total').innerText = dailyTotal > 0 ? fmtN(dailyTotal) : "0";
                 document.getElementById('wave-completed').innerText = aComp > 0 ? fmtN(aComp) : "0";
-                document.getElementById('wave-late').innerText = aLate > 0 ? fmtN(aLate) : "0";
-                let delayEl = document.getElementById('wave-delay');
-                if (delayEl) {
-                    if (aDelay > 0) delayEl.innerText = `${Math.floor(aDelay / 60)}h ${aDelay % 60}m`;
-                    else delayEl.innerText = `0h 0m`;
-                }
+                document.getElementById('wave-late').innerText = totalLate > 0 ? fmtN(totalLate) : "0";
                 
-                let waveStats = { total_orders: 0, late_pick_orders: 0, late_load_orders: 0, max_pick_delay_mins: 0, max_load_delay_mins: 0, min_pick_early_mins: null, min_load_early_mins: null, picked_orders: 0, shipped_orders: 0 };
-                try {
-                    let queryDate = latestD ? safeParseDate(latestD).toISOString().split('T')[0] : "";
-                    const waveResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fn: 'apiGetWaveMonitoring', args: [queryDate, queryDate] })
-                    });
-                    if (waveResp.ok) {
-                        const waveJson = await waveResp.json();
-                        if (waveJson.success && waveJson.data && waveJson.data.length > 0) {
-                            waveStats = waveJson.data[0];
-                        }
-                    }
-                } catch (err) {}
-
-                let isApiSuccess = (parseInt(waveStats.total_orders) > 0);
-                let latePick = isApiSuccess ? (parseInt(waveStats.late_pick_orders) || 0) : 0;
-                let lateLoad = isApiSuccess ? (parseInt(waveStats.late_load_orders) || 0) : aLate;
-                let totalLate = Math.max(latePick + lateLoad, (aLate || 0));
-
-                let maxPickDelay = isApiSuccess ? (parseInt(waveStats.max_pick_delay_mins) || 0) : 0;
-                let maxLoadDelay = isApiSuccess ? (parseInt(waveStats.max_load_delay_mins) || 0) : (aDelay > 0 ? aDelay : 0);
-                let maxOverallDelay = Math.max(maxPickDelay, maxLoadDelay, (aDelay || 0));
-                let pEarly = isApiSuccess ? parseInt(waveStats.min_pick_early_mins) : null;
-                let lEarly = isApiSuccess ? parseInt(waveStats.min_load_early_mins) : null;
-                const formatTime = (mins) => `${Math.floor(mins/60)}h ${mins%60}m`;
-
-                if (document.getElementById('wave-late')) {
-                    document.getElementById('wave-late').innerText = totalLate > 0 ? fmtN(totalLate) : "0";
-                    let info3 = document.getElementById('wave-active-info-3');
-                    if (info3) {
-                        if (totalLate > 0) {
-                            if (isApiSuccess && (latePick + lateLoad) > 0) {
-                                info3.innerHTML = `<span class="trend-badge" style="background:#fee2e2; color:#b91c1c;">หลุด SLA: Pick ${fmtN(latePick)} | Load ${fmtN(lateLoad)}</span>`;
-                            } else {
-                                info3.innerHTML = `<span class="trend-badge" style="background:#fee2e2; color:#b91c1c;">หลุด SLA: ${fmtN(totalLate)} บิล</span>`;
-                            }
+                let info3 = document.getElementById('wave-active-info-3');
+                if (info3) {
+                    if (totalLate > 0) {
+                        if (isApiSuccess && (latePick + lateLoad) > 0) {
+                            info3.innerHTML = `<span class="trend-badge" style="background:#fee2e2; color:#b91c1c;">หลุด SLA: Pick ${fmtN(latePick)} | Load ${fmtN(lateLoad)}</span>`;
                         } else {
-                            info3.innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">On-time ทุกบิล</span>`;
+                            info3.innerHTML = `<span class="trend-badge" style="background:#fee2e2; color:#b91c1c;">หลุด SLA: ${fmtN(totalLate)} บิล</span>`;
                         }
-                    }
-                }
-
-                if (document.getElementById('wave-delay')) {
-                    let pStr = "Done", lStr = "Done", overallMainText = "0h 0m";
-                    if (isApiSuccess) {
-                        if (maxPickDelay > 0) { pStr = `Delay ${formatTime(maxPickDelay)}`; overallMainText = formatTime(maxOverallDelay); }
-                        else if (!isNaN(pEarly) && pEarly !== null) { pStr = `Early ${formatTime(pEarly)}`; }
-
-                        if (maxLoadDelay > 0) { lStr = `Delay ${formatTime(maxLoadDelay)}`; overallMainText = formatTime(maxOverallDelay); }
-                        else if (!isNaN(lEarly) && lEarly !== null) { lStr = `Early ${formatTime(lEarly)}`; }
-                        
-                        document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">Pick: ${pStr} &bull; Load: ${lStr}</span>`;
                     } else {
-                        if (aDelay > 0) {
-                            overallMainText = formatTime(aDelay);
-                            document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge" style="background:#fef3c7; color:#b45309;">ดีเลย์ช้าสุด: ${worstBU}</span>`;
-                        } else {
-                            document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">เวลาปกติ</span>`;
-                        }
-                    }
-                    if (maxOverallDelay > 0) overallMainText = formatTime(maxOverallDelay);
-                    document.getElementById('wave-delay').innerText = overallMainText;
-                }
-
-                if (document.getElementById('wave-active-info-1')) document.getElementById('wave-active-info-1').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">สรุปข้อมูลล่าสุด</span>`;
-                if (document.getElementById('wave-active-info-2')) document.getElementById('wave-active-info-2').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">อัปเดตเรียบร้อย</span>`;
-
-                if (document.getElementById('stage-pick-pct')) {
-                    let fTotal = dailyTotal > 0 ? dailyTotal : (parseInt(waveStats.total_orders) || 0);
-                    let isDataIncomplete = (isApiSuccess === false);
-                    let fPicked = isDataIncomplete ? aComp : (parseInt(waveStats.picked_orders) || 0);
-                    let fShipped = isDataIncomplete ? aComp : (parseInt(waveStats.shipped_orders) || 0);
-                    let fQcDone = isDataIncomplete ? fShipped : (parseInt(waveStats.qc_orders) || 0);
-
-                    fPicked = Math.min(fPicked, fTotal);
-                    fQcDone = Math.min(fQcDone, fPicked); 
-                    fShipped = Math.min(fShipped, fQcDone); 
-                    let fQcPending = Math.max(0, fPicked - fQcDone);
-
-                    let pctPick = fTotal > 0 ? ((fPicked / fTotal) * 100).toFixed(1) : 0;
-                    document.getElementById('stage-pick-pct').innerText = pctPick + '%';
-                    document.getElementById('stage-pick-done').innerText = fmtN(fPicked);
-                    document.getElementById('stage-pick-total').innerText = fmtN(fTotal);
-                    if(document.getElementById('stage-pick-bar')) document.getElementById('stage-pick-bar').style.width = pctPick + '%';
-                    document.getElementById('stage-pick-text').innerHTML = `⏳ รอดำเนินการหยิบ: <b>${fmtN(fTotal - fPicked)}</b> บิล`;
-
-                    let pctQc = fTotal > 0 ? ((fQcDone / fTotal) * 100).toFixed(1) : 0;
-                    document.getElementById('stage-qc-pct').innerText = pctQc + '%';
-                    document.getElementById('stage-qc-done').innerText = fmtN(fQcDone); 
-                    document.getElementById('stage-qc-pending').innerText = fmtN(fQcPending);
-                    if(document.getElementById('stage-qc-bar')) document.getElementById('stage-qc-bar').style.width = pctQc + '%';
-                    document.getElementById('stage-qc-text').innerHTML = `🔍 ค้างตรวจ/รอแพ็ค: <b>${fmtN(fQcPending)}</b> บิล`;
-
-                    let pctShip = fTotal > 0 ? ((fShipped / fTotal) * 100).toFixed(1) : 0;
-                    let pendingShip = Math.max(0, fTotal - fShipped);
-                    document.getElementById('stage-ship-pct').innerText = pctShip + '%';
-                    document.getElementById('stage-ship-done').innerText = fmtN(fShipped);
-                    if(document.getElementById('stage-ship-pending')) document.getElementById('stage-ship-pending').innerText = fmtN(pendingShip);
-                    if(document.getElementById('stage-ship-bar')) document.getElementById('stage-ship-bar').style.width = pctShip + '%';
-                    document.getElementById('stage-ship-text').innerHTML = `📦 คงเหลือยังไม่ส่งออก: <b>${fmtN(pendingShip)}</b> บิล`;
-                }
-                
-                let targetWaveDate = latestD;
-                if (targetWaveDate) {
-                    let dispDate = getDisplayDate(targetWaveDate);
-                    ['1','2','3','4'].forEach(n => { let el = document.getElementById(`wave-date-${n}`); if(el) el.innerText = `Updated: ${dispDate}`; });
-                    ['pick','qc','ship'].forEach(s => { let el = document.getElementById(`stage-${s}-date`); if(el) el.innerText = `Updated: ${dispDate}`; });
-                }
-                
-                generateExecutiveAlerts(targetEnd, latestD, totalLate, maxOverallDelay, diffDays, worstBU);
-
-                const waveSummaryTable = document.getElementById('wave-summary-table');
-                if (waveSummaryTable) {
-                    if (validChartDates.length === 0 || allBUsArray.length === 0) {
-                        waveSummaryTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูลออเดอร์</th></tr></thead>`;
-                    } else {
-                        let thead = `<thead><tr><th class="text-center" style="position:sticky; left:0; z-index:20;">Planned Date</th>${allBUsArray.map(bu => `<th class="text-center">${bu}</th>`).join('')}<th class="text-center">Total (เสร็จ/ทั้งหมด)</th><th class="text-center">% Completed</th></tr></thead>`;
-                        let tbody = "<tbody>";
-                        
-                        [...validChartDates].sort((a,b) => safeParseDate(b).getTime() - safeParseDate(a).getTime()).forEach(dStr => {
-                            let dObj = safeParseDate(dStr);
-                            let dispDate = isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
-                            
-                            let tr = `<tr><td class="text-center font-bold" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${dispDate}</td>`;
-                            let dayTot = 0, dayComp = 0;
-                            
-                            allBUsArray.forEach(bu => {
-                                let bData = getBestOrderData(unifiedDatesMap[dStr]?.bq?.[bu], unifiedDatesMap[dStr]?.wave?.[bu], unifiedDatesMap[dStr]?.ffm?.[bu]);
-                                let ordTotal = bData.tot; let ordFull = bData.full;
-                                dayTot += ordTotal; dayComp += ordFull;
-                                if (ordTotal === 0) { tr += `<td class="text-center text-muted">-</td>`; } 
-                                else {
-                                    let color = (ordFull === ordTotal) ? 'var(--brand-green)' : (ordFull > 0 ? 'var(--brand-yellow)' : 'var(--brand-red)');
-                                    tr += `<td class="text-center"><span style="color:${color}; font-weight:700;">${fmtN(ordFull)}</span> <span class="text-xs text-muted">/ ${fmtN(ordTotal)}</span></td>`;
-                                }
-                            });
-                            
-                            let grandColor = (dayComp === dayTot && dayTot > 0) ? 'var(--brand-green)' : (dayComp > 0 ? 'var(--brand-yellow)' : 'var(--brand-red)');
-                            tr += `<td class="text-center"><span style="color:${grandColor}; font-weight:700;">${fmtN(dayComp)}</span> <span class="text-xs text-muted">/ ${fmtN(dayTot)}</span></td>`;
-                            
-                            let pct = dayTot > 0 ? Math.min(100, (dayComp / dayTot) * 100).toFixed(2) : 0;
-                            let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
-                            let pctColor = pct >= 100 ? '#10B981' : (pct > 0 ? '#F59E0B' : '#EF4444');
-                            tr += `<td class="text-center"><span style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:600;">${pct}%</span></td></tr>`;
-                            tbody += tr;
-                        });
-                        waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
+                        info3.innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">On-time ทุกบิล</span>`;
                     }
                 }
-            } else {
-                ['wave-total', 'wave-completed', 'wave-late'].forEach(id => {
-                    if (document.getElementById(id)) document.getElementById(id).innerText = "0";
-                });
-                if (document.getElementById('wave-delay')) document.getElementById('wave-delay').innerText = "0h 0m";
-                
-                ['stage-pick-pct', 'stage-qc-pct', 'stage-ship-pct'].forEach(id => {
-                    if (document.getElementById(id)) document.getElementById(id).innerText = "0%";
-                });
-                ['stage-pick-bar', 'stage-qc-bar', 'stage-ship-bar'].forEach(id => {
-                    if (document.getElementById(id)) document.getElementById(id).style.width = "0%";
-                });
-                ['stage-pick-done', 'stage-pick-total', 'stage-qc-done', 'stage-qc-pending', 'stage-ship-done', 'stage-ship-pending'].forEach(id => {
-                    if (document.getElementById(id)) document.getElementById(id).innerText = "0";
-                });
-
-                if (document.getElementById('wave-summary-table')) document.getElementById('wave-summary-table').innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูลออเดอร์ในช่วงที่เลือก</th></tr></thead>`;
-                if (document.getElementById('smart-alerts-container')) document.getElementById('smart-alerts-container').innerHTML = `<div class="info-alert alert-yellow" style="justify-content: center;">💡 ไม่มีข้อมูลเหตุการณ์ในช่วงวันที่เลือก</div>`;
-                if (document.getElementById('ffm-detail-table')) document.getElementById('ffm-detail-table').innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูล Fulfillment ในช่วงที่เลือก</th></tr></thead>`;
             }
+
+            if (document.getElementById('wave-delay')) {
+                let pStr = "Done", lStr = "Done", overallMainText = "0h 0m";
+                if (isApiSuccess) {
+                    if (maxPickDelay > 0) { pStr = `Delay ${formatTime(maxPickDelay)}`; overallMainText = formatTime(maxOverallDelay); }
+                    else if (!isNaN(pEarly) && pEarly !== null) { pStr = `Early ${formatTime(pEarly)}`; }
+
+                    if (maxLoadDelay > 0) { lStr = `Delay ${formatTime(maxLoadDelay)}`; overallMainText = formatTime(maxOverallDelay); }
+                    else if (!isNaN(lEarly) && lEarly !== null) { lStr = `Early ${formatTime(lEarly)}`; }
+                    
+                    document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">Pick: ${pStr} &bull; Load: ${lStr}</span>`;
+                } else {
+                    if (aDelay > 0) {
+                        overallMainText = formatTime(aDelay);
+                        document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge" style="background:#fef3c7; color:#b45309;">ดีเลย์ช้าสุด: ${worstBU}</span>`;
+                    } else {
+                        document.getElementById('wave-active-info-4').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">เวลาปกติ</span>`;
+                    }
+                }
+                if (maxOverallDelay > 0) overallMainText = formatTime(maxOverallDelay);
+                document.getElementById('wave-delay').innerText = overallMainText;
+            }
+
+            if (document.getElementById('wave-active-info-1')) document.getElementById('wave-active-info-1').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">สรุปข้อมูลล่าสุด</span>`;
+            if (document.getElementById('wave-active-info-2')) document.getElementById('wave-active-info-2').innerHTML = `<span class="trend-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted); border:none;">อัปเดตเรียบร้อย</span>`;
+
+            if (document.getElementById('stage-pick-pct')) {
+                let fTotal = dailyTotal > 0 ? dailyTotal : (parseInt(waveStats.total_orders) || 0);
+                let isDataIncomplete = (isApiSuccess === false);
+                let fPicked = isDataIncomplete ? aComp : (parseInt(waveStats.picked_orders) || 0);
+                let fShipped = isDataIncomplete ? aComp : (parseInt(waveStats.shipped_orders) || 0);
+                let fQcDone = isDataIncomplete ? fShipped : (parseInt(waveStats.qc_orders) || 0);
+
+                fPicked = Math.min(fPicked, fTotal);
+                fQcDone = Math.min(fQcDone, fPicked); 
+                fShipped = Math.min(fShipped, fQcDone); 
+                let fQcPending = Math.max(0, fPicked - fQcDone);
+
+                let pctPick = fTotal > 0 ? ((fPicked / fTotal) * 100).toFixed(1) : 0;
+                document.getElementById('stage-pick-pct').innerText = pctPick + '%';
+                document.getElementById('stage-pick-done').innerText = fmtN(fPicked);
+                document.getElementById('stage-pick-total').innerText = fmtN(fTotal);
+                if(document.getElementById('stage-pick-bar')) document.getElementById('stage-pick-bar').style.width = pctPick + '%';
+                document.getElementById('stage-pick-text').innerHTML = `⏳ รอดำเนินการหยิบ: <b>${fmtN(fTotal - fPicked)}</b> บิล`;
+
+                let pctQc = fTotal > 0 ? ((fQcDone / fTotal) * 100).toFixed(1) : 0;
+                document.getElementById('stage-qc-pct').innerText = pctQc + '%';
+                document.getElementById('stage-qc-done').innerText = fmtN(fQcDone); 
+                document.getElementById('stage-qc-pending').innerText = fmtN(fQcPending);
+                if(document.getElementById('stage-qc-bar')) document.getElementById('stage-qc-bar').style.width = pctQc + '%';
+                document.getElementById('stage-qc-text').innerHTML = `🔍 ค้างตรวจ/รอแพ็ค: <b>${fmtN(fQcPending)}</b> บิล`;
+
+                let pctShip = fTotal > 0 ? ((fShipped / fTotal) * 100).toFixed(1) : 0;
+                let pendingShip = Math.max(0, fTotal - fShipped);
+                document.getElementById('stage-ship-pct').innerText = pctShip + '%';
+                document.getElementById('stage-ship-done').innerText = fmtN(fShipped);
+                if(document.getElementById('stage-ship-pending')) document.getElementById('stage-ship-pending').innerText = fmtN(pendingShip);
+                if(document.getElementById('stage-ship-bar')) document.getElementById('stage-ship-bar').style.width = pctShip + '%';
+                document.getElementById('stage-ship-text').innerHTML = `📦 คงเหลือยังไม่ส่งออก: <b>${fmtN(pendingShip)}</b> บิล`;
+            }
+            
+            let targetWaveDate = latestD;
+            if (targetWaveDate) {
+                let dispDate = getDisplayDate(targetWaveDate);
+                ['1','2','3','4'].forEach(n => { let el = document.getElementById(`wave-date-${n}`); if(el) el.innerText = `Updated: ${dispDate}`; });
+                ['pick','qc','ship'].forEach(s => { let el = document.getElementById(`stage-${s}-date`); if(el) el.innerText = `Updated: ${dispDate}`; });
+            }
+            
+            generateExecutiveAlerts(targetEnd, latestD, totalLate, maxOverallDelay, diffDays, worstBU);
+
+            const waveSummaryTable = document.getElementById('wave-summary-table');
+            if (waveSummaryTable) {
+                if (validChartDates.length === 0 || allBUsArray.length === 0) {
+                    waveSummaryTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูลออเดอร์</th></tr></thead>`;
+                } else {
+                    let thead = `<thead><tr><th class="text-center" style="position:sticky; left:0; z-index:20;">Planned Date</th>${allBUsArray.map(bu => `<th class="text-center">${bu}</th>`).join('')}<th class="text-center">Total (เสร็จ/ทั้งหมด)</th><th class="text-center">% Completed</th></tr></thead>`;
+                    let tbody = "<tbody>";
+                    
+                    [...validChartDates].sort((a,b) => safeParseDate(b).getTime() - safeParseDate(a).getTime()).forEach(dStr => {
+                        let dObj = safeParseDate(dStr);
+                        let dispDate = isNaN(dObj.getTime()) ? dStr : `${String(dObj.getDate()).padStart(2, '0')} ${shortMonths[dObj.getMonth()]}`;
+                        
+                        let tr = `<tr><td class="text-center font-bold" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${dispDate}</td>`;
+                        let dayTot = 0, dayComp = 0;
+                        
+                        allBUsArray.forEach(bu => {
+                            let bData = getBestOrderData(unifiedDatesMap[dStr]?.bq?.[bu], unifiedDatesMap[dStr]?.wave?.[bu], unifiedDatesMap[dStr]?.ffm?.[bu]);
+                            let ordTotal = bData.tot; let ordFull = bData.full;
+                            dayTot += ordTotal; dayComp += ordFull;
+                            if (ordTotal === 0) { tr += `<td class="text-center text-muted">-</td>`; } 
+                            else {
+                                let color = (ordFull === ordTotal) ? 'var(--brand-green)' : (ordFull > 0 ? 'var(--brand-yellow)' : 'var(--brand-red)');
+                                tr += `<td class="text-center"><span style="color:${color}; font-weight:700;">${fmtN(ordFull)}</span> <span class="text-xs text-muted">/ ${fmtN(ordTotal)}</span></td>`;
+                            }
+                        });
+                        
+                        let grandColor = (dayComp === dayTot && dayTot > 0) ? 'var(--brand-green)' : (dayComp > 0 ? 'var(--brand-yellow)' : 'var(--brand-red)');
+                        tr += `<td class="text-center"><span style="color:${grandColor}; font-weight:700;">${fmtN(dayComp)}</span> <span class="text-xs text-muted">/ ${fmtN(dayTot)}</span></td>`;
+                        
+                        let pct = dayTot > 0 ? Math.min(100, (dayComp / dayTot) * 100).toFixed(2) : 0;
+                        let pctBg = pct >= 100 ? '#dcfce7' : (pct > 0 ? '#fef3c7' : '#fee2e2');
+                        let pctColor = pct >= 100 ? '#10B981' : (pct > 0 ? '#F59E0B' : '#EF4444');
+                        tr += `<td class="text-center"><span style="background:${pctBg}; color:${pctColor}; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:600;">${pct}%</span></td></tr>`;
+                        tbody += tr;
+                    });
+                    waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
+                }
+            }
+        } else {
+            ['wave-total', 'wave-completed', 'wave-late'].forEach(id => {
+                if (document.getElementById(id)) document.getElementById(id).innerText = "0";
+            });
+            if (document.getElementById('wave-delay')) document.getElementById('wave-delay').innerText = "0h 0m";
+            
+            ['stage-pick-pct', 'stage-qc-pct', 'stage-ship-pct'].forEach(id => {
+                if (document.getElementById(id)) document.getElementById(id).innerText = "0%";
+            });
+            ['stage-pick-bar', 'stage-qc-bar', 'stage-ship-bar'].forEach(id => {
+                if (document.getElementById(id)) document.getElementById(id).style.width = "0%";
+            });
+            ['stage-pick-done', 'stage-pick-total', 'stage-qc-done', 'stage-qc-pending', 'stage-ship-done', 'stage-ship-pending'].forEach(id => {
+                if (document.getElementById(id)) document.getElementById(id).innerText = "0";
+            });
+
+            if (document.getElementById('wave-summary-table')) document.getElementById('wave-summary-table').innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูลออเดอร์ในช่วงที่เลือก</th></tr></thead>`;
+            if (document.getElementById('smart-alerts-container')) document.getElementById('smart-alerts-container').innerHTML = `<div class="info-alert alert-yellow" style="justify-content: center;">💡 ไม่มีข้อมูลเหตุการณ์ในช่วงวันที่เลือก</div>`;
+            if (document.getElementById('ffm-detail-table')) document.getElementById('ffm-detail-table').innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูล Fulfillment ในช่วงที่เลือก</th></tr></thead>`;
+        }
 
     } catch (err) {
         console.error("Fulfillment Data Processing Error:", err);
@@ -2892,4 +2884,110 @@ function renderProductivitySection() {
 
         const userTableEl = document.getElementById('prod-user-table');
         if (userTableEl) {
-            let users = Object.keys(latest.users || {}).filter(u => {ฉันไม่สามารถช่วยในเรื่องนี้ได้ เพราะเป็นแค่โมเดลภาษา
+            let users = Object.keys(latest.users || {}).filter(u => {
+                let d = latest.users[u];
+                if (selectedZone !== 'ALL' && d.zone !== selectedZone) return false;
+                if (selectedArea !== 'ALL' && d.area !== selectedArea) return false;
+                return true;
+            }).sort((a, b) => {
+                let uphA = latest.users[a].hours > 0 ? latest.users[a].picks / latest.users[a].hours : 0;
+                let uphB = latest.users[b].hours > 0 ? latest.users[b].picks / latest.users[b].hours : 0;
+                return uphB - uphA;
+            });
+
+            let html = `<thead><tr>
+                <th style="position:sticky; left:0; z-index:20;">Name (ID)</th><th class="text-center">Picks</th><th class="text-center">Hours</th><th class="text-center">UPH</th><th class="text-center text-blue">Cost/Pick (฿)</th>
+            </tr></thead><tbody>`;
+            
+            if(users.length === 0) { html += `<tr><td colspan="5" class="text-center text-muted">ไม่มีข้อมูลพนักงานตามเงื่อนไข</td></tr>`; } 
+            else {
+                users.forEach(u => {
+                    let d = latest.users[u];
+                    let uph = d.hours > 0 ? Math.round(d.picks / d.hours) : 0;
+                    let isBulk = d.hours < 0.08 || uph > 600;
+                    let userTrg = getTarget(d.area, latestDateStr);
+                    let fullName = uMap[u] || u;
+                    let cost = uph > 0 ? (hourlyRate / uph) : 0;
+
+                    html += `<tr style="${isBulk ? 'opacity:0.5' : ''}">
+                        <td style="position:sticky; left:0; background:var(--bg-card); z-index:10;"><b class="text-dark">${fullName}</b><br><span class="text-xs text-muted">ID: ${u}</span></td>
+                        <td class="text-center font-bold">${fmtN(Math.round(d.picks))}</td>
+                        <td class="text-center text-muted">${d.hours.toFixed(2)}</td>
+                        <td class="text-center font-bold" style="color:${uph >= userTrg ? 'var(--brand-green)' : 'var(--brand-red)'}">${isBulk ? '<span class="text-xs text-muted">Bulk/Error</span>' : uph}</td>
+                        <td class="text-center font-bold text-blue">${isBulk ? '-' : cost.toFixed(2)}</td>
+                    </tr>`;
+                });
+            }
+            userTableEl.innerHTML = html + "</tbody>";
+        }
+
+        const overallTableEl = document.getElementById('prod-overall-table');
+        if (overallTableEl) {
+            let html = `<thead><tr>
+                <th style="position:sticky; left:0; z-index:20;">Date</th><th class="text-center">Active Pickers</th><th class="text-center">Total Picks</th><th class="text-center">Overall UPH</th><th class="text-center text-blue">Avg Cost/Pick (฿)</th>
+            </tr></thead><tbody>`;
+            
+            sortedGroups.slice().reverse().forEach(item => {
+                let nb = nonBulkTotals(item); 
+                let uph = nb.hours > 0 ? Math.round(nb.picks / nb.hours) : 0;
+                let _ds = groupDateStr(item); let trg = getTarget(selectedArea, _ds);
+                let cost = uph > 0 ? (hourlyRateFor(_ds) / uph) : 0;
+
+                html += `<tr>
+                    <td class="font-bold" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${item.label}</td>
+                    <td class="text-center"><span class="badge-glass" style="background:#F1F5F9; color:#475569;">${item.activePickers.size} คน</span></td>
+                    <td class="text-center font-bold">${fmtN(Math.round(nb.picks))}</td>
+                    <td class="text-center font-bold" style="color:${uph >= trg ? 'var(--brand-green)' : 'var(--brand-red)'}">${uph}</td>
+                    <td class="text-center font-bold text-blue">${cost.toFixed(2)}</td>
+                </tr>`;
+            });
+            overallTableEl.innerHTML = html + "</tbody>";
+        }
+
+    } catch (e) { console.error("Productivity Render Error:", e); }
+}
+
+// ==========================================
+// BOOTLOADER (ป้องกันการแครชก่อนโหลดเสร็จ)
+// ==========================================
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDashboard);
+} else {
+    initDashboard();
+}
+
+function generateExecutiveAlerts(targetEnd, latestD, totalLate, maxOverallDelay, diffDays, worstBU) {
+    const alertBox = document.getElementById('smart-alerts-container');
+    if (!alertBox) return;
+    
+    let alertsHtml = "";
+    let hasAlert = false;
+
+    if (diffDays > 0) {
+        alertsHtml += `<div class="info-alert alert-yellow">⚠️ <b>Outdated Data:</b> ข้อมูลล่าสุดคือวันที่ ${latestD} (ล่าช้า ${diffDays} วัน)</div>`;
+        hasAlert = true;
+    }
+    if (totalLate > 0) {
+        alertsHtml += `<div class="info-alert alert-red">🚨 <b>SLA Breach:</b> พบออเดอร์หลุดเวลาการทำรอบ (Late Orders) จำนวน ${fmtN(totalLate)} บิล</div>`;
+        hasAlert = true;
+    }
+    if (maxOverallDelay > 0) {
+        alertsHtml += `<div class="info-alert alert-red">⏱️ <b>Process Delay:</b> พบความล่าช้าในกระบวนการทำงานสูงสุดที่ BU: ${worstBU} (${Math.floor(maxOverallDelay/60)}h ${maxOverallDelay % 60}m)</div>`;
+        hasAlert = true;
+    }
+    
+    if (!hasAlert) {
+        alertsHtml = `<div class="info-alert alert-green" style="justify-content: center;">✅ <b>All Systems Normal:</b> ข้อมูลปกติ ไม่พบความล่าช้าในรอบบิลปัจจุบัน</div>`;
+    }
+    
+    alertBox.innerHTML = alertsHtml;
+}
+
+function scrollToSection(elementId) {
+    const el = document.getElementById(elementId);
+    if (el) {
+        const container = el.closest('.card') || el.closest('section') || el;
+        const y = container.getBoundingClientRect().top + window.scrollY - 140; 
+        window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+}
