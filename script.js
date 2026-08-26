@@ -2644,6 +2644,7 @@ function renderInventoryLossUI() {
         inventoryLossChartInstance.update();
     }
 }
+
 // ----------------------------------------------------
 // PRODUCTIVITY (Overlay Chart + Area Table with Picker Count)
 // ----------------------------------------------------
@@ -2850,27 +2851,14 @@ function renderProductivitySection() {
                     let trg = getTarget(zd.area, latestDateStr);
                     let gap = prod - trg; let cost = prod > 0 ? (hourlyRate / prod) : 0;
 
-                    // 🌟 อัปเกรดสูตรนับคน: ให้รองรับกรณีที่ไม่มี Zone แต่มี Area แทน พร้อมใส่ Log ไว้เช็ค
-let zonePickersCount = Object.keys(latest.users || {}).filter(u => {
-    let uZone = latest.users[u].zone;
-    
-    // สำรอง: ถ้า API ไม่ส่ง Zone มา ให้ลองใช้ Area แทน
-    if (!uZone || uZone === "") {
-        uZone = latest.users[u].area; 
-    }
-    
-    // ถ้ายังไม่มีข้อมูลอีก ให้ข้ามการนับคนนี้ไป
-    if (!uZone || uZone === "N/A") return false;
-
-    // แปลงเป็นตัวพิมพ์ใหญ่และตัดเว้นวรรคทิ้งทั้งคู่
-    let cleanUserZone = String(uZone).trim().toUpperCase();
-    let cleanTargetZone = String(z).trim().toUpperCase();
-
-    // ปลดคอมเมนต์บรรทัดด้านล่างนี้ เพื่อดูว่าระบบเทียบคำว่าอะไรกับอะไร (ดูใน Console)
-    // console.log(`Checking User: ${u} | UserZone: ${cleanUserZone} <--> TargetZone: ${cleanTargetZone}`);
-
-    return cleanUserZone.includes(cleanTargetZone) || cleanTargetZone.includes(cleanUserZone);
-}).length;
+                    let zonePickersCount = Object.keys(latest.users || {}).filter(u => {
+                        let uZone = latest.users[u].zone;
+                        if (!uZone || uZone === "") uZone = latest.users[u].area; 
+                        if (!uZone || uZone === "N/A") return false;
+                        let cleanUserZone = String(uZone).trim().toUpperCase();
+                        let cleanTargetZone = String(z).trim().toUpperCase();
+                        return cleanUserZone.includes(cleanTargetZone) || cleanTargetZone.includes(cleanUserZone);
+                    }).length;
 
                     html += `<tr>
                         <td class="font-bold text-dark" style="position:sticky; left:0; background:var(--bg-card); z-index:10;">${z}</td>
@@ -2948,6 +2936,7 @@ let zonePickersCount = Object.keys(latest.users || {}).filter(u => {
 
     } catch (e) { console.error("Productivity Render Error:", e); }
 }
+
 // ==========================================
 // BOOTLOADER (ป้องกันการแครชก่อนโหลดเสร็จ)
 // ==========================================
