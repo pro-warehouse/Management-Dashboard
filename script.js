@@ -683,50 +683,54 @@ async function initFulfillmentRealtime() {
     const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
     let bqDataList = [];
     try {
-        // 1. Dashboard Summary
+        // 🌟 1. ดึงข้อมูล Dashboard (บังคับให้ส่งวันที่เจาะจง เพื่อป้องกัน BigQuery Error) 🌟
         const response = await fetch(API_URL, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fn: 'apiGetDashboardSummary', args: ["", ""] })
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fn: 'apiGetDashboardSummary', args: [dpStartVal, dpEndVal] })
         });
         if (response.ok) {
             const result = await response.json();
             if (result.success && result.data) bqDataList = result.data;
-            else if (!result.success) alert("🚨 [Render Backend] แจ้ง Error (Dashboard Summary):\n" + result.message);
-        } else {
-            const errText = await response.text();
-            alert("🚨 [Render Backend] HTTP Error " + response.status + "\n" + errText);
         }
         
-        // 2. Capacity
         let dObj = safeParseDate(dpEndVal); dObj.setDate(dObj.getDate() - 90);
         const startDateCap = dObj.toISOString().split('T')[0];
-        const capResp = await fetch(API_URL, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fn: 'apiGetCapacity', args: [startDateCap, dpEndVal] })
-        });
-        if (capResp.ok) {
-            const capJson = await capResp.json();
-            if (capJson.success && capJson.data) {
-                capJson.data.forEach(row => {
-                    if (!globalCapacities[row.target_date]) globalCapacities[row.target_date] = {};
-                    globalCapacities[row.target_date][row.owner] = row.capacity;
-                });
-            } else if (!capJson.success) alert("🚨 [Render Backend] แจ้ง Error (Capacity):\n" + capJson.message);
-        }
         
-        // 3. UPH Cost
-        const uphResp = await fetch(API_URL, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fn: 'apiGetUphCost', args: [startDateCap, dpEndVal] }) 
-        });
-        if (uphResp.ok) {
-            const uphJson = await uphResp.json();
-            if (uphJson.success && uphJson.data) {
-                uphJson.data.forEach(row => { globalUphCost[row.target_date] = row; });
-            } else if (!uphJson.success) alert("🚨 [Render Backend] แจ้ง Error (UPH Cost):\n" + uphJson.message);
-        }
+        // 🌟 2. แยก Try-Catch ของ Capacity ออกมา ป้องกัน API ตัวใดตัวนึงล้มแล้วลามพา FFM พัง 🌟
+        try {
+            const capResp = await fetch(API_URL, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fn: 'apiGetCapacity', args: [startDateCap, dpEndVal] })
+            });
+            if (capResp.ok) {
+                const capJson = await capResp.json();
+                if (capJson.success && capJson.data) {
+                    capJson.data.forEach(row => {
+                        if (!globalCapacities[row.target_date]) globalCapacities[row.target_date] = {};
+                        globalCapacities[row.target_date][row.owner] = row.capacity;
+                    });
+                }
+            }
+        } catch(e) {}
+        
+        // 🌟 3. แยก Try-Catch ของ UPH 🌟
+        try {
+            const uphResp = await fetch(API_URL, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fn: 'apiGetUphCost', args: [startDateCap, dpEndVal] }) 
+            });
+            if (uphResp.ok) {
+                const uphJson = await uphResp.json();
+                if (uphJson.success && uphJson.data) {
+                    uphJson.data.forEach(row => {
+                        globalUphCost[row.target_date] = row;
+                    });
+                }
+            }
+        } catch(e) {}
     } catch (apiErr) {
-        alert("🚨 [Render Backend] ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ Render ได้เลย:\n" + apiErr.message);
+        console.warn("⚠️ API Error: Fallback to GAS data only.");
     }
     try {
         let unifiedDatesMap = {};
