@@ -394,7 +394,10 @@ function populateGlobalBUFilters() {
 async function initDashboard() {
     initCharts(); 
     const loader = document.getElementById('global-loader');
-    if (loader) loader.style.display = 'flex';
+    if (loader) {
+        loader.style.display = 'flex';
+        loader.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin-icon"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 1 10 10"></path></svg><span>⏳ กำลังดึงข้อมูล... <span id="loader-pct" style="font-weight: 900; margin-left: 4px;">0%</span></span>`;
+    }
     
     _loadProgress = 0; 
     updateLoaderPct(15, 500);
@@ -422,37 +425,45 @@ async function initDashboard() {
         const response = await fetch(`${GAS_URL}?section=all`);
         updateLoaderPct(65, 800);
         
-        // 🌟 ติดตั้งตัวฟ้อง Error อย่างละเอียด 🌟
-        if (!response.ok) {
-            alert(`⚠️ ดึงข้อมูลล้มเหลว!\nApps Script ส่งรหัส Error: ${response.status}\n\nวิธีแก้: ตรวจสอบว่าลิงก์ GAS_URL ถูกต้อง หรือมีการล็อกสิทธิ์การเข้าถึงใน Google Sheet หรือไม่`);
-        } else {
-            const textData = await response.text();
-            try {
-                const result = JSON.parse(textData);
-                if (result.status === "success") {
-                    globalData = result.data;
-                    cleanDataBeforeLoad();
-                    populateGlobalBUFilters();
-                } else {
-                    alert(`⚠️ ดึงข้อมูลสำเร็จ แต่ Backend แจ้ง Error:\n\n` + JSON.stringify(result));
-                }
-            } catch (parseErr) {
-                alert(`⚠️ ข้อมูลที่ส่งมาไม่ใช่ JSON! (มักเกิดจากการเผลอกด New Deployment หรือไฟล์ Sheet ขาดสิทธิ์การเข้าถึง)\n\nข้อความที่ระบบส่งมา:\n` + textData.substring(0, 150));
+        // 🌟 ดึงข้อมูลแบบ Text เพื่อตรวจสอบว่าเป็น HTML Error จาก Google หรือไม่ 🌟
+        const textData = await response.text();
+        
+        try {
+            const result = JSON.parse(textData);
+            if (result.status === "success") {
+                globalData = result.data;
+                cleanDataBeforeLoad();
+                populateGlobalBUFilters();
+            } else {
+                alert(`⚠️ แจ้งเตือน: ดึงข้อมูลสำเร็จ แต่หลังบ้าน (Apps Script) แจ้ง Error!\n\nโปรดเช็คที่ Apps Script`);
             }
+        } catch (parseErr) {
+            // 🚨 ถ้า Error ตกมาตรงนี้ แปลว่าติดสิทธิ์การเข้าถึง 100% 🚨
+            console.error("Not JSON format. Server returned HTML instead:", textData);
+            alert("🚨 ข้อมูลไม่โหลด: การตั้งค่า Google Apps Script ขาดสิทธิ์การเข้าถึง!\n\nโปรดกลับไปที่ Apps Script > จัดการการทำให้ใช้งานได้ (Manage Deployments) > แก้ไข (รูปดินสอ) > สร้างเวอร์ชันใหม่ > **บังคับเปลี่ยนช่อง 'ผู้มีสิทธิ์เข้าถึง (Who has access)' ให้เป็น 'ทุกคน (Anyone)'**");
+            if (loader) loader.innerHTML = `<span style="color:#DC2626; font-weight:bold;">🚨 โหลดข้อมูลล้มเหลว! (โปรดตรวจสอบสิทธิ์ชีต)</span>`;
+            return; // หยุดทำงาน
         }
+
     } catch (e) { 
-        alert(`⚠️ เชื่อมต่อ Apps Script ไม่ได้เลย!\n\nสาเหตุ: ` + e.message + `\n\nวิธีแก้: เช็คว่าลิงก์ GAS_URL ในไฟล์ script.js ตรงกับลิงก์ที่ Deploy ล่าสุดหรือไม่`); 
+        console.error("GAS Load Error:", e); 
+        alert("🚨 เชื่อมต่อ Apps Script ไม่ได้เลย (อาจจะลิงก์ผิด หรือไม่ได้เปิดเน็ต)");
+        if (loader) loader.innerHTML = `<span style="color:#DC2626; font-weight:bold;">🚨 เชื่อมต่อเซิร์ฟเวอร์ไม่ได้</span>`;
+        return;
     }
 
     updateLoaderPct(85, 600);
-    try { await initFulfillmentRealtime(); } catch (e) { console.error(e); }
+    // 🌟 ดัก Error เผื่อ API ฝั่ง Render พัง จะได้ไม่ลาม 🌟
+    try { await initFulfillmentRealtime(); } catch(e) { console.error("FFM API Error:", e); }
     
     updateLoaderPct(95, 300);
-    try { refreshAllSections(); } catch (e) { console.error(e); }
+    try { refreshAllSections(); } catch(e) { console.error("Refresh UI Error:", e); }
     
     updateLoaderPct(100, 200);
+    
     setTimeout(() => { 
         if (loader) loader.style.display = 'none'; 
+        showToast("ข้อมูลอัปเดตเรียบร้อย!"); 
         _loadProgress = 0; 
         if (document.getElementById('loader-pct')) document.getElementById('loader-pct').innerText = '0%'; 
     }, 600);
