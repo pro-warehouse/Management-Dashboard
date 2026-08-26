@@ -425,42 +425,41 @@ async function initDashboard() {
         const response = await fetch(`${GAS_URL}?section=all`);
         updateLoaderPct(65, 800);
         
-        // 🌟 ดึงข้อมูลแบบ Text เพื่อตรวจสอบว่าเป็น HTML Error จาก Google หรือไม่ 🌟
         const textData = await response.text();
-        
         try {
             const result = JSON.parse(textData);
             if (result.status === "success") {
                 globalData = result.data;
+                
+                // 🚨 เช็คความผิดปกติ: ถ้าเชื่อมต่อได้ แต่ดันไม่มีข้อมูลส่งมาเลย
+                if (Object.keys(globalData.workforce || {}).length === 0) {
+                    alert("🚨 [Apps Script] เชื่อมต่อสำเร็จ แต่ 'ข้อมูลว่างเปล่า (Empty)'\n\nสาเหตุที่เป็นไปได้:\n1. ลืมกด Deploy > New Version ใน Apps Script\n2. ตัวเลข Cache ใน Code.gs ยังเป็นตัวเก่า\n3. โค้ด Apps Script ดึง Google Sheet ไม่ได้");
+                }
+                
                 cleanDataBeforeLoad();
                 populateGlobalBUFilters();
             } else {
-                alert(`⚠️ แจ้งเตือน: ดึงข้อมูลสำเร็จ แต่หลังบ้าน (Apps Script) แจ้ง Error!\n\nโปรดเช็คที่ Apps Script`);
+                alert(`⚠️ [Apps Script] หลังบ้านแจ้ง Error:\n` + JSON.stringify(result));
             }
         } catch (parseErr) {
-            // 🚨 ถ้า Error ตกมาตรงนี้ แปลว่าติดสิทธิ์การเข้าถึง 100% 🚨
-            console.error("Not JSON format. Server returned HTML instead:", textData);
-            alert("🚨 ข้อมูลไม่โหลด: การตั้งค่า Google Apps Script ขาดสิทธิ์การเข้าถึง!\n\nโปรดกลับไปที่ Apps Script > จัดการการทำให้ใช้งานได้ (Manage Deployments) > แก้ไข (รูปดินสอ) > สร้างเวอร์ชันใหม่ > **บังคับเปลี่ยนช่อง 'ผู้มีสิทธิ์เข้าถึง (Who has access)' ให้เป็น 'ทุกคน (Anyone)'**");
-            if (loader) loader.innerHTML = `<span style="color:#DC2626; font-weight:bold;">🚨 โหลดข้อมูลล้มเหลว! (โปรดตรวจสอบสิทธิ์ชีต)</span>`;
-            return; // หยุดทำงาน
+            alert("🚨 [Apps Script] ข้อมูลที่ส่งมาไม่ใช่ JSON! (ติดเรื่องสิทธิ์ 100%)\n\nโปรดไปที่ Apps Script > จัดการการทำให้ใช้งานได้ > แก้ไข > สร้างเวอร์ชันใหม่ > ตั้งค่า 'ผู้มีสิทธิ์เข้าถึง (Who has access)' เป็น 'ทุกคน (Anyone)'");
+            if (loader) loader.innerHTML = `<span style="color:#DC2626; font-weight:bold;">🚨 โหลดข้อมูลล้มเหลว! (เช็คสิทธิ์ Apps Script)</span>`;
+            return;
         }
 
     } catch (e) { 
-        console.error("GAS Load Error:", e); 
-        alert("🚨 เชื่อมต่อ Apps Script ไม่ได้เลย (อาจจะลิงก์ผิด หรือไม่ได้เปิดเน็ต)");
+        alert("🚨 [Apps Script] เชื่อมต่อไม่ได้เลย (เช็คอินเทอร์เน็ต หรือ ลิงก์ GAS_URL ผิด)\n" + e.message);
         if (loader) loader.innerHTML = `<span style="color:#DC2626; font-weight:bold;">🚨 เชื่อมต่อเซิร์ฟเวอร์ไม่ได้</span>`;
         return;
     }
 
     updateLoaderPct(85, 600);
-    // 🌟 ดัก Error เผื่อ API ฝั่ง Render พัง จะได้ไม่ลาม 🌟
     try { await initFulfillmentRealtime(); } catch(e) { console.error("FFM API Error:", e); }
     
     updateLoaderPct(95, 300);
     try { refreshAllSections(); } catch(e) { console.error("Refresh UI Error:", e); }
     
     updateLoaderPct(100, 200);
-    
     setTimeout(() => { 
         if (loader) loader.style.display = 'none'; 
         showToast("ข้อมูลอัปเดตเรียบร้อย!"); 
@@ -684,19 +683,24 @@ async function initFulfillmentRealtime() {
     const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
     let bqDataList = [];
     try {
+        // 1. Dashboard Summary
         const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fn: 'apiGetDashboardSummary', args: ["", ""] })
         });
         if (response.ok) {
             const result = await response.json();
             if (result.success && result.data) bqDataList = result.data;
+            else if (!result.success) alert("🚨 [Render Backend] แจ้ง Error (Dashboard Summary):\n" + result.message);
+        } else {
+            const errText = await response.text();
+            alert("🚨 [Render Backend] HTTP Error " + response.status + "\n" + errText);
         }
         
+        // 2. Capacity
         let dObj = safeParseDate(dpEndVal); dObj.setDate(dObj.getDate() - 90);
         const startDateCap = dObj.toISOString().split('T')[0];
-        const capResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
+        const capResp = await fetch(API_URL, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fn: 'apiGetCapacity', args: [startDateCap, dpEndVal] })
         });
@@ -707,25 +711,23 @@ async function initFulfillmentRealtime() {
                     if (!globalCapacities[row.target_date]) globalCapacities[row.target_date] = {};
                     globalCapacities[row.target_date][row.owner] = row.capacity;
                 });
-            }
+            } else if (!capJson.success) alert("🚨 [Render Backend] แจ้ง Error (Capacity):\n" + capJson.message);
         }
         
-        const uphResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
+        // 3. UPH Cost
+        const uphResp = await fetch(API_URL, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fn: 'apiGetUphCost', args: [startDateCap, dpEndVal] }) 
         });
         if (uphResp.ok) {
             const uphJson = await uphResp.json();
             if (uphJson.success && uphJson.data) {
-                uphJson.data.forEach(row => {
-                    globalUphCost[row.target_date] = row;
-                });
-            }
+                uphJson.data.forEach(row => { globalUphCost[row.target_date] = row; });
+            } else if (!uphJson.success) alert("🚨 [Render Backend] แจ้ง Error (UPH Cost):\n" + uphJson.message);
         }
     } catch (apiErr) {
-        console.warn("⚠️ API Error: Fallback to GAS data only.");
+        alert("🚨 [Render Backend] ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ Render ได้เลย:\n" + apiErr.message);
     }
-
     try {
         let unifiedDatesMap = {};
         
