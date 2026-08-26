@@ -1109,8 +1109,8 @@ async function initFulfillmentRealtime() {
         
         let aComp = 0, aLate = 0, aDelay = 0; let worstBU = ""; 
         if (validChartDates.length > 0) {
-            // 🌟 แก้บัก: เปลี่ยนการดึงข้อมูลจากวันเก่าสุด ให้เป็นวันใหม่ล่าสุด (Index 0) 🌟
-            let latestD = validChartDates[0]; 
+            // 🌟 แก้บัก: ดึงวันที่ล่าสุดจริงๆ (ตัวสุดท้ายของ Array) มาแสดงผล 🌟
+            let latestD = validChartDates[validChartDates.length - 1];
             let dailyTotal = 0;
             
             allBUsArray.forEach(bu => {
@@ -1653,7 +1653,8 @@ function updateWorkforceUI() {
     let wfKeys = Object.keys(globalData.workforce).sort((a,b) => safeParseDate(a).getTime() - safeParseDate(b).getTime());
     let validKeys = wfKeys.filter(k => { let t = safeParseDate(k).getTime(); return t >= targetStart && t <= targetEnd; });
     
-    let displayKey = validKeys.length > 0 ? validKeys[validKeys.length-1] : wfKeys.find(k => safeParseDate(k).getTime() <= targetEnd);
+    // 🌟 แก้บัก: ค้นหาวันที่ย้อนหลัง ต้อง Reverse Array ก่อน ไม่งั้นมันจะไปเอาข้อมูลของปีที่แล้วมาโชว์ 🌟
+    let displayKey = validKeys.length > 0 ? validKeys[validKeys.length-1] : [...wfKeys].reverse().find(k => safeParseDate(k).getTime() <= targetEnd);
     let prevKey = wfKeys[wfKeys.indexOf(displayKey) - 1]; 
 
     const calcTotal = (dObj) => {
