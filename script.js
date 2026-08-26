@@ -120,7 +120,6 @@ const dataLabelPlugin = {
         chart.data.datasets.forEach((dataset, i) => {
             if (dataset.type === 'line' || !chart.isDatasetVisible(i) || dataset.stack) return;
             
-            // 🌟 ข้ามไม่เขียนป้ายกำกับให้แท่ง Target (index 0) ของกราฟ UPH (เขียนแค่ Actual) 🌟
             if (chart.canvas.id === 'productivityChart' && i === 0) return;
 
             const meta = chart.getDatasetMeta(i);
@@ -202,9 +201,8 @@ let inventoryLossChartInstance = null;
 let productivityChartInstance = null;
 let transportTrendChartInstance = null;
 
-// ฟังก์ชันนี้จะทำงานก็ต่อเมื่อ DOM โหลดเสร็จแล้วเท่านั้น ป้องกันการแครช
 function initCharts() {
-    if (ffmTrendChartInstance) return; // สร้างครั้งเดียวพอ
+    if (ffmTrendChartInstance) return;
 
     let ctx1 = document.getElementById('ffmTrendChart');
     if(ctx1) ffmTrendChartInstance = new Chart(ctx1, { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels:{usePointStyle:true, boxWidth:8} } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false }, grid: { borderDash: [4, 4] }, grace: '15%' } } }, plugins: [dataLabelPlugin] });
@@ -230,7 +228,6 @@ function initCharts() {
     let ctx8 = document.getElementById('transportTrendChart');
     if(ctx8) transportTrendChartInstance = new Chart(ctx8, { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }, scales: { x: { grid: { display: false } }, y: { type: 'linear', position: 'left', min: 0, max: 105, title: { display: true, text: 'SLA (%)', color: '#3B82F6', font: {weight: 'bold', size: 10} }, grid: { borderDash: [4, 4] } }, y1: { type: 'linear', position: 'right', title: { display: true, text: 'Cost (฿)', color: '#8B5CF6', font: {weight: 'bold', size: 10} }, grid: { display: false }, beginAtZero: true } } }, plugins: [dataLabelPlugin] });
 
-    // 🌟 Plugin พิเศษสำหรับเขียนตัวเลขไว้บนจุดของเส้นกราฟ Total Loss 🌟
     const lossLabelPlugin = {
         id: 'lossLabelPlugin',
         afterDatasetsDraw(chart) {
@@ -266,10 +263,10 @@ function initCharts() {
                     y: { stacked: true, beginAtZero: true, border: { display: false }, grid: { borderDash: [4, 4] } }
                 }
             },
-            plugins: [lossLabelPlugin] // โหลด Plugin เข้าไปในกราฟนี้
+            plugins: [lossLabelPlugin]
         });
     }
-} // <--- จบฟังก์ชัน initCharts() ตรงนี้ครับ
+} 
 
 // ==========================================
 // DATA FETCHING & PROCESSING 
@@ -426,12 +423,12 @@ async function initDashboard() {
         updateLoaderPct(65, 800);
         
         const textData = await response.text();
+        
         try {
             const result = JSON.parse(textData);
             if (result.status === "success") {
                 globalData = result.data;
                 
-                // 🚨 เช็คความผิดปกติ: ถ้าเชื่อมต่อได้ แต่ดันไม่มีข้อมูลส่งมาเลย
                 if (Object.keys(globalData.workforce || {}).length === 0) {
                     alert("🚨 [Apps Script] เชื่อมต่อสำเร็จ แต่ 'ข้อมูลว่างเปล่า (Empty)'\n\nสาเหตุที่เป็นไปได้:\n1. ลืมกด Deploy > New Version ใน Apps Script\n2. ตัวเลข Cache ใน Code.gs ยังเป็นตัวเก่า\n3. โค้ด Apps Script ดึง Google Sheet ไม่ได้");
                 }
@@ -439,16 +436,18 @@ async function initDashboard() {
                 cleanDataBeforeLoad();
                 populateGlobalBUFilters();
             } else {
-                alert(`⚠️ [Apps Script] หลังบ้านแจ้ง Error:\n` + JSON.stringify(result));
+                alert(`⚠️ แจ้งเตือน: ดึงข้อมูลสำเร็จ แต่หลังบ้าน (Apps Script) แจ้ง Error!\n\nโปรดเช็คที่ Apps Script`);
             }
         } catch (parseErr) {
-            alert("🚨 [Apps Script] ข้อมูลที่ส่งมาไม่ใช่ JSON! (ติดเรื่องสิทธิ์ 100%)\n\nโปรดไปที่ Apps Script > จัดการการทำให้ใช้งานได้ > แก้ไข > สร้างเวอร์ชันใหม่ > ตั้งค่า 'ผู้มีสิทธิ์เข้าถึง (Who has access)' เป็น 'ทุกคน (Anyone)'");
-            if (loader) loader.innerHTML = `<span style="color:#DC2626; font-weight:bold;">🚨 โหลดข้อมูลล้มเหลว! (เช็คสิทธิ์ Apps Script)</span>`;
-            return;
+            console.error("Not JSON format. Server returned HTML instead:", textData);
+            alert("🚨 ข้อมูลไม่โหลด: การตั้งค่า Google Apps Script ขาดสิทธิ์การเข้าถึง!\n\nโปรดกลับไปที่ Apps Script > จัดการการทำให้ใช้งานได้ (Manage Deployments) > แก้ไข (รูปดินสอ) > สร้างเวอร์ชันใหม่ > **บังคับเปลี่ยนช่อง 'ผู้มีสิทธิ์เข้าถึง (Who has access)' ให้เป็น 'ทุกคน (Anyone)'**");
+            if (loader) loader.innerHTML = `<span style="color:#DC2626; font-weight:bold;">🚨 โหลดข้อมูลล้มเหลว! (โปรดตรวจสอบสิทธิ์ชีต)</span>`;
+            return; 
         }
 
     } catch (e) { 
-        alert("🚨 [Apps Script] เชื่อมต่อไม่ได้เลย (เช็คอินเทอร์เน็ต หรือ ลิงก์ GAS_URL ผิด)\n" + e.message);
+        console.error("GAS Load Error:", e); 
+        alert("🚨 เชื่อมต่อ Apps Script ไม่ได้เลย (อาจจะลิงก์ผิด หรือไม่ได้เปิดเน็ต)");
         if (loader) loader.innerHTML = `<span style="color:#DC2626; font-weight:bold;">🚨 เชื่อมต่อเซิร์ฟเวอร์ไม่ได้</span>`;
         return;
     }
@@ -460,6 +459,7 @@ async function initDashboard() {
     try { refreshAllSections(); } catch(e) { console.error("Refresh UI Error:", e); }
     
     updateLoaderPct(100, 200);
+    
     setTimeout(() => { 
         if (loader) loader.style.display = 'none'; 
         showToast("ข้อมูลอัปเดตเรียบร้อย!"); 
@@ -475,7 +475,7 @@ function refreshAllSections() {
     try { updateClaimUI(); } catch(e) {}
     try { updateInventoryUI(); } catch(e) {}
     try { renderLocationAccuracy(); } catch(e) {}
-    try { renderInventoryLossUI(); } catch(e) {} // 🌟 เพิ่มตรงนี้ครับ
+    try { renderInventoryLossUI(); } catch(e) {} 
     try { renderProductivitySection(); } catch(e) {}
 }
 
@@ -557,7 +557,6 @@ async function saveDailyCapacity() {
     }
 }
 
-// 🌟 UPH Modal Functions 🌟
 function openUphModal() {
     const modal = document.getElementById('uph-modal');
     if(!modal) return;
@@ -683,7 +682,6 @@ async function initFulfillmentRealtime() {
     const API_URL = "https://dc-ordermonitoring-backend.onrender.com/api/run";
     let bqDataList = [];
     try {
-        // 🌟 1. ดึงข้อมูล Dashboard (บังคับให้ส่งวันที่เจาะจง เพื่อป้องกัน BigQuery Error) 🌟
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -697,7 +695,6 @@ async function initFulfillmentRealtime() {
         let dObj = safeParseDate(dpEndVal); dObj.setDate(dObj.getDate() - 90);
         const startDateCap = dObj.toISOString().split('T')[0];
         
-        // 🌟 2. แยก Try-Catch ของ Capacity ออกมา ป้องกัน API ตัวใดตัวนึงล้มแล้วลามพา FFM พัง 🌟
         try {
             const capResp = await fetch(API_URL, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -714,7 +711,6 @@ async function initFulfillmentRealtime() {
             }
         } catch(e) {}
         
-        // 🌟 3. แยก Try-Catch ของ UPH 🌟
         try {
             const uphResp = await fetch(API_URL, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -732,6 +728,7 @@ async function initFulfillmentRealtime() {
     } catch (apiErr) {
         console.warn("⚠️ API Error: Fallback to GAS data only.");
     }
+
     try {
         let unifiedDatesMap = {};
         
@@ -809,7 +806,6 @@ async function initFulfillmentRealtime() {
         if (validChartDates.length === 0) {
             htmlTable += `<tr><td colspan="14" class="text-center text-muted">ไม่มีข้อมูลในช่วงที่เลือก</td></tr>`;
         } else {
-            // 🌟 1. บังคับเรียง "วันที่" จากใหม่ไปเก่า (มากไปน้อย) เด็ดขาด 🌟
             let tableDatesDesc = [...validChartDates].sort((a, b) => safeParseDate(b).getTime() - safeParseDate(a).getTime());
 
             tableDatesDesc.forEach(dateStr => {
@@ -822,7 +818,6 @@ async function initFulfillmentRealtime() {
                 
                 let allBUsInDay = new Set([...Object.keys(bqData), ...Object.keys(wData), ...Object.keys(fData)]);
                 
-                // 🌟 2. บังคับเรียง "BU" ตามยอดออเดอร์ (มากไปน้อย) 🌟
                 let sortedOwners = Array.from(allBUsInDay).filter(o => o !== 'UNKNOWN' && o !== '').sort((a, b) => {
                     let ordA = getBestOrderData(bqData[a], wData[a], fData[a]).tot;
                     let ordB = getBestOrderData(bqData[b], wData[b], fData[b]).tot;
@@ -947,14 +942,17 @@ async function initFulfillmentRealtime() {
             let pLabel = getPeriodLabel(safeParseDate(dStr), period);
             if(!pMap[pLabel]) pMap[pLabel] = { req:0, alloc:0, ship:0, ordTotal:0, ordFull:0, buReq:{} };
             
-            let dData = chartDataMap[dStr];
+            let dData = chartDataMap[dStr] || { req:0, alloc:0, ship:0, ordTotal:0, ordFull:0, buShip: {}, buReq: {}, buOrd: {} };
+            
             pMap[pLabel].req += dData.req || 0;
             pMap[pLabel].alloc += dData.alloc || 0;
             pMap[pLabel].ship += dData.ship || 0;
             pMap[pLabel].ordTotal += dData.ordTotal || 0;
             pMap[pLabel].ordFull += dData.ordFull || 0;
 
-            chartBUsArray.forEach(bu => pMap[pLabel].buReq[bu] = (pMap[pLabel].buReq[bu]||0) + (dData.buReq[bu] || 0));
+            chartBUsArray.forEach(bu => {
+                pMap[pLabel].buReq[bu] = (pMap[pLabel].buReq[bu] || 0) + (dData.buReq ? (dData.buReq[bu] || 0) : 0);
+            });
         });
 
         let pLabels = Object.keys(pMap);
@@ -1109,8 +1107,7 @@ async function initFulfillmentRealtime() {
         
         let aComp = 0, aLate = 0, aDelay = 0; let worstBU = ""; 
         if (validChartDates.length > 0) {
-            // 🌟 แก้บัก: ดึงวันที่ล่าสุดจริงๆ (ตัวสุดท้ายของ Array) มาแสดงผล 🌟
-            let latestD = validChartDates[validChartDates.length - 1];
+            let latestD = validChartDates[validChartDates.length - 1]; 
             let dailyTotal = 0;
             
             allBUsArray.forEach(bu => {
@@ -1291,9 +1288,26 @@ async function initFulfillmentRealtime() {
                         waveSummaryTable.innerHTML = thead + tbody + "</tbody>";
                     }
                 }
-            }
-        }
+            } else {
+                ['wave-total', 'wave-completed', 'wave-late'].forEach(id => {
+                    if (document.getElementById(id)) document.getElementById(id).innerText = "0";
+                });
+                if (document.getElementById('wave-delay')) document.getElementById('wave-delay').innerText = "0h 0m";
+                
+                ['stage-pick-pct', 'stage-qc-pct', 'stage-ship-pct'].forEach(id => {
+                    if (document.getElementById(id)) document.getElementById(id).innerText = "0%";
+                });
+                ['stage-pick-bar', 'stage-qc-bar', 'stage-ship-bar'].forEach(id => {
+                    if (document.getElementById(id)) document.getElementById(id).style.width = "0%";
+                });
+                ['stage-pick-done', 'stage-pick-total', 'stage-qc-done', 'stage-qc-pending', 'stage-ship-done', 'stage-ship-pending'].forEach(id => {
+                    if (document.getElementById(id)) document.getElementById(id).innerText = "0";
+                });
 
+                if (document.getElementById('wave-summary-table')) document.getElementById('wave-summary-table').innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูลออเดอร์ในช่วงที่เลือก</th></tr></thead>`;
+                if (document.getElementById('smart-alerts-container')) document.getElementById('smart-alerts-container').innerHTML = `<div class="info-alert alert-yellow" style="justify-content: center;">💡 ไม่มีข้อมูลเหตุการณ์ในช่วงวันที่เลือก</div>`;
+                if (document.getElementById('ffm-detail-table')) document.getElementById('ffm-detail-table').innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูล Fulfillment ในช่วงที่เลือก</th></tr></thead>`;
+            }
     } catch (err) {}
 }
 
@@ -1436,7 +1450,6 @@ function updateTransportUI() {
         if(scroller) scroller.scrollLeft = scroller.scrollWidth;
     }, 400);
 
-    // 🌟 1. ค้นหาประเภทรถ (Vehicle Types) ทั้งหมดที่มีในระบบเพื่อสร้างหัวตารางแนวนอน 🌟
     let allVTypes = new Set();
     validDates.forEach(dateKey => {
         let dayData = globalData.transport[dateKey];
@@ -1450,7 +1463,6 @@ function updateTransportUI() {
     let vTypeArray = Array.from(allVTypes).sort();
     if (vTypeArray.length === 0) vTypeArray = ['ทั่วไป'];
 
-    // 🌟 2. อัปเดตหัวตาราง (Thead) ให้มีคอลัมน์ประเภทรออัตโนมัติ 🌟
     const dailyTable = document.getElementById('daily-transport-table');
     if (dailyTable) {
         let theadHtml = `<tr>
@@ -1473,7 +1485,6 @@ function updateTransportUI() {
         }
     }
 
-    // 🌟 3. สร้างข้อมูลใส่ตาราง 🌟
     let dailyHtml = "";
     let sortedPeriods = Object.values(groupedByPeriod).sort((a,b) => b.time - a.time);
     
@@ -1481,7 +1492,6 @@ function updateTransportUI() {
         let succPct = p.total_orders > 0 ? (p.success_orders / p.total_orders * 100).toFixed(1) : 0;
         let slaPct = p.success_orders > 0 ? (p.sla_hit / p.success_orders * 100).toFixed(1) : 0;
 
-        // แถว Summary
         dailyHtml += `<tr class="summary-row">
             <td colspan="2" class="font-bold text-dark text-sm">📅 ${p.label} - SUMMARY</td>`;
         vTypeArray.forEach(() => { dailyHtml += `<td class="text-center font-bold text-sm text-muted">-</td>`; });
@@ -1520,7 +1530,6 @@ function updateTransportUI() {
                 <td class="text-muted" style="padding-left:20px;">${p.label}</td>
                 <td><b class="text-dark">${d.carrier}</b></td>`;
                 
-            // วนลูปใส่คอลัมน์จำนวนรถตามประเภท
             vTypeArray.forEach(vt => {
                 let cnt = d.vTypeCounts[vt] ? d.vTypeCounts[vt].size : 0;
                 dailyHtml += `<td class="text-center font-bold ${cnt>0 ? 'text-purple' : 'text-muted'}">${cnt>0 ? cnt : '-'}</td>`;
@@ -1563,7 +1572,7 @@ function updateTransportUI() {
                 },
                 borderRadius: 4, 
                 borderSkipped: false, 
-                barPercentage: 0.6, /* เพิ่มความกว้างแท่งกราฟให้ยืดหยุ่น */
+                barPercentage: 0.6,
                 categoryPercentage: 0.8,
                 yAxisID: 'y', order: 3
             });
@@ -1578,7 +1587,7 @@ function updateTransportUI() {
                 pointHoverRadius: 6,
                 tension: 0.4, 
                 yAxisID: 'y1', 
-                fill: false, /* 🌟 ปิดการเทสีพื้นหลังสีม่วงทึบ 100% 🌟 */
+                fill: false, 
                 order: 2
             });
         }
@@ -1617,286 +1626,245 @@ function updateTransportUI() {
         `;
     }
 }
+
 // ----------------------------------------------------
 // WORKFORCE 
 // ----------------------------------------------------
 function updateWorkforceUI() {
-    const totalEl = document.getElementById('headcount-total');
-    const updEl = document.getElementById('headcount-update');
-    const trendBox = document.getElementById('hc-trend-box');
+    try {
+        const totalEl = document.getElementById('headcount-total');
+        const updEl = document.getElementById('headcount-update');
+        const trendBox = document.getElementById('hc-trend-box');
 
-    if (!globalData.workforce || Object.keys(globalData.workforce).length === 0) {
-        if(totalEl) totalEl.innerText = "0";
-        if(updEl) updEl.innerText = "Updated: --";
-        if(trendBox) trendBox.innerHTML = `<span class="trend-badge trend-neutral">-</span>`;
+        if (!globalData.workforce || Object.keys(globalData.workforce).length === 0) {
+            if(totalEl) totalEl.innerText = "0";
+            if(updEl) updEl.innerText = "Updated: --";
+            if(trendBox) trendBox.innerHTML = `<span class="trend-badge trend-neutral">-</span>`;
+            
+            if(document.getElementById('wf-matrix-table')) document.getElementById('wf-matrix-table').innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูล Workforce (โปรดตรวจสอบสิทธิ์ชีตพนักงาน)</th></tr></thead>`;
+            if(document.getElementById('daily-attendance-body')) document.getElementById('daily-attendance-body').innerHTML = `<tr><td colspan="100%" class="text-center text-muted">ไม่มีข้อมูล Attendance</td></tr>`;
+            if(document.getElementById('daily-attendance-head')) document.getElementById('daily-attendance-head').innerHTML = `<tr><th class="text-center text-muted">No Data</th></tr>`;
+            if(workforceChartInstance) { workforceChartInstance.data.labels = []; workforceChartInstance.update(); }
+            return;
+        }
         
-        // 🌟 บังคับเคลียร์คำว่า Loading ออก 🌟
-        const matrixTable = document.getElementById('wf-matrix-table');
-        if (matrixTable) matrixTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูล Workforce (โปรดตรวจสอบสิทธิ์ชีตพนักงาน)</th></tr></thead>`;
+        const targetStartObj = safeParseDate(document.getElementById('date-start').value);
+        const targetEndObj = safeParseDate(document.getElementById('date-end').value);
+        const targetStart = targetStartObj.setHours(0, 0, 0, 0);
+        const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
         
-        const attBody = document.getElementById('daily-attendance-body');
-        if (attBody) attBody.innerHTML = `<tr><td colspan="100%" class="text-center text-muted">ไม่มีข้อมูล Attendance</td></tr>`;
+        let wfKeys = Object.keys(globalData.workforce).sort((a,b) => safeParseDate(a).getTime() - safeParseDate(b).getTime());
+        let validKeys = wfKeys.filter(k => { let t = safeParseDate(k).getTime(); return t >= targetStart && t <= targetEnd; });
         
-        const attHead = document.getElementById('daily-attendance-head');
-        if (attHead) attHead.innerHTML = `<tr><th class="text-center text-muted">No Data</th></tr>`;
-        
-        if(workforceChartInstance) { workforceChartInstance.data.labels = []; workforceChartInstance.update(); }
-        return;
-    }
-    // ... (โค้ดด้านล่างปล่อยไว้ตามเดิมครับ) ...
-    
-    const targetStartObj = safeParseDate(document.getElementById('date-start').value);
-    const targetEndObj = safeParseDate(document.getElementById('date-end').value);
-    const targetStart = targetStartObj.setHours(0, 0, 0, 0);
-    const targetEnd = targetEndObj.setHours(23, 59, 59, 999);
-    
-    let wfKeys = Object.keys(globalData.workforce).sort((a,b) => safeParseDate(a).getTime() - safeParseDate(b).getTime());
-    let validKeys = wfKeys.filter(k => { let t = safeParseDate(k).getTime(); return t >= targetStart && t <= targetEnd; });
-    
-    // 🌟 แก้บัก: ค้นหาวันที่ย้อนหลัง ต้อง Reverse Array ก่อน ไม่งั้นมันจะไปเอาข้อมูลของปีที่แล้วมาโชว์ 🌟
-    let displayKey = validKeys.length > 0 ? validKeys[validKeys.length-1] : [...wfKeys].reverse().find(k => safeParseDate(k).getTime() <= targetEnd);
-    let prevKey = wfKeys[wfKeys.indexOf(displayKey) - 1]; 
+        let displayKey = validKeys.length > 0 ? validKeys[validKeys.length-1] : [...wfKeys].reverse().find(k => safeParseDate(k).getTime() <= targetEnd);
+        let prevKey = displayKey ? wfKeys[wfKeys.indexOf(displayKey) - 1] : null; 
 
-    const calcTotal = (dObj) => {
-        if (!dObj) return 0;
-        let sum = 0;
-        Object.keys(dObj.matrix || {}).forEach(aff => {
-            if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(aff)) {
-                Object.keys(dObj.matrix[aff]).forEach(r => Object.values(dObj.matrix[aff][r]).forEach(val => sum += val));
-            }
-        });
-        return sum;
-    };
-
-    if (displayKey) {
-        let opsTotal = calcTotal(globalData.workforce[displayKey]);
-        let prevTotal = prevKey ? calcTotal(globalData.workforce[prevKey]) : null;
-
-        if (totalEl) totalEl.innerText = fmtN(opsTotal);
-        if (updEl) updEl.innerText = `Updated: ${getDisplayDate(displayKey)}`;
-        if (trendBox) trendBox.innerHTML = generateTrendHtml(opsTotal, prevTotal, false, false);
-
-        if (globalData.workforce[displayKey].nationality) {
-            let nT = 0, nF = 0;
-            Object.keys(globalData.workforce[displayKey].nat_by_aff || {}).forEach(aff => {
+        const calcTotal = (dObj) => {
+            if (!dObj) return 0;
+            let sum = 0;
+            Object.keys(dObj.matrix || {}).forEach(aff => {
                 if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(aff)) {
-                    nT += (globalData.workforce[displayKey].nat_by_aff[aff].thai || 0); nF += (globalData.workforce[displayKey].nat_by_aff[aff].foreign || 0);
+                    Object.keys(dObj.matrix[aff]).forEach(r => Object.values(dObj.matrix[aff][r]).forEach(val => sum += val));
                 }
             });
-            if (document.getElementById('wf-thai')) document.getElementById('wf-thai').innerText = fmtN(nT);
-            if (document.getElementById('wf-foreign')) document.getElementById('wf-foreign').innerText = fmtN(nF);
-        }
-    } else {
-        if(totalEl) totalEl.innerText = "0";
-        if(updEl) updEl.innerText = "Updated: --";
-    }
+            return sum;
+        };
 
-    let dynamicTeamsSet = new Set();
-    Object.values(globalData.workforce).forEach(day => {
-        Object.values(day.matrix || {}).forEach(aff => {
-            Object.values(aff).forEach(roleObj => { Object.keys(roleObj).forEach(t => dynamicTeamsSet.add(t)); });
-        });
-    });
-    let dynamicTeams = Array.from(dynamicTeamsSet).filter(t => t && t !== "N/A").sort();
-    if (dynamicTeams.length === 0) dynamicTeams = ["A", "B", "C"]; 
+        if (displayKey) {
+            let opsTotal = calcTotal(globalData.workforce[displayKey]);
+            let prevTotal = prevKey ? calcTotal(globalData.workforce[prevKey]) : null;
 
-    if (validKeys.length > 0) {
-        let chartKeys = validKeys.slice(-7);
-        let affSet = new Set();
-        chartKeys.forEach(k => Object.keys(globalData.workforce[k]?.matrix || {}).forEach(aff => {
-            if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(aff)) affSet.add(aff);
-        }));
-        let affList = Array.from(affSet).sort();
-        let period = document.getElementById('global-period').value;
+            if (totalEl) totalEl.innerText = fmtN(opsTotal);
+            if (updEl) updEl.innerText = `Updated: ${getDisplayDate(displayKey)}`;
+            if (trendBox) trendBox.innerHTML = generateTrendHtml(opsTotal, prevTotal, false, false);
 
-        let pMap = {};
-        validChartDates.forEach(dStr => {
-            let pLabel = getPeriodLabel(safeParseDate(dStr), period);
-            if(!pMap[pLabel]) pMap[pLabel] = { req:0, alloc:0, ship:0, ordTotal:0, ordFull:0, buReq:{} };
-            
-            // 🌟 แก้บัก: ป้องกันหน้าเว็บพัง หากไม่มีข้อมูลออเดอร์ในบางวัน 🌟
-            let dData = chartDataMap[dStr] || { req:0, alloc:0, ship:0, ordTotal:0, ordFull:0, buShip: {}, buReq: {}, buOrd: {} };
-            
-            pMap[pLabel].req += dData.req || 0;
-            pMap[pLabel].alloc += dData.alloc || 0;
-            pMap[pLabel].ship += dData.ship || 0;
-            pMap[pLabel].ordTotal += dData.ordTotal || 0;
-            pMap[pLabel].ordFull += dData.ordFull || 0;
-
-            chartBUsArray.forEach(bu => {
-                pMap[pLabel].buReq[bu] = (pMap[pLabel].buReq[bu] || 0) + (dData.buReq ? (dData.buReq[bu] || 0) : 0);
-            });
-        });
-        
-        let pLabels = Object.keys(pMap);
-        let datasets = affList.map((aff) => {
-            let colorObj = getBuColor(aff);
-            return {
-                label: aff, data: pLabels.map(p => pMap[p][aff] || 0),
-                backgroundColor: (ctx) => (!ctx.chart.chartArea) ? colorObj.s : getGradient(ctx.chart.ctx, ctx.chart.chartArea, colorObj.s, colorObj.e),
-                borderRadius: 4, stack: 'hc'
-            };
-        });
-
-        if(workforceChartInstance) {
-            workforceChartInstance.data.labels = pLabels;
-            workforceChartInstance.data.datasets = datasets;
-            workforceChartInstance.update();
-        }
-
-        const matrixTable = document.getElementById('wf-matrix-table');
-        if (matrixTable && displayKey) {
-            let d = globalData.workforce[displayKey];
-            let opsTotal = calcTotal(d);
-            let affiliations = Object.keys(d.matrix || {}).sort();
-            if (!window.selectedBUs.includes('ALL')) affiliations = affiliations.filter(a => window.selectedBUs.includes(a));
-            
-            let rolesSet = new Set();
-            affiliations.forEach(aff => { if(d.matrix[aff]) Object.keys(d.matrix[aff]).forEach(r => rolesSet.add(r)); });
-            const roles = Array.from(rolesSet);
-
-            if (affiliations.length === 0) {
-                matrixTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูล MATRIX ของวันที่เลือก</th></tr></thead>`;
-            } else {
-                let natData = { thai: 0, foreign: 0 };
-                Object.keys(d.nat_by_aff || {}).forEach(aff => {
-                    if (affiliations.includes(aff)) {
-                        natData.thai += d.nat_by_aff[aff].thai || 0;
-                        natData.foreign += d.nat_by_aff[aff].foreign || 0;
+            if (globalData.workforce[displayKey].nationality) {
+                let nT = 0, nF = 0;
+                Object.keys(globalData.workforce[displayKey].nat_by_aff || {}).forEach(aff => {
+                    if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(aff)) {
+                        nT += (globalData.workforce[displayKey].nat_by_aff[aff].thai || 0); 
+                        nF += (globalData.workforce[displayKey].nat_by_aff[aff].foreign || 0);
                     }
                 });
-
-                let headerHtml = `<thead>
-                    <tr>
-                        <th rowspan="2" style="position:sticky; left:0; top:0; z-index:20; background:var(--bg-card);">Role / หน้าที่</th>`;
-                affiliations.forEach(aff => { headerHtml += `<th colspan="${dynamicTeams.length + 1}" class="text-center matrix-border-left" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">${aff}</th>`; });
-                
-                headerHtml += `<th rowspan="2" class="text-center matrix-border-left matrix-total-col" style="position:sticky; top:0; z-index:15;">Grand Total</th>
-                               <th colspan="2" class="text-center text-blue matrix-border-left" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">สัญชาติ (Nat.)</th>
-                               <th rowspan="2" class="text-center matrix-border-left" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">% Ratio</th>
-                    </tr><tr>`;
-                
-                affiliations.forEach(() => { 
-                    dynamicTeams.forEach((t, idx) => { let bClass = idx === 0 ? 'matrix-border-left' : ''; headerHtml += `<th class="text-center ${bClass}" style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">${t}</th>`; }); 
-                    headerHtml += `<th class="text-center matrix-total-col" style="position:sticky; top:32px; z-index:15;">Total</th>`; 
-                });
-                
-                headerHtml += `<th class="text-center text-muted matrix-border-left" style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">🇹🇭 ไทย</th>
-                               <th class="text-center text-muted" style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">🌐 ต่างชาติ</th>
-                    </tr></thead>`;
-
-                let bodyHtml = "<tbody>";
-                let grandTotalAll = 0; let colSums = {};
-
-                roles.forEach(role => {
-                    let roleGrandTotal = 0; 
-                    let roleRowHtml = `<td style="position:sticky; left:0; z-index:10; font-weight:700; background:var(--bg-card);">${role}</td>`;
-                    
-                    let roleThai = 0, roleForeign = 0;
-                    if(d.foreign_staff) d.foreign_staff.forEach(staff => { if(staff.role === role && affiliations.includes(staff.aff)) roleForeign++; });
-
-                    affiliations.forEach(aff => {
-                        let affRoleTotal = 0;
-                        dynamicTeams.forEach((team, idx) => {
-                            let count = d.matrix[aff]?.[role]?.[team] || 0;
-                            affRoleTotal += count; 
-                            colSums[`${aff}_${team}`] = (colSums[`${aff}_${team}`] || 0) + count;
-                            let bClass = idx === 0 ? 'matrix-border-left' : '';
-                            roleRowHtml += `<td class="text-center ${bClass}">${count > 0 ? count : '-'}</td>`;
-                        });
-                        roleGrandTotal += affRoleTotal;
-                        colSums[`${aff}_Total`] = (colSums[`${aff}_Total`] || 0) + affRoleTotal;
-                        roleRowHtml += `<td class="text-center matrix-total-col">${affRoleTotal > 0 ? affRoleTotal : '-'}</td>`;
-                    });
-                    
-                    roleThai = Math.max(0, roleGrandTotal - roleForeign);
-                    let grandPct = opsTotal > 0 ? ((roleGrandTotal / opsTotal) * 100).toFixed(1) + "%" : "0%";
-                    grandTotalAll += roleGrandTotal;
-                    
-                    bodyHtml += `<tr>
-                        ${roleRowHtml}
-                        <td class="text-center matrix-border-left matrix-total-col" style="color:var(--brand-blue) !important;">${roleGrandTotal > 0 ? roleGrandTotal : '-'}</td>
-                        <td class="text-center text-green font-bold matrix-border-left">${roleThai > 0 ? roleThai : '-'}</td>
-                        <td class="text-center text-blue font-bold">${roleForeign > 0 ? roleForeign : '-'}</td>
-                        <td class="text-center text-muted matrix-border-left">${roleGrandTotal > 0 ? grandPct : '-'}</td>
-                    </tr>`;
-                });
-                
-                let footerHtml = `<tr><td style="position:sticky; left:0; z-index:10; background:var(--bg-card); font-weight:800; border-top:2px solid var(--border-color);">OVERALL</td>`;
-                affiliations.forEach(aff => {
-                    dynamicTeams.forEach((team, idx) => {
-                        let count = colSums[`${aff}_${team}`] || 0;
-                        let bClass = idx === 0 ? 'matrix-border-left' : '';
-                        footerHtml += `<td class="text-center ${bClass}" style="font-weight:700; border-top:2px solid var(--border-color);">${count > 0 ? count : '-'}</td>`;
-                    });
-                    let affTot = colSums[`${aff}_Total`] || 0;
-                    footerHtml += `<td class="text-center matrix-total-col" style="border-top:2px solid var(--border-color);">${affTot > 0 ? affTot : '-'}</td>`;
-                });
-                footerHtml += `<td class="text-center matrix-border-left matrix-total-col" style="font-size:0.9rem; color:var(--brand-blue) !important; border-top:2px solid var(--border-color);">${grandTotalAll > 0 ? grandTotalAll : '-'}</td>
-                             <td class="text-center text-green matrix-border-left" style="font-weight:800; border-top:2px solid var(--border-color);">${natData.thai > 0 ? natData.thai : '-'}</td>
-                             <td class="text-center text-blue" style="font-weight:800; border-top:2px solid var(--border-color);">${natData.foreign > 0 ? natData.foreign : '-'}</td>
-                             <td class="text-center text-muted matrix-border-left" style="border-top:2px solid var(--border-color);">100%</td>
-                </tr>`;
-
-                matrixTable.innerHTML = headerHtml + bodyHtml + footerHtml + "</tbody>";
+                if (document.getElementById('wf-thai')) document.getElementById('wf-thai').innerText = fmtN(nT);
+                if (document.getElementById('wf-foreign')) document.getElementById('wf-foreign').innerText = fmtN(nF);
             }
+        } else {
+            if(totalEl) totalEl.innerText = "0";
+            if(updEl) updEl.innerText = "Updated: --";
         }
 
-        const attBody = document.getElementById('daily-attendance-body');
-        const attHead = document.getElementById('daily-attendance-head');
-        if (attHead) {
-            let h = `<tr>
-                <th rowspan="2" style="position:sticky; left:0; top:0; z-index:25; background:var(--bg-card); min-width:120px; box-shadow:inset -1px 0 0 var(--border-color);">DATE / DEPT.</th>
-                <th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">TARGET</th>
-                <th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">ACTUAL</th>
-                <th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">ABSENT</th>
-                <th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card); border-right:2px solid var(--border-color);">RATE</th>`;
-            dynamicTeams.forEach(t => { h += `<th colspan="4" class="team-divider" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">Team ${t}</th>`; });
-            h += `</tr><tr>`;
-            dynamicTeams.forEach(() => { 
-                h += `<th class="team-divider" style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">TRG</th>
-                      <th style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">ACT</th>
-                      <th style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">ABS</th>
-                      <th style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">%</th>`; 
-            });
-            h += `</tr>`;
-            attHead.innerHTML = h;
-        }
-        
-        let excelHtml = "";
-        const tableRows = [ { key: 'Pick', label: 'Pick' }, { key: 'RT', label: 'RT' }, { key: 'QCQA', label: 'QC / QA' }, { key: 'Grouping', label: 'Grouping' }, { key: 'Putaway', label: 'Put-away' }, { key: 'Receive', label: 'Receive' } ];
-        
-        validKeys.slice(0, 14).forEach(dateKey => {
-            const data = globalData.workforce[dateKey];
-            excelHtml += `<tr><td colspan="${5 + (dynamicTeams.length * 4)}" style="background:var(--bg-body); font-weight:700;">Date: ${getDisplayDate(dateKey)}</td></tr>`;
-            
-            tableRows.forEach(r => {
-                let act = 0, trgTot = 0;
-                if (r.key === 'QCQA') { act = (data.roles?.QC || 0) + (data.roles?.QA || 0); trgTot = (data.targets?.QC || 0) + (data.targets?.QA || 0); } 
-                else { act = data.roles?.[r.key] || 0; trgTot = data.targets?.[r.key] || 0; }
-
-                const calcAbs = (a, t) => (t===0&&a===0) ? '-' : (a-t<0 ? `<span class="text-red font-bold">${a-t}</span>` : a-t);
-                const calcRate = (a, t) => t===0 ? '-' : `<span class="${(a/t*100)<95?'text-red':'text-green'} font-bold">${(a/t*100).toFixed(2)}%</span>`;
-
-                let rowHtml = `<tr>
-                    <td style="position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${r.label}</td>
-                    <td class="text-center">${trgTot>0?trgTot:'-'}</td><td class="text-center">${act>0?act:'-'}</td><td class="text-center">${calcAbs(act, trgTot)}</td><td class="text-center">${calcRate(act, trgTot)}</td>`;
-                
-                dynamicTeams.forEach(t => {
-                    let tTrg = 0, tAct = 0;
-                    if (r.key === 'QCQA') { tAct = (data.roleByTeam?.QC?.[t] || 0) + (data.roleByTeam?.QA?.[t] || 0); tTrg = (data.targetByTeam?.QC?.[t] || 0) + (data.targetByTeam?.QA?.[t] || 0); } 
-                    else { tAct = data.roleByTeam?.[r.key]?.[t] || 0; tTrg = data.targetByTeam?.[r.key]?.[t] || 0; }
-                    rowHtml += `<td class="text-center team-divider">${tTrg>0?tTrg:'-'}</td><td class="text-center">${tAct>0?tAct:'-'}</td><td class="text-center">${calcAbs(tAct, tTrg)}</td><td class="text-center">${calcRate(tAct, tTrg)}</td>`;
-                });
-                excelHtml += rowHtml + `</tr>`;
+        let dynamicTeamsSet = new Set();
+        Object.values(globalData.workforce).forEach(day => {
+            Object.values(day.matrix || {}).forEach(aff => {
+                if (typeof aff === 'object') Object.values(aff).forEach(roleObj => { Object.keys(roleObj).forEach(t => dynamicTeamsSet.add(t)); });
             });
         });
-        if(attBody) attBody.innerHTML = excelHtml !== "" ? excelHtml : `<tr><td colspan="100%" class="text-center text-muted">ไม่มีข้อมูลในช่วงที่เลือก</td></tr>`;
+        let dynamicTeams = Array.from(dynamicTeamsSet).filter(t => t && t !== "N/A").sort();
+        if (dynamicTeams.length === 0) dynamicTeams = ["A", "B", "C"]; 
 
-    } else {
-        const matrixTable = document.getElementById('wf-matrix-table');
-        if (matrixTable) matrixTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูลในช่วงที่เลือก</th></tr></thead>`;
-        if(workforceChartInstance) { workforceChartInstance.data.labels = []; workforceChartInstance.update(); }
+        if (validKeys.length > 0 && displayKey) {
+            let chartKeys = validKeys.slice(-7);
+            let affSet = new Set();
+            chartKeys.forEach(k => Object.keys(globalData.workforce[k]?.matrix || {}).forEach(aff => {
+                if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(aff)) affSet.add(aff);
+            }));
+            let affList = Array.from(affSet).sort();
+            let period = document.getElementById('global-period').value;
+
+            let pMap = {};
+            chartKeys.forEach(k => {
+                let pLabel = getPeriodLabel(safeParseDate(k), period);
+                if(!pMap[pLabel]) pMap[pLabel] = {};
+                affList.forEach(aff => {
+                    let m = globalData.workforce[k]?.matrix?.[aff]; 
+                    let sum=0; if(m) Object.keys(m).forEach(r => Object.values(m[r]).forEach(v => sum+=v));
+                    pMap[pLabel][aff] = Math.max(pMap[pLabel][aff]||0, sum);
+                });
+            });
+            
+            let pLabels = Object.keys(pMap);
+            let datasets = affList.map((aff) => {
+                let colorObj = getBuColor(aff);
+                return {
+                    label: aff, data: pLabels.map(p => pMap[p][aff] || 0),
+                    backgroundColor: (ctx) => (!ctx.chart.chartArea) ? colorObj.s : getGradient(ctx.chart.ctx, ctx.chart.chartArea, colorObj.s, colorObj.e),
+                    borderRadius: 4, stack: 'hc'
+                };
+            });
+
+            if(workforceChartInstance) {
+                workforceChartInstance.data.labels = pLabels;
+                workforceChartInstance.data.datasets = datasets;
+                workforceChartInstance.update();
+            }
+
+            const matrixTable = document.getElementById('wf-matrix-table');
+            if (matrixTable) {
+                let d = globalData.workforce[displayKey];
+                let opsTotal = calcTotal(d);
+                let affiliations = Object.keys(d.matrix || {}).sort();
+                if (!window.selectedBUs.includes('ALL')) affiliations = affiliations.filter(a => window.selectedBUs.includes(a));
+                
+                let rolesSet = new Set();
+                affiliations.forEach(aff => { if(d.matrix[aff]) Object.keys(d.matrix[aff]).forEach(r => rolesSet.add(r)); });
+                const roles = Array.from(rolesSet);
+
+                if (affiliations.length === 0) {
+                    matrixTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูล MATRIX ของวันที่เลือก</th></tr></thead>`;
+                } else {
+                    let natData = { thai: 0, foreign: 0 };
+                    Object.keys(d.nat_by_aff || {}).forEach(aff => {
+                        if (affiliations.includes(aff)) {
+                            natData.thai += d.nat_by_aff[aff].thai || 0;
+                            natData.foreign += d.nat_by_aff[aff].foreign || 0;
+                        }
+                    });
+
+                    let headerHtml = `<thead><tr><th rowspan="2" style="position:sticky; left:0; top:0; z-index:20; background:var(--bg-card);">Role / หน้าที่</th>`;
+                    affiliations.forEach(aff => { headerHtml += `<th colspan="${dynamicTeams.length + 1}" class="text-center matrix-border-left" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">${aff}</th>`; });
+                    headerHtml += `<th rowspan="2" class="text-center matrix-border-left matrix-total-col" style="position:sticky; top:0; z-index:15;">Grand Total</th><th colspan="2" class="text-center text-blue matrix-border-left" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">สัญชาติ (Nat.)</th><th rowspan="2" class="text-center matrix-border-left" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">% Ratio</th></tr><tr>`;
+                    affiliations.forEach(() => { 
+                        dynamicTeams.forEach((t, idx) => { let bClass = idx === 0 ? 'matrix-border-left' : ''; headerHtml += `<th class="text-center ${bClass}" style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">${t}</th>`; }); 
+                        headerHtml += `<th class="text-center matrix-total-col" style="position:sticky; top:32px; z-index:15;">Total</th>`; 
+                    });
+                    headerHtml += `<th class="text-center text-muted matrix-border-left" style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">🇹🇭 ไทย</th><th class="text-center text-muted" style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">🌐 ต่างชาติ</th></tr></thead>`;
+
+                    let bodyHtml = "<tbody>";
+                    let grandTotalAll = 0; let colSums = {};
+
+                    roles.forEach(role => {
+                        let roleGrandTotal = 0; 
+                        let roleRowHtml = `<td style="position:sticky; left:0; z-index:10; font-weight:700; background:var(--bg-card);">${role}</td>`;
+                        let roleThai = 0, roleForeign = 0;
+                        if(d.foreign_staff) d.foreign_staff.forEach(staff => { if(staff.role === role && affiliations.includes(staff.aff)) roleForeign++; });
+
+                        affiliations.forEach(aff => {
+                            let affRoleTotal = 0;
+                            dynamicTeams.forEach((team, idx) => {
+                                let count = d.matrix[aff]?.[role]?.[team] || 0;
+                                affRoleTotal += count; 
+                                colSums[`${aff}_${team}`] = (colSums[`${aff}_${team}`] || 0) + count;
+                                let bClass = idx === 0 ? 'matrix-border-left' : '';
+                                roleRowHtml += `<td class="text-center ${bClass}">${count > 0 ? count : '-'}</td>`;
+                            });
+                            roleGrandTotal += affRoleTotal;
+                            colSums[`${aff}_Total`] = (colSums[`${aff}_Total`] || 0) + affRoleTotal;
+                            roleRowHtml += `<td class="text-center matrix-total-col">${affRoleTotal > 0 ? affRoleTotal : '-'}</td>`;
+                        });
+                        
+                        roleThai = Math.max(0, roleGrandTotal - roleForeign);
+                        let grandPct = opsTotal > 0 ? ((roleGrandTotal / opsTotal) * 100).toFixed(1) + "%" : "0%";
+                        grandTotalAll += roleGrandTotal;
+                        
+                        bodyHtml += `<tr>${roleRowHtml}<td class="text-center matrix-border-left matrix-total-col" style="color:var(--brand-blue) !important;">${roleGrandTotal > 0 ? roleGrandTotal : '-'}</td><td class="text-center text-green font-bold matrix-border-left">${roleThai > 0 ? roleThai : '-'}</td><td class="text-center text-blue font-bold">${roleForeign > 0 ? roleForeign : '-'}</td><td class="text-center text-muted matrix-border-left">${roleGrandTotal > 0 ? grandPct : '-'}</td></tr>`;
+                    });
+                    
+                    let footerHtml = `<tr><td style="position:sticky; left:0; z-index:10; background:var(--bg-card); font-weight:800; border-top:2px solid var(--border-color);">OVERALL</td>`;
+                    affiliations.forEach(aff => {
+                        dynamicTeams.forEach((team, idx) => {
+                            let count = colSums[`${aff}_${team}`] || 0;
+                            let bClass = idx === 0 ? 'matrix-border-left' : '';
+                            footerHtml += `<td class="text-center ${bClass}" style="font-weight:700; border-top:2px solid var(--border-color);">${count > 0 ? count : '-'}</td>`;
+                        });
+                        let affTot = colSums[`${aff}_Total`] || 0;
+                        footerHtml += `<td class="text-center matrix-total-col" style="border-top:2px solid var(--border-color);">${affTot > 0 ? affTot : '-'}</td>`;
+                    });
+                    footerHtml += `<td class="text-center matrix-border-left matrix-total-col" style="font-size:0.9rem; color:var(--brand-blue) !important; border-top:2px solid var(--border-color);">${grandTotalAll > 0 ? grandTotalAll : '-'}</td><td class="text-center text-green matrix-border-left" style="font-weight:800; border-top:2px solid var(--border-color);">${natData.thai > 0 ? natData.thai : '-'}</td><td class="text-center text-blue" style="font-weight:800; border-top:2px solid var(--border-color);">${natData.foreign > 0 ? natData.foreign : '-'}</td><td class="text-center text-muted matrix-border-left" style="border-top:2px solid var(--border-color);">100%</td></tr>`;
+                    matrixTable.innerHTML = headerHtml + bodyHtml + footerHtml + "</tbody>";
+                }
+            }
+
+            const attBody = document.getElementById('daily-attendance-body');
+            const attHead = document.getElementById('daily-attendance-head');
+            if (attHead) {
+                let h = `<tr><th rowspan="2" style="position:sticky; left:0; top:0; z-index:25; background:var(--bg-card); min-width:120px; box-shadow:inset -1px 0 0 var(--border-color);">DATE / DEPT.</th><th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">TARGET</th><th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">ACTUAL</th><th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">ABSENT</th><th rowspan="2" style="position:sticky; top:0; z-index:15; background:var(--bg-card); border-right:2px solid var(--border-color);">RATE</th>`;
+                dynamicTeams.forEach(t => { h += `<th colspan="4" class="team-divider" style="position:sticky; top:0; z-index:15; background:var(--bg-card);">Team ${t}</th>`; });
+                h += `</tr><tr>`;
+                dynamicTeams.forEach(() => { h += `<th class="team-divider" style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">TRG</th><th style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">ACT</th><th style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">ABS</th><th style="position:sticky; top:32px; z-index:15; background:var(--bg-card);">%</th>`; });
+                h += `</tr>`;
+                attHead.innerHTML = h;
+            }
+            
+            let excelHtml = "";
+            const tableRows = [ { key: 'Pick', label: 'Pick' }, { key: 'RT', label: 'RT' }, { key: 'QCQA', label: 'QC / QA' }, { key: 'Grouping', label: 'Grouping' }, { key: 'Putaway', label: 'Put-away' }, { key: 'Receive', label: 'Receive' } ];
+            
+            validKeys.slice(0, 14).forEach(dateKey => {
+                const data = globalData.workforce[dateKey];
+                excelHtml += `<tr><td colspan="${5 + (dynamicTeams.length * 4)}" style="background:var(--bg-body); font-weight:700;">Date: ${getDisplayDate(dateKey)}</td></tr>`;
+                
+                tableRows.forEach(r => {
+                    let act = 0, trgTot = 0;
+                    if (r.key === 'QCQA') { act = (data.roles?.QC || 0) + (data.roles?.QA || 0); trgTot = (data.targets?.QC || 0) + (data.targets?.QA || 0); } 
+                    else { act = data.roles?.[r.key] || 0; trgTot = data.targets?.[r.key] || 0; }
+
+                    const calcAbs = (a, t) => (t===0&&a===0) ? '-' : (a-t<0 ? `<span class="text-red font-bold">${a-t}</span>` : a-t);
+                    const calcRate = (a, t) => t===0 ? '-' : `<span class="${(a/t*100)<95?'text-red':'text-green'} font-bold">${(a/t*100).toFixed(2)}%</span>`;
+
+                    let rowHtml = `<tr><td style="position:sticky; left:0; background:var(--bg-card); z-index:10; font-weight:600;">${r.label}</td><td class="text-center">${trgTot>0?trgTot:'-'}</td><td class="text-center">${act>0?act:'-'}</td><td class="text-center">${calcAbs(act, trgTot)}</td><td class="text-center">${calcRate(act, trgTot)}</td>`;
+                    
+                    dynamicTeams.forEach(t => {
+                        let tTrg = 0, tAct = 0;
+                        if (r.key === 'QCQA') { tAct = (data.roleByTeam?.QC?.[t] || 0) + (data.roleByTeam?.QA?.[t] || 0); tTrg = (data.targetByTeam?.QC?.[t] || 0) + (data.targetByTeam?.QA?.[t] || 0); } 
+                        else { tAct = data.roleByTeam?.[r.key]?.[t] || 0; tTrg = data.targetByTeam?.[r.key]?.[t] || 0; }
+                        rowHtml += `<td class="text-center team-divider">${tTrg>0?tTrg:'-'}</td><td class="text-center">${tAct>0?tAct:'-'}</td><td class="text-center">${calcAbs(tAct, tTrg)}</td><td class="text-center">${calcRate(tAct, tTrg)}</td>`;
+                    });
+                    excelHtml += rowHtml + `</tr>`;
+                });
+            });
+            if(attBody) attBody.innerHTML = excelHtml !== "" ? excelHtml : `<tr><td colspan="100%" class="text-center text-muted">ไม่มีข้อมูลในช่วงที่เลือก</td></tr>`;
+
+        } else {
+            const matrixTable = document.getElementById('wf-matrix-table');
+            if (matrixTable) matrixTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูลพนักงานในช่วงที่เลือก (โปรดเปลี่ยนวันที่)</th></tr></thead>`;
+            
+            const attBody = document.getElementById('daily-attendance-body');
+            if (attBody) attBody.innerHTML = `<tr><td colspan="100%" class="text-center text-muted">ไม่มีข้อมูล Attendance</td></tr>`;
+            
+            if(workforceChartInstance) { workforceChartInstance.data.labels = []; workforceChartInstance.update(); }
+        }
+    } catch (e) {
+        console.error("Workforce UI Error:", e);
     }
 }
 
@@ -2096,7 +2064,6 @@ function updateClaimUI() {
     if (mtdData.length > 0) {
         let pLabels = mtdData.map(i => formatShortDate(i.dateObj));
         
-        // 🌟 สร้างกราฟ CLAIM อัปเดตใหม่ 🌟
         if(claimChart2Instance) {
             claimChart2Instance.data.labels = pLabels;
             claimChart2Instance.data.datasets = [
@@ -2249,7 +2216,7 @@ function updateInventoryUI() {
     const valEl = document.getElementById('inv-val');
     const updEl = document.getElementById('inv-update');
     let invSummary = document.getElementById('inv-summary-box');
-    let typeFilterEl = document.getElementById('inv-type-filter'); // ตัวดึงฟิลเตอร์ Location Type
+    let typeFilterEl = document.getElementById('inv-type-filter');
 
     if (!globalData.inventory_daily || Object.keys(globalData.inventory_daily).length === 0) {
         if(valEl) valEl.innerText = "-";
@@ -2269,7 +2236,6 @@ function updateInventoryUI() {
     let selectedType = typeFilterEl ? typeFilterEl.value : 'ALL';
     let allTypesSet = new Set();
     
-    // 🌟 สำรวจหา Location Type ทั้งหมดจากข้อมูลที่มี เพื่อสร้าง Dropdown 🌟
     Object.keys(globalData.inventory_daily).forEach(dKey => {
         let dayGroup = globalData.inventory_daily[dKey] || {};
         if (dayGroup.loc_data) {
@@ -2277,7 +2243,6 @@ function updateInventoryUI() {
         }
     });
 
-    // 🌟 สร้าง Options ลงใน Dropdown แบบไดนามิก 🌟
     if (typeFilterEl && typeFilterEl.options.length <= 1 && allTypesSet.size > 0) {
         Array.from(allTypesSet).sort().forEach(t => typeFilterEl.appendChild(new Option(t, t)));
     }
@@ -2289,7 +2254,6 @@ function updateInventoryUI() {
             let dayGroup = globalData.inventory_daily[dKey] || {};
             let sumOnhand = 0, sumDiff = 0, count = 0;
             
-            // 🌟 ตรวจสอบว่ามีข้อมูลแยกราย Type (loc_data) หรือไม่ 🌟
             if (dayGroup.loc_data && Object.keys(dayGroup.loc_data).length > 0) {
                 Object.keys(dayGroup.loc_data).forEach(type => {
                     if (selectedType === 'ALL' || selectedType === type) {
@@ -2299,7 +2263,6 @@ function updateInventoryUI() {
                     }
                 });
             } else {
-                // 🌟 Fallback ไปใช้ข้อมูลรวมระดับ BU เหมือนเดิม (กรณี Backend ส่งมาเป็นก้อน)
                 let buDataMap = dayGroup.bu_data || {};
                 Object.keys(buDataMap).forEach(bu => {
                     if (window.selectedBUs.includes('ALL') || window.selectedBUs.includes(bu)) {
@@ -2311,7 +2274,7 @@ function updateInventoryUI() {
             }
             
             let pct = count > 0 ? (sumOnhand > 0 ? Math.max(0, (1 - (sumDiff/sumOnhand))*100) : 0) : null;
-            if (count > 0 || sumOnhand > 0) { // เก็บเฉพาะวันที่มีข้อมูล
+            if (count > 0 || sumOnhand > 0) { 
                 allData.push({ dateStr: formatShortDate(dObj), dateObj: dObj, pct: pct, sumOnhand: sumOnhand, sumDiff: sumDiff });
             }
         }
