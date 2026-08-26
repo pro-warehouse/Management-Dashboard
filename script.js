@@ -392,8 +392,7 @@ function populateGlobalBUFilters() {
 }
 
 async function initDashboard() {
-    initCharts(); // 🌟 บังคับสร้าง Chart ทันที ป้องกันการแครช
-    
+    initCharts(); 
     const loader = document.getElementById('global-loader');
     if (loader) loader.style.display = 'flex';
     
@@ -422,26 +421,35 @@ async function initDashboard() {
         updateLoaderPct(40, 2000);
         const response = await fetch(`${GAS_URL}?section=all`);
         updateLoaderPct(65, 800);
-        const result = await response.json();
         
-        if (result.status === "success") {
-            globalData = result.data;
-            cleanDataBeforeLoad();
-            populateGlobalBUFilters();
+        if (response.ok) {
+            const result = await response.json();
+            if (result.status === "success") {
+                globalData = result.data;
+                cleanDataBeforeLoad();
+                populateGlobalBUFilters();
+            }
         }
     } catch (e) { console.error("GAS Load Error:", e); }
 
     updateLoaderPct(85, 600);
-    await initFulfillmentRealtime();
+    // 🌟 ดักจับ Error ไม่ให้ FFM/Wave พัง แล้วลามไปทำให้กล่องอื่นตายตาม 🌟
+    try {
+        await initFulfillmentRealtime();
+    } catch (e) {
+        console.error("FFM Logic Error:", e);
+    }
     
     updateLoaderPct(95, 300);
-    refreshAllSections();
+    try {
+        refreshAllSections();
+    } catch (e) {
+        console.error("Refresh Sections Error:", e);
+    }
     
     updateLoaderPct(100, 200);
-    
     setTimeout(() => { 
         if (loader) loader.style.display = 'none'; 
-        showToast("ข้อมูลรีเฟรชสำเร็จ!"); 
         _loadProgress = 0; 
         if (document.getElementById('loader-pct')) document.getElementById('loader-pct').innerText = '0%'; 
     }, 600);
@@ -1602,16 +1610,20 @@ function updateWorkforceUI() {
         if(updEl) updEl.innerText = "Updated: --";
         if(trendBox) trendBox.innerHTML = `<span class="trend-badge trend-neutral">-</span>`;
         
-        // 🌟 ล้างคำว่า Loading ออก เมื่อไม่มีข้อมูลส่งมา 🌟
+        // 🌟 บังคับเคลียร์คำว่า Loading ออก 🌟
         const matrixTable = document.getElementById('wf-matrix-table');
         if (matrixTable) matrixTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูล Workforce (โปรดตรวจสอบสิทธิ์ชีตพนักงาน)</th></tr></thead>`;
         
         const attBody = document.getElementById('daily-attendance-body');
         if (attBody) attBody.innerHTML = `<tr><td colspan="100%" class="text-center text-muted">ไม่มีข้อมูล Attendance</td></tr>`;
         
+        const attHead = document.getElementById('daily-attendance-head');
+        if (attHead) attHead.innerHTML = `<tr><th class="text-center text-muted">No Data</th></tr>`;
+        
         if(workforceChartInstance) { workforceChartInstance.data.labels = []; workforceChartInstance.update(); }
         return;
     }
+    // ... (โค้ดด้านล่างปล่อยไว้ตามเดิมครับ) ...
     
     const targetStartObj = safeParseDate(document.getElementById('date-start').value);
     const targetEndObj = safeParseDate(document.getElementById('date-end').value);
