@@ -1081,7 +1081,8 @@ async function initFulfillmentRealtime() {
         
         let aComp = 0, aLate = 0, aDelay = 0; let worstBU = ""; 
         if (validChartDates.length > 0) {
-            let latestD = validChartDates[validChartDates.length - 1];
+            // 🌟 แก้บัก: เปลี่ยนการดึงข้อมูลจากวันเก่าสุด ให้เป็นวันใหม่ล่าสุด (Index 0) 🌟
+            let latestD = validChartDates[0]; 
             let dailyTotal = 0;
             
             allBUsArray.forEach(bu => {
@@ -1599,6 +1600,19 @@ function updateWorkforceUI() {
     if (!globalData.workforce || Object.keys(globalData.workforce).length === 0) {
         if(totalEl) totalEl.innerText = "0";
         if(updEl) updEl.innerText = "Updated: --";
+        if(trendBox) trendBox.innerHTML = `<span class="trend-badge trend-neutral">-</span>`;
+        
+        // 🌟 เพิ่มคำสั่งลบคำว่า Loading ออก ถ้าไม่มีข้อมูลส่งมา 🌟
+        const matrixTable = document.getElementById('wf-matrix-table');
+        if (matrixTable) matrixTable.innerHTML = `<thead><tr><th class='text-center text-muted'>ไม่มีข้อมูล Workforce (โปรดตรวจสอบสิทธิ์ชีตพนักงาน)</th></tr></thead>`;
+        
+        const attBody = document.getElementById('daily-attendance-body');
+        if (attBody) attBody.innerHTML = `<tr><td colspan="100%" class="text-center text-muted">ไม่มีข้อมูล Attendance</td></tr>`;
+        
+        const attHead = document.getElementById('daily-attendance-head');
+        if (attHead) attHead.innerHTML = `<tr><th class="text-center text-muted">No Data</th></tr>`;
+        
+        if(workforceChartInstance) { workforceChartInstance.data.labels = []; workforceChartInstance.update(); }
         return;
     }
     
@@ -1666,14 +1680,20 @@ function updateWorkforceUI() {
         let period = document.getElementById('global-period').value;
 
         let pMap = {};
-        chartKeys.forEach(k => {
-            let pLabel = getPeriodLabel(safeParseDate(k), period);
-            if(!pMap[pLabel]) pMap[pLabel] = {};
-            affList.forEach(aff => {
-                let m = globalData.workforce[k]?.matrix?.[aff]; 
-                let sum=0; if(m) Object.keys(m).forEach(r => Object.values(m[r]).forEach(v => sum+=v));
-                pMap[pLabel][aff] = Math.max(pMap[pLabel][aff]||0, sum);
-            });
+        validChartDates.forEach(dStr => {
+            let pLabel = getPeriodLabel(safeParseDate(dStr), period);
+            if(!pMap[pLabel]) pMap[pLabel] = { req:0, alloc:0, ship:0, ordTotal:0, ordFull:0, buReq:{} };
+            
+            // 🌟 แก้บัก: ป้องกัน Error ทำให้หน้าเว็บพัง หากบางวันถูกกรองทิ้ง 🌟
+            let dData = chartDataMap[dStr] || { req:0, alloc:0, ship:0, ordTotal:0, ordFull:0, buShip: {}, buReq: {}, buOrd: {} };
+            
+            pMap[pLabel].req += dData.req || 0;
+            pMap[pLabel].alloc += dData.alloc || 0;
+            pMap[pLabel].ship += dData.ship || 0;
+            pMap[pLabel].ordTotal += dData.ordTotal || 0;
+            pMap[pLabel].ordFull += dData.ordFull || 0;
+
+            chartBUsArray.forEach(bu => pMap[pLabel].buReq[bu] = (pMap[pLabel].buReq[bu]||0) + (dData.buReq?.[bu] || 0));
         });
         
         let pLabels = Object.keys(pMap);
