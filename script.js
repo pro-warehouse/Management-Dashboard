@@ -2369,7 +2369,6 @@ function renderLocationAccuracy() {
         });
     });
 
-    // --- 🌟 ระบบสร้าง Dropdown Checkboxes อัตโนมัติ 🌟 ---
     const createDropdownCheckboxes = (containerId, textId, dataSet, prefix, labelPrefix) => {
         let container = document.getElementById(containerId);
         if (!container) return;
@@ -2451,7 +2450,6 @@ function renderLocationAccuracy() {
         groupedByBuZone[key].totalWrong += d.wrong;
     });
 
-    // 🌟 [แก้ใหม่]: เรียงตาม BU ก่อน (A-Z) ถ้า BU เดียวกัน ให้เรียงตาม Zone (A-Z) 🌟
     let sortedGroups = Object.values(groupedByBuZone).sort((a, b) => {
         let buComp = a.bu.localeCompare(b.bu);
         if (buComp !== 0) return buComp;
@@ -2481,7 +2479,6 @@ function renderLocationAccuracy() {
     if (sortedGroups.length === 0) {
         tbody += `<tr><td colspan="${typeList.length + 3}" class="text-center text-muted" style="padding:20px;">ไม่พบข้อมูลตามเงื่อนไขที่กรอง</td></tr>`;
     } else {
-        // หาโซนที่ผิดเยอะสุดสำหรับแสดงกล่อง Alert
         let worstGroup = [...sortedGroups].sort((a, b) => b.totalWrong - a.totalWrong)[0];
         if (worstGroup && worstGroup.totalWrong > 0) worstZone = worstGroup;
 
@@ -2519,6 +2516,7 @@ function renderLocationAccuracy() {
     
     locBoxEl.innerHTML = analysisHtml;
 }
+
 // ----------------------------------------------------
 // INVENTORY LOSS & SHRINKAGE (ตาราง Transpose + กราฟผสม)
 // ----------------------------------------------------
@@ -2605,10 +2603,8 @@ function renderInventoryLossUI() {
 
     tableEl.innerHTML = `<thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody>`;
 
-    // 🌟 3. อัปเดตกล่องสรุปยอด YTD และ MoM
     const summaryBox = document.getElementById('inv-loss-summary-box');
     if (summaryBox && lossData.length > 0) {
-        // หาเดือนล่าสุดที่มีข้อมูลจริงๆ (ยอด loss_mo ไม่เป็น 0)
         let activeData = lossData.filter(d => d.loss_mo > 0 || d.ship_mo > 0);
         let latest = activeData.length > 0 ? activeData[activeData.length - 1] : lossData[lossData.length - 1];
         let prev = activeData.length > 1 ? activeData[activeData.length - 2] : null;
@@ -2633,44 +2629,17 @@ function renderInventoryLossUI() {
         summaryBox.className = latest.stat_ytd === 'Over Target' ? 'info-alert alert-red mt-10' : 'info-alert alert-green mt-10';
     }
 
-    // 🌟 4. อัปเดตกราฟ (ปรับสีพาสเทลตามภาพ Google Sheet)
     if (inventoryLossChartInstance) {
         inventoryLossChartInstance.data.labels = lossData.map(d => d.month);
         inventoryLossChartInstance.data.datasets = [
             {
-                type: 'line',
-                label: 'Total Loss',
-                data: lossData.map(d => d.loss_mo),
-                borderColor: '#A6A6A6', 
-                backgroundColor: '#A6A6A6',
-                borderWidth: 2,
-                borderDash: [5, 5],
-                pointRadius: 5,
-                pointBackgroundColor: '#7F7F7F',
-                fill: false,
-                order: 1
+                type: 'line', label: 'Total Loss', data: lossData.map(d => d.loss_mo),
+                borderColor: '#A6A6A6', backgroundColor: '#A6A6A6', borderWidth: 2, borderDash: [5, 5],
+                pointRadius: 5, pointBackgroundColor: '#7F7F7F', fill: false, order: 1
             },
-            {
-                type: 'bar',
-                label: 'สินค้าหมดอายุ (Expired)',
-                data: lossData.map(d => d.exp),
-                backgroundColor: '#DE6B63', // แดงพาสเทล
-                order: 2
-            },
-            {
-                type: 'bar',
-                label: 'สินค้าสูญหาย (Lost)',
-                data: lossData.map(d => d.lost),
-                backgroundColor: '#9CBFF1', // ฟ้าพาสเทล
-                order: 3
-            },
-            {
-                type: 'bar',
-                label: 'สินค้าชำรุด (Damaged)',
-                data: lossData.map(d => d.dmg),
-                backgroundColor: '#A9D18E', // เขียวพาสเทล
-                order: 4
-            }
+            { type: 'bar', label: 'สินค้าหมดอายุ (Expired)', data: lossData.map(d => d.exp), backgroundColor: '#DE6B63', order: 2 },
+            { type: 'bar', label: 'สินค้าสูญหาย (Lost)', data: lossData.map(d => d.lost), backgroundColor: '#9CBFF1', order: 3 },
+            { type: 'bar', label: 'สินค้าชำรุด (Damaged)', data: lossData.map(d => d.dmg), backgroundColor: '#A9D18E', order: 4 }
         ];
         inventoryLossChartInstance.update();
     }
