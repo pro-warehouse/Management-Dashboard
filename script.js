@@ -1,5 +1,5 @@
 let globalCapacities = {};
-window.selectedBUs = ['ALL']; // <--- 🌟 เติมบรรทัดนี้เข้าไปครับ
+window.selectedBUs = ['ALL']; // ค่าเริ่มต้นป้องกัน Error
 const DEFAULT_CAPACITY = 10000;
 let globalUphCost = {};
 let _toastTimer = null;
@@ -120,7 +120,6 @@ const dataLabelPlugin = {
         const { ctx } = chart;
         chart.data.datasets.forEach((dataset, i) => {
             if (dataset.type === 'line' || !chart.isDatasetVisible(i) || dataset.stack) return;
-            
             if (chart.canvas.id === 'productivityChart' && i === 0) return;
 
             const meta = chart.getDatasetMeta(i);
@@ -429,26 +428,19 @@ async function initDashboard() {
             const result = JSON.parse(textData);
             if (result.status === "success") {
                 globalData = result.data;
-                
-                if (Object.keys(globalData.workforce || {}).length === 0) {
-                    console.warn("⚠️ [Apps Script] เชื่อมต่อสำเร็จ แต่ 'ข้อมูลว่างเปล่า (Empty)'");
-                }
-                
                 cleanDataBeforeLoad();
                 populateGlobalBUFilters();
             } else {
-                console.error(`⚠️ แจ้งเตือน: ดึงข้อมูลสำเร็จ แต่หลังบ้าน (Apps Script) แจ้ง Error!\n\nโปรดเช็คที่ Apps Script`);
+                console.error(`⚠️ หลังบ้าน (Apps Script) แจ้ง Error!`);
             }
         } catch (parseErr) {
             console.error("Not JSON format. Server returned HTML instead:", textData);
-            alert("🚨 ข้อมูลไม่โหลด: การตั้งค่า Google Apps Script ขาดสิทธิ์การเข้าถึง!\n\nโปรดกลับไปที่ Apps Script > จัดการการทำให้ใช้งานได้ (Manage Deployments) > แก้ไข (รูปดินสอ) > สร้างเวอร์ชันใหม่ > **บังคับเปลี่ยนช่อง 'ผู้มีสิทธิ์เข้าถึง (Who has access)' ให้เป็น 'ทุกคน (Anyone)'**");
             if (loader) loader.innerHTML = `<span style="color:#DC2626; font-weight:bold;">🚨 โหลดข้อมูลล้มเหลว! (โปรดตรวจสอบสิทธิ์ชีต)</span>`;
             return; 
         }
 
     } catch (e) { 
         console.error("GAS Load Error:", e); 
-        alert("🚨 เชื่อมต่อ Apps Script ไม่ได้เลย (อาจจะลิงก์ผิด หรือไม่ได้เปิดเน็ต)");
         if (loader) loader.innerHTML = `<span style="color:#DC2626; font-weight:bold;">🚨 เชื่อมต่อเซิร์ฟเวอร์ไม่ได้</span>`;
         return;
     }
@@ -1108,7 +1100,19 @@ async function initFulfillmentRealtime() {
         
         let aComp = 0, aLate = 0, aDelay = 0; let worstBU = ""; 
         if (validChartDates.length > 0) {
-            let latestD = validChartDates[validChartDates.length - 1]; 
+            // 🌟 SMART FALLBACK: หาวันล่าสุดที่มีข้อมูลจริง ๆ ไม่ใช่แค่วันสุดท้ายของปฏิทิน 🌟
+            let latestD = null;
+            for (let i = validChartDates.length - 1; i >= 0; i--) {
+                let d = validChartDates[i];
+                let dayTot = 0;
+                allBUsArray.forEach(bu => {
+                    let bData = getBestOrderData(unifiedDatesMap[d]?.bq?.[bu], unifiedDatesMap[d]?.wave?.[bu], unifiedDatesMap[d]?.ffm?.[bu]);
+                    dayTot += bData.tot;
+                });
+                if (dayTot > 0) { latestD = d; break; }
+            }
+            if (!latestD) latestD = validChartDates[validChartDates.length - 1]; // ถ้าไม่มีเลยจริงๆ ค่อยเอาวันสุดท้าย
+            
             let dailyTotal = 0;
             
             allBUsArray.forEach(bu => {
@@ -1652,9 +1656,6 @@ function updateWorkforceUI() {
         let wfKeys = Object.keys(globalData.workforce).sort((a,b) => safeParseDate(a).getTime() - safeParseDate(b).getTime());
         let validKeys = wfKeys.filter(k => { let t = safeParseDate(k).getTime(); return t >= targetStart && t <= targetEnd; });
         
-        let displayKey = validKeys.length > 0 ? validKeys[validKeys.length-1] : [...wfKeys].reverse().find(k => safeParseDate(k).getTime() <= targetEnd);
-        let prevKey = displayKey ? wfKeys[wfKeys.indexOf(displayKey) - 1] : null; 
-
         const calcTotal = (dObj) => {
             if (!dObj) return 0;
             let sum = 0;
@@ -1665,6 +1666,20 @@ function updateWorkforceUI() {
             });
             return sum;
         };
+
+        // 🌟 SMART FALLBACK: หาวันล่าสุดที่มีข้อมูลจริง ๆ 🌟
+        let displayKey = null;
+        if (validKeys.length > 0) {
+            for (let i = validKeys.length - 1; i >= 0; i--) {
+                if (calcTotal(globalData.workforce[validKeys[i]]) > 0) {
+                    displayKey = validKeys[i];
+                    break;
+                }
+            }
+        }
+        if (!displayKey) displayKey = [...wfKeys].reverse().find(k => safeParseDate(k).getTime() <= targetEnd && calcTotal(globalData.workforce[k]) > 0);
+        
+        let prevKey = displayKey ? wfKeys[wfKeys.indexOf(displayKey) - 1] : null; 
 
         if (displayKey) {
             let opsTotal = calcTotal(globalData.workforce[displayKey]);
@@ -2759,6 +2774,8 @@ function renderProductivitySection() {
 
         let sortedGroups = Object.values(grouped).sort((a,b) => a.time - b.time);
         let chartSlice = sortedGroups;
+        
+        // 🌟 SMART FALLBACK: หาข้อมูลล่าสุดจริงๆ มาแสดงในสรุปด้านล่าง 🌟
         let latest = sortedGroups[sortedGroups.length - 1];
         
         const groupDateStr = (g) => { let d = new Date(g.time); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
