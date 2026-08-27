@@ -1205,15 +1205,22 @@ async function initFulfillmentRealtime() {
 
             if (document.getElementById('stage-pick-pct')) {
                 let fTotal = dailyTotal > 0 ? dailyTotal : (parseInt(waveStats.total_orders) || 0);
-                let isDataIncomplete = (isApiSuccess === false);
-                let fPicked = isDataIncomplete ? aComp : (parseInt(waveStats.picked_orders) || 0);
-                let fShipped = isDataIncomplete ? aComp : (parseInt(waveStats.shipped_orders) || 0);
-                let fQcDone = isDataIncomplete ? fShipped : (parseInt(waveStats.qc_orders) || 0);
+                
+                // 🌟 ซิงค์ข้อมูล: บังคับให้ยอด "ส่งออก" (Shipped) ตรงกับยอด "สำเร็จ" (Completed Orders) เสมอ 🌟
+                let fShipped = aComp; 
+                let fPicked = Math.max(fShipped, parseInt(waveStats.picked_orders) || 0);
+                
+                // ถ้าระบบไม่ได้ส่งยอด QC มา ให้ถือว่าเท่ากับยอด Pick (เพื่อให้กราฟวิ่งตามความเป็นจริง)
+                let apiQc = parseInt(waveStats.qc_orders);
+                let fQcDone = !isNaN(apiQc) ? Math.max(fShipped, apiQc) : fPicked;
 
+                // ตีกรอบไม่ให้ตัวเลขทะลุกันเอง (Total >= Pick >= QC >= Ship)
                 fPicked = Math.min(fPicked, fTotal);
                 fQcDone = Math.min(fQcDone, fPicked); 
                 fShipped = Math.min(fShipped, fQcDone); 
+                
                 let fQcPending = Math.max(0, fPicked - fQcDone);
+                let pendingShip = Math.max(0, fTotal - fShipped);
 
                 let pctPick = fTotal > 0 ? ((fPicked / fTotal) * 100).toFixed(1) : 0;
                 document.getElementById('stage-pick-pct').innerText = pctPick + '%';
@@ -1230,7 +1237,6 @@ async function initFulfillmentRealtime() {
                 document.getElementById('stage-qc-text').innerHTML = `🔍 ค้างตรวจ/รอแพ็ค: <b>${fmtN(fQcPending)}</b> บิล`;
 
                 let pctShip = fTotal > 0 ? ((fShipped / fTotal) * 100).toFixed(1) : 0;
-                let pendingShip = Math.max(0, fTotal - fShipped);
                 document.getElementById('stage-ship-pct').innerText = pctShip + '%';
                 document.getElementById('stage-ship-done').innerText = fmtN(fShipped);
                 if(document.getElementById('stage-ship-pending')) document.getElementById('stage-ship-pending').innerText = fmtN(pendingShip);
