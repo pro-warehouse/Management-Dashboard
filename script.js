@@ -646,9 +646,6 @@ function getEffectiveCap(dateStr, bu) {
     return cand.length > 0 ? globalCapacities[cand[0]][bu] : DEFAULT_CAPACITY;
 }
 
-// ------------------------------------------------------------
-// FULFILLMENT & WAVE OPS 
-// ------------------------------------------------------------
 async function initFulfillmentRealtime() {
     const getBestOrderData = (bItem, wItem, fItem) => {
         let bt = parseFloat(bItem?.ordTotal || 0), bf = parseFloat(bItem?.ordFull || 0);
@@ -1099,32 +1096,26 @@ async function initFulfillmentRealtime() {
         }
         
         let aComp = 0, aLate = 0, aDelay = 0; let worstBU = ""; 
+        let dailyTotal = 0;
+
         if (validChartDates.length > 0) {
-            // 🌟 SMART FALLBACK: หาวันล่าสุดที่มีข้อมูลจริง ๆ ไม่ใช่แค่วันสุดท้ายของปฏิทิน 🌟
-            let latestD = null;
-            for (let i = validChartDates.length - 1; i >= 0; i--) {
-                let d = validChartDates[i];
-                let dayTot = 0;
+            
+            // 🌟 รวบยอดตามช่วงเวลา (Date Range) ที่เลือกทั้งหมด 🌟
+            validChartDates.forEach(d => {
                 allBUsArray.forEach(bu => {
                     let bData = getBestOrderData(unifiedDatesMap[d]?.bq?.[bu], unifiedDatesMap[d]?.wave?.[bu], unifiedDatesMap[d]?.ffm?.[bu]);
-                    dayTot += bData.tot;
-                });
-                if (dayTot > 0) { latestD = d; break; }
-            }
-            if (!latestD) latestD = validChartDates[validChartDates.length - 1]; // ถ้าไม่มีเลยจริงๆ ค่อยเอาวันสุดท้าย
-            
-            let dailyTotal = 0;
-            
-            allBUsArray.forEach(bu => {
-                let bData = getBestOrderData(unifiedDatesMap[latestD]?.bq?.[bu], unifiedDatesMap[latestD]?.wave?.[bu], unifiedDatesMap[latestD]?.ffm?.[bu]);
-                let ordTotal = bData.tot; let ordFull = bData.full;
-                let late = parseFloat(unifiedDatesMap[latestD]?.wave?.[bu]?.late_orders || 0);
-                let delay = parseFloat(unifiedDatesMap[latestD]?.wave?.[bu]?.total_delay_mins || 0);
+                    let ordTotal = bData.tot; let ordFull = bData.full;
+                    let late = parseFloat(unifiedDatesMap[d]?.wave?.[bu]?.late_orders || 0);
+                    let delay = parseFloat(unifiedDatesMap[d]?.wave?.[bu]?.total_delay_mins || 0);
 
-                dailyTotal += ordTotal; aComp += ordFull; aLate += late;
-                if (delay > aDelay) { aDelay = delay; worstBU = bu; }
+                    dailyTotal += ordTotal; 
+                    aComp += ordFull; 
+                    aLate += late;
+                    if (delay > aDelay) { aDelay = delay; worstBU = bu; }
+                });
             });
-            
+
+            let latestD = validChartDates[validChartDates.length - 1]; 
             let diffDays = 0; let activeDateStr = "--";
             if (latestD) { 
                 let dObj = safeParseDate(latestD);
@@ -1136,9 +1127,9 @@ async function initFulfillmentRealtime() {
 
             let waveStats = { total_orders: 0, late_pick_orders: 0, late_load_orders: 0, max_pick_delay_mins: 0, max_load_delay_mins: 0, min_pick_early_mins: null, min_load_early_mins: null, picked_orders: 0, shipped_orders: 0 };
             try {
-                let queryDate = latestD ? safeParseDate(latestD).toISOString().split('T')[0] : "";
+                // 🌟 ดึงข้อมูล API คลุมทั้งช่วงเวลาที่เลือก (dpStartVal ถึง dpEndVal) 🌟
                 const waveResp = await fetch("https://dc-ordermonitoring-backend.onrender.com/api/run", {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fn: 'apiGetWaveMonitoring', args: [queryDate, queryDate] })
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fn: 'apiGetWaveMonitoring', args: [dpStartVal, dpEndVal] })
                 });
                 if (waveResp.ok) {
                     const waveJson = await waveResp.json();
@@ -1152,6 +1143,7 @@ async function initFulfillmentRealtime() {
             let latePick = isApiSuccess ? (parseInt(waveStats.late_pick_orders) || 0) : 0;
             let lateLoad = isApiSuccess ? (parseInt(waveStats.late_load_orders) || 0) : aLate;
             let totalLate = Math.max(latePick + lateLoad, (aLate || 0));
+
             let maxPickDelay = isApiSuccess ? (parseInt(waveStats.max_pick_delay_mins) || 0) : 0;
             let maxLoadDelay = isApiSuccess ? (parseInt(waveStats.max_load_delay_mins) || 0) : (aDelay > 0 ? aDelay : 0);
             let maxOverallDelay = Math.max(maxPickDelay, maxLoadDelay, (aDelay || 0));
@@ -1205,20 +1197,19 @@ async function initFulfillmentRealtime() {
 
             if (document.getElementById('stage-pick-pct')) {
                 let fTotal = dailyTotal > 0 ? dailyTotal : (parseInt(waveStats.total_orders) || 0);
-                
-                // 🌟 ซิงค์ข้อมูล: บังคับให้ยอด "ส่งออก" (Shipped) ตรงกับยอด "สำเร็จ" (Completed Orders) เสมอ 🌟
                 let fShipped = aComp; 
-                let fPicked = Math.max(fShipped, parseInt(waveStats.picked_orders) || 0);
                 
-                // ถ้าระบบไม่ได้ส่งยอด QC มา ให้ถือว่าเท่ากับยอด Pick (เพื่อให้กราฟวิ่งตามความเป็นจริง)
-                let apiQc = parseInt(waveStats.qc_orders);
-                let fQcDone = !isNaN(apiQc) ? Math.max(fShipped, apiQc) : fPicked;
+                let apiPicked = parseInt(waveStats.picked_orders) || 0;
+                let apiQc = parseInt(waveStats.qc_orders) || 0;
+
+                let fPicked = Math.max(fShipped, apiPicked);
+                let fQcDone = apiQc > 0 ? Math.max(fShipped, apiQc) : fPicked;
 
                 // ตีกรอบไม่ให้ตัวเลขทะลุกันเอง (Total >= Pick >= QC >= Ship)
                 fPicked = Math.min(fPicked, fTotal);
                 fQcDone = Math.min(fQcDone, fPicked); 
                 fShipped = Math.min(fShipped, fQcDone); 
-                
+
                 let fQcPending = Math.max(0, fPicked - fQcDone);
                 let pendingShip = Math.max(0, fTotal - fShipped);
 
