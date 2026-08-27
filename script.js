@@ -1,4 +1,5 @@
 let globalCapacities = {};
+window.selectedBUs = ['ALL']; // <--- 🌟 เติมบรรทัดนี้เข้าไปครับ
 const DEFAULT_CAPACITY = 10000;
 let globalUphCost = {};
 let _toastTimer = null;
